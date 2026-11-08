@@ -1,7 +1,7 @@
 Config = {}
 
 Config.Job = 'event_planner'
-Config.Label = 'Organisateur d'Événements & DJ'
+Config.Label = "Organisateur d'Événements & DJ"
 Config.Category = 'divertissement'
 
 Config.DutyCoords = vector3(240.0, -1380.0, 33.7)
