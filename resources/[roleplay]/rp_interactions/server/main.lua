@@ -81,12 +81,34 @@ RegisterNetEvent('rp_interactions:executeAction', function(targetId, action, amo
             notify(src, 'error', 'Votre métier ne peut pas émettre cette facture.')
             return
         end
-        if target.removeBank(cost, 'Facture / amende') then
-            player.addBank(cost, 'Paiement reçu')
-            notify(targetId, 'info', 'Vous avez payé ' .. cost .. ' $.')
-            notify(src, 'success', 'Paiement de ' .. cost .. ' $ reçu.')
-        else
+        if (tonumber(target.bank) or 0) < cost then
             notify(src, 'error', 'Le citoyen n’a pas assez d’argent en banque.')
+            return
         end
+        local targetNewBank = target.bank - cost
+        local sourceNewBank = player.bank + cost
+        local ok, transactionResult = pcall(function()
+            return MySQL.transaction.await({
+                {
+                    query = 'UPDATE characters SET bank = ? WHERE id = ? AND bank >= ?',
+                    values = { targetNewBank, target.charId, cost }
+                },
+                {
+                    query = 'UPDATE characters SET bank = ? WHERE id = ?',
+                    values = { sourceNewBank, player.charId }
+                }
+            })
+        end)
+        if not ok or not transactionResult then
+            notify(src, 'error', 'Le paiement a échoué en base de données.')
+            return
+        end
+        target.bank, player.bank = targetNewBank, sourceNewBank
+        TriggerClientEvent('rp_core:client:updateBank', targetId, target.bank)
+        TriggerClientEvent('rp_core:client:updateBank', src, player.bank)
+        TriggerEvent('rp_economy:server:logTransaction', target.charId, action == 'fine' and 'withdraw' or 'withdraw', cost, player.firstname .. ' ' .. player.lastname, action == 'fine' and 'Amende' or 'Facture')
+        TriggerEvent('rp_economy:server:logTransaction', player.charId, 'deposit', cost, target.firstname .. ' ' .. target.lastname, action == 'fine' and 'Amende reçue' or 'Facture réglée')
+        notify(targetId, 'info', 'Vous avez payé ' .. cost .. ' $.')
+        notify(src, 'success', 'Paiement de ' .. cost .. ' $ reçu.')
     end
 end)
