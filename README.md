@@ -39,6 +39,17 @@ Les noms des ressources FiveM (`rp_core`, `job_police`, etc.) restent inchangés
 
 La migration adapte le champ de date de naissance. Elle ne supprime aucun personnage. Si vous avez des dates invalides ou un schéma personnalisé, vérifiez la base avant l'exécution.
 
+## État fonctionnel connu
+
+- Les 50 ressources métiers sont présentes, compilent et valident leur métier côté serveur. La majorité ne contient toutefois que la prise de service : les missions propres à chaque métier (tournées, récolte, fabrication, livraison, vente, progression et véhicules adaptés) restent à concevoir et implémenter. Elles ne doivent pas être présentées comme des métiers complets.
+- Les actions de menottage, amende, facturation, soins et réanimation sont disponibles avec contrôle de proximité et prise de service.
+- Les consommables alimentaires, boissons et soins sont persistés en SQL. Les objets utilitaires sans effet serveur restent volontairement inutilisables.
+- Le dépôt au sol et les actions de réparation/nettoyage/fourrière de véhicules restent désactivés tant que leur cycle serveur sécurisé n'est pas implémenté.
+
+## Vérifications à effectuer avec FXServer
+
+Les contrôles statiques et compilations sont automatisés dans GitHub Actions. Le démarrage FXServer reste nécessaire pour confirmer la découverte des ressources dans les dossiers de catégorie, les dépendances réelles, la connexion oxmysql, l'exécution des migrations, OneSync, les entités réseau, les NUI et les interactions entre plusieurs joueurs.
+
 ## Persistance et limites
 - Le compte est associé à l'identifiant FiveM `license:`.
 - Les personnages sont enregistrés dans MySQL et sélectionnés à chaque connexion.
