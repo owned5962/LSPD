@@ -94,3 +94,16 @@ Serveur GTA 5 RP complet et modulaire pour FiveM, prêt à être déployé.
    - Indiquer votre clé FiveM Keymaster (`sv_licenseKey`).
    - Ajuster la chaîne de connexion MySQL (`mysql_connection_string`).
 3. Lancer le serveur avec `./run.sh` ou votre gestionnaire FiveM.
+
+
+## 🔐 Permissions administrateur
+
+La tablette admin vérifie désormais une permission ACE dédiée (`rp_admin`) ou le groupe serveur `admin` / `superadmin` du joueur chargé. Le numéro de joueur FiveM ne donne jamais de privilège automatiquement.
+
+Le fichier `server.cfg` autorise la permission `rp_admin` au principal ACE `group.admin`. Ajoutez chaque administrateur explicitement, par exemple :
+
+```cfg
+add_principal identifier.license:VOTRE_LICENSE_ICI group.admin
+```
+
+Remplacez la valeur d'exemple par la licence FiveM réelle de chaque administrateur. Ne publiez pas cette licence dans un dépôt public.
