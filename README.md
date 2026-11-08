@@ -11,6 +11,14 @@ Serveur RP modulaire comprenant un système de personnages, une économie, 50 m�
 - 50 métiers RP et grades.
 - Tablette admin protégée par ACE.
 
+## Organisation des ressources
+
+- `resources/[CORE]` : `rp_core` et `rp_characters`.
+- `resources/[JOB]` : les 50 ressources métiers (`job_*`).
+- `resources/[FUNCTION]` : économie, inventaire, interactions, vêtements, interface, tablette admin, anticheat et autres systèmes transversaux.
+
+Les noms des ressources FiveM (`rp_core`, `job_police`, etc.) restent inchangés ; seuls leurs dossiers de regroupement ont changé. Le `server.cfg` est conservé tel quel.
+
 ## Installation neuve
 1. Installez les artifacts FXServer.
 2. Installez la ressource [oxmysql](https://github.com/overextended/oxmysql) dans votre dossier resources.
