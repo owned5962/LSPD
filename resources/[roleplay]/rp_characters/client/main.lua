@@ -33,6 +33,12 @@ local function CloseCharacterUI()
     isCreating = false
 end
 
+RegisterNUICallback('beginCreation', function(data, cb)
+    CloseCharacterUI()
+    OpenCreator(3)
+    cb({ status = 'ok' })
+end)
+
 RegisterNUICallback('saveCharacter', function(data, cb)
     TriggerServerEvent('rp_characters:server:createCharacter', data)
     cb({ status = 'submitted' })
