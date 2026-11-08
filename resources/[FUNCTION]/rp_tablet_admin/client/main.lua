@@ -2,7 +2,7 @@ local isTabletOpen = false
 local tabletEntity = nil
 local tabletDict = "amb@code_human_in_bus_passenger_idles@female@tablet@base"
 local tabletAnim = "base"
-local tabletModel = `prop_cs_tablet`
+local tabletModel = GetHashKey('prop_cs_tablet')
 
 function OpenAdminTablet()
     TriggerServerEvent('rp_tablet_admin:server:requestOpen')
