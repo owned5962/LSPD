@@ -10,12 +10,12 @@ Config.Protections = {
 }
 
 Config.BlacklistedWeapons = {
-    `WEAPON_RPG`,
-    `WEAPON_MINIGUN`,
-    `WEAPON_RAILGUN`,
-    `WEAPON_HOMINGLAUNCHER`,
-    `WEAPON_COMPACTLAUNCHER`,
-    `WEAPON_GRENADELAUNCHER`
+    GetHashKey('WEAPON_RPG'),
+    GetHashKey('WEAPON_MINIGUN'),
+    GetHashKey('WEAPON_RAILGUN'),
+    GetHashKey('WEAPON_HOMINGLAUNCHER'),
+    GetHashKey('WEAPON_COMPACTLAUNCHER'),
+    GetHashKey('WEAPON_GRENADELAUNCHER')
 }
 
 Config.MaxSpeed = 10.0 -- Max pedestrian speed (m/s) before flag
