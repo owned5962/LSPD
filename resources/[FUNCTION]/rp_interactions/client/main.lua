@@ -87,3 +87,20 @@ function GetClosestPlayer()
     end
     return closestPlayer, closestDistance
 end
+
+RegisterNetEvent('rp_interactions:medicalAction', function(action)
+    local ped = PlayerPedId()
+    if action == 'revive' then
+        if not IsEntityDead(ped) then return end
+        local coords = GetEntityCoords(ped)
+        local heading = GetEntityHeading(ped)
+        NetworkResurrectLocalPlayer(coords.x, coords.y, coords.z, heading, true, false)
+        ClearPedTasksImmediately(ped)
+        SetEntityHealth(ped, 150)
+        ClearPedBloodDamage(ped)
+    elseif action == 'heal' then
+        if IsEntityDead(ped) then return end
+        SetEntityHealth(ped, GetEntityMaxHealth(ped))
+        ClearPedBloodDamage(ped)
+    end
+end)
