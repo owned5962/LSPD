@@ -33,3 +33,8 @@ RegisterNetEvent('job_police:getArmoryWeapons', function()
     end
     TriggerClientEvent('rp_core:client:notify', src, 'Dotation d\'armement LSPD distribuée avec succès.', 'success')
 end)
+
+
+exports('IsOnDuty', function(src)
+    return dutyPlayers[tonumber(src)] == true
+end)
