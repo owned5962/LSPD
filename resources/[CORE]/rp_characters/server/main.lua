@@ -95,7 +95,7 @@ RegisterNetEvent('rp_characters:server:checkPlayer', function()
     end
 
     local characters = MySQL.query.await(
-        'SELECT id, char_id, firstname, lastname, dateofbirth, sex, height, cash, bank, job, job_grade, position, skin FROM characters WHERE identifier = ? ORDER BY char_id ASC',
+        'SELECT id, char_id, firstname, lastname, dateofbirth, sex, height, cash, bank, job, job_grade, position, skin, metadata FROM characters WHERE identifier = ? ORDER BY char_id ASC',
         { identifier }
     ) or {}
 
@@ -122,7 +122,7 @@ RegisterNetEvent('rp_characters:server:selectCharacter', function(slot)
     end
 
     local char = MySQL.single.await(
-        'SELECT id, char_id, firstname, lastname, dateofbirth, sex, height, cash, bank, job, job_grade, position, skin FROM characters WHERE identifier = ? AND char_id = ?',
+        'SELECT id, char_id, firstname, lastname, dateofbirth, sex, height, cash, bank, job, job_grade, position, skin, metadata FROM characters WHERE identifier = ? AND char_id = ?',
         { identifier, slot }
     )
     if not char then
