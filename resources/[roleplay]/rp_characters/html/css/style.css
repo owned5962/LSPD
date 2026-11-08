@@ -242,3 +242,24 @@ input[type="range"] {
 .btn.success:hover {
     background: #059669;
 }
+
+#character-selection {
+    width: 480px;
+    max-height: 90vh;
+    overflow-y: auto;
+    background: rgba(18, 22, 33, 0.96);
+    border-radius: 20px;
+    box-shadow: 0 20px 50px rgba(0,0,0,.8);
+    color: #f1f5f9;
+}
+.character-list { display: flex; flex-direction: column; gap: 10px; margin: 20px 0; }
+.character-card {
+    display: flex; flex-direction: column; gap: 5px; width: 100%;
+    padding: 16px; text-align: left; border-radius: 12px;
+    color: #fff; background: rgba(255,255,255,.06);
+    border: 1px solid rgba(255,255,255,.12); cursor: pointer;
+}
+.character-card:hover { border-color: #38bdf8; background: rgba(56,189,248,.12); }
+.character-card span { color: #94a3b8; font-size: 12px; }
+.character-card.empty { color: #94a3b8; border-style: dashed; }
+#create-character-btn:disabled { opacity: .5; cursor: not-allowed; }

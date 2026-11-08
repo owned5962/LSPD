@@ -4,7 +4,9 @@ lua54 'yes'
 
 author 'FiveM RP Team'
 description 'Character registration and character creator for FiveM'
-version '1.0.0'
+version '1.1.0'
+
+dependency 'oxmysql'
 
 ui_page 'html/index.html'
 
@@ -19,5 +21,6 @@ client_scripts {
 }
 
 server_scripts {
+    '@oxmysql/lib/MySQL.lua',
     'server/main.lua'
 }
