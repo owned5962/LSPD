@@ -60,9 +60,23 @@ RegisterNetEvent('rp_interactions:executeAction', function(targetId, action, amo
     end
 
     if action == 'revive' or action == 'heal' then
-        if jobName ~= 'ambulance' then return end
-        notify(targetId, 'success', action == 'revive' and 'Vous avez été réanimé par le SAMU !' or 'Vous avez reçu des soins médicaux.')
-        notify(src, 'success', action == 'revive' and 'Patient réanimé avec succès.' or 'Soins administrés au patient.')
+        if jobName ~= 'ambulance' then
+            notify(src, 'error', 'Action réservée au SAMU.')
+            return
+        end
+        local targetPed = GetPlayerPed(targetId)
+        if targetPed == 0 then return end
+        if action == 'revive' and not IsEntityDead(targetPed) then
+            notify(src, 'error', 'Ce patient n’est pas inconscient.')
+            return
+        end
+        if action == 'heal' and IsEntityDead(targetPed) then
+            notify(src, 'error', 'Ce patient doit être réanimé avant de recevoir des soins.')
+            return
+        end
+        TriggerClientEvent('rp_interactions:medicalAction', targetId, action)
+        notify(targetId, 'success', action == 'revive' and 'Vous avez été réanimé par le SAMU.' or 'Vous avez reçu des soins médicaux.')
+        notify(src, 'success', action == 'revive' and 'Patient réanimé.' or 'Soins administrés au patient.')
         return
     end
 
