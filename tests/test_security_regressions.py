@@ -114,6 +114,12 @@ def test_interaction_actions_are_authorized_and_distance_checked():
     assert "isNearby(src, targetId, 3.0)" in source
     assert "cost > 100000" in source
     assert "GetPlayerFromId" in source
+    assert "IsEntityDead(targetPed)" in source
+    assert "rp_interactions:medicalAction" in source
+    client = read("resources/[FUNCTION]/rp_interactions/client/main.lua")
+    config = read("resources/[FUNCTION]/rp_interactions/shared/config.lua")
+    assert "NetworkResurrectLocalPlayer" in client
+    assert "{ id = 'heal'" in config and "{ id = 'revive'" in config
 
 
 def test_inventory_is_persistent_and_server_validates_transfers():
