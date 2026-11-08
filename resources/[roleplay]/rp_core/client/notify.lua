@@ -20,3 +20,12 @@ RegisterNetEvent('rp_core:client:notify', function(message, type, duration)
         args = {"[RP]", message}
     })
 end)
+
+-- Compatibility bridge for legacy resources using rp_core:notify(type, message).
+RegisterNetEvent('rp_core:notify', function(notificationType, message, duration)
+    if type(notificationType) == 'string' and type(message) == 'string' then
+        TriggerEvent('rp_core:client:notify', message, notificationType, duration)
+    elseif type(notificationType) == 'string' then
+        TriggerEvent('rp_core:client:notify', notificationType, 'info', duration)
+    end
+end)
