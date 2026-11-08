@@ -10,6 +10,10 @@ RegisterCommand('openanticheat', function()
     TriggerServerEvent('rp_anticheat:requestOpen')
 end, false)
 
+RegisterNetEvent('rp_anticheat:syncProtections', function(protections)
+    if type(protections) == 'table' then Config.Protections = protections end
+end)
+
 RegisterNetEvent('rp_anticheat:openUI', function(protections, playersList)
     SetNuiFocus(true, true)
     SendNUIMessage({
