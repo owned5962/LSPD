@@ -80,9 +80,8 @@ RegisterNetEvent('rp_economy:server:transfer', function(rawTargetId, rawAmount)
         return
     end
 
-    if player.removeBank(amount, 'Virement vers ' .. target.firstname .. ' ' .. target.lastname) then
+    if player.removeBank(amount, 'Virement vers ' .. target.firstname .. ' ' .. target.lastname, 'transfer_send') then
         target.addBank(amount, 'Virement reçu de ' .. player.firstname .. ' ' .. player.lastname, 'transfer_receive')
-        TriggerEvent('rp_economy:server:logTransaction', player.charId, 'transfer_send', amount, target.firstname .. ' ' .. target.lastname, 'Virement envoyé')
         TriggerClientEvent('rp_economy:client:refreshBalances', src, player.getCash(), player.getBank())
         TriggerClientEvent('rp_economy:client:refreshBalances', targetId, target.getCash(), target.getBank())
         notify(src, 'Virement de ' .. formatCurrency(amount) .. ' effectué.', 'success')
