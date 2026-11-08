@@ -60,6 +60,7 @@ def test_character_ui_has_selection_and_creation_callbacks():
     client = read("resources/[roleplay]/rp_characters/client/main.lua")
     ui = read("resources/[roleplay]/rp_characters/html/js/app.js")
     assert "openCharacterSelection" in client
+    assert "beginCreation" in client
     assert "selectCharacter" in client
     assert "openCharacterSelection" in ui
     assert "postNui('selectCharacter'" in ui
