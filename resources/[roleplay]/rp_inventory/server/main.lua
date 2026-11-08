@@ -1,5 +1,6 @@
 local playerInventories = {}
 local transferLocks = {}
+local inventoryCharacterIds = {}
 
 local DEFAULT_INVENTORY = {
     { name = 'id_card', count = 1 },
@@ -74,12 +75,14 @@ local function loadInventory(player)
         local ok, decoded = pcall(json.decode, row.items)
         if ok then
             playerInventories[player.source] = normalizeInventory(decoded)
+            inventoryCharacterIds[player.source] = player.charId
             return
         end
         print(('[rp_inventory] Invalid saved inventory for character %s; restoring defaults'):format(player.charId))
     end
 
     playerInventories[player.source] = normalizeInventory(DEFAULT_INVENTORY)
+    inventoryCharacterIds[player.source] = player.charId
     saveInventory(player)
 end
 
@@ -106,6 +109,10 @@ RegisterNetEvent('rp_inventory:useItem', function(itemName)
 
     local itemDef = Config.DefaultItems[itemName]
     if not itemDef then return end
+    if itemDef.type == 'food' or itemDef.type == 'drink' or itemDef.type == 'medical' then
+        notify(src, 'error', 'Les effets de cet objet ne sont pas encore implémentés. Objet conservé.')
+        return
+    end
     for index, item in ipairs(inventory) do
         if item.name == itemName and item.count > 0 then
             if item.count > 1 then item.count = item.count - 1 else table.remove(inventory, index) end
@@ -217,7 +224,7 @@ RegisterNetEvent('rp_inventory:dropItem', function(itemName, rawCount)
     local src = source
     local count = tonumber(rawCount)
     local player = exports['rp_core']:GetPlayerFromId(src)
-    if not player or type(itemName) ~= 'string' or not count or count % 1 ~= 0 or count < 1 or count > 100 then return end
+    if not player or not playerInventories[src] or type(itemName) ~= 'string' or not count or count % 1 ~= 0 or count < 1 or count > 100 then return end
     -- Ground drops are deliberately rejected until a server-owned pickup entity flow is installed.
     notify(src, 'error', 'Le dépôt au sol est temporairement désactivé.')
 end)
@@ -225,6 +232,15 @@ end)
 AddEventHandler('playerDropped', function()
     local src = source
     local player = exports['rp_core']:GetPlayerFromId(src)
-    if player then saveInventory(player) end
+    local charId = inventoryCharacterIds[src]
+    if charId and playerInventories[src] then
+        local ok, err = pcall(MySQL.update.await,
+            'INSERT INTO player_inventories (character_id, items) VALUES (?, ?) ON DUPLICATE KEY UPDATE items = VALUES(items)',
+            { charId, json.encode(playerInventories[src]) }
+        )
+        if not ok then print(('[rp_inventory] Disconnect save failed for character %s: %s'):format(charId, tostring(err))) end
+    end
     playerInventories[src] = nil
+    inventoryCharacterIds[src] = nil
+    transferLocks[src] = nil
 end)
