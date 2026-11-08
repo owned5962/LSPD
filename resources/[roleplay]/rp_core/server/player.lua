@@ -109,12 +109,21 @@ function CreateRPPlayer(source, identifier, charData)
             jobObj = exports['rp_jobs']:GetJob('unemployed')
         end
         grade = tonumber(grade) or 0
-        local gradeData = exports['rp_jobs']:GetJobGrade(jobName, grade) or { name = 'employe', label = 'Employé', salary = 200 }
-        self.job = jobName
-        self.jobGrade = grade
+        if not jobObj.grades or not jobObj.grades[grade] then
+            TriggerClientEvent('rp_core:client:notify', self.source, 'Grade invalide pour ce métier.', 'error')
+            return false
+        end
+        local gradeData = exports['rp_jobs']:GetJobGrade(jobName, grade)
+        local previousJob, previousGrade = self.job, self.jobGrade
+        self.job, self.jobGrade = jobName, grade
+        if not self.save() then
+            self.job, self.jobGrade = previousJob, previousGrade
+            TriggerClientEvent('rp_core:client:notify', self.source, 'Impossible de sauvegarder votre métier. Aucun changement appliqué.', 'error')
+            return false
+        end
         TriggerClientEvent('rp_core:client:setJob', self.source, jobName, jobObj.label, grade, gradeData.label)
         TriggerClientEvent('rp_core:client:notify', self.source, 'Votre métier est désormais: ' .. jobObj.label .. ' (' .. gradeData.label .. ')', 'info')
-        self.save()
+        return true
     end
 
     function self.save()
