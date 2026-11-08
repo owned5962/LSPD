@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chargement GTA 5 RP</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="video-overlay"></div>
+    <div class="bg-gradient"></div>
+
+    <div class="loadscreen-container">
+        <!-- Topbar -->
+        <header class="topbar">
+            <div class="server-branding">
+                <span class="badge">SERVEUR ROLEPLAY FR</span>
+                <h1>LOS SANTOS STORIES</h1>
+                <p class="subtitle">50 Métiers | Économie Dynamique | Expérience Immersive</p>
+            </div>
+            
+            <div class="music-controller">
+                <button id="toggle-audio-btn" class="audio-btn">
+                    <i class="fas fa-volume-up" id="audio-icon"></i>
+                </button>
+                <div class="track-info">
+                    <span class="track-title">Ambiance Urbaine - San Andreas</span>
+                    <span class="track-state">Lecture en cours</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Info Center -->
+        <main class="content-grid">
+            <div class="info-card rules-card">
+                <h2><i class="fas fa-scroll"></i> Règles Fondamentales</h2>
+                <ul>
+                    <li><strong>Fair-Play RP :</strong> Privilégiez toujours les scènes interactives avant les tirs.</li>
+                    <li><strong>PainRP & FearRP :</strong> Respectez la peur du danger et ressentez les blessures physiques.</li>
+                    <li><strong>Métiers & Économie :</strong> 50 métiers sont accessibles au Pôle Emploi ou sur concours.</li>
+                    <li><strong>Tablette Admin :</strong> Les modérateurs veillent en permanence au bon déroulement des scènes.</li>
+                </ul>
+            </div>
+
+            <div class="info-card updates-card">
+                <h2><i class="fas fa-bolt"></i> Nouveautés de la Ville</h2>
+                <div class="update-item">
+                    <span class="update-date">Mise à jour v2.4</span>
+                    <p>Déploiement de 50 métiers réalistes et rééquilibrage complet de l'économie.</p>
+                </div>
+                <div class="update-item">
+                    <span class="update-date">Tablette Admin OS</span>
+                    <p>Nouvel outil de modération avec gestion des joueurs, économie et véhicules en direct.</p>
+                </div>
+            </div>
+
+            <div class="info-card keybinds-card">
+                <h2><i class="fas fa-keyboard"></i> Raccourcis Clés</h2>
+                <div class="keybind-list">
+                    <div class="key-item"><span class="key">F10</span> Ouvrir la Tablette Admin (Staff)</div>
+                    <div class="key-item"><span class="key">/jobcenter</span> Menu des 50 métiers</div>
+                    <div class="key-item"><span class="key">/bank</span> Accéder au compte bancaire</div>
+                    <div class="key-item"><span class="key">/pay [ID] [Montant]</span> Donner du cash</div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Bottom Loading Status -->
+        <footer class="bottom-bar">
+            <div class="progress-details">
+                <span id="load-status">Initialisation des ressources du serveur...</span>
+                <span id="load-percentage">15%</span>
+            </div>
+            <div class="progress-track">
+                <div class="progress-fill" id="progress-bar"></div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Background Audio Loop -->
+    <audio id="bg-music" loop>
+        <source src="https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=cyberpunk-2099-10701.mp3" type="audio/mpeg">
+    </audio>
+
+    <script src="js/app.js"></script>
+</body>
+</html>

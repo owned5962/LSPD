@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Banque Fleeca</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="bank-container" class="hidden">
+        <div class="bank-card-window">
+            <div class="bank-topbar">
+                <div class="bank-brand">
+                    <span class="logo-dot"></span>
+                    <span class="brand-name" id="bank-title">FLEÈCA BANK</span>
+                </div>
+                <button class="close-btn" id="close-bank">&times;</button>
+            </div>
+
+            <div class="account-card">
+                <div class="card-chip"></div>
+                <div class="card-owner" id="account-holder">JEAN DUPONT</div>
+                <div class="card-number" id="account-number">LS-8492 4920 1839</div>
+                <div class="card-balance-box">
+                    <span class="balance-label">SOLDE DISPONIBLE</span>
+                    <span class="balance-value" id="display-bank">10 000 $</span>
+                </div>
+            </div>
+
+            <div class="quick-stats">
+                <div class="stat-pill">
+                    <span class="stat-label">Espèces sur vous</span>
+                    <span class="stat-val" id="display-cash">2 500 $</span>
+                </div>
+                <div class="stat-pill">
+                    <span class="stat-label">Statut Compte</span>
+                    <span class="stat-val active-status">ACTIF / VIP</span>
+                </div>
+            </div>
+
+            <div class="bank-actions">
+                <div class="action-box">
+                    <h3>Dépôt d'Espèces</h3>
+                    <div class="input-inline">
+                        <input type="number" id="deposit-amount" placeholder="Montant..." min="1">
+                        <button id="deposit-btn" class="action-btn">Déposer</button>
+                    </div>
+                </div>
+
+                <div class="action-box">
+                    <h3>Retrait Bancaire</h3>
+                    <div class="input-inline">
+                        <input type="number" id="withdraw-amount" placeholder="Montant..." min="1">
+                        <button id="withdraw-btn" class="action-btn">Retirer</button>
+                    </div>
+                </div>
+
+                <div class="action-box full-action" id="transfer-section">
+                    <h3>Virement Bancaire Immédiat</h3>
+                    <div class="input-inline">
+                        <input type="number" id="transfer-id" placeholder="ID Joueur (ex: 2)" style="max-width: 140px;">
+                        <input type="number" id="transfer-amount" placeholder="Montant..." min="1">
+                        <button id="transfer-btn" class="action-btn special">Envoyer</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,312 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    user-select: none;
+}
+
+body {
+    background: transparent;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+
+.casino-modal {
+    width: 1100px;
+    background: #0d1117;
+    border: 1px solid #2d2616;
+    border-radius: 20px;
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.9);
+    overflow: hidden;
+    color: #f8fafc;
+}
+
+.casino-header {
+    height: 80px;
+    background: #161b22;
+    border-bottom: 2px solid #b48325;
+    padding: 0 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.brand-gem {
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, #d4af37, #aa7c11);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: #fff;
+    box-shadow: 0 0 20px rgba(212, 175, 55, 0.5);
+}
+
+.brand h1 {
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    color: #fef08a;
+}
+
+.brand p {
+    font-size: 12px;
+    color: #94a3b8;
+}
+
+.user-chips-badge {
+    background: #251e12;
+    border: 1px solid #b48325;
+    padding: 10px 18px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 800;
+    color: #fef08a;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.user-chips-badge i {
+    color: #facc15;
+}
+
+.close-btn {
+    background: #21262d;
+    border: none;
+    color: #94a3b8;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.2s;
+}
+
+.close-btn:hover {
+    background: #ef4444;
+    color: #fff;
+}
+
+/* Casino Grid */
+.casino-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.3fr;
+    gap: 24px;
+    padding: 28px;
+}
+
+.casino-card {
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 16px;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.card-header {
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    color: #facc15;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.desc {
+    font-size: 13px;
+    color: #94a3b8;
+    line-height: 1.5;
+}
+
+/* Cashier */
+.cashier-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-top: 8px;
+}
+
+.input-row {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.input-row label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #cbd5e1;
+}
+
+.input-row input {
+    background: #0d1117;
+    border: 1px solid #30363d;
+    padding: 12px;
+    border-radius: 8px;
+    color: #fff;
+    font-size: 16px;
+    font-weight: 700;
+    outline: none;
+}
+
+.btn-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.btn {
+    padding: 12px;
+    border: none;
+    border-radius: 10px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s;
+}
+
+.btn-buy-chips {
+    background: linear-gradient(135deg, #16a34a, #15803d);
+    color: #fff;
+}
+
+.btn-sell-chips {
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    color: #fff;
+}
+
+.vip-status-box {
+    margin-top: auto;
+    background: #251e12;
+    border: 1px solid #b48325;
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.vip-badge {
+    font-size: 13px;
+    font-weight: 800;
+    color: #facc15;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.vip-status-box span {
+    font-size: 11px;
+    color: #cbd5e1;
+}
+
+/* Slots */
+.slots-box {
+    background: radial-gradient(circle at center, #261f14, #161b22);
+}
+
+.reels-container {
+    height: 140px;
+    background: #0d1117;
+    border: 2px solid #b48325;
+    border-radius: 14px;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
+}
+
+.reel {
+    font-size: 50px;
+    width: 90px;
+    height: 100px;
+    background: #161b22;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    border: 1px solid #30363d;
+}
+
+.bet-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.bet-controls .label {
+    font-size: 13px;
+    font-weight: 700;
+    color: #94a3b8;
+}
+
+.bet-chip {
+    flex: 1;
+    background: #21262d;
+    border: 1px solid #30363d;
+    color: #cbd5e1;
+    padding: 8px;
+    border-radius: 8px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.bet-chip:hover, .bet-chip.active {
+    background: #b48325;
+    color: #fff;
+    border-color: #facc15;
+}
+
+.spin-footer {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.last-win {
+    font-size: 13px;
+    color: #94a3b8;
+    text-align: center;
+}
+
+.highlight {
+    color: #22c55e;
+    font-weight: 800;
+}
+
+.btn-spin {
+    background: linear-gradient(135deg, #eab308, #ca8a04);
+    color: #000;
+    font-size: 16px;
+    font-weight: 900;
+    padding: 16px;
+    border-radius: 12px;
+    box-shadow: 0 6px 20px rgba(234, 179, 8, 0.4);
+}
+
+.btn-spin:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(234, 179, 8, 0.6);
+}

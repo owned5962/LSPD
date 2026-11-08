@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Los Santos Marketplace - Le Bon Coin San Andreas</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div id="mkt-container" class="mkt-window">
+        <header class="mkt-header">
+            <div class="brand">
+                <i class="fa-solid fa-store"></i>
+                <div>
+                    <h1>MARKETPLACE SAN ANDREAS (P2P)</h1>
+                    <p>Petites annonces sécurisées : Voitures, Motos, Vélos & Objets</p>
+                </div>
+            </div>
+            <div class="header-actions">
+                <button class="btn-create-ad" onclick="openPublishModal()"><i class="fa-solid fa-plus"></i> Déposer une Annonce</button>
+                <button id="btn-close" class="close-btn"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+        </header>
+
+        <div class="mkt-categories">
+            <button class="cat-btn active" onclick="switchCategory('all')"><i class="fa-solid fa-border-all"></i> Tout afficher</button>
+            <button class="cat-btn" onclick="switchCategory('car')"><i class="fa-solid fa-car"></i> Voitures</button>
+            <button class="cat-btn" onclick="switchCategory('bike')"><i class="fa-solid fa-bicycle"></i> Vélos & Deux-roues</button>
+            <button class="cat-btn" onclick="switchCategory('item')"><i class="fa-solid fa-box-open"></i> Objets & Items</button>
+        </div>
+
+        <main class="mkt-body">
+            <div class="listing-grid" id="listings-container">
+                <!-- Dynamic ads -->
+            </div>
+        </main>
+
+        <!-- Publish Modal -->
+        <div id="modal-publish" class="modal">
+            <div class="modal-box">
+                <div class="modal-header">
+                    <h3>Publier une Annonce de Vente</h3>
+                    <button class="close-btn" onclick="closePublishModal()"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div class="modal-form">
+                    <div class="form-group">
+                        <label>Catégorie :</label>
+                        <select id="ad-category" class="input-field">
+                            <option value="car">Voiture d'occasion</option>
+                            <option value="bike">Vélo / Moto</option>
+                            <option value="item">Objet d'inventaire</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Titre de l'annonce :</label>
+                        <input type="text" id="ad-title" class="input-field" placeholder="Ex: Sultan RS Customisée Turbo" />
+                    </div>
+                    <div class="form-group">
+                        <label>Prix de vente ($) :</label>
+                        <input type="number" id="ad-price" class="input-field" placeholder="50000" />
+                    </div>
+                    <div class="form-group">
+                        <label>Téléphone du vendeur :</label>
+                        <input type="text" id="ad-phone" class="input-field" value="555-0192" />
+                    </div>
+                    <button class="btn-submit-ad" onclick="submitAd()"><i class="fa-solid fa-check"></i> Mettre en Ligne ($50 frais de parution)</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>

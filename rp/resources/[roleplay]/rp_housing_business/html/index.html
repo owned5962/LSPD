@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Dynasty 8 Real Estate & Business</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div id="re-container" class="re-window">
+        <!-- Header -->
+        <header class="re-header">
+            <div class="brand">
+                <div class="brand-logo">D8</div>
+                <div>
+                    <h1>DYNASTY 8 REAL ESTATE & EXECUTIVE</h1>
+                    <p>Achat, Vente & Location de Propriétés et Entreprises</p>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="balance-tag"><i class="fa-solid fa-building-columns"></i> Solde Banque: <span id="bank-val">$2,450,000</span></div>
+                <button id="btn-close" class="close-btn"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <nav class="re-nav">
+            <button class="tab-btn active" data-tab="houses"><i class="fa-solid fa-house"></i> Maisons & Appartements</button>
+            <button class="tab-btn" data-tab="businesses"><i class="fa-solid fa-briefcase"></i> Entreprises & Commerces</button>
+            <button class="tab-btn" data-tab="myprops"><i class="fa-solid fa-key"></i> Mon Patrimoine (Gestion)</button>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="re-main">
+            <!-- Properties Tab -->
+            <section id="tab-houses" class="tab-content active">
+                <div class="filter-bar">
+                    <span class="filter-label"><i class="fa-solid fa-filter"></i> Type d'opération :</span>
+                    <button class="pill active" onclick="filterHousing('all')">Tous</button>
+                    <button class="pill" onclick="filterHousing('buy')">Achat</button>
+                    <button class="pill" onclick="filterHousing('rent')">Location</button>
+                </div>
+                <div class="props-grid" id="housing-list">
+                    <!-- Dynamic properties list -->
+                </div>
+            </section>
+
+            <!-- Businesses Tab -->
+            <section id="tab-businesses" class="tab-content">
+                <div class="business-banner">
+                    <i class="fa-solid fa-chart-line"></i>
+                    <div>
+                        <h3>Investissement Professionnel</h3>
+                        <p>Devenez propriétaire d'une entreprise ou louez un local commercial pour générer des revenus passifs et embaucher des employés.</p>
+                    </div>
+                </div>
+                <div class="props-grid" id="business-list">
+                    <!-- Dynamic business list -->
+                </div>
+            </section>
+
+            <!-- My Assets Tab -->
+            <section id="tab-myprops" class="tab-content">
+                <div class="myprops-container" id="myprops-list">
+                    <!-- User owned or rented properties -->
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,264 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+    user-select: none;
+}
+
+body {
+    background-color: transparent;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+
+.transit-window {
+    width: 880px;
+    background: #11141b;
+    border: 1px solid #232938;
+    border-radius: 14px;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.85);
+    color: #e2e8f0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.transit-header {
+    background: #1a202c;
+    padding: 18px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #3b82f6;
+}
+
+.transit-header .brand {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.transit-header .brand i {
+    font-size: 30px;
+    color: #f59e0b;
+}
+
+.transit-header h1 {
+    font-size: 1.15rem;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    color: #fff;
+}
+
+.transit-header p {
+    font-size: 0.8rem;
+    color: #94a3b8;
+}
+
+.header-status {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.badge.online {
+    background: rgba(16, 185, 129, 0.15);
+    color: #10b981;
+    border: 1px solid #10b981;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.close-btn {
+    background: #2d3748;
+    border: none;
+    color: #cbd5e1;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.2s;
+}
+
+.close-btn:hover {
+    background: #ef4444;
+    color: #fff;
+}
+
+.transit-tabs {
+    display: flex;
+    background: #151a24;
+    padding: 0 24px;
+    border-bottom: 1px solid #232938;
+}
+
+.tab-btn {
+    background: none;
+    border: none;
+    padding: 14px 20px;
+    color: #94a3b8;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.tab-btn.active {
+    color: #f59e0b;
+    border-bottom-color: #f59e0b;
+}
+
+.transit-content {
+    padding: 24px;
+    max-height: 480px;
+    overflow-y: auto;
+}
+
+.tab-panel {
+    display: none;
+}
+
+.tab-panel.active {
+    display: block;
+}
+
+.taxi-hero, .bus-hero {
+    background: #1e2638;
+    border: 1px solid #2e3a54;
+    padding: 16px 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+
+.taxi-hero h3, .bus-hero h3 {
+    color: #f59e0b;
+    font-size: 1rem;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.taxi-hero p, .bus-hero p {
+    font-size: 0.85rem;
+    color: #94a3b8;
+    line-height: 1.4;
+}
+
+.taxi-options {
+    margin-top: 12px;
+    display: flex;
+    gap: 16px;
+    align-items: center;
+}
+
+.taxi-options .label {
+    font-size: 0.85rem;
+    color: #cbd5e1;
+    font-weight: 600;
+}
+
+.select-box {
+    background: #11141b;
+    border: 1px solid #3b82f6;
+    color: #fff;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    outline: none;
+}
+
+.destinations-list, .bus-routes {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+}
+
+.destination-card, .route-card {
+    background: #192030;
+    border: 1px solid #28334a;
+    border-radius: 10px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: all 0.2s;
+}
+
+.destination-card:hover, .route-card:hover {
+    border-color: #f59e0b;
+    transform: translateY(-2px);
+}
+
+.card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 10px;
+}
+
+.card-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #fff;
+}
+
+.card-price {
+    background: rgba(245, 158, 11, 0.15);
+    color: #f59e0b;
+    font-weight: 800;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+}
+
+.card-desc {
+    font-size: 0.8rem;
+    color: #94a3b8;
+    margin-bottom: 14px;
+}
+
+.btn-ride {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: #111;
+    border: none;
+    padding: 10px;
+    border-radius: 6px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    transition: filter 0.2s;
+}
+
+.btn-ride:hover {
+    filter: brightness(1.15);
+}
+
+.transit-footer {
+    background: #151a24;
+    padding: 12px 24px;
+    border-top: 1px solid #232938;
+    font-size: 0.78rem;
+    color: #64748b;
+}
+
+.transit-footer .tip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}

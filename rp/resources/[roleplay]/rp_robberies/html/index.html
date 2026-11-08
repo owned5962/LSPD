@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Piratage & Braquage NUI</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div id="hack-container" class="hidden">
+        <div class="terminal-window">
+            <div class="terminal-header">
+                <div class="header-dots">
+                    <span class="dot red"></span>
+                    <span class="dot yellow"></span>
+                    <span class="dot green"></span>
+                </div>
+                <div class="terminal-title" id="terminal-title">TERMINAL DE DÉCRYPTAGE - SYSTÈME BANCAIRE</div>
+                <div class="security-level" id="security-level">NIVEAU: ÉLEVÉ</div>
+            </div>
+
+            <div class="terminal-body">
+                <div class="hack-instruction">
+                    <i class="fa-solid fa-microchip"></i>
+                    Alignez les fragments binaires avant que le système de contre-mesures ne déclenche l'alarme silencieuse.
+                </div>
+
+                <div class="timer-bar-container">
+                    <div class="timer-bar" id="hack-timer-bar"></div>
+                </div>
+                <div class="timer-text" id="hack-timer-text">Temps restant : 20.0s</div>
+
+                <div class="memory-grid" id="memory-grid">
+                    <!-- Généré dynamiquement en JS -->
+                </div>
+
+                <div class="target-sequence">
+                    <span class="seq-label">SÉQUENCE REQUISE :</span>
+                    <span class="seq-code" id="target-sequence-code">0x4F - 0x9A - 0x1B - 0xC3</span>
+                </div>
+            </div>
+
+            <div class="terminal-footer">
+                <button id="btn-abort-hack" class="btn-cancel"><i class="fa-solid fa-xmark"></i> Annuler l'intrusion</button>
+            </div>
+        </div>
+    </div>
+    <script src="js/app.js"></script>
+</body>
+</html>
