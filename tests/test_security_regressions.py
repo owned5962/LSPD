@@ -91,6 +91,60 @@ def test_clothing_presets_and_outfits_are_saved():
     assert "/applyPreset" in ui
 
 
+
+def test_legacy_core_exports_and_notifications_are_compatible():
+    core = read("resources/[roleplay]/rp_core/server/main.lua")
+    notify = read("resources/[roleplay]/rp_core/client/notify.lua")
+    assert "exports('GetPlayer', GetPlayerFromId)" in core
+    assert "RegisterNetEvent('rp_core:notify'" in notify
+    assert "TriggerEvent('rp_core:client:notify', message, notificationType" in notify
+
+
+def test_mysql_manifests_use_oxmysql_only():
+    manifests = list((ROOT / "resources").rglob("fxmanifest.lua"))
+    assert manifests
+    for manifest in manifests:
+        content = manifest.read_text(encoding="utf-8")
+        assert "@mysql-async/lib/MySQL.lua" not in content, str(manifest)
+
+
+def test_interaction_actions_are_authorized_and_distance_checked():
+    source = read("resources/[roleplay]/rp_interactions/server/main.lua")
+    assert "actionAllowed(jobName, action)" in source
+    assert "isNearby(src, targetId, 3.0)" in source
+    assert "cost > 100000" in source
+    assert "GetPlayerFromId" in source
+
+
+def test_inventory_is_persistent_and_server_validates_transfers():
+    source = read("resources/[roleplay]/rp_inventory/server/main.lua")
+    sql = read("database.sql")
+    assert "player_inventories" in sql
+    assert "MySQL.single.await" in source
+    assert "ON DUPLICATE KEY UPDATE items" in source
+    assert "targetPed" in source and "Config.MaxWeight" in source
+    assert "rp_inventory:giveItem" in source
+
+
+def test_economy_has_sql_logging_and_transaction_limits():
+    source = read("resources/[roleplay]/rp_economy/server/main.lua")
+    manifest = read("resources/[roleplay]/rp_economy/fxmanifest.lua")
+    assert "@oxmysql/lib/MySQL.lua" in manifest
+    assert "rp_economy:server:logTransaction" in source
+    assert "MAX_TRANSACTION = 1000000" in source
+    assert "MySQL.insert.await" in source
+
+
+def test_anticheat_rate_limits_reports_and_persists_bans():
+    source = read("resources/[roleplay]/rp_anticheat/server/main.lua")
+    sql = read("database.sql")
+    assert "lastFlagAt" in source and "now - lastFlagAt[src] < 5" in source
+    assert "player_bans" in sql
+    assert "INSERT INTO player_bans" in source
+    assert "AddEventHandler('playerConnecting'" in source
+    assert "RegisterCommand('rp_unban'" in source
+
+
 if __name__ == "__main__":
     for check in (
         test_admin_tablet_has_no_source_one_bypass,
@@ -101,6 +155,12 @@ if __name__ == "__main__":
         test_character_ui_has_selection_and_creation_callbacks,
         test_character_appearance_is_applied_and_persisted,
         test_clothing_presets_and_outfits_are_saved,
+        test_legacy_core_exports_and_notifications_are_compatible,
+        test_mysql_manifests_use_oxmysql_only,
+        test_interaction_actions_are_authorized_and_distance_checked,
+        test_inventory_is_persistent_and_server_validates_transfers,
+        test_economy_has_sql_logging_and_transaction_limits,
+        test_anticheat_rate_limits_reports_and_persists_bans,
     ):
         check()
     print("All security and persistence regression checks passed.")
