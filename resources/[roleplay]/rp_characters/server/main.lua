@@ -37,6 +37,13 @@ local function DecodeJson(value, fallback)
 end
 
 local function LoadCharacter(src, identifier, userGroup, char)
+    local currentSession = exports['rp_core']:GetPlayerByIdentifier(identifier)
+    if currentSession then
+        if currentSession.source ~= src then
+            DropPlayer(src, 'Une session est déjà active avec ce compte.')
+        end
+        return
+    end
     if exports['rp_core']:GetPlayerFromId(src) then
         Notify(src, 'Un personnage est déjà chargé.')
         return
@@ -133,8 +140,9 @@ RegisterNetEvent('rp_characters:server:createCharacter', function(data)
         Notify(src, 'Données de création invalides.')
         return
     end
-    if exports['rp_core']:GetPlayerFromId(src) or exports['rp_core']:GetPlayerByIdentifier(identifier) then
-        Notify(src, 'Un personnage est déjà chargé.')
+    local activeSession = exports['rp_core']:GetPlayerByIdentifier(identifier)
+    if exports['rp_core']:GetPlayerFromId(src) or activeSession then
+        Notify(src, 'Une session est déjà active pour ce compte.')
         return
     end
 
