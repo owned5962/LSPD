@@ -42,12 +42,42 @@ local function ApplyCharacterAppearance(gender, skin)
         worker = { pants = 36, shoes = 12, undershirt = 59, top = 56 },
         sport = { pants = 5, shoes = 3, undershirt = 15, top = 15 }
     }
-    local outfit = outfits[skin.clothing] or outfits.casual
-    SetSafeComponent(ped, 4, outfit.pants, 0)
-    SetSafeComponent(ped, 6, outfit.shoes, 0)
-    SetSafeComponent(ped, 8, outfit.undershirt, 0)
-    SetSafeComponent(ped, 11, outfit.top, 0)
-    SetSafeComponent(ped, 3, 0, 0)
+    if type(skin.components) == 'table' then
+        for component = 0, 11 do
+            local saved = skin.components[tostring(component)] or skin.components[component]
+            if type(saved) == 'table' then
+                SetSafeComponent(ped, component, saved.drawable, saved.texture)
+            end
+        end
+    else
+        local outfit = outfits[skin.clothing] or outfits.casual
+        SetSafeComponent(ped, 4, outfit.pants, 0)
+        SetSafeComponent(ped, 6, outfit.shoes, 0)
+        SetSafeComponent(ped, 8, outfit.undershirt, 0)
+        SetSafeComponent(ped, 11, outfit.top, 0)
+        SetSafeComponent(ped, 3, 0, 0)
+    end
+
+    if type(skin.props) == 'table' then
+        for prop = 0, 7 do
+            local saved = skin.props[tostring(prop)] or skin.props[prop]
+            if type(saved) == 'table' then
+                local drawable = tonumber(saved.drawable) or -1
+                local texture = tonumber(saved.texture) or 0
+                if drawable < 0 then
+                    ClearPedProp(ped, prop)
+                else
+                    local propCount = GetNumberOfPedPropDrawableVariations(ped, prop)
+                    if propCount and propCount > 0 then
+                        drawable = math.min(drawable, propCount - 1)
+                        local textureCount = GetNumberOfPedPropTextureVariations(ped, prop, drawable)
+                        texture = math.max(0, math.min(texture, math.max(0, (textureCount or 1) - 1)))
+                        SetPedPropIndex(ped, prop, drawable, texture, true)
+                    end
+                end
+            end
+        end
+    end
 end
 
 local function OpenCreator(maxCharacters)
