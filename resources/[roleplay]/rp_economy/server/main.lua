@@ -44,13 +44,20 @@ RegisterNetEvent('rp_economy:server:deposit', function(rawAmount)
     local amount = validAmount(rawAmount)
     if not player or not amount then return end
 
-    if player.removeCash(amount) then
-        player.addBank(amount, 'Dépôt bancaire', 'deposit')
-        TriggerClientEvent('rp_economy:client:refreshBalances', src, player.getCash(), player.getBank())
-        notify(src, 'Dépôt réussi : ' .. formatCurrency(amount), 'success')
-    else
-        notify(src, 'Fonds insuffisants en espèces.', 'error')
+    local ok, affected = pcall(MySQL.update.await,
+        'UPDATE characters SET cash = cash - ?, bank = bank + ? WHERE id = ? AND identifier = ? AND cash >= ?',
+        { amount, amount, player.charId, player.identifier, amount }
+    )
+    if not ok or tonumber(affected) ~= 1 then
+        notify(src, 'error', 'Dépôt impossible : solde insuffisant ou base indisponible.')
+        return
     end
+    player.cash, player.bank = player.cash - amount, player.bank + amount
+    TriggerEvent('rp_economy:server:logTransaction', player.charId, 'deposit', amount, 'Système', 'Dépôt bancaire')
+    TriggerClientEvent('rp_core:client:updateCash', src, player.cash)
+    TriggerClientEvent('rp_core:client:updateBank', src, player.bank)
+    TriggerClientEvent('rp_economy:client:refreshBalances', src, player.cash, player.bank)
+    notify(src, 'Dépôt réussi : ' .. formatCurrency(amount), 'success')
 end)
 
 RegisterNetEvent('rp_economy:server:withdraw', function(rawAmount)
@@ -59,13 +66,20 @@ RegisterNetEvent('rp_economy:server:withdraw', function(rawAmount)
     local amount = validAmount(rawAmount)
     if not player or not amount then return end
 
-    if player.removeBank(amount, 'Retrait DAB / Guichet') then
-        player.addCash(amount)
-        TriggerClientEvent('rp_economy:client:refreshBalances', src, player.getCash(), player.getBank())
-        notify(src, 'Retrait réussi : ' .. formatCurrency(amount), 'success')
-    else
-        notify(src, 'Solde bancaire insuffisant.', 'error')
+    local ok, affected = pcall(MySQL.update.await,
+        'UPDATE characters SET bank = bank - ?, cash = cash + ? WHERE id = ? AND identifier = ? AND bank >= ?',
+        { amount, amount, player.charId, player.identifier, amount }
+    )
+    if not ok or tonumber(affected) ~= 1 then
+        notify(src, 'error', 'Retrait impossible : solde insuffisant ou base indisponible.')
+        return
     end
+    player.bank, player.cash = player.bank - amount, player.cash + amount
+    TriggerEvent('rp_economy:server:logTransaction', player.charId, 'withdraw', amount, 'Système', 'Retrait DAB / Guichet')
+    TriggerClientEvent('rp_core:client:updateCash', src, player.cash)
+    TriggerClientEvent('rp_core:client:updateBank', src, player.bank)
+    TriggerClientEvent('rp_economy:client:refreshBalances', src, player.cash, player.bank)
+    notify(src, 'Retrait réussi : ' .. formatCurrency(amount), 'success')
 end)
 
 RegisterNetEvent('rp_economy:server:transfer', function(rawTargetId, rawAmount)
@@ -80,15 +94,23 @@ RegisterNetEvent('rp_economy:server:transfer', function(rawTargetId, rawAmount)
         return
     end
 
-    if player.removeBank(amount, 'Virement vers ' .. target.firstname .. ' ' .. target.lastname, 'transfer_send') then
-        target.addBank(amount, 'Virement reçu de ' .. player.firstname .. ' ' .. player.lastname, 'transfer_receive')
-        TriggerClientEvent('rp_economy:client:refreshBalances', src, player.getCash(), player.getBank())
-        TriggerClientEvent('rp_economy:client:refreshBalances', targetId, target.getCash(), target.getBank())
-        notify(src, 'Virement de ' .. formatCurrency(amount) .. ' effectué.', 'success')
-        notify(targetId, 'Virement de ' .. formatCurrency(amount) .. ' reçu.', 'info')
-    else
-        notify(src, 'Solde insuffisant pour ce virement.', 'error')
+    local ok, affected = pcall(MySQL.update.await,
+        'UPDATE characters AS sender JOIN characters AS recipient ON sender.id = ? AND recipient.id = ? SET sender.bank = sender.bank - ?, recipient.bank = recipient.bank + ? WHERE sender.identifier = ? AND recipient.identifier = ? AND sender.bank >= ?',
+        { player.charId, target.charId, amount, amount, player.identifier, target.identifier, amount }
+    )
+    if not ok or tonumber(affected) ~= 2 then
+        notify(src, 'error', 'Virement impossible : solde modifié ou base indisponible.')
+        return
     end
+    player.bank, target.bank = player.bank - amount, target.bank + amount
+    TriggerEvent('rp_economy:server:logTransaction', player.charId, 'transfer_send', amount, target.firstname .. ' ' .. target.lastname, 'Virement envoyé')
+    TriggerEvent('rp_economy:server:logTransaction', target.charId, 'transfer_receive', amount, player.firstname .. ' ' .. player.lastname, 'Virement reçu')
+    TriggerClientEvent('rp_core:client:updateBank', src, player.bank)
+    TriggerClientEvent('rp_core:client:updateBank', targetId, target.bank)
+    TriggerClientEvent('rp_economy:client:refreshBalances', src, player.cash, player.bank)
+    TriggerClientEvent('rp_economy:client:refreshBalances', targetId, target.cash, target.bank)
+    notify(src, 'Virement de ' .. formatCurrency(amount) .. ' effectué.', 'success')
+    notify(targetId, 'Virement de ' .. formatCurrency(amount) .. ' reçu.', 'info')
 end)
 
 CreateThread(function()
