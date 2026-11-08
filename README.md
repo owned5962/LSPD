@@ -26,7 +26,7 @@ Serveur RP modulaire comprenant un système de personnages, une économie, 50 m�
 ## Mise à jour d'une base existante
 1. Faites une sauvegarde complète de la base.
 2. Arrêtez le serveur.
-3. Exécutez une seule fois `migrations/001_character_persistence.sql` sur la base existante.
+3. Exécutez une seule fois `migrations/001_character_persistence.sql`, puis `migrations/002_inventory_persistence.sql` sur la base existante.
 4. Redémarrez le serveur avec oxmysql installé et configuré.
 
 La migration adapte le champ de date de naissance. Elle ne supprime aucun personnage. Si vous avez des dates invalides ou un schéma personnalisé, vérifiez la base avant l'exécution.
@@ -35,6 +35,8 @@ La migration adapte le champ de date de naissance. Elle ne supprime aucun person
 - Le compte est associé à l'identifiant FiveM `license:`.
 - Les personnages sont enregistrés dans MySQL et sélectionnés à chaque connexion.
 - Les emplacements sont limités à 3 par compte.
+- Les inventaires sont persistés par personnage dans `player_inventories` ; sur une base existante, appliquez la migration `002_inventory_persistence.sql`.
+- Le dépôt au sol reste désactivé tant qu'un système serveur de ramassage sécurisé n'est pas installé.
 - Les sauvegardes automatiques réduisent la perte de données, mais une sauvegarde régulière de la base reste indispensable.
 - Les métadonnées d'apparence sont stockées ; leur application complète au ped doit être raccordée au système de vêtements/skin du serveur.
 
