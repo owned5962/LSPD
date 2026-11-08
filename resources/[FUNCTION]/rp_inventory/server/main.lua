@@ -112,14 +112,86 @@ RegisterNetEvent('rp_inventory:useItem', function(itemName)
     end
 
     local itemDef = Config.DefaultItems[itemName]
-    if not itemDef then return end
-    for _, item in ipairs(inventory) do
-        if item.name == itemName and item.count > 0 then
-            notify(src, 'error', 'L’utilisation de cet objet n’est pas encore implémentée. Objet conservé.')
+    if not itemDef or (itemDef.type ~= 'food' and itemDef.type ~= 'drink' and itemDef.type ~= 'medical') then
+        notify(src, 'error', 'Cet objet ne peut pas être utilisé.')
+        return
+    end
+
+    local itemIndex
+    for index, item in ipairs(inventory) do
+        if item.name == itemName and item.count > 0 then itemIndex = index break end
+    end
+    if not itemIndex then
+        notify(src, 'error', 'Cet objet n’est pas dans votre inventaire.')
+        return
+    end
+
+    local ped = GetPlayerPed(src)
+    if ped == 0 or IsEntityDead(ped) then
+        notify(src, 'error', 'Vous ne pouvez pas utiliser cet objet dans cet état.')
+        return
+    end
+    if itemDef.type == 'medical' then
+        local currentHealth, maxHealth = GetEntityHealth(ped), GetEntityMaxHealth(ped)
+        if not itemDef.heal or currentHealth >= maxHealth then
+            notify(src, 'error', 'Vous n’avez pas besoin de soins.')
             return
         end
     end
-    notify(src, 'error', 'Cet objet n’est pas dans votre inventaire.')
+
+    local metadata = {}
+    for key, value in pairs(player.metadata or {}) do metadata[key] = value end
+    metadata.hunger = math.max(0, math.min(100, tonumber(metadata.hunger) or 100))
+    metadata.thirst = math.max(0, math.min(100, tonumber(metadata.thirst) or 100))
+    if itemDef.hunger then metadata.hunger = math.min(100, metadata.hunger + itemDef.hunger) end
+    if itemDef.thirst then metadata.thirst = math.min(100, metadata.thirst + itemDef.thirst) end
+    if itemDef.type ~= 'medical' and metadata.hunger == (player.metadata.hunger or 100)
+        and metadata.thirst == (player.metadata.thirst or 100) then
+        notify(src, 'error', 'Votre faim ou votre soif est déjà satisfaite.')
+        return
+    end
+
+    local updatedInventory = normalizeInventory(inventory)
+    local updatedIndex
+    for index, item in ipairs(updatedInventory) do
+        if item.name == itemName then updatedIndex = index break end
+    end
+    if not updatedIndex then return end
+    if updatedInventory[updatedIndex].count <= 1 then
+        table.remove(updatedInventory, updatedIndex)
+    else
+        updatedInventory[updatedIndex].count = updatedInventory[updatedIndex].count - 1
+    end
+
+    transferLocks[src] = true
+    local persisted, persistError = pcall(function()
+        local ok = MySQL.transaction.await({
+            {
+                query = 'UPDATE player_inventories SET items = ? WHERE character_id = ?',
+                values = { json.encode(updatedInventory), player.charId }
+            },
+            {
+                query = 'UPDATE characters SET metadata = ? WHERE id = ? AND identifier = ?',
+                values = { json.encode(metadata), player.charId, player.identifier }
+            }
+        })
+        if not ok then error('Item use transaction rejected') end
+    end)
+    transferLocks[src] = nil
+    if not persisted then
+        print(('[rp_inventory] Item use failed for character %s: %s'):format(player.charId, tostring(persistError)))
+        notify(src, 'error', 'Impossible d’utiliser cet objet : sauvegarde indisponible.')
+        return
+    end
+
+    playerInventories[src] = updatedInventory
+    player.metadata = metadata
+    TriggerClientEvent('rp_core:client:updateNeeds', src, metadata.hunger, metadata.thirst)
+    if itemDef.type == 'medical' then
+        TriggerClientEvent('rp_inventory:applyMedicalItem', src, itemDef.heal)
+    end
+    sendInventory(src, player)
+    notify(src, 'success', itemDef.label .. ' utilisé.')
 end)
 
 RegisterNetEvent('rp_inventory:giveItem', function(rawTargetId, itemName, rawCount)
