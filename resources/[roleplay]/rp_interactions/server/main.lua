@@ -30,11 +30,7 @@ RegisterNetEvent('rp_interactions:requestJobMenu', function()
     local jobName = player.job or 'unemployed'
     local jobData = Config.JobActions[jobName] or {
         label = 'Actions Citoyen',
-        actions = {
-            { id = 'id_card', label = "Montrer sa carte d'identité", icon = 'fa-id-card' },
-            { id = 'driver_license', label = 'Montrer son permis de conduire', icon = 'fa-car' },
-            { id = 'billing', label = 'Facturer un service', icon = 'fa-file-invoice' }
-        }
+        actions = {}
     }
     TriggerClientEvent('rp_interactions:openMenu', src, jobName, player.jobGrade or 0, jobData)
 end)
@@ -98,7 +94,7 @@ RegisterNetEvent('rp_interactions:executeAction', function(targetId, action, amo
         target.bank, player.bank = targetNewBank, sourceNewBank
         TriggerClientEvent('rp_core:client:updateBank', targetId, target.bank)
         TriggerClientEvent('rp_core:client:updateBank', src, player.bank)
-        TriggerEvent('rp_economy:server:logTransaction', target.charId, action == 'fine' and 'withdraw' or 'withdraw', cost, player.firstname .. ' ' .. player.lastname, action == 'fine' and 'Amende' or 'Facture')
+        TriggerEvent('rp_economy:server:logTransaction', target.charId, 'withdraw', cost, player.firstname .. ' ' .. player.lastname, action == 'fine' and 'Amende' or 'Facture')
         TriggerEvent('rp_economy:server:logTransaction', player.charId, 'deposit', cost, target.firstname .. ' ' .. target.lastname, action == 'fine' and 'Amende reçue' or 'Facture réglée')
         notify(targetId, 'info', 'Vous avez payé ' .. cost .. ' $.')
         notify(src, 'success', 'Paiement de ' .. cost .. ' $ reçu.')
