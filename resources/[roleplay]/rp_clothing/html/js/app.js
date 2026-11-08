@@ -10,6 +10,11 @@ document.querySelectorAll('.preset-btn').forEach(btn => {
     btn.addEventListener('click', () => {
         const outfit = btn.dataset.outfit;
         document.getElementById('outfit-name').value = btn.innerText.trim();
+        fetch(`https://${GetParentResourceName()}/applyPreset`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ outfit })
+        }).catch(() => {});
     });
 });
 
@@ -18,7 +23,7 @@ document.getElementById('btn-save').addEventListener('click', () => {
     fetch(`https://${GetParentResourceName()}/saveOutfit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: name, skin: {} })
+        body: JSON.stringify({ name: name })
     });
     document.getElementById('clothing-wrapper').classList.add('hidden');
 });
