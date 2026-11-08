@@ -173,7 +173,7 @@ def test_followup_hardening_keeps_internal_logs_private_and_money_atomic():
     assert "UPDATE characters AS sender JOIN characters AS recipient" in economy
     assert "if not self.save() then" in core
     assert "MySQL.transaction.await" in inventory
-    assert "Objet conservé." in inventory
+    assert "itemDef.hunger" in inventory and "itemDef.thirst" in inventory
     assert "UPDATE characters AS sender JOIN characters AS target" in interactions
     assert "connection refused" in anticheat
     assert "isAt(Config.ArmoryCoords" in police
