@@ -13,6 +13,22 @@ local function isNearby(src, targetId, maxDistance)
     return #(GetEntityCoords(sourcePed) - GetEntityCoords(targetPed)) <= (maxDistance or 3.0)
 end
 
+local dutyResources = {
+    police = 'job_police',
+    ambulance = 'job_ambulance',
+    mechanic = 'job_mechanic',
+    taxi = 'job_taxi'
+}
+
+local function isOnDuty(jobName, src)
+    local resource = dutyResources[jobName]
+    if not resource or GetResourceState(resource) ~= 'started' then return false end
+    local ok, state = pcall(function()
+        return exports[resource]:IsOnDuty(src)
+    end)
+    return ok and state == true
+end
+
 local function actionAllowed(jobName, action)
     local jobData = Config.JobActions[jobName]
     if not jobData then return false end
@@ -49,6 +65,10 @@ RegisterNetEvent('rp_interactions:executeAction', function(targetId, action, amo
     local jobName = player.job or 'unemployed'
     if not actionAllowed(jobName, action) then
         notify(src, 'error', 'Cette action n’est pas autorisée pour votre métier.')
+        return
+    end
+    if dutyResources[jobName] and not isOnDuty(jobName, src) then
+        notify(src, 'error', 'Vous devez être en service pour effectuer cette action.')
         return
     end
 
