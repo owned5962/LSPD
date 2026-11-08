@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- TextUI Floating Badge -->
+    <div id="textui-container" class="hidden">
+        <div class="textui-badge">
+            <div class="textui-icon"><i class="fa-solid fa-hand-pointer"></i></div>
+            <div class="textui-content" id="textui-text">[E] Interagir</div>
+        </div>
+    </div>
+
+    <!-- Animated Action Progress Bar -->
+    <div id="progress-container" class="hidden">
+        <div class="progress-box">
+            <div class="progress-header">
+                <span id="progress-label">Action en cours...</span>
+                <span id="progress-percentage">0%</span>
+            </div>
+            <div class="progress-bar-bg">
+                <div class="progress-bar-fill" id="progress-fill"></div>
+            </div>
+            <div class="progress-hint"><i class="fa-solid fa-keyboard"></i> Appuyez sur <strong>X</strong> pour annuler</div>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
