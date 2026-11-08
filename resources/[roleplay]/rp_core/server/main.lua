@@ -17,6 +17,8 @@ function GetAllPlayers()
     return Players
 end
 
+-- Backward-compatible alias used by older resources.
+exports('GetPlayer', GetPlayerFromId)
 exports('GetPlayerFromId', GetPlayerFromId)
 exports('GetPlayerByIdentifier', GetPlayerByIdentifier)
 exports('GetAllPlayers', GetAllPlayers)
