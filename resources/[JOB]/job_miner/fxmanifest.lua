@@ -2,7 +2,7 @@ fx_version 'cerulean'
 game 'gta5'
 
 author 'FiveM RP Server'
-description 'Dedicated RP Job: Mineur d'Extraction (industrie)'
+description "Dedicated RP Job: Mineur d'Extraction (industrie)"
 version '1.0.0'
 
 shared_scripts {
