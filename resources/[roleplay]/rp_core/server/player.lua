@@ -85,7 +85,7 @@ function CreateRPPlayer(source, identifier, charData)
         return true
     end
 
-    function self.removeBank(amount, reason)
+    function self.removeBank(amount, reason, transactionType)
         amount = tonumber(amount)
         if not amount or amount <= 0 or amount % 1 ~= 0 or self.bank < amount then return false end
         local previous = self.bank
@@ -97,7 +97,7 @@ function CreateRPPlayer(source, identifier, charData)
         end
         TriggerClientEvent('rp_core:client:updateBank', self.source, self.bank)
         TriggerClientEvent('rp_core:client:notify', self.source, '- ' .. Utils.FormatCurrency(amount) .. ' (Banque)', 'warning')
-        TriggerEvent('rp_economy:server:logTransaction', self.charId, 'withdraw', amount, 'Système', reason or 'Débit')
+        TriggerEvent('rp_economy:server:logTransaction', self.charId, transactionType or 'withdraw', amount, 'Système', reason or 'Débit')
         return true
     end
 
