@@ -12,6 +12,8 @@ Config.JobActions = {
     ['ambulance'] = {
         label = 'SAMU / Urgences',
         actions = {
+            { id = 'heal', label = 'Soigner un patient', icon = 'fa-heart-pulse' },
+            { id = 'revive', label = 'Réanimer un patient', icon = 'fa-kit-medical' },
             { id = 'billing', label = 'Facturer les soins', icon = 'fa-file-invoice-dollar' }
         }
     },
