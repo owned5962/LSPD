@@ -31,11 +31,17 @@ AddEventHandler('rp_economy:server:logTransaction', function(characterId, transa
     amount = validAmount(amount)
     if not characterId or characterId % 1 ~= 0 or not validTypes[transactionType] or not amount then return end
 
-    MySQL.insert.await('INSERT INTO bank_transactions (character_id, type, amount, sender_or_receiver, reason) VALUES (?, ?, ?, ?, ?)', {
-        characterId, transactionType, amount,
-        tostring(sender or 'Système'):sub(1, 128),
-        tostring(reason or 'Transaction'):sub(1, 255)
-    })
+    local ok, err = pcall(MySQL.insert.await,
+        'INSERT INTO bank_transactions (character_id, type, amount, sender_or_receiver, reason) VALUES (?, ?, ?, ?, ?)',
+        {
+            characterId, transactionType, amount,
+            tostring(sender or 'Système'):sub(1, 128),
+            tostring(reason or 'Transaction'):sub(1, 255)
+        }
+    )
+    if not ok then
+        print(('[rp_economy] Transaction log failed for character %s: %s'):format(characterId, tostring(err)))
+    end
 end)
 
 RegisterNetEvent('rp_economy:server:deposit', function(rawAmount)
