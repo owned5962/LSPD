@@ -146,8 +146,8 @@ AddEventHandler('playerConnecting', function(playerName, setKickReason, deferral
         return MySQL.single.await('SELECT reason FROM player_bans WHERE identifier = ?', { identifier })
     end)
     if not ok then
-        print('[rp_anticheat] Ban lookup failed; connection allowed: ' .. tostring(ban))
-        deferrals.done()
+        print('[rp_anticheat] Ban lookup failed; connection refused: ' .. tostring(ban))
+        deferrals.done('Vérification de sécurité indisponible. Réessayez dans quelques minutes.')
         return
     end
     if ban then
