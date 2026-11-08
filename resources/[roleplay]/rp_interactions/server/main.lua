@@ -87,20 +87,12 @@ RegisterNetEvent('rp_interactions:executeAction', function(targetId, action, amo
         end
         local targetNewBank = target.bank - cost
         local sourceNewBank = player.bank + cost
-        local ok, transactionResult = pcall(function()
-            return MySQL.transaction.await({
-                {
-                    query = 'UPDATE characters SET bank = ? WHERE id = ? AND bank >= ?',
-                    values = { targetNewBank, target.charId, cost }
-                },
-                {
-                    query = 'UPDATE characters SET bank = ? WHERE id = ?',
-                    values = { sourceNewBank, player.charId }
-                }
-            })
-        end)
-        if not ok or not transactionResult then
-            notify(src, 'error', 'Le paiement a échoué en base de données.')
+        local ok, affectedRows = pcall(MySQL.update.await,
+            'UPDATE characters AS sender JOIN characters AS target ON sender.id = ? AND target.id = ? SET sender.bank = sender.bank + ?, target.bank = target.bank - ? WHERE target.bank >= ?',
+            { player.charId, target.charId, cost, cost, cost }
+        )
+        if not ok or tonumber(affectedRows) ~= 2 then
+            notify(src, 'error', 'Le paiement a échoué : solde modifié ou sauvegarde indisponible.')
             return
         end
         target.bank, player.bank = targetNewBank, sourceNewBank
