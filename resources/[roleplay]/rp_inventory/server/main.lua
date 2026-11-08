@@ -106,27 +106,16 @@ RegisterNetEvent('rp_inventory:useItem', function(itemName)
     local player = exports['rp_core']:GetPlayerFromId(src)
     local inventory = playerInventories[src]
     if not player or not inventory or type(itemName) ~= 'string' then return end
+    if transferLocks[src] then
+        notify(src, 'error', 'Un transfert est en cours. Réessayez.')
+        return
+    end
 
     local itemDef = Config.DefaultItems[itemName]
     if not itemDef then return end
-    if itemDef.type == 'food' or itemDef.type == 'drink' or itemDef.type == 'medical' then
-        notify(src, 'error', 'Les effets de cet objet ne sont pas encore implémentés. Objet conservé.')
-        return
-    end
-    for index, item in ipairs(inventory) do
+    for _, item in ipairs(inventory) do
         if item.name == itemName and item.count > 0 then
-            if item.count > 1 then item.count = item.count - 1 else table.remove(inventory, index) end
-            saveInventory(player)
-            if itemDef.type == 'food' then
-                notify(src, 'success', ('Vous mangez : %s (+%d faim)'):format(itemDef.label, itemDef.hunger or 20))
-            elseif itemDef.type == 'drink' then
-                notify(src, 'success', ('Vous buvez : %s (+%d soif)'):format(itemDef.label, itemDef.thirst or 25))
-            elseif itemDef.type == 'medical' then
-                notify(src, 'success', ('Vous utilisez : %s (+%d PV)'):format(itemDef.label, itemDef.heal or 50))
-            else
-                notify(src, 'info', 'Objet utilisé : ' .. itemDef.label)
-            end
-            sendInventory(src, player)
+            notify(src, 'error', 'L’utilisation de cet objet n’est pas encore implémentée. Objet conservé.')
             return
         end
     end
