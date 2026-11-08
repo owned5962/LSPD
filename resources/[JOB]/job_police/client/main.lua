@@ -27,8 +27,7 @@ Citizen.CreateThread(function()
                 local label = onDuty and "[E] Terminer son service LSPD" or "[E] Prendre son service LSPD"
                 exports['rp_ui']:ShowTextUI(label)
                 if IsControlJustPressed(0, 38) then
-                    onDuty = not onDuty
-                    TriggerServerEvent('job_police:setDuty', onDuty)
+                    TriggerServerEvent('job_police:setDuty', not onDuty)
                 end
             end
         end
