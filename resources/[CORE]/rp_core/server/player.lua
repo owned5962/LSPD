@@ -17,6 +17,15 @@ function CreateRPPlayer(source, identifier, charData)
     self.group = charData.group or 'user'
     self.duty = true
 
+    local savedMetadata = charData.metadata
+    if type(savedMetadata) == 'string' and savedMetadata ~= '' then
+        local ok, decoded = pcall(json.decode, savedMetadata)
+        savedMetadata = ok and decoded or nil
+    end
+    self.metadata = type(savedMetadata) == 'table' and savedMetadata or {}
+    self.metadata.hunger = math.max(0, math.min(100, tonumber(self.metadata.hunger) or 100))
+    self.metadata.thirst = math.max(0, math.min(100, tonumber(self.metadata.thirst) or 100))
+
     local savedPosition = charData.position
     if type(savedPosition) == 'string' and savedPosition ~= '' then
         local ok, decoded = pcall(json.decode, savedPosition)
@@ -141,7 +150,7 @@ function CreateRPPlayer(source, identifier, charData)
         end
 
         local ok, result = pcall(MySQL.update.await,
-            'UPDATE characters SET cash = ?, bank = ?, job = ?, job_grade = ?, position = ?, skin = ? WHERE id = ? AND identifier = ?',
+            'UPDATE characters SET cash = ?, bank = ?, job = ?, job_grade = ?, position = ?, skin = ?, metadata = ? WHERE id = ? AND identifier = ?',
             {
                 self.cash,
                 self.bank,
@@ -149,6 +158,7 @@ function CreateRPPlayer(source, identifier, charData)
                 self.jobGrade,
                 json.encode(position),
                 json.encode(self.skin or {}),
+                json.encode(self.metadata or {}),
                 self.charId,
                 self.identifier
             }
@@ -176,7 +186,9 @@ function CreateRPPlayer(source, identifier, charData)
             jobLabel = jobObj.label,
             jobGrade = self.jobGrade,
             jobGradeLabel = gradeData.label,
-            group = self.group
+            group = self.group,
+            hunger = self.metadata.hunger,
+            thirst = self.metadata.thirst
         })
     end
 
