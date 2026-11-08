@@ -12,3 +12,8 @@ RegisterNetEvent('job_taxi:setDuty', function(status)
     TriggerClientEvent('job_taxi:dutyUpdated', src, status)
     print(string.format('[JOB_TAXI] Player %s is now %s duty', player.name or src, status and 'ON' or 'OFF'))
 end)
+
+
+exports('IsOnDuty', function(src)
+    return dutyPlayers[tonumber(src)] == true
+end)
