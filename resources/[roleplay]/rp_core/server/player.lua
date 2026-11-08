@@ -59,25 +59,35 @@ function CreateRPPlayer(source, identifier, charData)
         return self.bank
     end
 
-    function self.addBank(amount, reason)
+    function self.addBank(amount, reason, transactionType)
         amount = tonumber(amount)
         if not amount or amount <= 0 or amount % 1 ~= 0 then return false end
+        local previous = self.bank
         self.bank = self.bank + amount
+        if not self.save() then
+            self.bank = previous
+            TriggerClientEvent('rp_core:client:updateBank', self.source, self.bank)
+            return false
+        end
         TriggerClientEvent('rp_core:client:updateBank', self.source, self.bank)
         TriggerClientEvent('rp_core:client:notify', self.source, '+ ' .. Utils.FormatCurrency(amount) .. ' (Banque)', 'success')
-        TriggerEvent('rp_economy:server:logTransaction', self.charId, 'deposit', amount, 'Système', reason or 'Crédit')
-        self.save()
+        TriggerEvent('rp_economy:server:logTransaction', self.charId, transactionType or 'deposit', amount, 'Système', reason or 'Crédit')
         return true
     end
 
     function self.removeBank(amount, reason)
         amount = tonumber(amount)
         if not amount or amount <= 0 or amount % 1 ~= 0 or self.bank < amount then return false end
+        local previous = self.bank
         self.bank = self.bank - amount
+        if not self.save() then
+            self.bank = previous
+            TriggerClientEvent('rp_core:client:updateBank', self.source, self.bank)
+            return false
+        end
         TriggerClientEvent('rp_core:client:updateBank', self.source, self.bank)
         TriggerClientEvent('rp_core:client:notify', self.source, '- ' .. Utils.FormatCurrency(amount) .. ' (Banque)', 'warning')
         TriggerEvent('rp_economy:server:logTransaction', self.charId, 'withdraw', amount, 'Système', reason or 'Débit')
-        self.save()
         return true
     end
 
