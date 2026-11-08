@@ -133,6 +133,14 @@ RegisterNetEvent('rp_inventory:giveItem', function(rawTargetId, itemName, rawCou
     if not player or not target or targetId == src or type(itemName) ~= 'string'
         or not count or count % 1 ~= 0 or count < 1 or count > 100 then return end
     local definition = Config.DefaultItems[itemName]
+    if not playerInventories[targetId] then
+        local ok, err = pcall(loadInventory, target)
+        if not ok then
+            print(('[rp_inventory] Target load failed for character %s: %s'):format(target.charId, tostring(err)))
+            notify(src, 'error', 'Impossible de charger l’inventaire du destinataire.')
+            return
+        end
+    end
     local sourceInventory, targetInventory = playerInventories[src], playerInventories[targetId]
     if not definition or not sourceInventory or not targetInventory then
         notify(src, 'error', 'Inventaire indisponible ou objet invalide.')
