@@ -4,9 +4,9 @@ Config = {}
 Config.Protections = {
     ['godmode'] = { label = 'Détection GodMode (Invincibilité)', enabled = true },
     ['speedhack'] = { label = 'Détection SpeedHack / SuperVitesse', enabled = true },
-    ['superjump'] = { label = 'Détection Super Saut', enabled = true },
+    ['superjump'] = { label = 'Détection Super Saut (indisponible)', enabled = false },
     ['blacklisted_weapons'] = { label = 'Armes Blacklistées (RPG, Minigun)', enabled = true },
-    ['teleport'] = { label = 'Détection Téléportation Suspecte', enabled = true },
+    ['teleport'] = { label = 'Détection Téléportation (indisponible)', enabled = false },
     ['thermal_night_vision'] = { label = 'Vision Thermique / Nocturne Illégale', enabled = true },
     ['spectate_monitoring'] = { label = 'Surveillance Staff en Direct', enabled = true }
 }
