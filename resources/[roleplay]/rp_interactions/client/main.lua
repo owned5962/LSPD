@@ -29,32 +29,7 @@ RegisterNUICallback('triggerAction', function(data, cb)
     local closestPlayer, closestDistance = GetClosestPlayer()
 
     if action == 'repair' or action == 'clean' or action == 'impound' then
-        local ped = PlayerPedId()
-        local vehicle = GetVehicleInFront()
-        if vehicle ~= 0 then
-            exports['rp_ui']:ProgressBar({
-                duration = 5000,
-                label = action == 'repair' and 'Réparation en cours...' or 'Nettoyage en cours...'
-            }, function(success)
-                if success then
-                    if action == 'repair' then
-                        SetVehicleFixed(vehicle)
-                        SetVehicleDeformationFixed(vehicle)
-                        SetVehicleUndriveable(vehicle, false)
-                        SetVehicleEngineOn(vehicle, true, true)
-                        TriggerEvent('rp_core:notify', 'success', 'Véhicule réparé avec succès!')
-                    elseif action == 'clean' then
-                        SetVehicleDirtLevel(vehicle, 0.0)
-                        TriggerEvent('rp_core:notify', 'success', 'Véhicule nettoyé!')
-                    elseif action == 'impound' then
-                        DeleteVehicle(vehicle)
-                        TriggerEvent('rp_core:notify', 'info', 'Véhicule mis en fourrière.')
-                    end
-                end
-            end)
-        else
-            TriggerEvent('rp_core:notify', 'error', 'Aucun véhicule à proximité!')
-        end
+        TriggerEvent('rp_core:notify', 'error', 'Cette action est désactivée jusqu’à son implémentation sécurisée côté serveur.')
     elseif closestPlayer ~= -1 and closestDistance <= 3.0 then
         local targetServerId = GetPlayerServerId(closestPlayer)
         TriggerServerEvent('rp_interactions:executeAction', targetServerId, action, data.amount)
