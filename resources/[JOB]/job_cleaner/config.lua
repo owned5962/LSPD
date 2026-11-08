@@ -1,7 +1,7 @@
 Config = {}
 
 Config.Job = 'cleaner'
-Config.Label = 'Agent d'Entretien & Nettoyage Urbain'
+Config.Label = "Agent d'Entretien & Nettoyage Urbain"
 Config.Category = 'public_service'
 
 Config.DutyCoords = vector3(240.0, -1380.0, 33.7)
