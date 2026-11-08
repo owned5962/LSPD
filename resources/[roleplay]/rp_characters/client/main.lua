@@ -4,6 +4,7 @@ local charCamera = nil
 local function LoadFreemodeModel(gender)
     local model = joaat(gender == 'f' and 'mp_f_freemode_01' or 'mp_m_freemode_01')
     if not IsModelInCdimage(model) or not IsModelValid(model) then return false end
+    if GetEntityModel(PlayerPedId()) == model then return true end
     RequestModel(model)
     local timeout = GetGameTimer() + 10000
     while not HasModelLoaded(model) and GetGameTimer() < timeout do Wait(0) end
