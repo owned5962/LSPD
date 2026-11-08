@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Inventaire RP</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div id="inventory-wrapper" class="hidden">
+        <div class="inventory-card">
+            <!-- Header -->
+            <div class="inv-header">
+                <div class="inv-title">
+                    <i class="fa-solid fa-box-archive"></i> Inventaire Personnel
+                </div>
+                <div class="inv-weight">
+                    <span id="weight-text">0.0 / 30.0 KG</span>
+                    <div class="weight-bar"><div id="weight-fill"></div></div>
+                </div>
+                <button class="close-btn" id="btn-close"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <!-- Balances -->
+            <div class="inv-wallet">
+                <div class="wallet-pill cash"><i class="fa-solid fa-money-bill-wave"></i> Liquide: <span id="cash-val">0 $</span></div>
+                <div class="wallet-pill bank"><i class="fa-solid fa-building-columns"></i> Banque: <span id="bank-val">0 $</span></div>
+            </div>
+
+            <!-- Main Items Grid -->
+            <div class="inv-grid" id="items-grid"></div>
+
+            <!-- Action Toolbar -->
+            <div class="inv-actions">
+                <div class="action-selected-info">
+                    Objet sélectionné: <strong id="selected-label">Aucun</strong>
+                </div>
+                <div class="action-btns">
+                    <input type="number" id="item-quantity" min="1" value="1" class="qty-input">
+                    <button class="action-btn use" id="btn-use"><i class="fa-solid fa-hand-holding-hand"></i> Utiliser</button>
+                    <button class="action-btn give" id="btn-give"><i class="fa-solid fa-user-plus"></i> Donner</button>
+                    <button class="action-btn drop" id="btn-drop"><i class="fa-solid fa-trash-can"></i> Jeter</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="js/app.js"></script>
+</body>
+</html>
