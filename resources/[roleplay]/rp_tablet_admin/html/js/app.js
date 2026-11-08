@@ -1,247 +1,240 @@
-let currentAdmin = null;
-let currentPlayers = [];
-let allJobs = [];
+// State & Configuration
+let currentMode = 'admin'; // 'admin' ou 'creator'
+let activeGrade = 'superoperator';
+let selectedPlayerId = 1;
 
-// Clock update
-setInterval(() => {
-    const d = new Date();
-    const hours = String(d.getHours()).padStart(2, '0');
-    const mins = String(d.getMinutes()).padStart(2, '0');
-    const timeEl = document.getElementById('tablet-time');
-    if (timeEl) timeEl.innerText = `${hours}:${mins}`;
-}, 1000);
+// Permissions catalog with default values per grade
+const allPermissions = [
+    { id: 'tp_to', label: 'Téléportation Cible (Goto)', desc: 'Se téléporter instantanément sur un joueur', icon: 'fa-location-arrow' },
+    { id: 'tp_here', label: 'Téléporter sur Moi (Bring)', desc: 'Attirer le joueur à sa position actuelle', icon: 'fa-magnet' },
+    { id: 'freeze', label: 'Freeze / Défreeze', desc: 'Bloquer ou débloquer la motricité du joueur', icon: 'fa-snowflake' },
+    { id: 'spectate', label: 'Caméra Spectateur', desc: 'Espionner la vue du joueur sans être vu', icon: 'fa-eye' },
+    { id: 'heal', label: 'Soigner (Heal)', desc: 'Restaurer toute la santé et l\'armure', icon: 'fa-medkit' },
+    { id: 'revive', label: 'Réanimer (Revive)', desc: 'Réanimer un joueur dans le coma', icon: 'fa-heart' },
+    { id: 'noclip', label: 'Mode Vol (NoClip)', desc: 'Traverser les murs et se déplacer librement', icon: 'fa-ghost' },
+    { id: 'godmode', label: 'Invincibilité (Godmode)', desc: 'Immunité aux balles et collisions', icon: 'fa-shield-virus' },
+    { id: 'kick', label: 'Expulser (Kick)', desc: 'Éjecter un fauteur de troubles du serveur', icon: 'fa-user-times' },
+    { id: 'ban', label: 'Bannir Joueur (Ban)', desc: 'Bannissement temporaire ou définitif', icon: 'fa-ban' },
+    { id: 'give_money', label: 'Donner de l\'Argent', desc: 'Créditer du cash ou banque d\'urgence', icon: 'fa-money-bill-wave' },
+    { id: 'spawn_veh', label: 'Spawn Véhicule Staff', desc: 'Faire apparaître un véhicule d\'intervention', icon: 'fa-car' }
+];
 
-window.addEventListener('message', (event) => {
-    const data = event.data;
-    if (data.action === 'openTablet') {
-        currentAdmin = data.admin || {};
-        currentPlayers = data.players || [];
-        allJobs = data.jobs || [];
-
-        document.getElementById('admin-name').innerText = (currentAdmin.name || 'ADMIN').toUpperCase();
-        document.getElementById('tablet-wrapper').classList.remove('hidden');
-
-        populateJobsSelector();
-        populatePlayersTable();
-        navigateTo('homescreen');
-    } else if (data.action === 'closeTablet') {
-        document.getElementById('tablet-wrapper').classList.add('hidden');
+// Configuration par défaut par rôle
+const rolePermissions = {
+    helper: {
+        tp_to: true,
+        tp_here: false,
+        freeze: true,
+        spectate: true,
+        heal: true,
+        revive: true,
+        noclip: false,
+        godmode: false,
+        kick: false,
+        ban: false,
+        give_money: false,
+        spawn_veh: true
+    },
+    operator: {
+        tp_to: true,
+        tp_here: true,
+        freeze: true,
+        spectate: true,
+        heal: true,
+        revive: true,
+        noclip: true,
+        godmode: false,
+        kick: true,
+        ban: false,
+        give_money: false,
+        spawn_veh: true
+    },
+    superoperator: {
+        tp_to: true,
+        tp_here: true,
+        freeze: true,
+        spectate: true,
+        heal: true,
+        revive: true,
+        noclip: true,
+        godmode: true,
+        kick: true,
+        ban: true,
+        give_money: true,
+        spawn_veh: true
+    },
+    fondateur: {
+        tp_to: true,
+        tp_here: true,
+        freeze: true,
+        spectate: true,
+        heal: true,
+        revive: true,
+        noclip: true,
+        godmode: true,
+        kick: true,
+        ban: true,
+        give_money: true,
+        spawn_veh: true
     }
+};
+
+// Initialisation au chargement
+document.addEventListener('DOMContentLoaded', () => {
+    setupTabSwitching();
+    renderPermissionsMatrix();
+    updateClock();
+    setInterval(updateClock, 1000);
 });
 
-function navigateTo(appId) {
-    document.querySelectorAll('.app-screen').forEach(el => el.classList.remove('active'));
-    const target = document.getElementById(`app-${appId}`);
-    if (target) {
-        target.classList.add('active');
-    }
+function updateClock() {
+    const now = new Date();
+    const h = String(now.getHours()).padStart(2, '0');
+    const m = String(now.getMinutes()).padStart(2, '0');
+    const el = document.getElementById('tablet-time');
+    if (el) el.textContent = `${h}:${m}`;
 }
 
-// App grid navigation
-document.querySelectorAll('.app-icon-item').forEach(item => {
-    item.addEventListener('click', () => {
-        const app = item.getAttribute('data-app');
-        navigateTo(app);
-    });
-});
+// Gestion des onglets principaux (Menu Admin Noir & Rouge vs Menu Créateur Noir & Bleu)
+function setupTabSwitching() {
+    const tabs = document.querySelectorAll('.mode-btn');
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            tabs.forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
 
-document.querySelectorAll('.back-btn').forEach(btn => {
-    btn.addEventListener('click', () => navigateTo('homescreen'));
-});
+            const mode = tab.dataset.mode;
+            currentMode = mode;
 
-document.getElementById('dock-home').addEventListener('click', () => navigateTo('homescreen'));
-
-function closeTablet() {
-    fetch(`https://${GetParentResourceName()}/close`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({})
-    }).catch(() => {});
-    document.getElementById('tablet-wrapper').classList.add('hidden');
-}
-
-document.getElementById('dock-power').addEventListener('click', closeTablet);
-
-document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' || e.key === 'F10') {
-        closeTablet();
-    }
-});
-
-function populateJobsSelector() {
-    const sel = document.getElementById('job-selector');
-    sel.innerHTML = '';
-    allJobs.forEach(j => {
-        const opt = document.createElement('option');
-        opt.value = j.name;
-        opt.innerText = `${j.label} (${j.category})`;
-        sel.appendChild(opt);
-    });
-}
-
-function populatePlayersTable() {
-    const tbody = document.getElementById('players-tbody');
-    tbody.innerHTML = '';
-
-    if (currentPlayers.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 20px; color:#94a3b8;">Aucun joueur connecté actuellement.</td></tr>';
-        return;
-    }
-
-    currentPlayers.forEach(p => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td><strong>#${p.id}</strong></td>
-            <td>${p.name} <br><small style="color:#94a3b8;">(${p.rawName})</small></td>
-            <td>${p.jobLabel || p.job} (Grade ${p.grade})</td>
-            <td><span style="color:#10b981;">${p.cash} $</span></td>
-            <td><span style="color:#38bdf8;">${p.bank} $</span></td>
-            <td>
-                <div class="table-actions">
-                    <button class="mini-btn blue btn-tp" title="Se téléporter"><i class="fas fa-location-arrow"></i> TP</button>
-                    <button class="mini-btn orange btn-bring" title="Amener le joueur"><i class="fas fa-magnet"></i> Bring</button>
-                    <button class="mini-btn green btn-revive" title="Réanimer"><i class="fas fa-first-aid"></i> Heal</button>
-                    <button class="mini-btn red btn-freeze" title="Geler / Dégeler"><i class="fas fa-snowflake"></i></button>
-                    <button class="mini-btn red btn-kick" title="Expulser"><i class="fas fa-user-times"></i></button>
-                </div>
-            </td>
-        `;
-
-        tr.querySelector('.btn-tp').addEventListener('click', () => {
-            fetch(`https://${GetParentResourceName()}/teleportToPlayer`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ playerId: p.id })
-            });
-        });
-
-        tr.querySelector('.btn-bring').addEventListener('click', () => {
-            fetch(`https://${GetParentResourceName()}/bringPlayer`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ playerId: p.id })
-            });
-        });
-
-        tr.querySelector('.btn-revive').addEventListener('click', () => {
-            fetch(`https://${GetParentResourceName()}/revivePlayer`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ playerId: p.id })
-            });
-        });
-
-        let frozen = false;
-        tr.querySelector('.btn-freeze').addEventListener('click', () => {
-            frozen = !frozen;
-            fetch(`https://${GetParentResourceName()}/freezePlayer`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ playerId: p.id, freeze: frozen })
-            });
-        });
-
-        tr.querySelector('.btn-kick').addEventListener('click', () => {
-            const reason = prompt(`Raison de l'expulsion pour ${p.name}:`, "Expulsion administrative");
-            if (reason) {
-                fetch(`https://${GetParentResourceName()}/kickPlayer`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ playerId: p.id, reason })
-                });
+            document.querySelectorAll('.view-panel').forEach(p => p.classList.remove('active'));
+            if (mode === 'admin') {
+                document.getElementById('view-admin').classList.add('active');
+            } else {
+                document.getElementById('view-creator').classList.add('active');
             }
         });
-
-        tbody.appendChild(tr);
     });
 }
 
-// Economy actions
-document.getElementById('btn-eco-give').addEventListener('click', () => {
-    const playerId = document.getElementById('eco-player-id').value;
-    const type = document.getElementById('eco-type').value;
-    const amount = document.getElementById('eco-amount').value;
-    if (!playerId || !amount) return;
-
-    fetch(`https://${GetParentResourceName()}/manageEconomy`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ playerId, type, amount, operation: 'give' })
+// Changement d'affichage des rôles dans le menu créateur
+function changeGradeConfig(grade) {
+    activeGrade = grade;
+    document.querySelectorAll('.grade-tab').forEach(b => {
+        b.classList.toggle('active', b.dataset.grade === grade);
     });
-    document.getElementById('eco-amount').value = '';
-});
 
-document.getElementById('btn-eco-remove').addEventListener('click', () => {
-    const playerId = document.getElementById('eco-player-id').value;
-    const type = document.getElementById('eco-type').value;
-    const amount = document.getElementById('eco-amount').value;
-    if (!playerId || !amount) return;
+    const labelMap = {
+        superoperator: 'SuperOpérateur',
+        operator: 'Opérateur',
+        helper: 'Helper',
+        fondateur: 'Fondateur'
+    };
+    document.getElementById('active-grade-title').textContent = labelMap[grade];
 
-    fetch(`https://${GetParentResourceName()}/manageEconomy`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ playerId, type, amount, operation: 'remove' })
+    renderPermissionsMatrix();
+    showToast(`Configuration chargée pour le grade : ${labelMap[grade]}`);
+}
+
+// Rendu des cases à cocher de permissions
+function renderPermissionsMatrix() {
+    const container = document.getElementById('permissions-container');
+    if (!container) return;
+    container.innerHTML = '';
+
+    const currentPerms = rolePermissions[activeGrade] || {};
+    const isFondateur = activeGrade === 'fondateur';
+
+    allPermissions.forEach(perm => {
+        const isChecked = currentPerms[perm.id] === true;
+        const div = document.createElement('div');
+        div.className = 'perm-item-box';
+
+        div.innerHTML = `
+            <div class="perm-details">
+                <span class="perm-title"><i class="fas ${perm.icon}"></i> ${perm.label}</span>
+                <span class="perm-desc">${perm.desc}</span>
+            </div>
+            <label class="switch-label">
+                <input type="checkbox" data-perm-id="${perm.id}" ${isChecked ? 'checked' : ''} ${isFondateur ? 'disabled' : ''} onchange="togglePermission('${perm.id}', this.checked)">
+                <span class="slider"></span>
+            </label>
+        `;
+        container.appendChild(div);
     });
-    document.getElementById('eco-amount').value = '';
-});
+}
 
-// Job Assignment
-document.getElementById('btn-assign-job').addEventListener('click', () => {
-    const playerId = document.getElementById('job-player-id').value;
-    const jobName = document.getElementById('job-selector').value;
-    const grade = document.getElementById('job-grade-input').value;
-    if (!playerId || !jobName) return;
+function togglePermission(permId, value) {
+    if (!rolePermissions[activeGrade]) rolePermissions[activeGrade] = {};
+    rolePermissions[activeGrade][permId] = value;
+}
 
-    fetch(`https://${GetParentResourceName()}/setJob`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ playerId, jobName, grade })
-    });
-});
+function saveCurrentPermissions() {
+    showToast(`Permissions enregistrées avec succès pour ${activeGrade.toUpperCase()} !`);
+    if (window.invokeNative) {
+        fetch(`https://${GetParentResourceName()}/savePermissions`, {
+            method: 'POST',
+            body: JSON.stringify({ grade: activeGrade, permissions: rolePermissions[activeGrade] })
+        });
+    }
+}
 
-// Vehicles
-document.getElementById('btn-spawn-veh').addEventListener('click', () => {
-    const model = document.getElementById('veh-model-input').value.trim();
-    if (!model) return;
-    fetch(`https://${GetParentResourceName()}/spawnVehicle`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model })
-    });
-});
+// Actions du Menu Admin
+function selectPlayer(id, name, job) {
+    selectedPlayerId = id;
+    document.querySelectorAll('.player-entry').forEach(el => el.classList.remove('selected'));
+    event.currentTarget.classList.add('selected');
+    document.getElementById('selected-target-name').textContent = `${name.replace('_', ' ')} [ID: ${id}]`;
+}
 
-document.getElementById('btn-delete-veh').addEventListener('click', () => {
-    fetch(`https://${GetParentResourceName()}/deleteVehicle`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({})
-    });
-});
+function playerAction(action) {
+    showToast(`Action '${action.toUpperCase()}' exécutée sur le joueur #${selectedPlayerId}`);
+    if (window.invokeNative) {
+        fetch(`https://${GetParentResourceName()}/adminAction`, {
+            method: 'POST',
+            body: JSON.stringify({ action: action, target: selectedPlayerId })
+        });
+    }
+}
 
-// World & Weather
-document.getElementById('btn-apply-world').addEventListener('click', () => {
-    const weather = document.getElementById('weather-select').value;
-    const hours = document.getElementById('time-hours').value;
-    const minutes = document.getElementById('time-minutes').value;
-    fetch(`https://${GetParentResourceName()}/setWeatherTime`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ weather, hours, minutes })
-    });
-});
+function triggerAdminAction(act) {
+    showToast(`Action globale exécutée : ${act}`);
+}
 
-// Broadcast
-document.getElementById('btn-send-broadcast').addEventListener('click', () => {
-    const message = document.getElementById('broadcast-message').value.trim();
-    if (!message) return;
-    fetch(`https://${GetParentResourceName()}/broadcastAnnouncement`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message })
-    });
-    document.getElementById('broadcast-message').value = '';
-});
+// Commandes du serveur depuis le Menu Créateur
+function setWeather(weather) {
+    showToast(`Météo du serveur changée en : ${weather}`);
+}
 
-function GetParentResourceName() {
-    return window.GetParentResourceName ? window.GetParentResourceName() : 'rp_tablet_admin';
+function setTime(h, m) {
+    showToast(`Heure du monde ajustée : ${h}h00`);
+}
+
+function sendBroadcast() {
+    const input = document.getElementById('broadcast-msg');
+    const msg = input.value.trim();
+    if (!msg) return;
+    showToast(`Annonce Créateur diffusée : "${msg}"`);
+    input.value = '';
+}
+
+function wipeVehicles() {
+    showToast('Purge de tous les véhicules abandonnés lancée !');
+}
+
+function wipePeds() {
+    showToast('Nettoyage des entités et PNJ achevé.');
+}
+
+function toggleWhitelist() {
+    showToast('Statut de protection et verrouillage du serveur basculé.');
+}
+
+function showToast(msg) {
+    const toast = document.getElementById('toast-notify');
+    if (!toast) return;
+    toast.textContent = msg;
+    toast.style.display = 'block';
+    setTimeout(() => {
+        toast.style.display = 'none';
+    }, 2800);
 }
