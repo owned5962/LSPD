@@ -31,7 +31,7 @@ RegisterNetEvent('rp_economy:server:logTransaction', function(characterId, trans
     amount = validAmount(amount)
     if not characterId or not validTypes[transactionType] or not amount then return end
 
-    MySQL.insert('INSERT INTO bank_transactions (character_id, type, amount, sender_or_receiver, reason) VALUES (?, ?, ?, ?, ?)', {
+    MySQL.insert.await('INSERT INTO bank_transactions (character_id, type, amount, sender_or_receiver, reason) VALUES (?, ?, ?, ?, ?)', {
         characterId, transactionType, amount,
         tostring(sender or 'Système'):sub(1, 128),
         tostring(reason or 'Transaction'):sub(1, 255)
