@@ -44,6 +44,8 @@ La migration adapte le champ de date de naissance. Elle ne supprime aucun person
 - Les personnages sont enregistrés dans MySQL et sélectionnés à chaque connexion.
 - Les emplacements sont limités à 3 par compte.
 - Les inventaires sont persistés par personnage dans `player_inventories` ; sur une base existante, appliquez la migration `002_inventory_persistence.sql`.
+- La faim et la soif sont persistées dans `characters.metadata` ; sur une base existante, appliquez aussi `migrations/004_character_metadata.sql`.
+- Les aliments, boissons et soins consomment désormais une unité après validation et sauvegarde SQL ; les objets sans effet codé restent non utilisables.
 - Le dépôt au sol reste désactivé tant qu'un système serveur de ramassage sécurisé n'est pas installé.
 - Les bannissements anticheat sont persistants par identifiant `license:` ; la commande console ou staff `/rp_unban license:...` permet de les lever.
 - Les sauvegardes automatiques réduisent la perte de données, mais une sauvegarde régulière de la base reste indispensable.
