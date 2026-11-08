@@ -1,38 +1,82 @@
-RegisterNetEvent('rp_economy:server:deposit', function(amount)
+local MAX_TRANSACTION = 1000000
+
+local function validAmount(value)
+    local amount = tonumber(value)
+    if not amount or amount ~= amount or amount % 1 ~= 0 or amount < 1 or amount > MAX_TRANSACTION then
+        return nil
+    end
+    return amount
+end
+
+local function formatCurrency(amount)
+    local formatted = tostring(math.floor(tonumber(amount) or 0))
+    local k
+    while true do
+        formatted, k = string.gsub(formatted, '^(-?%d+)(%d%d%d)', '%1 %2')
+        if k == 0 then break end
+    end
+    return formatted .. ' $'
+end
+
+local function notify(src, message, kind)
+    TriggerClientEvent('rp_core:client:notify', src, message, kind or 'info')
+end
+
+RegisterNetEvent('rp_economy:server:logTransaction', function(characterId, transactionType, amount, sender, reason)
+    local validTypes = {
+        deposit = true, withdraw = true, transfer_send = true,
+        transfer_receive = true, salary = true
+    }
+    characterId = tonumber(characterId)
+    amount = validAmount(amount)
+    if not characterId or not validTypes[transactionType] or not amount then return end
+
+    MySQL.insert('INSERT INTO bank_transactions (character_id, type, amount, sender_or_receiver, reason) VALUES (?, ?, ?, ?, ?)', {
+        characterId, transactionType, amount,
+        tostring(sender or 'Système'):sub(1, 128),
+        tostring(reason or 'Transaction'):sub(1, 255)
+    })
+end)
+
+RegisterNetEvent('rp_economy:server:deposit', function(rawAmount)
     local src = source
     local player = exports['rp_core']:GetPlayerFromId(src)
-    if not player or not amount or amount <= 0 then return end
+    local amount = validAmount(rawAmount)
+    if not player or not amount then return end
 
     if player.removeCash(amount) then
-        player.addBank(amount, 'Dépôt Bancaire')
+        player.addBank(amount, 'Dépôt bancaire')
         TriggerClientEvent('rp_economy:client:refreshBalances', src, player.getCash(), player.getBank())
-        TriggerClientEvent('rp_core:client:notify', src, 'Dépôt réussi: ' .. Utils.FormatCurrency(amount), 'success')
+        notify(src, 'Dépôt réussi : ' .. formatCurrency(amount), 'success')
     else
-        TriggerClientEvent('rp_core:client:notify', src, 'Fonds insuffisants en espèces.', 'error')
+        notify(src, 'Fonds insuffisants en espèces.', 'error')
     end
 end)
 
-RegisterNetEvent('rp_economy:server:withdraw', function(amount)
+RegisterNetEvent('rp_economy:server:withdraw', function(rawAmount)
     local src = source
     local player = exports['rp_core']:GetPlayerFromId(src)
-    if not player or not amount or amount <= 0 then return end
+    local amount = validAmount(rawAmount)
+    if not player or not amount then return end
 
     if player.removeBank(amount, 'Retrait DAB / Guichet') then
         player.addCash(amount)
         TriggerClientEvent('rp_economy:client:refreshBalances', src, player.getCash(), player.getBank())
-        TriggerClientEvent('rp_core:client:notify', src, 'Retrait réussi: ' .. Utils.FormatCurrency(amount), 'success')
+        notify(src, 'Retrait réussi : ' .. formatCurrency(amount), 'success')
     else
-        TriggerClientEvent('rp_core:client:notify', src, 'Solde bancaire insuffisant.', 'error')
+        notify(src, 'Solde bancaire insuffisant.', 'error')
     end
 end)
 
-RegisterNetEvent('rp_economy:server:transfer', function(targetId, amount)
+RegisterNetEvent('rp_economy:server:transfer', function(rawTargetId, rawAmount)
     local src = source
+    local targetId = tonumber(rawTargetId)
+    local amount = validAmount(rawAmount)
     local player = exports['rp_core']:GetPlayerFromId(src)
-    local target = exports['rp_core']:GetPlayerFromId(targetId)
+    local target = targetId and exports['rp_core']:GetPlayerFromId(targetId)
 
-    if not player or not target or not amount or amount <= 0 then
-        TriggerClientEvent('rp_core:client:notify', src, 'Virement invalide ou joueur introuvable.', 'error')
+    if not player or not target or targetId == src or not amount then
+        notify(src, 'Virement invalide ou joueur introuvable.', 'error')
         return
     end
 
@@ -40,23 +84,23 @@ RegisterNetEvent('rp_economy:server:transfer', function(targetId, amount)
         target.addBank(amount, 'Virement reçu de ' .. player.firstname .. ' ' .. player.lastname)
         TriggerClientEvent('rp_economy:client:refreshBalances', src, player.getCash(), player.getBank())
         TriggerClientEvent('rp_economy:client:refreshBalances', targetId, target.getCash(), target.getBank())
-        TriggerClientEvent('rp_core:client:notify', src, 'Virement de ' .. Utils.FormatCurrency(amount) .. ' effectué.', 'success')
-        TriggerClientEvent('rp_core:client:notify', targetId, 'Virement de ' .. Utils.FormatCurrency(amount) .. ' reçu.', 'info')
+        notify(src, 'Virement de ' .. formatCurrency(amount) .. ' effectué.', 'success')
+        notify(targetId, 'Virement de ' .. formatCurrency(amount) .. ' reçu.', 'info')
     else
-        TriggerClientEvent('rp_core:client:notify', src, 'Solde insuffisant pour ce virement.', 'error')
+        notify(src, 'Solde insuffisant pour ce virement.', 'error')
     end
 end)
 
--- Automated Salaries Loop
 CreateThread(function()
     while true do
-        Wait(10 * 60 * 1000) -- every 10 mins
+        Wait(10 * 60 * 1000)
         local allPlayers = exports['rp_core']:GetAllPlayers()
         for src, player in pairs(allPlayers) do
             local gradeData = exports['rp_jobs']:GetJobGrade(player.job, player.jobGrade)
-            local salary = gradeData and gradeData.salary or 150
-            player.addBank(salary, 'Salaire - ' .. (player.job or 'Civil'))
-            TriggerClientEvent('rp_core:client:notify', src, 'Salaire reçu: ' .. Utils.FormatCurrency(salary) .. ' sur votre compte bancaire.', 'success')
+            local salary = validAmount(gradeData and gradeData.salary or 150)
+            if salary and player.addBank(salary, 'Salaire - ' .. (player.job or 'Civil')) then
+                notify(src, 'Salaire reçu : ' .. formatCurrency(salary) .. ' sur votre compte bancaire.', 'success')
+            end
         end
     end
 end)
