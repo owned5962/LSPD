@@ -26,6 +26,7 @@ CREATE TABLE IF NOT EXISTS `characters` (
     `job_grade` INT NOT NULL DEFAULT 0,
     `position` LONGTEXT DEFAULT NULL,
     `skin` LONGTEXT DEFAULT NULL,
+    `metadata` LONGTEXT DEFAULT NULL,
     `is_dead` TINYINT(1) NOT NULL DEFAULT 0,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE KEY `unique_user_char` (`identifier`, `char_id`),
