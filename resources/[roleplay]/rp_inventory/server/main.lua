@@ -6,13 +6,16 @@ RegisterNetEvent('rp_inventory:requestData', function()
     if not player then return end
 
     if not playerInventories[src] then
-        -- Default starter items
+        -- Inventaire initial avec nourriture et boisson diversifiées
         playerInventories[src] = {
-            { name = 'id_card', count = 1, label = 'Carte d\'identité', weight = 0.1 },
-            { name = 'driver_license', count = 1, label = 'Permis de conduire', weight = 0.1 },
-            { name = 'phone', count = 1, label = 'Téléphone portable', weight = 0.2 },
-            { name = 'bread', count = 3, label = 'Pain', weight = 0.5 },
-            { name = 'water', count = 3, label = 'Bouteille d\'eau', weight = 0.5 }
+            { name = 'id_card', count = 1, label = Config.DefaultItems['id_card'].label, weight = Config.DefaultItems['id_card'].weight },
+            { name = 'driver_license', count = 1, label = Config.DefaultItems['driver_license'].label, weight = Config.DefaultItems['driver_license'].weight },
+            { name = 'phone', count = 1, label = Config.DefaultItems['phone'].label, weight = Config.DefaultItems['phone'].weight },
+            { name = 'bread', count = 2, label = Config.DefaultItems['bread'].label, weight = Config.DefaultItems['bread'].weight },
+            { name = 'burger_bleeder', count = 2, label = Config.DefaultItems['burger_bleeder'].label, weight = Config.DefaultItems['burger_bleeder'].weight },
+            { name = 'water', count = 3, label = Config.DefaultItems['water'].label, weight = Config.DefaultItems['water'].weight },
+            { name = 'soda_ecola', count = 2, label = Config.DefaultItems['soda_ecola'].label, weight = Config.DefaultItems['soda_ecola'].weight },
+            { name = 'coffee', count = 1, label = Config.DefaultItems['coffee'].label, weight = Config.DefaultItems['coffee'].weight }
         }
     end
 
@@ -34,6 +37,8 @@ RegisterNetEvent('rp_inventory:useItem', function(itemName)
     local player = exports['rp_core']:GetPlayer(src)
     if not player or not playerInventories[src] then return end
 
+    local itemDef = Config.DefaultItems[itemName]
+
     for idx, item in ipairs(playerInventories[src]) do
         if item.name == itemName then
             if item.count > 1 then
@@ -42,12 +47,16 @@ RegisterNetEvent('rp_inventory:useItem', function(itemName)
                 table.remove(playerInventories[src], idx)
             end
 
-            if itemName == 'bread' then
-                TriggerClientEvent('rp_core:notify', src, 'success', 'Vous avez mangé un pain.')
-            elseif itemName == 'water' then
-                TriggerClientEvent('rp_core:notify', src, 'success', 'Vous avez bu une bouteille d\'eau.')
-            elseif itemName == 'medikit' then
-                TriggerClientEvent('rp_core:notify', src, 'success', 'Vous avez utilisé un kit de secours.')
+            if itemDef then
+                if itemDef.type == 'food' then
+                    TriggerClientEvent('rp_core:notify', src, 'success', string.format('Vous mangez : %s (+%d faim)', itemDef.label, itemDef.hunger or 20))
+                elseif itemDef.type == 'drink' then
+                    TriggerClientEvent('rp_core:notify', src, 'success', string.format('Vous buvez : %s (+%d soif)', itemDef.label, itemDef.thirst or 25))
+                elseif itemDef.type == 'medical' then
+                    TriggerClientEvent('rp_core:notify', src, 'success', string.format('Vous utilisez : %s (+%d PV)', itemDef.label, itemDef.heal or 50))
+                else
+                    TriggerClientEvent('rp_core:notify', src, 'info', 'Objet utilisé : ' .. itemDef.label)
+                end
             else
                 TriggerClientEvent('rp_core:notify', src, 'info', 'Objet utilisé : ' .. item.label)
             end
