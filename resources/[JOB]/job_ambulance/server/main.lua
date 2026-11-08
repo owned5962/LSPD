@@ -12,3 +12,8 @@ RegisterNetEvent('job_ambulance:setDuty', function(status)
     TriggerClientEvent('job_ambulance:dutyUpdated', src, status)
     print(string.format('[JOB_AMBULANCE] Player %s is now %s duty', player.name or src, status and 'ON' or 'OFF'))
 end)
+
+
+exports('IsOnDuty', function(src)
+    return dutyPlayers[tonumber(src)] == true
+end)
