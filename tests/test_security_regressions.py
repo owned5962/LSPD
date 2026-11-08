@@ -67,6 +67,30 @@ def test_character_ui_has_selection_and_creation_callbacks():
     assert "textContent" in ui
 
 
+def test_character_appearance_is_applied_and_persisted():
+    client = read("resources/[roleplay]/rp_characters/client/main.lua")
+    server = read("resources/[roleplay]/rp_characters/server/main.lua")
+    assert "mp_f_freemode_01" in client and "mp_m_freemode_01" in client
+    assert "SetPedHairColor" in client
+    assert "skin.components" in client and "skin.props" in client
+    assert "char.position, char.sex, char.skin" in server
+    assert "sendAppearancePreview" in read("resources/[roleplay]/rp_characters/html/js/app.js")
+
+
+def test_clothing_presets_and_outfits_are_saved():
+    client = read("resources/[roleplay]/rp_clothing/client/main.lua")
+    server = read("resources/[roleplay]/rp_clothing/server/main.lua")
+    manifest = read("resources/[roleplay]/rp_clothing/fxmanifest.lua")
+    ui = read("resources/[roleplay]/rp_clothing/html/js/app.js")
+    assert "ApplyPreset(data.outfit)" in client
+    assert "CaptureAppearance()" in client
+    assert "GetPlayerFromId(src)" in server
+    assert "INSERT INTO user_outfits" in server
+    assert "UPDATE characters SET skin" in server
+    assert "@oxmysql/lib/MySQL.lua" in manifest
+    assert "/applyPreset" in ui
+
+
 if __name__ == "__main__":
     for check in (
         test_admin_tablet_has_no_source_one_bypass,
@@ -75,6 +99,8 @@ if __name__ == "__main__":
         test_database_schema_has_unique_character_slots_and_one_job_grades_table,
         test_startup_orders_oxmysql_before_core,
         test_character_ui_has_selection_and_creation_callbacks,
+        test_character_appearance_is_applied_and_persisted,
+        test_clothing_presets_and_outfits_are_saved,
     ):
         check()
     print("All security and persistence regression checks passed.")
