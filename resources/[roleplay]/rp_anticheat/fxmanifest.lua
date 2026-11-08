@@ -25,3 +25,5 @@ files {
     'html/css/style.css',
     'html/js/app.js'
 }
+
+dependency 'oxmysql'
