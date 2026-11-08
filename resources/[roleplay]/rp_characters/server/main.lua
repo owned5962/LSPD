@@ -57,7 +57,7 @@ local function LoadCharacter(src, identifier, userGroup, char)
     exports['rp_core']:GetAllPlayers()[src] = player
     player.syncClient()
 
-    TriggerClientEvent('rp_characters:client:spawnPlayer', src, char.position)
+    TriggerClientEvent('rp_characters:client:spawnPlayer', src, char.position, char.sex, char.skin)
     TriggerClientEvent('rp_characters:client:closeMenu', src)
     Notify(src, ('Bienvenue %s %s !'):format(char.firstname, char.lastname), 'success')
 end
