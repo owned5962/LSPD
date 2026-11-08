@@ -5,9 +5,9 @@ function GetPlayerFromId(source)
 end
 
 function GetPlayerByIdentifier(identifier)
-    for _, p in pairs(Players) do
-        if p.identifier == identifier then
-            return p
+    for _, player in pairs(Players) do
+        if player.identifier == identifier then
+            return player
         end
     end
     return nil
@@ -21,10 +21,29 @@ exports('GetPlayerFromId', GetPlayerFromId)
 exports('GetPlayerByIdentifier', GetPlayerByIdentifier)
 exports('GetAllPlayers', GetAllPlayers)
 
+-- Save all connected characters regularly so economy/job changes survive crashes
+-- more reliably than a disconnect-only save.
+CreateThread(function()
+    while true do
+        Wait(5 * 60 * 1000)
+        for _, player in pairs(Players) do
+            if player and player.save then
+                player.save()
+            end
+        end
+    end
+end)
+
 AddEventHandler('playerDropped', function(reason)
     local src = source
-    if Players[src] then
-        print(string.format('[rp_core] Player %s (%s) disconnected: %s', GetPlayerName(src), Players[src].identifier or 'unknown', reason))
+    local player = Players[src]
+    if player then
+        print(string.format('[rp_core] Player %s (%s) disconnected: %s',
+            GetPlayerName(src) or tostring(src), player.identifier or 'unknown', reason or 'unknown'))
+        -- Keep the player object alive in this closure while the SQL save completes.
+        CreateThread(function()
+            player.save()
+        end)
         Players[src] = nil
     end
 end)
