@@ -1,0 +1,76 @@
+-- ====================================================================
+-- GTA 5 Roleplay FiveM Database Schema
+-- Supports Players, Multi-Characters, 50 Jobs, Economy, and Admin Audit
+-- ====================================================================
+
+CREATE TABLE IF NOT EXISTS `users` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `identifier` VARCHAR(64) NOT NULL UNIQUE,
+    `license` VARCHAR(64) DEFAULT NULL,
+    `discord` VARCHAR(64) DEFAULT NULL,
+    `name` VARCHAR(64) NOT NULL,
+    `group` VARCHAR(32) NOT NULL DEFAULT 'user',
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `last_seen` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `characters` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `identifier` VARCHAR(64) NOT NULL,
+    `char_id` INT NOT NULL DEFAULT 1,
+    `firstname` VARCHAR(64) NOT NULL,
+    `lastname` VARCHAR(64) NOT NULL,
+    `dateofbirth` VARCHAR(10) NOT NULL,
+    `sex` VARCHAR(1) NOT NULL DEFAULT 'm',
+    `height` INT NOT NULL DEFAULT 175,
+    `phone_number` VARCHAR(16) DEFAULT NULL,
+    `cash` BIGINT NOT NULL DEFAULT 2500,
+    `bank` BIGINT NOT NULL DEFAULT 10000,
+    `job` VARCHAR(50) NOT NULL DEFAULT 'unemployed',
+    `job_grade` INT NOT NULL DEFAULT 0,
+    `position` LONGTEXT DEFAULT '{"x": -1037.7, "y": -2737.8, "z": 20.1, "heading": 330.0}',
+    `skin` LONGTEXT DEFAULT NULL,
+    `is_dead` TINYINT(1) NOT NULL DEFAULT 0,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY `unique_user_char` (`identifier`, `char_id`),
+    CONSTRAINT `fk_characters_users` FOREIGN KEY (`identifier`) REFERENCES `users` (`identifier`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `bank_transactions` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `character_id` INT NOT NULL,
+    `type` ENUM('deposit', 'withdraw', 'transfer_send', 'transfer_receive', 'salary') NOT NULL,
+    `amount` BIGINT NOT NULL,
+    `sender_or_receiver` VARCHAR(128) DEFAULT NULL,
+    `reason` VARCHAR(255) DEFAULT 'Transaction',
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT `fk_bank_characters` FOREIGN KEY (`character_id`) REFERENCES `characters` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `jobs` (
+    `name` VARCHAR(50) PRIMARY KEY,
+    `label` VARCHAR(100) NOT NULL,
+    `category` VARCHAR(50) NOT NULL DEFAULT 'civilian',
+    `whitelisted` TINYINT(1) NOT NULL DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `job_grades` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `job_name` VARCHAR(50) NOT NULL,
+    `grade` INT NOT NULL,
+    `name` VARCHAR(50) NOT NULL,
+    `label` VARCHAR(100) NOT NULL,
+    `salary` INT NOT NULL DEFAULT 200,
+    UNIQUE KEY `unique_job_grade` (`job_name`, `grade`),
+    CONSTRAINT `fk_job_grades_jobs` FOREIGN KEY (`job_name`) REFERENCES `jobs` (`name`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `admin_logs` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `admin_identifier` VARCHAR(64) NOT NULL,
+    `admin_name` VARCHAR(64) NOT NULL,
+    `action` VARCHAR(64) NOT NULL,
+    `target_identifier` VARCHAR(64) DEFAULT NULL,
+    `details` TEXT DEFAULT NULL,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
