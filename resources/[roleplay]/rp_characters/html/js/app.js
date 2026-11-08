@@ -58,9 +58,7 @@ function renderCharacters(characters) {
 }
 
 document.getElementById('create-character-btn').addEventListener('click', () => {
-    document.getElementById('character-selection').classList.add('hidden');
-    document.getElementById('registration-app').classList.remove('hidden');
-    switchTab(0);
+    postNui('beginCreation').catch(() => {});
 });
 
 function switchTab(index) {
