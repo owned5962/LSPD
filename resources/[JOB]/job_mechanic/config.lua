@@ -1,7 +1,7 @@
 Config = {}
 
 Config.Job = 'mechanic'
-Config.Label = 'Mécanicien Benny's / LSC'
+Config.Label = "Mécanicien Benny's / LSC"
 Config.Category = 'artisanat'
 
 Config.DutyCoords = vector3(240.0, -1380.0, 33.7)
