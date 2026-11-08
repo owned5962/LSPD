@@ -85,15 +85,27 @@ document.querySelectorAll('.color-dot').forEach(dot => dot.addEventListener('cli
     document.querySelectorAll('.color-dot').forEach(d => d.classList.remove('active'));
     dot.classList.add('active');
     selectedColor = Number(dot.dataset.color);
+    sendAppearancePreview();
 }));
 document.querySelectorAll('.spawn-card').forEach(card => card.addEventListener('click', () => {
     document.querySelectorAll('.spawn-card').forEach(c => c.classList.remove('active'));
     card.classList.add('active');
     selectedSpawn = card.dataset.spawn;
 }));
-document.getElementById('gender').addEventListener('change', e => {
-    postNui('updateSkinPreview', { gender: e.target.value }).catch(() => {});
-});
+function sendAppearancePreview() {
+    postNui('updateSkinPreview', {
+        gender: document.getElementById('gender').value,
+        skin: {
+            hairStyle: Number(document.getElementById('hair-style').value),
+            hairColor: selectedColor,
+            clothing: document.getElementById('clothing-style').value
+        }
+    }).catch(() => {});
+}
+
+document.getElementById('gender').addEventListener('change', sendAppearancePreview);
+document.getElementById('hair-style').addEventListener('input', sendAppearancePreview);
+document.getElementById('clothing-style').addEventListener('change', sendAppearancePreview);
 
 document.getElementById('creator-form').addEventListener('submit', e => {
     e.preventDefault();
