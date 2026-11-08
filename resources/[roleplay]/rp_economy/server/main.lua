@@ -22,14 +22,14 @@ local function notify(src, message, kind)
     TriggerClientEvent('rp_core:client:notify', src, message, kind or 'info')
 end
 
-RegisterNetEvent('rp_economy:server:logTransaction', function(characterId, transactionType, amount, sender, reason)
+AddEventHandler('rp_economy:server:logTransaction', function(characterId, transactionType, amount, sender, reason)
     local validTypes = {
         deposit = true, withdraw = true, transfer_send = true,
         transfer_receive = true, salary = true
     }
     characterId = tonumber(characterId)
     amount = validAmount(amount)
-    if not characterId or not validTypes[transactionType] or not amount then return end
+    if not characterId or characterId % 1 ~= 0 or not validTypes[transactionType] or not amount then return end
 
     MySQL.insert.await('INSERT INTO bank_transactions (character_id, type, amount, sender_or_receiver, reason) VALUES (?, ?, ?, ?, ?)', {
         characterId, transactionType, amount,
@@ -45,7 +45,7 @@ RegisterNetEvent('rp_economy:server:deposit', function(rawAmount)
     if not player or not amount then return end
 
     if player.removeCash(amount) then
-        player.addBank(amount, 'Dépôt bancaire')
+        player.addBank(amount, 'Dépôt bancaire', 'deposit')
         TriggerClientEvent('rp_economy:client:refreshBalances', src, player.getCash(), player.getBank())
         notify(src, 'Dépôt réussi : ' .. formatCurrency(amount), 'success')
     else
@@ -81,7 +81,8 @@ RegisterNetEvent('rp_economy:server:transfer', function(rawTargetId, rawAmount)
     end
 
     if player.removeBank(amount, 'Virement vers ' .. target.firstname .. ' ' .. target.lastname) then
-        target.addBank(amount, 'Virement reçu de ' .. player.firstname .. ' ' .. player.lastname)
+        target.addBank(amount, 'Virement reçu de ' .. player.firstname .. ' ' .. player.lastname, 'transfer_receive')
+        TriggerEvent('rp_economy:server:logTransaction', player.charId, 'transfer_send', amount, target.firstname .. ' ' .. target.lastname, 'Virement envoyé')
         TriggerClientEvent('rp_economy:client:refreshBalances', src, player.getCash(), player.getBank())
         TriggerClientEvent('rp_economy:client:refreshBalances', targetId, target.getCash(), target.getBank())
         notify(src, 'Virement de ' .. formatCurrency(amount) .. ' effectué.', 'success')
@@ -98,7 +99,7 @@ CreateThread(function()
         for src, player in pairs(allPlayers) do
             local gradeData = exports['rp_jobs']:GetJobGrade(player.job, player.jobGrade)
             local salary = validAmount(gradeData and gradeData.salary or 150)
-            if salary and player.addBank(salary, 'Salaire - ' .. (player.job or 'Civil')) then
+            if salary and player.addBank(salary, 'Salaire - ' .. (player.job or 'Civil'), 'salary') then
                 notify(src, 'Salaire reçu : ' .. formatCurrency(salary) .. ' sur votre compte bancaire.', 'success')
             end
         end
