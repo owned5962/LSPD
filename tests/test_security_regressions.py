@@ -145,6 +145,44 @@ def test_anticheat_rate_limits_reports_and_persists_bans():
     assert "RegisterCommand('rp_unban'" in source
 
 
+def test_followup_hardening_keeps_internal_logs_private_and_money_atomic():
+    economy = read("resources/[roleplay]/rp_economy/server/main.lua")
+    core = read("resources/[roleplay]/rp_core/server/player.lua")
+    inventory = read("resources/[roleplay]/rp_inventory/server/main.lua")
+    interactions = read("resources/[roleplay]/rp_interactions/server/main.lua")
+    anticheat = read("resources/[roleplay]/rp_anticheat/server/main.lua")
+    police = read("resources/[jobs]/job_police/server/main.lua")
+    assert "AddEventHandler('rp_economy:server:logTransaction'" in economy
+    assert "RegisterNetEvent('rp_economy:server:logTransaction'" not in economy
+    assert "UPDATE characters SET cash = cash - ?, bank = bank + ?" in economy
+    assert "UPDATE characters AS sender JOIN characters AS recipient" in economy
+    assert "if not self.save() then" in core
+    assert "MySQL.transaction.await" in inventory
+    assert "Objet conservé." in inventory
+    assert "UPDATE characters AS sender JOIN characters AS target" in interactions
+    assert "connection refused" in anticheat
+    assert "isAt(Config.ArmoryCoords" in police
+
+
+def test_job_duty_events_validate_job_and_boolean_status():
+    jobs = (
+        "police", "taxi", "miner", "chef", "diver", "pilot", "judge",
+        "ranger", "tailor", "farmer", "lawyer", "banker", "brewer",
+        "welder", "butcher", "postman", "armorer", "florist", "plumber",
+        "garbage", "cleaner", "it_tech", "towtruck", "security", "smuggler",
+        "event_planner", "delivery", "mechanic", "bartender", "ambulance",
+        "fisherman", "cardealer", "architect", "winemaker", "journalist",
+        "pharmacist", "lumberjack", "bus_driver", "realestate", "electrician",
+        "dock_worker", "firefighter", "train_driver", "photographer",
+        "bike_courier", "boat_captain", "veterinarian", "casino_dealer",
+        "fitness_coach", "cinema_operator"
+    )
+    for job in jobs:
+        source = read(f"resources/[jobs]/job_{job}/server/main.lua")
+        assert f"player.job ~= '{job}'" in source, job
+        assert "type(status) ~= 'boolean'" in source, job
+
+
 if __name__ == "__main__":
     for check in (
         test_admin_tablet_has_no_source_one_bypass,
@@ -161,6 +199,8 @@ if __name__ == "__main__":
         test_inventory_is_persistent_and_server_validates_transfers,
         test_economy_has_sql_logging_and_transaction_limits,
         test_anticheat_rate_limits_reports_and_persists_bans,
+        test_followup_hardening_keeps_internal_logs_private_and_money_atomic,
+        test_job_duty_events_validate_job_and_boolean_status,
     ):
         check()
     print("All security and persistence regression checks passed.")
