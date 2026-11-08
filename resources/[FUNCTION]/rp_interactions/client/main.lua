@@ -48,7 +48,7 @@ RegisterNetEvent('rp_interactions:toggleCuff', function()
     if isHandcuffed then
         SetEnableHandcuffs(ped, true)
         DisablePlayerFiring(ped, true)
-        SetCurrentPedWeapon(ped, `WEAPON_UNARMED`, true)
+        SetCurrentPedWeapon(ped, GetHashKey('WEAPON_UNARMED'), true)
         SetPedCanPlayGestureAnims(ped, false)
         TriggerEvent('rp_core:notify', 'info', 'Vous avez été menotté.')
     else
