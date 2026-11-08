@@ -36,6 +36,7 @@ def test_core_exposes_player_factory_and_saves():
     main = read("resources/[CORE]/rp_core/server/main.lua")
     assert "exports('CreateRPPlayer', CreateRPPlayer)" in core
     assert "UPDATE characters SET cash = ?, bank = ?, job = ?" in core
+    assert "self.metadata" in core and "metadata = ?" in core
     assert "@oxmysql/lib/MySQL.lua" in manifest
     assert "player.save()" in main
     assert "5 * 60 * 1000" in main
@@ -46,6 +47,7 @@ def test_database_schema_has_unique_character_slots_and_one_job_grades_table():
     assert "UNIQUE KEY `unique_user_char` (`identifier`, `char_id`)" in sql
     assert sql.count("CREATE TABLE IF NOT EXISTS `job_grades`") == 1
     assert "FOREIGN KEY (`identifier`) REFERENCES `users`" in sql
+    assert "`metadata` LONGTEXT DEFAULT NULL" in sql
 
 
 def test_startup_orders_oxmysql_before_core():
@@ -134,6 +136,9 @@ def test_inventory_is_persistent_and_server_validates_transfers():
     assert "ON DUPLICATE KEY UPDATE items" in source
     assert "targetPed" in source and "Config.MaxWeight" in source
     assert "rp_inventory:giveItem" in source
+    assert "itemDef.hunger" in source and "itemDef.thirst" in source
+    assert "rp_inventory:applyMedicalItem" in source
+    assert "MySQL.transaction.await" in source
 
 
 def test_economy_has_sql_logging_and_transaction_limits():
