@@ -2,7 +2,7 @@ fx_version 'cerulean'
 game 'gta5'
 
 author 'FiveM RP Server'
-description 'Dedicated RP Job: Organisateur d'Événements & DJ (divertissement)'
+description "Dedicated RP Job: Organisateur d'Événements & DJ (divertissement)"
 version '1.0.0'
 
 shared_scripts {
