@@ -77,3 +77,11 @@ function GetClosestPlayer()
     end
     return closestPlayer, closestDistance
 end
+
+RegisterNetEvent('rp_inventory:applyMedicalItem', function(heal)
+    local ped = PlayerPedId()
+    local amount = tonumber(heal)
+    if not amount or amount <= 0 or IsEntityDead(ped) then return end
+    SetEntityHealth(ped, math.min(GetEntityMaxHealth(ped), GetEntityHealth(ped) + amount))
+    ClearPedBloodDamage(ped)
+end)
