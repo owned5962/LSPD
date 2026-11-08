@@ -1,4 +1,5 @@
 local playerInventories = {}
+local transferLocks = {}
 
 local DEFAULT_INVENTORY = {
     { name = 'id_card', count = 1 },
@@ -164,15 +165,48 @@ RegisterNetEvent('rp_inventory:giveItem', function(rawTargetId, itemName, rawCou
         return
     end
 
-    sourceItem.count = sourceItem.count - count
-    if sourceItem.count == 0 then table.remove(sourceInventory, sourceIndex) end
-    local existing
-    for _, item in ipairs(targetInventory) do if item.name == itemName then existing = item break end end
-    if existing then existing.count = existing.count + count
-    else targetInventory[#targetInventory + 1] = { name = itemName, count = count, label = definition.label, weight = definition.weight } end
+    if transferLocks[src] or transferLocks[targetId] then
+        notify(src, 'error', 'Un transfert est déjà en cours.')
+        return
+    end
+    transferLocks[src], transferLocks[targetId] = true, true
 
-    saveInventory(player)
-    saveInventory(target)
+    local sourceNew = normalizeInventory(sourceInventory)
+    local targetNew = normalizeInventory(targetInventory)
+    local newSourceItem
+    for index, item in ipairs(sourceNew) do
+        if item.name == itemName then newSourceItem = item; if item.count <= count then table.remove(sourceNew, index) else item.count = item.count - count end; break end
+    end
+    local existing
+    for _, item in ipairs(targetNew) do if item.name == itemName then existing = item break end end
+    if existing then existing.count = existing.count + count
+    else targetNew[#targetNew + 1] = { name = itemName, count = count, label = definition.label, weight = definition.weight } end
+
+    local persisted, persistError = pcall(function()
+        -- Ensure both rows exist before the atomic two-row update.
+        if not saveInventory(player) or not saveInventory(target) then
+            error('Unable to prepare inventory rows')
+        end
+        local ok = MySQL.transaction.await({
+            {
+                query = 'UPDATE player_inventories SET items = ? WHERE character_id = ?',
+                values = { json.encode(sourceNew), player.charId }
+            },
+            {
+                query = 'UPDATE player_inventories SET items = ? WHERE character_id = ?',
+                values = { json.encode(targetNew), target.charId }
+            }
+        })
+        if not ok then error('Inventory transaction rejected') end
+    end)
+    transferLocks[src], transferLocks[targetId] = nil, nil
+    if not persisted then
+        print(('[rp_inventory] Atomic transfer failed (%s -> %s): %s'):format(player.charId, target.charId, tostring(persistError)))
+        notify(src, 'error', 'Le transfert a échoué. Aucun objet n’a été transféré.')
+        return
+    end
+
+    playerInventories[src], playerInventories[targetId] = sourceNew, targetNew
     notify(src, 'success', 'Objet transféré.')
     notify(targetId, 'success', 'Vous avez reçu ' .. count .. ' x ' .. definition.label .. '.')
     sendInventory(src, player)
