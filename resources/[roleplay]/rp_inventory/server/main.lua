@@ -1,67 +1,188 @@
 local playerInventories = {}
 
+local DEFAULT_INVENTORY = {
+    { name = 'id_card', count = 1 },
+    { name = 'driver_license', count = 1 },
+    { name = 'phone', count = 1 },
+    { name = 'bread', count = 2 },
+    { name = 'burger_bleeder', count = 2 },
+    { name = 'water', count = 3 },
+    { name = 'soda_ecola', count = 2 },
+    { name = 'coffee', count = 1 }
+}
+
+local function notify(src, kind, message)
+    TriggerClientEvent('rp_core:client:notify', src, message, kind or 'info')
+end
+
+local function normalizeInventory(raw)
+    local normalized = {}
+    if type(raw) ~= 'table' then return normalized end
+    for _, saved in ipairs(raw) do
+        local name = type(saved) == 'table' and saved.name
+        local count = type(saved) == 'table' and tonumber(saved.count)
+        local definition = name and Config.DefaultItems[name]
+        if definition and count and count % 1 == 0 and count > 0 and count <= 10000 then
+            normalized[#normalized + 1] = {
+                name = name, count = count,
+                label = definition.label, weight = definition.weight
+            }
+        end
+    end
+    return normalized
+end
+
+local function saveInventory(player)
+    if not player or not player.charId or not playerInventories[player.source] then return false end
+    local ok, err = pcall(function()
+        MySQL.update.await([[
+            INSERT INTO player_inventories (character_id, items)
+            VALUES (?, ?)
+            ON DUPLICATE KEY UPDATE items = VALUES(items)
+        ]], { player.charId, json.encode(playerInventories[player.source]) })
+    end)
+    if not ok then
+        print(('[rp_inventory] Save failed for character %s: %s'):format(player.charId, tostring(err)))
+        return false
+    end
+    return true
+end
+
+local function getInventoryWeight(inventory)
+    local weight = 0.0
+    for _, item in ipairs(inventory) do
+        weight = weight + (item.weight * item.count)
+    end
+    return weight
+end
+
+local function sendInventory(src, player)
+    local inventory = playerInventories[src]
+    if not inventory then return end
+    TriggerClientEvent('rp_inventory:receiveData', src, {
+        inventory = inventory,
+        currentWeight = getInventoryWeight(inventory),
+        cash = player.cash or 0,
+        bank = player.bank or 0
+    })
+end
+
+local function loadInventory(player)
+    local row = MySQL.single.await('SELECT items FROM player_inventories WHERE character_id = ?', { player.charId })
+    if row and row.items then
+        local ok, decoded = pcall(json.decode, row.items)
+        if ok then
+            playerInventories[player.source] = normalizeInventory(decoded)
+            return
+        end
+        print(('[rp_inventory] Invalid saved inventory for character %s; restoring defaults'):format(player.charId))
+    end
+
+    playerInventories[player.source] = normalizeInventory(DEFAULT_INVENTORY)
+    saveInventory(player)
+end
+
 RegisterNetEvent('rp_inventory:requestData', function()
     local src = source
-    local player = exports['rp_core']:GetPlayer(src)
+    local player = exports['rp_core']:GetPlayerFromId(src)
     if not player then return end
-
     if not playerInventories[src] then
-        -- Inventaire initial avec nourriture et boisson diversifiées
-        playerInventories[src] = {
-            { name = 'id_card', count = 1, label = Config.DefaultItems['id_card'].label, weight = Config.DefaultItems['id_card'].weight },
-            { name = 'driver_license', count = 1, label = Config.DefaultItems['driver_license'].label, weight = Config.DefaultItems['driver_license'].weight },
-            { name = 'phone', count = 1, label = Config.DefaultItems['phone'].label, weight = Config.DefaultItems['phone'].weight },
-            { name = 'bread', count = 2, label = Config.DefaultItems['bread'].label, weight = Config.DefaultItems['bread'].weight },
-            { name = 'burger_bleeder', count = 2, label = Config.DefaultItems['burger_bleeder'].label, weight = Config.DefaultItems['burger_bleeder'].weight },
-            { name = 'water', count = 3, label = Config.DefaultItems['water'].label, weight = Config.DefaultItems['water'].weight },
-            { name = 'soda_ecola', count = 2, label = Config.DefaultItems['soda_ecola'].label, weight = Config.DefaultItems['soda_ecola'].weight },
-            { name = 'coffee', count = 1, label = Config.DefaultItems['coffee'].label, weight = Config.DefaultItems['coffee'].weight }
-        }
+        local ok, err = pcall(loadInventory, player)
+        if not ok then
+            print(('[rp_inventory] Load failed for character %s: %s'):format(player.charId, tostring(err)))
+            notify(src, 'error', 'Impossible de charger votre inventaire. Réessayez plus tard.')
+            return
+        end
     end
-
-    local currentWeight = 0.0
-    for _, item in ipairs(playerInventories[src]) do
-        currentWeight = currentWeight + (item.weight * item.count)
-    end
-
-    TriggerClientEvent('rp_inventory:receiveData', src, {
-        inventory = playerInventories[src],
-        currentWeight = currentWeight,
-        cash = player.cash or 2500,
-        bank = player.bank or 10000
-    })
+    sendInventory(src, player)
 end)
 
 RegisterNetEvent('rp_inventory:useItem', function(itemName)
     local src = source
-    local player = exports['rp_core']:GetPlayer(src)
-    if not player or not playerInventories[src] then return end
+    local player = exports['rp_core']:GetPlayerFromId(src)
+    local inventory = playerInventories[src]
+    if not player or not inventory or type(itemName) ~= 'string' then return end
 
     local itemDef = Config.DefaultItems[itemName]
-
-    for idx, item in ipairs(playerInventories[src]) do
-        if item.name == itemName then
-            if item.count > 1 then
-                item.count = item.count - 1
+    if not itemDef then return end
+    for index, item in ipairs(inventory) do
+        if item.name == itemName and item.count > 0 then
+            if item.count > 1 then item.count = item.count - 1 else table.remove(inventory, index) end
+            saveInventory(player)
+            if itemDef.type == 'food' then
+                notify(src, 'success', ('Vous mangez : %s (+%d faim)'):format(itemDef.label, itemDef.hunger or 20))
+            elseif itemDef.type == 'drink' then
+                notify(src, 'success', ('Vous buvez : %s (+%d soif)'):format(itemDef.label, itemDef.thirst or 25))
+            elseif itemDef.type == 'medical' then
+                notify(src, 'success', ('Vous utilisez : %s (+%d PV)'):format(itemDef.label, itemDef.heal or 50))
             else
-                table.remove(playerInventories[src], idx)
+                notify(src, 'info', 'Objet utilisé : ' .. itemDef.label)
             end
-
-            if itemDef then
-                if itemDef.type == 'food' then
-                    TriggerClientEvent('rp_core:notify', src, 'success', string.format('Vous mangez : %s (+%d faim)', itemDef.label, itemDef.hunger or 20))
-                elseif itemDef.type == 'drink' then
-                    TriggerClientEvent('rp_core:notify', src, 'success', string.format('Vous buvez : %s (+%d soif)', itemDef.label, itemDef.thirst or 25))
-                elseif itemDef.type == 'medical' then
-                    TriggerClientEvent('rp_core:notify', src, 'success', string.format('Vous utilisez : %s (+%d PV)', itemDef.label, itemDef.heal or 50))
-                else
-                    TriggerClientEvent('rp_core:notify', src, 'info', 'Objet utilisé : ' .. itemDef.label)
-                end
-            else
-                TriggerClientEvent('rp_core:notify', src, 'info', 'Objet utilisé : ' .. item.label)
-            end
-            break
+            sendInventory(src, player)
+            return
         end
     end
-    TriggerClientEvent('rp_inventory:requestData', src)
+    notify(src, 'error', 'Cet objet n’est pas dans votre inventaire.')
+end)
+
+RegisterNetEvent('rp_inventory:giveItem', function(rawTargetId, itemName, rawCount)
+    local src = source
+    local targetId, count = tonumber(rawTargetId), tonumber(rawCount)
+    local player = exports['rp_core']:GetPlayerFromId(src)
+    local target = targetId and exports['rp_core']:GetPlayerFromId(targetId)
+    if not player or not target or targetId == src or type(itemName) ~= 'string'
+        or not count or count % 1 ~= 0 or count < 1 or count > 100 then return end
+    local definition = Config.DefaultItems[itemName]
+    local sourceInventory, targetInventory = playerInventories[src], playerInventories[targetId]
+    if not definition or not sourceInventory or not targetInventory then
+        notify(src, 'error', 'Inventaire indisponible ou objet invalide.')
+        return
+    end
+    local sourceIndex, sourceItem
+    for index, item in ipairs(sourceInventory) do
+        if item.name == itemName then sourceIndex, sourceItem = index, item break end
+    end
+    if not sourceItem or sourceItem.count < count then
+        notify(src, 'error', 'Quantité insuffisante.')
+        return
+    end
+    local sourcePed, targetPed = GetPlayerPed(src), GetPlayerPed(targetId)
+    if sourcePed == 0 or targetPed == 0 or #(GetEntityCoords(sourcePed) - GetEntityCoords(targetPed)) > 3.0 then
+        notify(src, 'error', 'Le joueur est trop éloigné.')
+        return
+    end
+    if getInventoryWeight(targetInventory) + definition.weight * count > Config.MaxWeight then
+        notify(src, 'error', 'Le joueur ne peut pas porter cette charge.')
+        return
+    end
+
+    sourceItem.count = sourceItem.count - count
+    if sourceItem.count == 0 then table.remove(sourceInventory, sourceIndex) end
+    local existing
+    for _, item in ipairs(targetInventory) do if item.name == itemName then existing = item break end end
+    if existing then existing.count = existing.count + count
+    else targetInventory[#targetInventory + 1] = { name = itemName, count = count, label = definition.label, weight = definition.weight } end
+
+    saveInventory(player)
+    saveInventory(target)
+    notify(src, 'success', 'Objet transféré.')
+    notify(targetId, 'success', 'Vous avez reçu ' .. count .. ' x ' .. definition.label .. '.')
+    sendInventory(src, player)
+    sendInventory(targetId, target)
+end)
+
+RegisterNetEvent('rp_inventory:dropItem', function(itemName, rawCount)
+    local src = source
+    local count = tonumber(rawCount)
+    local player = exports['rp_core']:GetPlayerFromId(src)
+    if not player or type(itemName) ~= 'string' or not count or count % 1 ~= 0 or count < 1 or count > 100 then return end
+    -- Ground drops are deliberately rejected until a server-owned pickup entity flow is installed.
+    notify(src, 'error', 'Le dépôt au sol est temporairement désactivé.')
+end)
+
+AddEventHandler('playerDropped', function()
+    local src = source
+    local player = exports['rp_core']:GetPlayerFromId(src)
+    if player then saveInventory(player) end
+    playerInventories[src] = nil
 end)
