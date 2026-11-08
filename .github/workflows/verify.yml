@@ -37,10 +37,17 @@ jobs:
       - name: Compile every Lua file
         shell: bash
         run: |
-          set -euo pipefail
+          set -uo pipefail
+          errors=0
           while IFS= read -r -d '' file; do
-            luac5.4 -p "$file"
+            if ! luac5.4 -p "$file"; then
+              errors=$((errors + 1))
+            fi
           done < <(find resources -type f -name '*.lua' -print0)
+          if [ "$errors" -ne 0 ]; then
+            echo "Lua syntax errors found: $errors"
+            exit 1
+          fi
 
       - name: Check every NUI JavaScript file
         shell: bash
