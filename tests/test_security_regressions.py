@@ -116,6 +116,10 @@ def test_interaction_actions_are_authorized_and_distance_checked():
     assert "GetPlayerFromId" in source
     assert "IsEntityDead(targetPed)" in source
     assert "rp_interactions:medicalAction" in source
+    assert "isOnDuty(jobName, src)" in source
+    for job in ("police", "ambulance", "mechanic", "taxi"):
+        duty_source = read(f"resources/[JOB]/job_{job}/server/main.lua")
+        assert "exports('IsOnDuty'" in duty_source
     client = read("resources/[FUNCTION]/rp_interactions/client/main.lua")
     config = read("resources/[FUNCTION]/rp_interactions/shared/config.lua")
     assert "NetworkResurrectLocalPlayer" in client
