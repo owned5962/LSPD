@@ -2,8 +2,11 @@ local dutyPlayers = {}
 
 RegisterNetEvent('job_casino_dealer:setDuty', function(status)
     local src = source
-    local player = exports['rp_core']:GetPlayer(src)
-    if not player then return end
+    local player = exports['rp_core']:GetPlayerFromId(src)
+    if not player or player.job ~= 'casino_dealer' or type(status) ~= 'boolean' then
+        TriggerClientEvent('rp_core:client:notify', src, 'Accès refusé ou état de service invalide.', 'error')
+        return
+    end
 
     dutyPlayers[src] = status
     TriggerClientEvent('job_casino_dealer:dutyUpdated', src, status)
