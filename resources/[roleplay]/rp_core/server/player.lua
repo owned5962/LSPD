@@ -38,20 +38,30 @@ function CreateRPPlayer(source, identifier, charData)
     function self.addCash(amount)
         amount = tonumber(amount)
         if not amount or amount <= 0 or amount % 1 ~= 0 then return false end
+        local previous = self.cash
         self.cash = self.cash + amount
+        if not self.save() then
+            self.cash = previous
+            TriggerClientEvent('rp_core:client:updateCash', self.source, self.cash)
+            return false
+        end
         TriggerClientEvent('rp_core:client:updateCash', self.source, self.cash)
         TriggerClientEvent('rp_core:client:notify', self.source, '+ ' .. Utils.FormatCurrency(amount) .. ' (Cash)', 'success')
-        self.save()
         return true
     end
 
     function self.removeCash(amount)
         amount = tonumber(amount)
         if not amount or amount <= 0 or amount % 1 ~= 0 or self.cash < amount then return false end
+        local previous = self.cash
         self.cash = self.cash - amount
+        if not self.save() then
+            self.cash = previous
+            TriggerClientEvent('rp_core:client:updateCash', self.source, self.cash)
+            return false
+        end
         TriggerClientEvent('rp_core:client:updateCash', self.source, self.cash)
         TriggerClientEvent('rp_core:client:notify', self.source, '- ' .. Utils.FormatCurrency(amount) .. ' (Cash)', 'warning')
-        self.save()
         return true
     end
 
