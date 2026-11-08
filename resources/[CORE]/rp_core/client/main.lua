@@ -9,7 +9,9 @@ PlayerData = {
     jobGradeLabel = 'Demandeur',
     cash = 0,
     bank = 0,
-    group = 'user'
+    group = 'user',
+    hunger = 100,
+    thirst = 100
 }
 
 RegisterNetEvent('rp_core:client:setPlayerData', function(data)
@@ -35,4 +37,9 @@ end)
 
 exports('GetPlayerData', function()
     return PlayerData
+end)
+
+RegisterNetEvent('rp_core:client:updateNeeds', function(hunger, thirst)
+    PlayerData.hunger = math.max(0, math.min(100, tonumber(hunger) or PlayerData.hunger or 100))
+    PlayerData.thirst = math.max(0, math.min(100, tonumber(thirst) or PlayerData.thirst or 100))
 end)
