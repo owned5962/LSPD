@@ -137,11 +137,13 @@ end)
 
 AddEventHandler('playerConnecting', function(playerName, setKickReason, deferrals)
     local src = source
-    local identifier = getLicense(src)
-    if not identifier then return end
-
     deferrals.defer()
     Wait(0)
+    local identifier = getLicense(src)
+    if not identifier then
+        deferrals.done('Impossible de vérifier votre identifiant FiveM. Réessayez.')
+        return
+    end
     local ok, ban = pcall(function()
         return MySQL.single.await('SELECT reason FROM player_bans WHERE identifier = ?', { identifier })
     end)
