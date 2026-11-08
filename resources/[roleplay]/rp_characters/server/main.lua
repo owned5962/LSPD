@@ -197,12 +197,12 @@ RegisterNetEvent('rp_characters:server:createCharacter', function(data)
         end
     end
 
-    local charId = MySQL.insert.await(
+    local insertOk, charId = pcall(MySQL.insert.await,
         'INSERT INTO characters (identifier, char_id, firstname, lastname, dateofbirth, sex, height, cash, bank, job, job_grade, position, skin) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
         { identifier, slot, firstname, lastname, data.dateofbirth, data.gender, height,
           2500, 10000, 'unemployed', 0, json.encode(spawn), json.encode(skin) }
     )
-    if not charId then
+    if not insertOk or not charId then
         Notify(src, 'Impossible d’enregistrer le personnage en base de données.')
         return
     end
