@@ -32,10 +32,17 @@ def test_database_schema():
 
 def test_dedicated_jobs():
     jobs_dir = os.path.join(BASE_DIR, 'resources', '[JOB]')
-    assert os.path.exists(jobs_dir), "resources/[jobs] directory missing!"
-    job_folders = [d for d in os.listdir(jobs_dir) if d.startswith('job_')]
+    assert os.path.exists(jobs_dir), "resources/[JOB] directory missing!"
+    job_folders = sorted(d for d in os.listdir(jobs_dir) if d.startswith('job_'))
     assert len(job_folders) == 50, f"Expected 50 jobs, found {len(job_folders)}"
-    print(f"✓ All {len(job_folders)} dedicated job resources verified successfully.")
+    for job in job_folders:
+        job_dir = os.path.join(jobs_dir, job)
+        for relative in ('fxmanifest.lua', 'config.lua', 'client/main.lua', 'server/main.lua'):
+            assert os.path.isfile(os.path.join(job_dir, relative)), f"{job} missing {relative}"
+        with open(os.path.join(job_dir, 'config.lua'), encoding='utf-8') as config_file:
+            config = config_file.read()
+        assert f"Config.Job = '{job[4:]}'" in config, f"{job} Config.Job mismatch"
+    print(f"✓ All {len(job_folders)} job resources have manifests, config, client and server files.")
 
 def test_core_resources():
     roleplay_dir = os.path.join(BASE_DIR, 'resources', '[CORE]')
