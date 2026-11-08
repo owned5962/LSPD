@@ -1,7 +1,7 @@
 Config = {}
 
 Config.Job = 'miner'
-Config.Label = 'Mineur d'Extraction'
+Config.Label = "Mineur d'Extraction"
 Config.Category = 'industrie'
 
 Config.DutyCoords = vector3(240.0, -1380.0, 33.7)
