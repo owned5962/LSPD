@@ -49,7 +49,7 @@ RegisterNetEvent('rp_economy:server:deposit', function(rawAmount)
         { amount, amount, player.charId, player.identifier, amount }
     )
     if not ok or tonumber(affected) ~= 1 then
-        notify(src, 'error', 'Dépôt impossible : solde insuffisant ou base indisponible.')
+        notify(src, 'Dépôt impossible : solde insuffisant ou base indisponible.', 'error')
         return
     end
     player.cash, player.bank = player.cash - amount, player.bank + amount
@@ -71,7 +71,7 @@ RegisterNetEvent('rp_economy:server:withdraw', function(rawAmount)
         { amount, amount, player.charId, player.identifier, amount }
     )
     if not ok or tonumber(affected) ~= 1 then
-        notify(src, 'error', 'Retrait impossible : solde insuffisant ou base indisponible.')
+        notify(src, 'Retrait impossible : solde insuffisant ou base indisponible.', 'error')
         return
     end
     player.bank, player.cash = player.bank - amount, player.cash + amount
@@ -99,7 +99,7 @@ RegisterNetEvent('rp_economy:server:transfer', function(rawTargetId, rawAmount)
         { player.charId, target.charId, amount, amount, player.identifier, target.identifier, amount }
     )
     if not ok or tonumber(affected) ~= 2 then
-        notify(src, 'error', 'Virement impossible : solde modifié ou base indisponible.')
+        notify(src, 'Virement impossible : solde modifié ou base indisponible.', 'error')
         return
     end
     player.bank, target.bank = player.bank - amount, target.bank + amount
