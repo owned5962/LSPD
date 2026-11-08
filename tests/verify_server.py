@@ -31,32 +31,29 @@ def test_database_schema():
     print(f"✓ database.sql verified successfully with all {len(tables)} tables.")
 
 def test_dedicated_jobs():
-    jobs_dir = os.path.join(BASE_DIR, 'resources', '[jobs]')
+    jobs_dir = os.path.join(BASE_DIR, 'resources', '[JOB]')
     assert os.path.exists(jobs_dir), "resources/[jobs] directory missing!"
     job_folders = [d for d in os.listdir(jobs_dir) if d.startswith('job_')]
     assert len(job_folders) == 50, f"Expected 50 jobs, found {len(job_folders)}"
     print(f"✓ All {len(job_folders)} dedicated job resources verified successfully.")
 
 def test_core_resources():
-    roleplay_dir = os.path.join(BASE_DIR, 'resources', '[roleplay]')
+    roleplay_dir = os.path.join(BASE_DIR, 'resources', '[CORE]')
+    function_dir = os.path.join(BASE_DIR, 'resources', '[FUNCTION]')
     expected_resources = [
         'rp_core',
-        'rp_ui',
-        'rp_inventory',
-        'rp_interactions',
-        'rp_clothing',
-        'rp_characters',
-        'rp_economy',
-        'rp_jobs',
-        'rp_loadscreen',
-        'rp_tablet_admin',
-        'rp_anticheat'
+        'rp_characters'
     ]
     for res in expected_resources:
         res_dir = os.path.join(roleplay_dir, res)
         assert os.path.exists(res_dir), f"Missing core resource {res}"
         assert os.path.exists(os.path.join(res_dir, 'fxmanifest.lua')), f"Missing manifest for {res}"
-    print(f"✓ All {len(expected_resources)} core roleplay modules (including anticheat) verified successfully.")
+    expected_functions = ['rp_ui', 'rp_inventory', 'rp_interactions', 'rp_clothing', 'rp_economy', 'rp_jobs', 'rp_loadscreen', 'rp_tablet_admin', 'rp_anticheat']
+    for res in expected_functions:
+        res_dir = os.path.join(function_dir, res)
+        assert os.path.exists(res_dir), f"Missing function resource {res}"
+        assert os.path.exists(os.path.join(res_dir, 'fxmanifest.lua')), f"Missing manifest for {res}"
+    print(f"✓ All {len(expected_resources) + len(expected_functions)} core/function resources verified successfully.")
 
 if __name__ == '__main__':
     print("========================================")
