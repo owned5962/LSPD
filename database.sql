@@ -74,3 +74,60 @@ CREATE TABLE IF NOT EXISTS `admin_logs` (
     `details` TEXT DEFAULT NULL,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ============================================================
+-- ESX Core Expansion Modules: Items, Outfits, Invoices, Stashes
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS `items` (
+    `name` VARCHAR(50) NOT NULL PRIMARY KEY,
+    `label` VARCHAR(100) NOT NULL,
+    `weight` DECIMAL(10,2) NOT NULL DEFAULT 1.0,
+    `rare` TINYINT(1) NOT NULL DEFAULT 0,
+    `can_remove` TINYINT(1) NOT NULL DEFAULT 1
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+INSERT IGNORE INTO `items` (`name`, `label`, `weight`, `rare`, `can_remove`) VALUES
+('bread', 'Pain', 0.5, 0, 1),
+('water', 'Bouteille d\'eau', 0.5, 0, 1),
+('medikit', 'Kit de secours', 1.0, 0, 1),
+('bandage', 'Bandage', 0.2, 0, 1),
+('repairkit', 'Kit de réparation', 3.0, 0, 1),
+('handcuffs', 'Menottes de police', 0.8, 0, 1),
+('phone', 'Téléphone portable', 0.2, 0, 1),
+('id_card', 'Carte d\'identité', 0.1, 0, 0),
+('driver_license', 'Permis de conduire', 0.1, 0, 0),
+('radio', 'Talkie-walkie', 0.5, 0, 1);
+
+CREATE TABLE IF NOT EXISTS `billing` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `identifier` VARCHAR(64) NOT NULL,
+    `sender` VARCHAR(64) NOT NULL,
+    `target_type` VARCHAR(50) NOT NULL DEFAULT 'player',
+    `target` VARCHAR(64) NOT NULL,
+    `label` VARCHAR(255) NOT NULL,
+    `amount` INT NOT NULL,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX (`identifier`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `user_outfits` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `identifier` VARCHAR(64) NOT NULL,
+    `character_id` INT NOT NULL,
+    `name` VARCHAR(50) NOT NULL,
+    `skin_data` LONGTEXT NOT NULL,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX (`identifier`),
+    INDEX (`character_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `job_grades` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `job_name` VARCHAR(50) NOT NULL,
+    `grade` INT NOT NULL,
+    `name` VARCHAR(50) NOT NULL,
+    `label` VARCHAR(100) NOT NULL,
+    `salary` INT NOT NULL DEFAULT 500,
+    INDEX (`job_name`, `grade`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
