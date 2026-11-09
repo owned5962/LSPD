@@ -196,6 +196,8 @@ def test_job_duty_events_validate_job_and_boolean_status():
         source = read(f"resources/[JOB]/job_{job}/server/main.lua")
         assert f"player.job ~= '{job}'" in source, job
         assert "type(status) ~= 'boolean'" in source, job
+        assert "isAt(Config.DutyCoords, src, 5.0)" in source, job
+        assert "AddEventHandler('playerDropped'" in source, job
 
 
 if __name__ == "__main__":
