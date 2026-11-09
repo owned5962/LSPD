@@ -62,6 +62,24 @@ def test_core_resources():
         assert os.path.exists(os.path.join(res_dir, 'fxmanifest.lua')), f"Missing manifest for {res}"
     print(f"✓ All {len(expected_resources) + len(expected_functions)} core/function resources verified successfully.")
 
+
+def test_all_resources_are_started_by_resource_name():
+    resources_dir = os.path.join(BASE_DIR, 'resources')
+    with open(os.path.join(BASE_DIR, 'server.cfg'), encoding='utf-8') as cfg_file:
+        cfg = cfg_file.read()
+    manifests = []
+    for category in ('[CORE]', '[JOB]', '[FUNCTION]'):
+        category_dir = os.path.join(resources_dir, category)
+        assert os.path.isdir(category_dir), f"Missing category {category}"
+        for name in os.listdir(category_dir):
+            resource_dir = os.path.join(category_dir, name)
+            if os.path.isdir(resource_dir) and os.path.isfile(os.path.join(resource_dir, 'fxmanifest.lua')):
+                manifests.append(name)
+    missing = [name for name in manifests if f"ensure {name}" not in cfg]
+    assert not missing, f"Resources not started by server.cfg: {missing}"
+    assert len([name for name in manifests if name.startswith('job_')]) == 50
+    print(f"✓ All {len(manifests)} categorized resources are referenced in server.cfg.")
+
 if __name__ == '__main__':
     print("========================================")
     print("Running Full FiveM RP Verification Test")
@@ -70,6 +88,7 @@ if __name__ == '__main__':
     test_database_schema()
     test_dedicated_jobs()
     test_core_resources()
+    test_all_resources_are_started_by_resource_name()
     print("========================================")
     print("ALL VERIFICATION CHECKS PASSED (100%)")
     print("========================================")
