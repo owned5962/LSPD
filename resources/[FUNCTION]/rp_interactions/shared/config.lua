@@ -6,7 +6,8 @@ Config.JobActions = {
         label = 'LSPD / Police',
         actions = {
             { id = 'cuff', label = 'Menotter / Démenotter', icon = 'fa-handcuffs' },
-            { id = 'fine', label = 'Mettre une amende', icon = 'fa-receipt' }
+            { id = 'fine', label = 'Mettre une amende', icon = 'fa-receipt' },
+            { id = 'impound', label = 'Mettre en fourrière', icon = 'fa-truck-ramp-box' }
         }
     },
     ['ambulance'] = {
@@ -20,7 +21,15 @@ Config.JobActions = {
     ['mechanic'] = {
         label = 'Benny\'s / Mécano',
         actions = {
-            { id = 'billing', label = 'Facturer les réparations', icon = 'fa-file-invoice-dollar' }
+            { id = 'billing', label = 'Facturer les réparations', icon = 'fa-file-invoice-dollar' },
+            { id = 'repair', label = 'Réparer le véhicule', icon = 'fa-wrench' },
+            { id = 'clean', label = 'Nettoyer le véhicule', icon = 'fa-spray-can-sparkles' }
+        }
+    },
+    ['towtruck'] = {
+        label = 'Dépannage / Fourrière',
+        actions = {
+            { id = 'impound', label = 'Remorquer / mettre en fourrière', icon = 'fa-truck-ramp-box' }
         }
     },
     ['taxi'] = {
