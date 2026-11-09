@@ -260,6 +260,15 @@ def test_character_creator_persists_genetics_and_face_morphs():
 
 
 
+def test_inventory_use_requires_persisted_inventory_row():
+    source = read("resources/[FUNCTION]/rp_inventory/server/main.lua")
+    load_handler = source.split("local function loadInventory(player)", 1)[1].split("RegisterNetEvent('rp_inventory:requestData'", 1)[0]
+    use_handler = source.split("RegisterNetEvent('rp_inventory:useItem'", 1)[1].split("RegisterNetEvent('rp_inventory:giveItem'", 1)[0]
+    assert "if not saveInventory(player) then" in load_handler
+    assert "Unable to persist the initial inventory" in load_handler
+    assert "INSERT INTO player_inventories (character_id, items) VALUES (?, ?) ON DUPLICATE KEY UPDATE items = VALUES(items)" in use_handler
+
+
 def test_admin_economy_and_job_actions_only_report_persisted_success():
     source = read("resources/[FUNCTION]/rp_tablet_admin/server/main.lua")
     assert "succeeded = target.addCash(amount)" in source
@@ -283,6 +292,7 @@ if __name__ == "__main__":
         test_new_character_onboarding_is_shown_and_persisted_per_character,
         test_character_appearance_is_applied_and_persisted,
         test_character_creator_persists_genetics_and_face_morphs,
+        test_inventory_use_requires_persisted_inventory_row,
         test_admin_economy_and_job_actions_only_report_persisted_success,
         test_clothing_presets_and_outfits_are_saved,
         test_clothing_saved_outfits_can_be_listed_and_applied_safely,
