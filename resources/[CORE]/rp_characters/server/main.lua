@@ -36,6 +36,47 @@ local function DecodeJson(value, fallback)
     return ok and type(decoded) == 'table' and decoded or fallback
 end
 
+-- The onboarding state is stored in this character's metadata, not on the account.
+-- A player who leaves before finishing will see the tutorial again on next login.
+local tutorialStarted = {}
+
+RegisterNetEvent('rp_characters:server:requestTutorial', function()
+    local src = source
+    local player = exports['rp_core']:GetPlayerFromId(src)
+    if not player or type(player.metadata) ~= 'table' then return end
+    if player.metadata.tutorialCompleted == true then return end
+
+    tutorialStarted[src] = true
+    TriggerClientEvent('rp_characters:client:startTutorial', src)
+end)
+
+RegisterNetEvent('rp_characters:server:completeTutorial', function()
+    local src = source
+    if tutorialStarted[src] ~= true then return end
+
+    local player = exports['rp_core']:GetPlayerFromId(src)
+    if not player or type(player.metadata) ~= 'table' then
+        tutorialStarted[src] = nil
+        return
+    end
+
+    local previous = player.metadata.tutorialCompleted
+    player.metadata.tutorialCompleted = true
+    if not player.save() then
+        player.metadata.tutorialCompleted = previous
+        Notify(src, 'La progression du tutoriel n’a pas pu être sauvegardée. Il sera proposé à votre prochaine connexion.', 'warning')
+        tutorialStarted[src] = nil
+        return
+    end
+
+    tutorialStarted[src] = nil
+    Notify(src, 'Tutoriel terminé ! Bonne aventure à Los Santos.', 'success')
+end)
+
+AddEventHandler('playerDropped', function()
+    tutorialStarted[source] = nil
+end)
+
 local function LoadCharacter(src, identifier, userGroup, char)
     local currentSession = exports['rp_core']:GetPlayerByIdentifier(identifier)
     if currentSession then
