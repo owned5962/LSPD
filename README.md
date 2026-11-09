@@ -41,8 +41,10 @@ La migration adapte le champ de date de naissance. Elle ne supprime aucun person
 
 ## État fonctionnel connu
 
-- Les 50 ressources métiers sont présentes, compilent et valident leur métier côté serveur. La majorité ne contient toutefois que la prise de service : les missions propres à chaque métier (tournées, récolte, fabrication, livraison, vente, progression et véhicules adaptés) restent à concevoir et implémenter. Elles ne doivent pas être présentées comme des métiers complets.
+- Les 50 ressources métiers sont présentes et compilées. La prise de service vérifie côté serveur le métier, le type de statut et la proximité du point de service ; l'état de service est nettoyé à la déconnexion. La majorité ne contient toutefois que la prise de service : les missions propres à chaque métier (tournées, récolte, fabrication, livraison, vente, progression et véhicules adaptés) restent à concevoir et implémenter. Elles ne doivent pas être présentées comme des métiers complets.
 - Les actions de menottage, amende, facturation, soins et réanimation sont disponibles avec contrôle de proximité et prise de service.
+- Les actions véhicule de mécanicien (réparation/nettoyage) et de police/dépanneur (fourrière) sont traitées côté serveur avec vérification du métier, du service, de l'entité réseau et de la proximité. La fourrière refuse un véhicule occupé.
+- Les tenues sauvegardées peuvent être consultées et réappliquées depuis la boutique ; leur enregistrement met à jour la tenue du personnage et l'historique en transaction SQL.
 - Les consommables alimentaires, boissons et soins sont persistés en SQL. Les objets utilitaires sans effet serveur restent volontairement inutilisables.
 - Le dépôt au sol et les actions de réparation/nettoyage/fourrière de véhicules restent désactivés tant que leur cycle serveur sécurisé n'est pas implémenté.
 
@@ -60,7 +62,7 @@ Les contrôles statiques et compilations sont automatisés dans GitHub Actions. 
 - Le dépôt au sol reste désactivé tant qu'un système serveur de ramassage sécurisé n'est pas installé.
 - Les bannissements anticheat sont persistants par identifiant `license:` ; la commande console ou staff `/rp_unban license:...` permet de les lever.
 - Les sauvegardes automatiques réduisent la perte de données, mais une sauvegarde régulière de la base reste indispensable.
-- Les métadonnées d'apparence sont stockées ; leur application complète au ped doit être raccordée au système de vêtements/skin du serveur.
+- Les métadonnées d'apparence et les tenues sauvegardées sont stockées en SQL ; les variations de vêtements et accessoires peuvent être appliquées depuis le système de personnages et la boutique.
 
 ## Permissions administrateur
 La tablette vérifie la permission ACE `rp_admin` ou le groupe serveur `admin` / `superadmin`. Aucun privilège n'est accordé selon le numéro de joueur.
