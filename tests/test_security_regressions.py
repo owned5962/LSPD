@@ -69,6 +69,20 @@ def test_character_ui_has_selection_and_creation_callbacks():
     assert "textContent" in ui
 
 
+def test_new_character_onboarding_is_shown_and_persisted_per_character():
+    client = read("resources/[CORE]/rp_characters/client/main.lua")
+    server = read("resources/[CORE]/rp_characters/server/main.lua")
+    assert "rp_characters:server:requestTutorial" in client
+    assert "rp_characters:client:startTutorial" in client
+    assert "tutorialPages" in client and "TON INVENTAIRE" in client
+    assert "F2" in client and "/jobcenter" in client and "F6" in client
+    assert "rp_characters:server:completeTutorial" in client
+    assert "tutorialStarted[src] ~= true" in server
+    assert "player.metadata.tutorialCompleted == true" in server
+    assert "player.metadata.tutorialCompleted = true" in server
+    assert "if not player.save() then" in server
+
+
 def test_character_appearance_is_applied_and_persisted():
     client = read("resources/[CORE]/rp_characters/client/main.lua")
     server = read("resources/[CORE]/rp_characters/server/main.lua")
@@ -235,6 +249,7 @@ if __name__ == "__main__":
         test_database_schema_has_unique_character_slots_and_one_job_grades_table,
         test_startup_orders_oxmysql_before_core,
         test_character_ui_has_selection_and_creation_callbacks,
+        test_new_character_onboarding_is_shown_and_persisted_per_character,
         test_character_appearance_is_applied_and_persisted,
         test_clothing_presets_and_outfits_are_saved,
         test_clothing_saved_outfits_can_be_listed_and_applied_safely,
