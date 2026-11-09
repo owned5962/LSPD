@@ -27,7 +27,7 @@ local tutorialPages = {
         lines = {
             'Tu commences avec 2 500 $ en poche et 10 000 $ en banque.',
             'Utilise /bank pour accéder à ton compte bancaire.',
-            'Les distributeurs et banques sont signalés sur ta carte.'
+            'Les principales banques sont indiquées sur ta carte.'
         }
     },
     {
@@ -35,7 +35,7 @@ local tutorialPages = {
         lines = {
             'Rends-toi au Pôle Emploi ou utilise /jobcenter pour découvrir les métiers.',
             'Le serveur propose de nombreux métiers civils et services publics.',
-            'Une fois en poste, appuie sur F6 pour ouvrir le menu de ton métier.'
+            'Une fois ton métier choisi, rends-toi sur son lieu de travail pour découvrir les interactions disponibles.'
         }
     },
     {
@@ -81,11 +81,12 @@ local function FinishTutorial()
 end
 
 RegisterNetEvent('rp_characters:client:startTutorial', function()
-    if tutorialActive or IsPauseMenuActive() then return end
+    if tutorialActive then return end
     tutorialStep = 1
     tutorialActive = true
 
     CreateThread(function()
+        while tutorialActive and IsPauseMenuActive() do Wait(250) end
         while tutorialActive do
             Wait(0)
             local page = tutorialPages[tutorialStep]

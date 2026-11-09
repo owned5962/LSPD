@@ -75,7 +75,8 @@ def test_new_character_onboarding_is_shown_and_persisted_per_character():
     assert "rp_characters:server:requestTutorial" in client
     assert "rp_characters:client:startTutorial" in client
     assert "tutorialPages" in client and "TON INVENTAIRE" in client
-    assert "F2" in client and "/jobcenter" in client and "F6" in client
+    assert "F2" in client and "/jobcenter" in client
+    assert "lieu de travail" in client and "F6" not in client
     assert "rp_characters:server:completeTutorial" in client
     assert "tutorialStarted[src] ~= true" in server
     assert "player.metadata.tutorialCompleted == true" in server
