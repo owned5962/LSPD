@@ -127,7 +127,10 @@ RegisterNetEvent('rp_crime:server:robNPC', function(rawNetId)
     local netId = tonumber(rawNetId)
     if not player or not netId or netId < 1 or netId % 1 ~= 0 then return end
     local npc = NetworkGetEntityFromNetworkId(netId)
-    if npc == 0 or not DoesEntityExist(npc) or GetEntityType(npc) ~= 1 or npc == GetPlayerPed(src) then return end
+    if npc == 0 or not DoesEntityExist(npc) or GetEntityType(npc) ~= 1 then return end
+    for _, playerId in ipairs(GetPlayers()) do
+        if GetPlayerPed(tonumber(playerId)) == npc then return end
+    end
     local npcCoords = GetEntityCoords(npc)
     if not alive(src) or not nearPoint(src, npcCoords, Config.Robbery.maxDistance) then
         notify(src, 'Approchez-vous d’un passant vivant.', 'error')
