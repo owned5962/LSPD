@@ -61,17 +61,19 @@ RegisterNetEvent('rp_clothing:saveOutfit', function(name, skinData)
     skin.props = appearance.props
     skin.hairStyle = appearance.hairStyle
     skin.hairColor = appearance.hairColor
-    player.skin = skin
 
     local ok, result = pcall(function()
-        MySQL.insert.await(
-            'INSERT INTO user_outfits (identifier, character_id, name, skin_data) VALUES (?, ?, ?, ?)',
-            { player.identifier, player.charId, name, json.encode(appearance) }
-        )
-        MySQL.update.await(
-            'UPDATE characters SET skin = ? WHERE id = ? AND identifier = ?',
-            { json.encode(skin), player.charId, player.identifier }
-        )
+        local committed = MySQL.transaction.await({
+            {
+                query = 'INSERT INTO user_outfits (identifier, character_id, name, skin_data) VALUES (?, ?, ?, ?)',
+                values = { player.identifier, player.charId, name, json.encode(appearance) }
+            },
+            {
+                query = 'UPDATE characters SET skin = ? WHERE id = ? AND identifier = ?',
+                values = { json.encode(skin), player.charId, player.identifier }
+            }
+        })
+        if not committed then error('Outfit transaction rejected') end
     end)
 
     if not ok then
@@ -81,5 +83,6 @@ RegisterNetEvent('rp_clothing:saveOutfit', function(name, skinData)
         return
     end
 
+    player.skin = skin
     Notify(src, ('Tenue « %s » enregistrée et appliquée.'):format(name), 'success')
 end)
