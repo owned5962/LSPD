@@ -23,3 +23,8 @@ end)
 AddEventHandler('playerDropped', function()
     dutyPlayers[source] = nil
 end)
+
+
+exports('IsOnDuty', function(src)
+    return dutyPlayers[tonumber(src)] == true
+end)
