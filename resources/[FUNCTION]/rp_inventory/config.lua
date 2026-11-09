@@ -42,4 +42,16 @@ Config.DefaultItems = {
     ['id_card'] = { label = 'Carte nationale d\'identité', weight = 0.05, type = 'document', icon = 'fas fa-id-card' },
     ['driver_license'] = { label = 'Permis de conduire San Andreas', weight = 0.05, type = 'document', icon = 'fas fa-id-badge' },
     ['radio'] = { label = 'Radio Talkie-Walkie cryptée', weight = 0.5, type = 'tool', icon = 'fas fa-walkie-talkie' }
+
+    -- Produits fictifs de contrebande (RP uniquement)
+    ['weed_bag'] = { label = 'Sachet de cannabis', weight = 0.1, type = 'item', icon = 'fas fa-leaf' },
+    ['coke_bag'] = { label = 'Sachet de poudre blanche', weight = 0.1, type = 'item', icon = 'fas fa-box' },
+    ['meth_bag'] = { label = 'Cristaux de méthamphétamine', weight = 0.1, type = 'item', icon = 'fas fa-gem' },
+    ['heroin_bag'] = { label = 'Poudre brune conditionnée', weight = 0.1, type = 'item', icon = 'fas fa-box' },
+    ['crack_rock'] = { label = 'Caillou de crack', weight = 0.1, type = 'item', icon = 'fas fa-gem' },
+    ['ecstasy_pill'] = { label = 'Comprimé festif', weight = 0.05, type = 'item', icon = 'fas fa-pills' },
+    ['lsd_tab'] = { label = 'Buvar psychédélique', weight = 0.01, type = 'item', icon = 'fas fa-stamp' },
+    ['opium_pack'] = { label = 'Paquet d’opium', weight = 0.1, type = 'item', icon = 'fas fa-box' },
+    ['mushroom_pack'] = { label = 'Champignons hallucinogènes', weight = 0.1, type = 'item', icon = 'fas fa-seedling' },
+    ['pill_pack'] = { label = 'Médicaments détournés', weight = 0.1, type = 'item', icon = 'fas fa-pills' },
 }
