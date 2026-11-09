@@ -263,3 +263,13 @@ input[type="range"] {
 .character-card span { color: #94a3b8; font-size: 12px; }
 .character-card.empty { color: #94a3b8; border-style: dashed; }
 #create-character-btn:disabled { opacity: .5; cursor: not-allowed; }
+
+/* Extended GTA-style genetic and face editor */
+#registration-app { max-height: 94vh; overflow-y: auto; }
+#registration-app .creator-wrapper { padding: 24px; }
+.tabs { flex-wrap: wrap; gap: 5px; margin-bottom: 16px; }
+.tab-btn { min-width: 72px; padding: 9px 7px; font-size: 11px; }
+.section-help { color: #94a3b8; font-size: 12px; line-height: 1.5; }
+.face-sliders { display: flex; flex-direction: column; gap: 12px; max-height: 42vh; overflow-y: auto; padding-right: 6px; }
+#registration-app select { width: 100%; }
+#registration-app input[type="range"] { width: 100%; }

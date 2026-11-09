@@ -238,12 +238,50 @@ RegisterNetEvent('rp_characters:server:createCharacter', function(data)
 
     local skin = {}
     if type(data.skin) == 'table' then
-        local hairStyle, hairColor = tonumber(data.skin.hairStyle), tonumber(data.skin.hairColor)
+        local input = data.skin
+        local hairStyle, hairColor = tonumber(input.hairStyle), tonumber(input.hairColor)
         if hairStyle and hairStyle % 1 == 0 and hairStyle >= 0 and hairStyle <= 100 then skin.hairStyle = hairStyle end
         if hairColor and hairColor % 1 == 0 and hairColor >= 0 and hairColor <= 63 then skin.hairColor = hairColor end
-        if type(data.skin.clothing) == 'string' and #data.skin.clothing <= 32 and not data.skin.clothing:find('[%c<>]') then
-            skin.clothing = data.skin.clothing
+        if type(input.clothing) == 'string' and #input.clothing <= 32 and not input.clothing:find('[%c<>]') then skin.clothing = input.clothing end
+        local function safeNumber(value, minimum, maximum, integer)
+            local number = tonumber(value)
+            if not number or number ~= number or number == math.huge or number == -math.huge then return nil end
+            if integer then number = math.floor(number) end
+            return math.max(minimum, math.min(maximum, number))
         end
+        local blend = type(input.headBlend) == 'table' and input.headBlend or {}
+        skin.headBlend = {
+            shapeFirst = safeNumber(blend.shapeFirst, 0, 45, true) or 0,
+            shapeSecond = safeNumber(blend.shapeSecond, 0, 45, true) or 21,
+            shapeThird = safeNumber(blend.shapeThird, 0, 45, true) or 0,
+            skinFirst = safeNumber(blend.skinFirst, 0, 45, true) or 0,
+            skinSecond = safeNumber(blend.skinSecond, 0, 45, true) or 21,
+            skinThird = safeNumber(blend.skinThird, 0, 45, true) or 0,
+            shapeMix = safeNumber(blend.shapeMix, 0, 1, false) or 0.5,
+            skinMix = safeNumber(blend.skinMix, 0, 1, false) or 0.5,
+            thirdMix = safeNumber(blend.thirdMix, 0, 1, false) or 0.0
+        }
+        skin.faceFeatures = {}
+        if type(input.faceFeatures) == 'table' then
+            for feature = 0, 19 do
+                skin.faceFeatures[tostring(feature)] = safeNumber(input.faceFeatures[tostring(feature)] or input.faceFeatures[feature], -1, 1, false) or 0.0
+            end
+        end
+        skin.overlays = {}
+        if type(input.overlays) == 'table' then
+            for _, overlay in ipairs({ 1, 2 }) do
+                local item = input.overlays[tostring(overlay)] or input.overlays[overlay]
+                if type(item) == 'table' then
+                    skin.overlays[tostring(overlay)] = {
+                        index = safeNumber(item.index, 0, 33, true) or 0,
+                        opacity = safeNumber(item.opacity, 0, 1, false) or 1.0,
+                        color = safeNumber(item.color, 0, 63, true) or 0,
+                        secondColor = safeNumber(item.secondColor, 0, 63, true) or 0
+                    }
+                end
+            end
+        end
+        skin.eyeColor = safeNumber(input.eyeColor, 0, 31, true) or 0
     end
 
     local insertOk, charId = pcall(MySQL.insert.await,

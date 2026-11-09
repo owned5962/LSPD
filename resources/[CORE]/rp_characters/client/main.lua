@@ -153,6 +153,47 @@ local function ApplyCharacterAppearance(gender, skin)
     skin = type(skin) == 'table' and skin or {}
     LoadFreemodeModel(gender)
     local ped = PlayerPedId()
+
+    -- GTA freemode genetic inheritance and facial morphs.
+    local blend = type(skin.headBlend) == 'table' and skin.headBlend or {}
+    local function blendId(key, fallback)
+        local value = tonumber(blend[key])
+        if not value or value % 1 ~= 0 then return fallback end
+        return math.max(0, math.min(45, value))
+    end
+    local function blendMix(key, fallback)
+        local value = tonumber(blend[key])
+        if not value or value ~= value then return fallback end
+        return math.max(0.0, math.min(1.0, value))
+    end
+    SetPedHeadBlendData(ped,
+        blendId('shapeFirst', 0), blendId('shapeSecond', 0), blendId('shapeThird', 0),
+        blendId('skinFirst', 0), blendId('skinSecond', 0), blendId('skinThird', 0),
+        blendMix('shapeMix', 0.5), blendMix('skinMix', 0.5), blendMix('thirdMix', 0.0), false)
+
+    if type(skin.faceFeatures) == 'table' then
+        for feature = 0, 19 do
+            local value = tonumber(skin.faceFeatures[tostring(feature)] or skin.faceFeatures[feature]) or 0.0
+            if value == value then SetPedFaceFeature(ped, feature, math.max(-1.0, math.min(1.0, value))) end
+        end
+    end
+    if type(skin.overlays) == 'table' then
+        for overlay = 0, 12 do
+            local item = skin.overlays[tostring(overlay)] or skin.overlays[overlay]
+            if type(item) == 'table' then
+                local index = math.max(0, math.min(255, math.floor(tonumber(item.index) or 0)))
+                local opacity = tonumber(item.opacity) or 1.0
+                SetPedHeadOverlay(ped, overlay, index, math.max(0.0, math.min(1.0, opacity)))
+                local colorType = (overlay == 1 or overlay == 2 or overlay == 10) and 1 or 0
+                local color = math.max(0, math.min(63, math.floor(tonumber(item.color) or 0)))
+                local second = math.max(0, math.min(63, math.floor(tonumber(item.secondColor) or color)))
+                SetPedHeadOverlayColor(ped, overlay, colorType, color, second)
+            end
+        end
+    end
+    local eyeColor = tonumber(skin.eyeColor) or 0
+    SetPedEyeColor(ped, math.max(0, math.min(31, math.floor(eyeColor))))
+
     local hairStyle = tonumber(skin.hairStyle) or 0
     local hairCount = GetNumberOfPedDrawableVariations(ped, 2)
     if hairCount and hairCount > 0 then

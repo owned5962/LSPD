@@ -30,8 +30,28 @@
             <form id="creator-form">
                 <div class="tabs">
                     <button type="button" class="tab-btn active" data-tab="identity">Identité</button>
+                    <button type="button" class="tab-btn" data-tab="heritage">Héritage</button>
+                    <button type="button" class="tab-btn" data-tab="face">Visage</button>
                     <button type="button" class="tab-btn" data-tab="appearance">Apparence</button>
                     <button type="button" class="tab-btn" data-tab="spawn">Arrivée</button>
+                </div>
+                <div class="tab-content" id="heritage-tab">
+                    <p class="section-help">Choisissez les traits transmis par vos parents. Le résultat se met à jour directement sur votre personnage.</p>
+                    <div class="form-row">
+                        <div class="form-group half"><label for="father">Père</label><select id="father"></select></div>
+                        <div class="form-group half"><label for="mother">Mère</label><select id="mother"></select></div>
+                    </div>
+                    <div class="form-group"><label for="shape-mix">Ressemblance du visage : <span id="shape-mix-val">50</span>% père</label><input type="range" id="shape-mix" min="0" max="100" value="50"></div>
+                    <div class="form-group"><label for="skin-mix">Teint : <span id="skin-mix-val">50</span>% père</label><input type="range" id="skin-mix" min="0" max="100" value="50"></div>
+                    <div class="form-group"><label for="third-mix">Influence du troisième parent : <span id="third-mix-val">0</span>%</label><input type="range" id="third-mix" min="0" max="100" value="0"></div>
+                </div>
+                <div class="tab-content" id="face-tab">
+                    <div class="form-group"><label for="eye-color">Couleur des yeux</label><select id="eye-color"><option value="0">Vert</option><option value="1">Émeraude</option><option value="2">Bleu clair</option><option value="3">Bleu océan</option><option value="4">Marron clair</option><option value="5" selected>Marron</option><option value="6">Noisette</option><option value="7">Gris foncé</option><option value="8">Gris clair</option><option value="9">Rose</option><option value="10">Jaune</option></select></div>
+                    <div id="face-sliders" class="face-sliders"></div>
+                    <div class="form-group"><label for="brow-style">Sourcils</label><input type="range" id="brow-style" min="0" max="33" value="0"></div>
+                    <div class="form-group"><label for="beard-style">Barbe / pilosité</label><input type="range" id="beard-style" min="0" max="28" value="0"></div>
+                    <div class="form-group"><label for="brow-opacity">Intensité sourcils</label><input type="range" id="brow-opacity" min="0" max="100" value="100"></div>
+                    <div class="form-group"><label for="beard-opacity">Intensité barbe</label><input type="range" id="beard-opacity" min="0" max="100" value="100"></div>
                 </div>
                 <div class="tab-content active" id="identity-tab">
                     <div class="form-group">

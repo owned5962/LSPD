@@ -242,6 +242,22 @@ def test_job_hiring_only_confirms_persisted_changes():
     assert "if not player.setJob(jobName, 0) then" in source
     assert "if not targetPlayer.setJob(jobName, grade) then" in source
 
+def test_character_creator_persists_genetics_and_face_morphs():
+    client = read("resources/[CORE]/rp_characters/client/main.lua")
+    server = read("resources/[CORE]/rp_characters/server/main.lua")
+    html = read("resources/[CORE]/rp_characters/html/index.html")
+    ui = read("resources/[CORE]/rp_characters/html/js/app.js")
+    assert "SetPedHeadBlendData" in client
+    assert "SetPedFaceFeature" in client
+    assert "SetPedHeadOverlay" in client
+    assert "SetPedEyeColor" in client
+    assert "headBlend" in server and "faceFeatures" in server and "overlays" in server
+    assert "safeNumber(blend.shapeFirst, 0, 45, true)" in server
+    assert "safeNumber(input.faceFeatures" in server
+    assert 'data-tab="heritage"' in html and 'data-tab="face"' in html
+    assert "father" in ui and "mother" in ui and "faceFeatures" in ui
+    assert "sendAppearancePreview" in ui
+
 if __name__ == "__main__":
     for check in (
         test_admin_tablet_has_no_source_one_bypass,
@@ -252,6 +268,7 @@ if __name__ == "__main__":
         test_character_ui_has_selection_and_creation_callbacks,
         test_new_character_onboarding_is_shown_and_persisted_per_character,
         test_character_appearance_is_applied_and_persisted,
+        test_character_creator_persists_genetics_and_face_morphs,
         test_clothing_presets_and_outfits_are_saved,
         test_clothing_saved_outfits_can_be_listed_and_applied_safely,
         test_legacy_core_exports_and_notifications_are_compatible,
