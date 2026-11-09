@@ -83,7 +83,11 @@ local function loadInventory(player)
 
     playerInventories[player.source] = normalizeInventory(DEFAULT_INVENTORY)
     inventoryCharacterIds[player.source] = player.charId
-    saveInventory(player)
+    if not saveInventory(player) then
+        playerInventories[player.source] = nil
+        inventoryCharacterIds[player.source] = nil
+        error('Unable to persist the initial inventory')
+    end
 end
 
 RegisterNetEvent('rp_inventory:requestData', function()
@@ -167,8 +171,8 @@ RegisterNetEvent('rp_inventory:useItem', function(itemName)
     local persisted, persistError = pcall(function()
         local ok = MySQL.transaction.await({
             {
-                query = 'UPDATE player_inventories SET items = ? WHERE character_id = ?',
-                values = { json.encode(updatedInventory), player.charId }
+                query = 'INSERT INTO player_inventories (character_id, items) VALUES (?, ?) ON DUPLICATE KEY UPDATE items = VALUES(items)',
+                values = { player.charId, json.encode(updatedInventory) }
             },
             {
                 query = 'UPDATE characters SET metadata = ? WHERE id = ? AND identifier = ?',
