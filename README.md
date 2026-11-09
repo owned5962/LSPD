@@ -12,6 +12,10 @@ Serveur RP modulaire comprenant un système de personnages, une économie, 50 m�
 - Tablette admin protégée par ACE.
 - Activités criminelles RP : récolte temporisée, vente de produits fictifs à un receleur ou à d'autres joueurs, braquage de passants et dispatch LSPD avec acceptation et GPS.
 
+## Catalogue visuel des menus
+
+Les aperçus des interfaces NUI du serveur sont regroupés dans [`menu/`](menu/README.md). Les visuels SVG sont des maquettes reconstruites depuis les fichiers HTML/CSS, et non des captures FiveM en direct.
+
 ## Organisation des ressources
 
 - `resources/[CORE]` : `rp_core` et `rp_characters`.
