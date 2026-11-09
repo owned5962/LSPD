@@ -1,6 +1,7 @@
 local harvestBusy = false
 local activeDispatchBlips = {}
 local sellPed = nil
+local sellAllBusy = false
 
 local function drawText3D(coords, text)
     local onScreen, sx, sy = World3dToScreen2d(coords.x, coords.y, coords.z)
@@ -41,7 +42,13 @@ CreateThread(function()
         if sellDist < 10.0 then
             wait = 0
             if sellDist < 2.0 then
-                drawText3D(Config.SellNPC.coords + vector3(0,0,1.0), '[E] Contacter le receleur  |  /sellcontraband item quantité')
+                drawText3D(Config.SellNPC.coords + vector3(0,0,1.0), '[E] Vendre tous les produits au receleur')
+                if IsControlJustPressed(0, 38) and not sellAllBusy then
+                    sellAllBusy = true
+                    TriggerServerEvent('rp_crime:server:sellAllToNPC')
+                    Wait(1500)
+                    sellAllBusy = false
+                end
             end
         end
         Wait(wait)
@@ -98,6 +105,7 @@ RegisterCommand('clearcrimeblips', function()
     end
 end, false)
 
+RegisterKeyMapping('robnpc', 'Braquer le passant le plus proche', 'keyboard', 'G')
 RegisterCommand('robnpc', function()
     local playerPed = PlayerPedId()
     local playerCoords = GetEntityCoords(playerPed)
