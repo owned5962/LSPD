@@ -189,9 +189,7 @@ RegisterNetEvent('rp_crime:server:robNPC', function(rawNetId)
         local id = dispatchCounter
         local coords = GetEntityCoords(GetPlayerPed(src))
         dispatches[id] = { coords = coords, expires = os.time() + Config.Dispatch.expireSeconds, claimed = false }
-        local streetHash = GetStreetNameAtCoord(coords.x, coords.y, coords.z)
-        local street = GetStreetNameFromHashKey(streetHash)
-        local call = { id = id, coords = { x = coords.x, y = coords.y, z = coords.z }, street = street or 'Secteur inconnu',
+        local call = { id = id, coords = { x = coords.x, y = coords.y, z = coords.z }, street = 'Position GPS signalée',
             message = 'Vol avec menace sur un passant' }
         for _, target in ipairs(GetPlayers()) do
             local officer = tonumber(target)
