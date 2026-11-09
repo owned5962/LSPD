@@ -109,3 +109,49 @@ RegisterNUICallback('saveOutfit', function(data, cb)
     SendNUIMessage({ action = 'close' })
     cb({ status = 'submitted' })
 end)
+
+
+RegisterNUICallback('requestOutfits', function(data, cb)
+    TriggerServerEvent('rp_clothing:requestOutfits')
+    cb({ status = 'requested' })
+end)
+
+RegisterNUICallback('applySavedOutfit', function(data, cb)
+    local outfitId = type(data) == 'table' and tonumber(data.id) or nil
+    if not outfitId or outfitId % 1 ~= 0 or outfitId < 1 then
+        cb({ status = 'invalid_id' })
+        return
+    end
+    TriggerServerEvent('rp_clothing:applySavedOutfit', outfitId)
+    cb({ status = 'submitted' })
+end)
+
+RegisterNetEvent('rp_clothing:receiveOutfits', function(outfits)
+    SendNUIMessage({ action = 'outfits', outfits = type(outfits) == 'table' and outfits or {} })
+end)
+
+RegisterNetEvent('rp_clothing:applyAppearance', function(appearance)
+    if type(appearance) ~= 'table' or type(appearance.components) ~= 'table' or type(appearance.props) ~= 'table' then return end
+    local ped = PlayerPedId()
+    for component = 0, 11 do
+        local item = appearance.components[tostring(component)]
+        if type(item) == 'table' then SetSafeComponent(ped, component, tonumber(item.drawable) or 0, tonumber(item.texture) or 0) end
+    end
+    for prop = 0, 7 do
+        local item = appearance.props[tostring(prop)]
+        if type(item) == 'table' then
+            local drawable = tonumber(item.drawable) or -1
+            if drawable < 0 then
+                ClearPedProp(ped, prop)
+            else
+                local count = GetNumberOfPedPropDrawableVariations(ped, prop)
+                if count and drawable < count then
+                    local textures = GetNumberOfPedPropTextureVariations(ped, prop, drawable)
+                    local texture = math.max(0, math.min(tonumber(item.texture) or 0, math.max(0, (textures or 1) - 1)))
+                    SetPedPropIndex(ped, prop, drawable, texture, true)
+                end
+            end
+        end
+    end
+    SetPedHairColor(ped, math.max(0, math.min(63, tonumber(appearance.hairColor) or 0)), 0)
+end)
