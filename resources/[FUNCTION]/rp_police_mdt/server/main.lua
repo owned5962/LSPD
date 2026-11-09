@@ -20,7 +20,7 @@ local function getDispatches()
     return ok and type(calls) == 'table' and calls or {}
 end
 
-local function buildData()
+local function buildData(requester)
     local citizens, officers = {}, {}
     local all = exports['rp_core']:GetAllPlayers() or {}
     for rawId, player in pairs(all) do
@@ -49,6 +49,61 @@ local function buildData()
         citizens = citizens,
         officers = officers,
         dispatches = getDispatches(),
+        officer = (function()
+            local current = getPlayer(requester)
+            local name = current and (tostring(current.firstname or '') .. ' ' .. tostring(current.lastname or '')):gsub('^%s*(.-)%s*
+            citizens = #citizens,
+            officers = #officers,
+            dispatches = #getDispatches()
+        }
+    }
+end
+
+RegisterNetEvent('rp_police_mdt:server:requestOpen', function()
+    local src = source
+    if not isOfficerOnDuty(src) then
+        TriggerClientEvent('rp_core:client:notify', src,
+            'Accès refusé : tablette réservée aux policiers en service.', 'error')
+        return
+    end
+    TriggerClientEvent('rp_police_mdt:client:open', src, buildData(src))
+end)
+
+RegisterNetEvent('rp_police_mdt:server:requestData', function()
+    local src = source
+    if not isOfficerOnDuty(src) then
+        TriggerClientEvent('rp_police_mdt:client:close', src)
+        TriggerClientEvent('rp_core:client:notify', src, 'Votre accès MDT a été révoqué.', 'error')
+        return
+    end
+    TriggerClientEvent('rp_police_mdt:client:updateData', src, buildData(src))
+end)
+
+RegisterNetEvent('rp_police_mdt:server:locateCitizen', function(rawId)
+    local src = source
+    if not isOfficerOnDuty(src) then return end
+    local targetId = tonumber(rawId)
+    if not targetId or targetId % 1 ~= 0 or targetId < 1 or not GetPlayerName(targetId) then
+        TriggerClientEvent('rp_core:client:notify', src, 'Citoyen introuvable ou hors ligne.', 'error')
+        return
+    end
+    local ped = GetPlayerPed(targetId)
+    if ped == 0 or not DoesEntityExist(ped) then
+        TriggerClientEvent('rp_core:client:notify', src, 'Position du citoyen indisponible.', 'error')
+        return
+    end
+    local coords = GetEntityCoords(ped)
+    TriggerClientEvent('rp_police_mdt:client:waypoint', src,
+        { x = coords.x, y = coords.y, z = coords.z }, 'citoyen #' .. targetId)
+end)
+
+AddEventHandler('playerDropped', function()
+    -- No per-player server state is retained by the MDT.
+end)
+, '%1') or ''
+            if name == '' then name = GetPlayerName(requester) or 'Officier' end
+            return { id = tonumber(requester), name = name, grade = tonumber(current and current.jobGrade) or 0 }
+        end)(),
         totals = {
             citizens = #citizens,
             officers = #officers,
