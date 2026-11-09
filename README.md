@@ -46,7 +46,7 @@ La migration adapte le champ de date de naissance. Elle ne supprime aucun person
 - Les actions véhicule de mécanicien (réparation/nettoyage) et de police/dépanneur (fourrière) sont traitées côté serveur avec vérification du métier, du service, de l'entité réseau et de la proximité. La fourrière refuse un véhicule occupé.
 - Les tenues sauvegardées peuvent être consultées et réappliquées depuis la boutique ; leur enregistrement met à jour la tenue du personnage et l'historique en transaction SQL.
 - Les consommables alimentaires, boissons et soins sont persistés en SQL. Les objets utilitaires sans effet serveur restent volontairement inutilisables.
-- Le dépôt au sol et les actions de réparation/nettoyage/fourrière de véhicules restent désactivés tant que leur cycle serveur sécurisé n'est pas implémenté.
+- Le dépôt au sol reste désactivé tant qu'un système serveur de création, de synchronisation et de ramassage sécurisé des objets n'est pas implémenté. Les actions de réparation, nettoyage et fourrière des véhicules sont, elles, disponibles avec les contrôles serveur décrits ci-dessus.
 
 ## Vérifications à effectuer avec FXServer
 
