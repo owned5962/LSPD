@@ -10,12 +10,18 @@ Serveur RP modulaire comprenant un système de personnages, une économie, 50 m�
 - Économie avec dépôts, retraits, virements et salaires.
 - 50 métiers RP et grades.
 - Tablette admin protégée par ACE.
+- Tablette police MDT accessible avec F6 aux policiers en service : dispatch, annuaire des joueurs connectés, liste des unités et GPS citoyen.
+- Activités criminelles RP : récolte temporisée, vente de produits fictifs à un receleur ou à d'autres joueurs, braquage de passants et dispatch LSPD avec acceptation et GPS.
+
+## Catalogue visuel des menus
+
+Les aperçus des interfaces NUI du serveur sont regroupés dans [`menu/`](menu/README.md). Les visuels SVG sont des maquettes reconstruites depuis les fichiers HTML/CSS, et non des captures FiveM en direct.
 
 ## Organisation des ressources
 
 - `resources/[CORE]` : `rp_core` et `rp_characters`.
 - `resources/[JOB]` : les 50 ressources métiers (`job_*`).
-- `resources/[FUNCTION]` : économie, inventaire, interactions, vêtements, interface, tablette admin, anticheat et autres systèmes transversaux.
+- `resources/[FUNCTION]` : économie, inventaire, interactions, vêtements, interface, tablette admin, anticheat, activités criminelles et autres systèmes transversaux.
 
 Les noms des ressources FiveM (`rp_core`, `job_police`, etc.) restent inchangés ; seuls leurs dossiers de regroupement ont changé. Le `server.cfg` est conservé tel quel.
 
@@ -46,7 +52,9 @@ La migration adapte le champ de date de naissance. Elle ne supprime aucun person
 - Les actions véhicule de mécanicien (réparation/nettoyage) et de police/dépanneur (fourrière) sont traitées côté serveur avec vérification du métier, du service, de l'entité réseau et de la proximité. La fourrière refuse un véhicule occupé.
 - Les tenues sauvegardées peuvent être consultées et réappliquées depuis la boutique ; leur enregistrement met à jour la tenue du personnage et l'historique en transaction SQL.
 - Les consommables alimentaires, boissons et soins sont persistés en SQL. Les objets utilitaires sans effet serveur restent volontairement inutilisables.
-- Le dépôt au sol et les actions de réparation/nettoyage/fourrière de véhicules restent désactivés tant que leur cycle serveur sécurisé n'est pas implémenté.
+- Le dépôt au sol reste désactivé tant qu'un système serveur de création, de synchronisation et de ramassage sécurisé des objets n'est pas implémenté. Les actions de réparation, nettoyage et fourrière des véhicules sont, elles, disponibles avec les contrôles serveur décrits ci-dessus.
+- La tablette police `rp_police_mdt` est démarrée après `job_police` et `rp_crime`. Ouvrir avec F6 ou `/mdt` en étant policier en service ; elle affiche les citoyens connectés, les unités LSPD et les appels actifs, permet d'accepter un dispatch et de placer un GPS sur un citoyen.
+- La ressource `rp_crime` est démarrée après `job_police`. Commandes : `/robnpc` (touche G), `/sellcontraband item quantité`, `/sellitem ID item quantité prix`, `/acceptdispatch numéro` et `/clearcrimeblips`.
 
 ## Vérifications à effectuer avec FXServer
 
