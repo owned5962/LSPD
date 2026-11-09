@@ -335,3 +335,19 @@ if __name__ == "__main__":
     ):
         check()
     print("All security and persistence regression checks passed.")
+
+
+def test_police_mdt_is_duty_gated_and_uses_live_dispatch_data():
+    server = read("resources/[FUNCTION]/rp_police_mdt/server/main.lua")
+    client = read("resources/[FUNCTION]/rp_police_mdt/client/main.lua")
+    manifest = read("resources/[FUNCTION]/rp_police_mdt/fxmanifest.lua")
+    crime = read("resources/[FUNCTION]/rp_crime/server/main.lua")
+    ui = read("resources/[FUNCTION]/rp_police_mdt/html/js/app.js")
+    assert "player.job ~= 'police'" in server
+    assert "exports['job_police']:IsOnDuty(src)" in server
+    assert "GetActiveDispatches" in server and "exports('GetActiveDispatches'" in crime
+    assert "rp_crime:server:acceptDispatch" in client
+    assert "locateCitizen" in server and "SetNewWaypoint" in client
+    assert "ui_page 'html/index.html'" in manifest
+    assert "textContent" in ui
+    assert "innerHTML" not in ui
