@@ -41,7 +41,7 @@ Config.DefaultItems = {
     ['phone'] = { label = 'Smartphone tactile', weight = 0.2, type = 'item', icon = 'fas fa-mobile-alt' },
     ['id_card'] = { label = 'Carte nationale d\'identité', weight = 0.05, type = 'document', icon = 'fas fa-id-card' },
     ['driver_license'] = { label = 'Permis de conduire San Andreas', weight = 0.05, type = 'document', icon = 'fas fa-id-badge' },
-    ['radio'] = { label = 'Radio Talkie-Walkie cryptée', weight = 0.5, type = 'tool', icon = 'fas fa-walkie-talkie' }
+    ['radio'] = { label = 'Radio Talkie-Walkie cryptée', weight = 0.5, type = 'tool', icon = 'fas fa-walkie-talkie' },
 
     -- Produits fictifs de contrebande (RP uniquement)
     ['weed_bag'] = { label = 'Sachet de cannabis', weight = 0.1, type = 'item', icon = 'fas fa-leaf' },
