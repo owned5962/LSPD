@@ -221,6 +221,12 @@ def test_clothing_saved_outfits_can_be_listed_and_applied_safely():
     assert "outfit-list" in html
     assert "textContent" in ui
 
+
+def test_job_hiring_only_confirms_persisted_changes():
+    source = read("resources/[FUNCTION]/rp_jobs/server/main.lua")
+    assert "if not player.setJob(jobName, 0) then" in source
+    assert "if not targetPlayer.setJob(jobName, grade) then" in source
+
 if __name__ == "__main__":
     for check in (
         test_admin_tablet_has_no_source_one_bypass,
@@ -240,6 +246,7 @@ if __name__ == "__main__":
         test_anticheat_rate_limits_reports_and_persists_bans,
         test_followup_hardening_keeps_internal_logs_private_and_money_atomic,
         test_job_duty_events_validate_job_and_boolean_status,
+        test_job_hiring_only_confirms_persisted_changes,
     ):
         check()
     print("All security and persistence regression checks passed.")
