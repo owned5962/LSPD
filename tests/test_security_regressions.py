@@ -258,6 +258,17 @@ def test_character_creator_persists_genetics_and_face_morphs():
     assert "father" in ui and "mother" in ui and "faceFeatures" in ui
     assert "sendAppearancePreview" in ui
 
+
+
+def test_admin_economy_and_job_actions_only_report_persisted_success():
+    source = read("resources/[FUNCTION]/rp_tablet_admin/server/main.lua")
+    assert "succeeded = target.addCash(amount)" in source
+    assert "succeeded = target.addBank(amount, 'Donation Administrative')" in source
+    assert "if not target.setJob(jobName, grade) then" in source
+    assert "Modification du métier impossible : la sauvegarde a échoué." in source
+    assert "succeeded = true" not in source
+
+
 if __name__ == "__main__":
     for check in (
         test_admin_tablet_has_no_source_one_bypass,
@@ -269,6 +280,7 @@ if __name__ == "__main__":
         test_new_character_onboarding_is_shown_and_persisted_per_character,
         test_character_appearance_is_applied_and_persisted,
         test_character_creator_persists_genetics_and_face_morphs,
+        test_admin_economy_and_job_actions_only_report_persisted_success,
         test_clothing_presets_and_outfits_are_saved,
         test_clothing_saved_outfits_can_be_listed_and_applied_safely,
         test_legacy_core_exports_and_notifications_are_compatible,
