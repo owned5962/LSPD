@@ -233,21 +233,34 @@ RegisterNetEvent('rp_tablet_admin:server:setWeatherTime', function(weather, hour
         SNOWLIGHT = true, XMAS = true, HALLOWEEN = true
     }
 
-    if weather ~= nil and weather ~= '' then
-        if type(weather) ~= 'string' or not allowedWeather[weather] then
-            NotifyAdmin(src, 'Météo invalide.')
-            return
-        end
-        TriggerClientEvent('rp_tablet_admin:client:syncWeather', -1, weather)
+    -- Validate the complete request before applying either change. This avoids
+    -- changing the weather when the accompanying time value is invalid.
+    local hasWeather = weather ~= nil and weather ~= ''
+    if hasWeather and (type(weather) ~= 'string' or not allowedWeather[weather]) then
+        NotifyAdmin(src, 'Météo invalide.')
+        return
     end
 
-    if hours ~= nil or minutes ~= nil then
+    local hasTime = hours ~= nil or minutes ~= nil
+    if hasTime then
         hours = tonumber(hours)
         minutes = tonumber(minutes)
-        if not hours or not minutes or hours % 1 ~= 0 or minutes % 1 ~= 0 or hours < 0 or hours > 23 or minutes < 0 or minutes > 59 then
+        if not hours or not minutes or hours % 1 ~= 0 or minutes % 1 ~= 0
+            or hours < 0 or hours > 23 or minutes < 0 or minutes > 59 then
             NotifyAdmin(src, 'Heure invalide.')
             return
         end
+    end
+
+    if not hasWeather and not hasTime then
+        NotifyAdmin(src, 'Aucune modification météo ou horaire fournie.')
+        return
+    end
+
+    if hasWeather then
+        TriggerClientEvent('rp_tablet_admin:client:syncWeather', -1, weather)
+    end
+    if hasTime then
         TriggerClientEvent('rp_tablet_admin:client:syncTime', -1, hours, minutes)
     end
 
