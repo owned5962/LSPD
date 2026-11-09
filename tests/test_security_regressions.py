@@ -205,6 +205,22 @@ def test_job_duty_events_validate_job_and_boolean_status():
         assert "AddEventHandler('playerDropped'" in source, job
 
 
+
+def test_clothing_saved_outfits_can_be_listed_and_applied_safely():
+    server = read("resources/[FUNCTION]/rp_clothing/server/main.lua")
+    client = read("resources/[FUNCTION]/rp_clothing/client/main.lua")
+    ui = read("resources/[FUNCTION]/rp_clothing/html/js/app.js")
+    html = read("resources/[FUNCTION]/rp_clothing/html/index.html")
+    assert "MySQL.transaction.await" in server
+    assert "rp_clothing:requestOutfits" in server
+    assert "rp_clothing:applySavedOutfit" in server
+    assert "WHERE id = ? AND identifier = ? AND character_id = ?" in server
+    assert "rp_clothing:receiveOutfits" in client
+    assert "rp_clothing:applyAppearance" in client
+    assert "requestOutfits" in ui and "applySavedOutfit" in ui
+    assert "outfit-list" in html
+    assert "textContent" in ui
+
 if __name__ == "__main__":
     for check in (
         test_admin_tablet_has_no_source_one_bypass,
@@ -215,6 +231,7 @@ if __name__ == "__main__":
         test_character_ui_has_selection_and_creation_callbacks,
         test_character_appearance_is_applied_and_persisted,
         test_clothing_presets_and_outfits_are_saved,
+        test_clothing_saved_outfits_can_be_listed_and_applied_safely,
         test_legacy_core_exports_and_notifications_are_compatible,
         test_mysql_manifests_use_oxmysql_only,
         test_interaction_actions_are_authorized_and_distance_checked,
