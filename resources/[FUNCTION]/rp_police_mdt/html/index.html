@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>LSPD Mobile Data Terminal</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <main id="app" class="tablet hidden" aria-label="Tablette de police LSPD">
+    <header class="topbar">
+      <div class="brand">
+        <div class="badge">★</div>
+        <div><strong>LOS SANTOS POLICE DEPARTMENT</strong><small>MOBILE DATA TERMINAL · MDT</small></div>
+      </div>
+      <div class="top-status"><span class="live-dot"></span> AGENT EN SERVICE <span id="clock">--:--</span></div>
+      <button id="close" class="close" aria-label="Fermer">×</button>
+    </header>
+    <div class="layout">
+      <nav class="sidebar">
+        <button class="nav active" data-view="dashboard"><b>⌂</b> Vue générale</button>
+        <button class="nav" data-view="dispatch"><b>◉</b> Dispatch <span id="dispatch-count" class="count">0</span></button>
+        <button class="nav" data-view="citizens"><b>♙</b> Citoyens</button>
+        <button class="nav" data-view="units"><b>▣</b> Unités LSPD</button>
+        <div class="side-footer"><span class="shield">LSPD</span><small>SECURE TERMINAL<br>LOS SANTOS · SAN ANDREAS</small></div>
+      </nav>
+      <section class="content">
+        <div class="page-head">
+          <div><p class="eyebrow">CENTRE OPÉRATIONNEL</p><h1 id="page-title">Vue générale</h1><p class="muted">Données en direct des joueurs connectés au serveur</p></div>
+          <button id="refresh" class="refresh">↻ Actualiser</button>
+        </div>
+        <section id="dashboard" class="view active">
+          <div class="stats">
+            <article class="stat"><span>Citoyens connectés</span><strong id="citizen-total">0</strong><small>Joueurs en ligne</small></article>
+            <article class="stat"><span>Policiers en service</span><strong id="officer-total">0</strong><small>Unités LSPD actives</small></article>
+            <article class="stat alert-stat"><span>Appels en attente</span><strong id="call-total">0</strong><small>Interventions non attribuées</small></article>
+          </div>
+          <div class="columns">
+            <article class="panel">
+              <div class="panel-title"><div><h2>Derniers appels</h2><p>Signalements reçus par le dispatch</p></div><button class="text-btn" data-go="dispatch">Tout voir →</button></div>
+              <div id="recent-calls" class="rows empty">Aucun appel actif.</div>
+            </article>
+            <article class="panel">
+              <div class="panel-title"><div><h2>Unités en service</h2><p>Effectifs connectés</p></div><button class="text-btn" data-go="units">Tout voir →</button></div>
+              <div id="recent-units" class="rows empty">Aucune unité en service.</div>
+            </article>
+          </div>
+          <article class="panel">
+            <div class="panel-title"><div><h2>Accès rapides</h2><p>Outils opérationnels</p></div></div>
+            <div class="quick-actions">
+              <button data-go="dispatch">◉ Consulter le dispatch</button>
+              <button data-go="citizens">♙ Rechercher un citoyen</button>
+              <button data-go="units">▣ Voir les unités LSPD</button>
+            </div>
+          </article>
+        </section>
+        <section id="dispatch" class="view">
+          <article class="panel">
+            <div class="panel-title"><div><h2>Centre de dispatch</h2><p>Appels criminels et interventions signalées</p></div><span class="live-label">● EN DIRECT</span></div>
+            <div id="dispatch-list" class="rows empty">Aucun appel actif.</div>
+          </article>
+        </section>
+        <section id="citizens" class="view">
+          <article class="panel">
+            <div class="panel-title"><div><h2>Annuaire des citoyens</h2><p>Joueurs actuellement connectés</p></div></div>
+            <input id="citizen-search" class="search" type="search" placeholder="Rechercher un nom, un métier ou un ID…">
+            <div class="table-wrap"><table><thead><tr><th>ID</th><th>Identité</th><th>Métier</th><th>Grade</th><th>Ping</th><th>Action</th></tr></thead><tbody id="citizen-list"></tbody></table></div>
+            <p id="citizen-empty" class="empty-note">Aucun citoyen ne correspond à la recherche.</p>
+          </article>
+        </section>
+        <section id="units" class="view">
+          <article class="panel">
+            <div class="panel-title"><div><h2>Unités LSPD</h2><p>Policiers dont la prise de service est validée</p></div></div>
+            <div id="unit-list" class="rows empty">Aucune unité en service.</div>
+          </article>
+        </section>
+        <footer class="footnote">LSPD MDT · Accès réservé au personnel de police en service · Les données affichées proviennent du serveur.</footer>
+      </section>
+    </div>
+  </main>
+  <script src="js/app.js"></script>
+</body>
+</html>
