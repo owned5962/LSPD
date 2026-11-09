@@ -48,13 +48,12 @@ function getSkin() {
     const mother = Number(document.getElementById('mother').value);
     const shapeMix = Number(document.getElementById('shape-mix').value) / 100;
     const skinMix = Number(document.getElementById('skin-mix').value) / 100;
-    const thirdMix = Number(document.getElementById('third-mix').value) / 100;
     return {
         hairStyle: Number(document.getElementById('hair-style').value),
         hairColor: selectedColor,
         clothing: document.getElementById('clothing-style').value,
         eyeColor: Number(document.getElementById('eye-color').value),
-        headBlend: { shapeFirst: father, shapeSecond: mother, shapeThird: 0, skinFirst: father, skinSecond: mother, skinThird: 0, shapeMix, skinMix, thirdMix },
+        headBlend: { shapeFirst: father, shapeSecond: mother, shapeThird: 0, skinFirst: father, skinSecond: mother, skinThird: 0, shapeMix, skinMix, thirdMix: 0.0 },
         faceFeatures,
         overlays: {
             '1': { index: Number(document.getElementById('beard-style').value), opacity: Number(document.getElementById('beard-opacity').value) / 100, color: selectedColor },
@@ -63,7 +62,7 @@ function getSkin() {
     };
 }
 function sendAppearancePreview() {
-    ['shape-mix','skin-mix','third-mix'].forEach(id => {
+    ['shape-mix','skin-mix'].forEach(id => {
         document.getElementById(`${id}-val`).textContent = document.getElementById(id).value;
     });
     postNui('updateSkinPreview', { gender: document.getElementById('gender').value, skin: getSkin() }).catch(() => {});
@@ -126,7 +125,7 @@ document.querySelectorAll('.spawn-card').forEach(card => card.addEventListener('
     document.querySelectorAll('.spawn-card').forEach(c => c.classList.remove('active'));
     card.classList.add('active'); selectedSpawn = card.dataset.spawn;
 }));
-['gender','clothing-style','father','mother','shape-mix','skin-mix','third-mix','eye-color','brow-style','beard-style','brow-opacity','beard-opacity'].forEach(id => {
+['gender','clothing-style','father','mother','shape-mix','skin-mix','eye-color','brow-style','beard-style','brow-opacity','beard-opacity'].forEach(id => {
     document.getElementById(id).addEventListener('input', sendAppearancePreview);
     document.getElementById(id).addEventListener('change', sendAppearancePreview);
 });
