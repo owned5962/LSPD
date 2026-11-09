@@ -105,7 +105,11 @@ RegisterNetEvent('rp_clothing:requestOutfits', function()
 
     local outfits = {}
     for _, row in ipairs(rows or {}) do
-        local decoded = type(row.skin_data) == 'string' and json.decode(row.skin_data) or row.skin_data
+        local decoded = row.skin_data
+        if type(decoded) == 'string' then
+            local decodedOk, value = pcall(json.decode, decoded)
+            decoded = decodedOk and value or nil
+        end
         if SanitizeAppearance(decoded) then
             outfits[#outfits + 1] = { id = tonumber(row.id), name = tostring(row.name or 'Tenue') }
         end
@@ -128,7 +132,11 @@ RegisterNetEvent('rp_clothing:applySavedOutfit', function(rawOutfitId)
         return
     end
 
-    local decoded = type(row.skin_data) == 'string' and json.decode(row.skin_data) or row.skin_data
+    local decoded = row.skin_data
+    if type(decoded) == 'string' then
+        local decodedOk, value = pcall(json.decode, decoded)
+        decoded = decodedOk and value or nil
+    end
     local appearance = SanitizeAppearance(decoded)
     if not appearance then
         Notify(src, 'Cette tenue contient des données invalides.', 'error')
