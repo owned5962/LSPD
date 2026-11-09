@@ -17,6 +17,8 @@ def test_server_cfg():
     assert "ensure rp_core" in content
     assert "ensure rp_anticheat" in content
     assert "ensure rp_tablet_admin" in content
+    assert "ensure rp_police_mdt" in content
+    assert content.index("ensure rp_crime") < content.index("ensure rp_police_mdt")
     print("✓ server.cfg verified successfully.")
 
 def test_database_schema():
@@ -55,7 +57,7 @@ def test_core_resources():
         res_dir = os.path.join(roleplay_dir, res)
         assert os.path.exists(res_dir), f"Missing core resource {res}"
         assert os.path.exists(os.path.join(res_dir, 'fxmanifest.lua')), f"Missing manifest for {res}"
-    expected_functions = ['rp_ui', 'rp_inventory', 'rp_interactions', 'rp_clothing', 'rp_economy', 'rp_jobs', 'rp_loadscreen', 'rp_tablet_admin', 'rp_anticheat']
+    expected_functions = ['rp_ui', 'rp_inventory', 'rp_interactions', 'rp_clothing', 'rp_economy', 'rp_jobs', 'rp_loadscreen', 'rp_tablet_admin', 'rp_anticheat', 'rp_police_mdt']
     for res in expected_functions:
         res_dir = os.path.join(function_dir, res)
         assert os.path.exists(res_dir), f"Missing function resource {res}"
