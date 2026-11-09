@@ -167,11 +167,10 @@ RegisterNetEvent('rp_tablet_admin:server:manageEconomy', function(targetId, mone
     local succeeded = false
     if operation == 'give' then
         if moneyType == 'cash' then
-            target.addCash(amount)
+            succeeded = target.addCash(amount)
         else
-            target.addBank(amount, 'Donation Administrative')
+            succeeded = target.addBank(amount, 'Donation Administrative')
         end
-        succeeded = true
     elseif moneyType == 'cash' then
         succeeded = target.removeCash(amount)
     else
@@ -179,7 +178,7 @@ RegisterNetEvent('rp_tablet_admin:server:manageEconomy', function(targetId, mone
     end
 
     if not succeeded then
-        NotifyAdmin(src, 'Fonds insuffisants : opération annulée.')
+        NotifyAdmin(src, 'Opération non effectuée : fonds insuffisants ou sauvegarde impossible.')
         return
     end
 
@@ -215,7 +214,11 @@ RegisterNetEvent('rp_tablet_admin:server:setJob', function(targetId, jobName, gr
         return
     end
 
-    target.setJob(jobName, grade)
+    if not target.setJob(jobName, grade) then
+        NotifyAdmin(src, 'Modification du métier impossible : la sauvegarde a échoué.')
+        return
+    end
+
     NotifyAdmin(src, 'Métier du joueur ' .. targetId .. ' défini sur ' .. jobName .. ' (Grade ' .. grade .. ')', 'success')
 end)
 
