@@ -99,7 +99,7 @@ RegisterNetEvent('rp_crime:server:sellAllToNPC', function()
             local unitPrice = math.random(data.priceMin, data.priceMax)
             local amount = math.min(count, 100)
             if exports['rp_inventory']:RemoveItem(src, itemName, amount) then
-                sold[#sold + 1] = ('%d x %s'):format(amount, data.label)
+                sold[#sold + 1] = { name = itemName, amount = amount, label = data.label }
                 total = total + (unitPrice * amount)
             end
         end
@@ -110,17 +110,15 @@ RegisterNetEvent('rp_crime:server:sellAllToNPC', function()
     end
     if not player.addCash(total) then
         -- Restitution de chaque pile si le paiement n'a pas pu être sauvegardé.
-        for itemName, data in pairs(Config.Drugs) do
-            local labelPrefix = data.label
-            for _, entry in ipairs(sold) do
-                local amount = tonumber(entry:match('^(%d+)'))
-                if amount and entry:find(labelPrefix, 1, true) then exports['rp_inventory']:AddItem(src, itemName, amount) end
-            end
+        for _, entry in ipairs(sold) do
+            exports['rp_inventory']:AddItem(src, entry.name, entry.amount)
         end
         notify(src, 'Paiement impossible : produits restitués si la sauvegarde le permet.', 'error')
         return
     end
-    notify(src, ('Vente au receleur : %s. Total : %d $.'):format(table.concat(sold, ', '), total), 'success')
+    local soldLabels = {}
+    for _, entry in ipairs(sold) do soldLabels[#soldLabels + 1] = ('%d x %s'):format(entry.amount, entry.label) end
+    notify(src, ('Vente au receleur : %s. Total : %d $.'):format(table.concat(soldLabels, ', '), total), 'success')
 end)
 
 RegisterNetEvent('rp_crime:server:sellToPlayer', function(rawTarget, itemName, rawAmount, rawPrice)
