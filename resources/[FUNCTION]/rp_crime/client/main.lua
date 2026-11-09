@@ -112,12 +112,14 @@ RegisterCommand('robnpc', function()
         TriggerEvent('rp_core:client:notify', 'Aucun passant à proximité.', 'error')
         return
     end
+    if not NetworkGetEntityIsNetworked(closestPed) then NetworkRegisterEntityAsNetworked(closestPed) end
+    local netId = NetworkGetNetworkIdFromEntity(closestPed)
+    if not netId or netId == 0 then
+        TriggerEvent('rp_core:client:notify', 'Ce passant ne peut pas être ciblé.', 'error')
+        return
+    end
     TaskTurnPedToFaceEntity(closestPed, playerPed, 1000)
-    TriggerServerEvent('rp_crime:server:robNPC', {
-        x = GetEntityCoords(closestPed).x,
-        y = GetEntityCoords(closestPed).y,
-        z = GetEntityCoords(closestPed).z
-    })
+    TriggerServerEvent('rp_crime:server:robNPC', netId)
 end, false)
 
 AddEventHandler('onResourceStop', function(resource)
