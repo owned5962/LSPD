@@ -1,6 +1,24 @@
 local harvestCooldowns, robberyCooldowns, activeHarvests = {}, {}, {}
 local dispatches, dispatchCounter = {}, 0
 
+exports('GetActiveDispatches', function()
+    local result = {}
+    for id, call in pairs(dispatches) do
+        if call.expires >= os.time() then
+            result[#result + 1] = {
+                id = id,
+                coords = { x = call.coords.x, y = call.coords.y, z = call.coords.z },
+                street = call.street or 'Position GPS signalée',
+                message = call.message or 'Intervention',
+                claimed = call.claimed == true,
+                officer = call.officer
+            }
+        end
+    end
+    table.sort(result, function(a, b) return a.id > b.id end)
+    return result
+end)
+
 local function notify(src, message, kind)
     TriggerClientEvent('rp_core:client:notify', src, message, kind or 'info')
 end
@@ -194,6 +212,7 @@ RegisterNetEvent('rp_crime:server:robNPC', function(rawNetId)
         for _, target in ipairs(GetPlayers()) do
             local officer = tonumber(target)
             if isPoliceOnDuty(officer) then TriggerClientEvent('rp_crime:client:dispatch', officer, call) end
+            if isPoliceOnDuty(officer) then TriggerClientEvent('rp_police_mdt:client:requestRefresh', officer) end
         end
     end
 end)
