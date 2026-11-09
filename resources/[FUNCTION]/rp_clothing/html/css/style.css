@@ -122,3 +122,45 @@ body {
 .save-btn:hover {
     background: #0369a1;
 }
+
+
+.saved-outfits {
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding-top: 14px;
+    margin-bottom: 16px;
+}
+
+.saved-outfits h3 {
+    color: #cbd5e1;
+    font-size: 0.85rem;
+    margin-bottom: 10px;
+}
+
+#outfit-list {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    max-height: 140px;
+    overflow-y: auto;
+}
+
+.saved-outfit-btn {
+    background: rgba(30, 41, 59, 0.8);
+    border: 1px solid rgba(56, 189, 248, 0.2);
+    border-radius: 8px;
+    padding: 9px 12px;
+    color: #e2e8f0;
+    text-align: left;
+    cursor: pointer;
+}
+
+.saved-outfit-btn:hover {
+    border-color: #38bdf8;
+    background: rgba(56, 189, 248, 0.15);
+}
+
+.empty-outfits {
+    color: #94a3b8;
+    font-size: 0.8rem;
+    padding: 6px 0;
+}
