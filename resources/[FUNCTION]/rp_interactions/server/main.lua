@@ -17,7 +17,8 @@ local dutyResources = {
     police = 'job_police',
     ambulance = 'job_ambulance',
     mechanic = 'job_mechanic',
-    taxi = 'job_taxi'
+    taxi = 'job_taxi',
+    towtruck = 'job_towtruck'
 }
 
 local function isOnDuty(jobName, src)
@@ -49,6 +50,62 @@ RegisterNetEvent('rp_interactions:requestJobMenu', function()
         actions = {}
     }
     TriggerClientEvent('rp_interactions:openMenu', src, jobName, player.jobGrade or 0, jobData)
+end)
+
+RegisterNetEvent('rp_interactions:executeVehicleAction', function(rawNetId, action)
+    local src = source
+    local netId = tonumber(rawNetId)
+    if not netId or netId % 1 ~= 0 or netId < 1 or type(action) ~= 'string' then return end
+
+    local player = getPlayer(src)
+    if not player or not actionAllowed(player.job, action) then
+        notify(src, 'error', 'Cette action véhicule n’est pas autorisée pour votre métier.')
+        return
+    end
+    if not isOnDuty(player.job, src) then
+        notify(src, 'error', 'Vous devez être en service pour effectuer cette action.')
+        return
+    end
+
+    local expectedJob = (action == 'repair' or action == 'clean') and 'mechanic'
+        or (action == 'impound' and (player.job == 'police' or player.job == 'towtruck') and player.job)
+    if not expectedJob or player.job ~= expectedJob then
+        notify(src, 'error', 'Action véhicule refusée.')
+        return
+    end
+
+    local vehicle = NetworkGetEntityFromNetworkId(netId)
+    local ped = GetPlayerPed(src)
+    if vehicle == 0 or not DoesEntityExist(vehicle) or GetEntityType(vehicle) ~= 2 or ped == 0 then
+        notify(src, 'error', 'Véhicule introuvable.')
+        return
+    end
+    if #(GetEntityCoords(ped) - GetEntityCoords(vehicle)) > 5.0 then
+        notify(src, 'error', 'Vous êtes trop loin du véhicule.')
+        return
+    end
+
+    if action == 'repair' then
+        SetVehicleFixed(vehicle)
+        SetVehicleDeformationFixed(vehicle)
+        SetVehicleEngineHealth(vehicle, 1000.0)
+        SetVehicleBodyHealth(vehicle, 1000.0)
+        SetVehiclePetrolTankHealth(vehicle, 1000.0)
+        notify(src, 'success', 'Véhicule réparé.')
+    elseif action == 'clean' then
+        SetVehicleDirtLevel(vehicle, 0.0)
+        notify(src, 'success', 'Véhicule nettoyé.')
+    elseif action == 'impound' then
+        local maxPassengers = GetVehicleMaxNumberOfPassengers(vehicle)
+        for seat = -1, maxPassengers - 1 do
+            if GetPedInVehicleSeat(vehicle, seat) ~= 0 then
+                notify(src, 'error', 'Impossible de mettre en fourrière un véhicule occupé.')
+                return
+            end
+        end
+        DeleteEntity(vehicle)
+        notify(src, 'success', 'Véhicule envoyé en fourrière.')
+    end
 end)
 
 RegisterNetEvent('rp_interactions:executeAction', function(targetId, action, amount)
