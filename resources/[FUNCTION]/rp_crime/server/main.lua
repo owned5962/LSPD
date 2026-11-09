@@ -85,6 +85,44 @@ RegisterNetEvent('rp_crime:server:sellToNPC', function(itemName, rawAmount)
     notify(src, ('Vente effectuée : %d x %s pour %d $.'):format(amount, data.label, total), 'success')
 end)
 
+RegisterNetEvent('rp_crime:server:sellAllToNPC', function()
+    local src = source
+    local player = getPlayer(src)
+    if not player or not nearPoint(src, Config.SellNPC.coords, Config.SellNPC.radius) then
+        notify(src, 'Le receleur n’est pas à proximité.', 'error')
+        return
+    end
+    local sold, total = {}, 0
+    for itemName, data in pairs(Config.Drugs) do
+        local count = exports['rp_inventory']:GetItemCount(src, itemName)
+        if count > 0 then
+            local unitPrice = math.random(data.priceMin, data.priceMax)
+            local amount = math.min(count, 100)
+            if exports['rp_inventory']:RemoveItem(src, itemName, amount) then
+                sold[#sold + 1] = ('%d x %s'):format(amount, data.label)
+                total = total + (unitPrice * amount)
+            end
+        end
+    end
+    if total <= 0 then
+        notify(src, 'Vous n’avez aucun produit accepté à vendre.', 'warning')
+        return
+    end
+    if not player.addCash(total) then
+        -- Restitution de chaque pile si le paiement n'a pas pu être sauvegardé.
+        for itemName, data in pairs(Config.Drugs) do
+            local labelPrefix = data.label
+            for _, entry in ipairs(sold) do
+                local amount = tonumber(entry:match('^(%d+)'))
+                if amount and entry:find(labelPrefix, 1, true) then exports['rp_inventory']:AddItem(src, itemName, amount) end
+            end
+        end
+        notify(src, 'Paiement impossible : produits restitués si la sauvegarde le permet.', 'error')
+        return
+    end
+    notify(src, ('Vente au receleur : %s. Total : %d $.'):format(table.concat(sold, ', '), total), 'success')
+end)
+
 RegisterNetEvent('rp_crime:server:sellToPlayer', function(rawTarget, itemName, rawAmount, rawPrice)
     local src, targetId = source, tonumber(rawTarget)
     local seller, buyer = getPlayer(src), targetId and getPlayer(targetId)
