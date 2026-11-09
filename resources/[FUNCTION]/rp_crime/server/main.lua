@@ -121,13 +121,14 @@ RegisterNetEvent('rp_crime:server:sellToPlayer', function(rawTarget, itemName, r
     notify(targetId, ('Achat reçu : %d x %s.'):format(amount, data.label), 'success')
 end)
 
-RegisterNetEvent('rp_crime:server:robNPC', function(rawNpcCoords)
+RegisterNetEvent('rp_crime:server:robNPC', function(rawNetId)
     local src = source
     local player = getPlayer(src)
-    if not player or type(rawNpcCoords) ~= 'table' then return end
-    local x, y, z = tonumber(rawNpcCoords.x), tonumber(rawNpcCoords.y), tonumber(rawNpcCoords.z)
-    if not x or not y or not z or math.abs(x) > 5000 or math.abs(y) > 5000 or z < -100 or z > 2000 then return end
-    local npcCoords = vector3(x, y, z)
+    local netId = tonumber(rawNetId)
+    if not player or not netId or netId < 1 or netId % 1 ~= 0 then return end
+    local npc = NetworkGetEntityFromNetworkId(netId)
+    if npc == 0 or not DoesEntityExist(npc) or GetEntityType(npc) ~= 1 or npc == GetPlayerPed(src) then return end
+    local npcCoords = GetEntityCoords(npc)
     if not alive(src) or not nearPoint(src, npcCoords, Config.Robbery.maxDistance) then
         notify(src, 'Approchez-vous d’un passant vivant.', 'error')
         return
