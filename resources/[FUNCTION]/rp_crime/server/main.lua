@@ -226,6 +226,12 @@ RegisterNetEvent('rp_crime:server:acceptDispatch', function(rawId)
     end
     call.claimed = true
     call.officer = src
+    for _, target in ipairs(GetPlayers()) do
+        local officer = tonumber(target)
+        if isPoliceOnDuty(officer) then
+            TriggerClientEvent('rp_police_mdt:client:requestRefresh', officer)
+        end
+    end
     TriggerClientEvent('rp_crime:client:dispatchAccepted', src, {
         id = id, coords = { x = call.coords.x, y = call.coords.y, z = call.coords.z },
         street = call.street
