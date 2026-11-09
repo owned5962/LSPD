@@ -29,7 +29,17 @@ RegisterNUICallback('triggerAction', function(data, cb)
     local closestPlayer, closestDistance = GetClosestPlayer()
 
     if action == 'repair' or action == 'clean' or action == 'impound' then
-        TriggerEvent('rp_core:notify', 'error', 'Cette action est désactivée jusqu’à son implémentation sécurisée côté serveur.')
+        local vehicle = GetVehicleInFront()
+        if vehicle ~= 0 and DoesEntityExist(vehicle) then
+            local netId = NetworkGetNetworkIdFromEntity(vehicle)
+            if netId and netId > 0 then
+                TriggerServerEvent('rp_interactions:executeVehicleAction', netId, action)
+            else
+                TriggerEvent('rp_core:notify', 'error', 'Véhicule réseau indisponible.')
+            end
+        else
+            TriggerEvent('rp_core:notify', 'error', 'Aucun véhicule devant vous.')
+        end
     elseif closestPlayer ~= -1 and closestDistance <= 3.0 then
         local targetServerId = GetPlayerServerId(closestPlayer)
         TriggerServerEvent('rp_interactions:executeAction', targetServerId, action, data.amount)
