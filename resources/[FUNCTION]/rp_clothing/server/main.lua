@@ -86,3 +86,69 @@ RegisterNetEvent('rp_clothing:saveOutfit', function(name, skinData)
     player.skin = skin
     Notify(src, ('Tenue « %s » enregistrée et appliquée.'):format(name), 'success')
 end)
+
+
+RegisterNetEvent('rp_clothing:requestOutfits', function()
+    local src = source
+    local player = exports['rp_core']:GetPlayerFromId(src)
+    if not player then return end
+
+    local ok, rows = pcall(MySQL.query.await,
+        'SELECT id, name, skin_data FROM user_outfits WHERE identifier = ? AND character_id = ? ORDER BY created_at DESC, id DESC LIMIT 20',
+        { player.identifier, player.charId }
+    )
+    if not ok then
+        Notify(src, 'Impossible de charger vos tenues sauvegardées.', 'error')
+        print(('[rp_clothing] Outfit list failed for character %s: %s'):format(player.charId, tostring(rows)))
+        return
+    end
+
+    local outfits = {}
+    for _, row in ipairs(rows or {}) do
+        local decoded = type(row.skin_data) == 'string' and json.decode(row.skin_data) or row.skin_data
+        if SanitizeAppearance(decoded) then
+            outfits[#outfits + 1] = { id = tonumber(row.id), name = tostring(row.name or 'Tenue') }
+        end
+    end
+    TriggerClientEvent('rp_clothing:receiveOutfits', src, outfits)
+end)
+
+RegisterNetEvent('rp_clothing:applySavedOutfit', function(rawOutfitId)
+    local src = source
+    local player = exports['rp_core']:GetPlayerFromId(src)
+    local outfitId = tonumber(rawOutfitId)
+    if not player or not outfitId or outfitId % 1 ~= 0 or outfitId < 1 then return end
+
+    local ok, row = pcall(MySQL.single.await,
+        'SELECT skin_data FROM user_outfits WHERE id = ? AND identifier = ? AND character_id = ?',
+        { outfitId, player.identifier, player.charId }
+    )
+    if not ok or not row then
+        Notify(src, 'Tenue introuvable.', 'error')
+        return
+    end
+
+    local decoded = type(row.skin_data) == 'string' and json.decode(row.skin_data) or row.skin_data
+    local appearance = SanitizeAppearance(decoded)
+    if not appearance then
+        Notify(src, 'Cette tenue contient des données invalides.', 'error')
+        return
+    end
+
+    local skin = type(player.skin) == 'table' and player.skin or {}
+    skin.components, skin.props = appearance.components, appearance.props
+    skin.hairStyle, skin.hairColor = appearance.hairStyle, appearance.hairColor
+    local saved, result = pcall(MySQL.update.await,
+        'UPDATE characters SET skin = ? WHERE id = ? AND identifier = ?',
+        { json.encode(skin), player.charId, player.identifier }
+    )
+    if not saved then
+        Notify(src, 'Impossible de sauvegarder cette tenue.', 'error')
+        print(('[rp_clothing] Outfit apply failed for character %s: %s'):format(player.charId, tostring(result)))
+        return
+    end
+
+    player.skin = skin
+    TriggerClientEvent('rp_clothing:applyAppearance', src, appearance)
+    Notify(src, 'Tenue sauvegardée appliquée.', 'success')
+end)
