@@ -281,6 +281,32 @@ def test_admin_economy_and_job_actions_only_report_persisted_success():
     assert "if not hasWeather and not hasTime then" in weather_handler
 
 
+
+def test_crime_system_uses_server_validated_inventory_and_police_dispatch():
+    inventory_config = read("resources/[FUNCTION]/rp_inventory/config.lua")
+    inventory_server = read("resources/[FUNCTION]/rp_inventory/server/main.lua")
+    crime_config = read("resources/[FUNCTION]/rp_crime/config.lua")
+    crime_server = read("resources/[FUNCTION]/rp_crime/server/main.lua")
+    crime_client = read("resources/[FUNCTION]/rp_crime/client/main.lua")
+    server_cfg = read("server.cfg")
+    assert "weed_bag" in inventory_config and "coke_bag" in inventory_config
+    assert "exports('AddItem'" in inventory_server
+    assert "exports('RemoveItem'" in inventory_server
+    assert "exports('GetItemCount'" in inventory_server
+    assert len([line for line in crime_config.splitlines() if "zone = vector3" in line]) >= 8
+    assert "Wait(data.wait)" in crime_server
+    assert "nearPoint(src, data.zone, 5.0)" in crime_server
+    assert "rp_crime:server:sellToNPC" in crime_server
+    assert "rp_crime:server:sellToPlayer" in crime_server
+    assert "NetworkGetEntityFromNetworkId(netId)" in crime_server
+    assert "GetEntityType(npc) ~= 1" in crime_server
+    assert "GetPlayerPed(tonumber(playerId)) == npc" in crime_server
+    assert "exports['job_police']:IsOnDuty(src)" in crime_server
+    assert "rp_crime:server:acceptDispatch" in crime_server
+    assert "SetNewWaypoint(c.x, c.y)" in crime_client
+    assert "ensure rp_crime" in server_cfg
+
+
 if __name__ == "__main__":
     for check in (
         test_admin_tablet_has_no_source_one_bypass,
@@ -305,6 +331,7 @@ if __name__ == "__main__":
         test_followup_hardening_keeps_internal_logs_private_and_money_atomic,
         test_job_duty_events_validate_job_and_boolean_status,
         test_job_hiring_only_confirms_persisted_changes,
+        test_crime_system_uses_server_validated_inventory_and_police_dispatch,
     ):
         check()
     print("All security and persistence regression checks passed.")
