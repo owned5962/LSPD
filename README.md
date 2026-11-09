@@ -15,7 +15,7 @@ Serveur RP modulaire comprenant un système de personnages, une économie, 50 m�
 
 - `resources/[CORE]` : `rp_core` et `rp_characters`.
 - `resources/[JOB]` : les 50 ressources métiers (`job_*`).
-- `resources/[FUNCTION]` : économie, inventaire, interactions, vêtements, interface, tablette admin, anticheat et autres systèmes transversaux.
+- `resources/[FUNCTION]` : économie, inventaire, interactions, vêtements, interface, tablette admin, anticheat, activités criminelles et autres systèmes transversaux.
 
 Les noms des ressources FiveM (`rp_core`, `job_police`, etc.) restent inchangés ; seuls leurs dossiers de regroupement ont changé. Le `server.cfg` est conservé tel quel.
 
