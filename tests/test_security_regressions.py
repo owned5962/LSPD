@@ -267,6 +267,9 @@ def test_admin_economy_and_job_actions_only_report_persisted_success():
     assert "if not target.setJob(jobName, grade) then" in source
     assert "Modification du métier impossible : la sauvegarde a échoué." in source
     assert "succeeded = true" not in source
+    weather_handler = source.split("RegisterNetEvent('rp_tablet_admin:server:setWeatherTime'", 1)[1].split("RegisterNetEvent('rp_tablet_admin:server:broadcastAnnouncement'", 1)[0]
+    assert weather_handler.index("if hasTime then") < weather_handler.index("TriggerClientEvent('rp_tablet_admin:client:syncWeather'")
+    assert "if not hasWeather and not hasTime then" in weather_handler
 
 
 if __name__ == "__main__":
