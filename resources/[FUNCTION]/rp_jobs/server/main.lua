@@ -42,7 +42,10 @@ RegisterNetEvent('rp_jobs:server:chooseJob', function(jobName)
         return
     end
 
-    player.setJob(jobName, 0)
+    if not player.setJob(jobName, 0) then
+        TriggerClientEvent('rp_core:client:notify', src, 'Votre embauche n’a pas pu être enregistrée.', 'error')
+        return
+    end
     TriggerClientEvent('rp_core:client:notify', src, 'Félicitations ! Vous venez d\'être embauché en tant que ' .. job.label .. ' !', 'success')
 end)
 
@@ -71,7 +74,14 @@ RegisterCommand('setjob', function(source, args)
         return
     end
 
-    targetPlayer.setJob(jobName, grade)
+    if not targetPlayer.setJob(jobName, grade) then
+        if src > 0 then
+            TriggerClientEvent('rp_core:client:notify', src, 'Modification du métier refusée ou non sauvegardée.', 'error')
+        else
+            print('Modification du métier refusée ou non sauvegardée.')
+        end
+        return
+    end
     if src > 0 then
         TriggerClientEvent('rp_core:client:notify', src, 'Métier mis à jour pour ' .. targetPlayer.firstname .. ' ' .. targetPlayer.lastname, 'success')
     else
