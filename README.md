@@ -10,6 +10,7 @@ Serveur RP modulaire comprenant un système de personnages, une économie, 50 m�
 - Économie avec dépôts, retraits, virements et salaires.
 - 50 métiers RP et grades.
 - Tablette admin protégée par ACE.
+- Tablette police MDT accessible avec F6 aux policiers en service : dispatch, annuaire des joueurs connectés, liste des unités et GPS citoyen.
 - Activités criminelles RP : récolte temporisée, vente de produits fictifs à un receleur ou à d'autres joueurs, braquage de passants et dispatch LSPD avec acceptation et GPS.
 
 ## Catalogue visuel des menus
@@ -52,6 +53,7 @@ La migration adapte le champ de date de naissance. Elle ne supprime aucun person
 - Les tenues sauvegardées peuvent être consultées et réappliquées depuis la boutique ; leur enregistrement met à jour la tenue du personnage et l'historique en transaction SQL.
 - Les consommables alimentaires, boissons et soins sont persistés en SQL. Les objets utilitaires sans effet serveur restent volontairement inutilisables.
 - Le dépôt au sol reste désactivé tant qu'un système serveur de création, de synchronisation et de ramassage sécurisé des objets n'est pas implémenté. Les actions de réparation, nettoyage et fourrière des véhicules sont, elles, disponibles avec les contrôles serveur décrits ci-dessus.
+- La tablette police `rp_police_mdt` est démarrée après `job_police` et `rp_crime`. Ouvrir avec F6 ou `/mdt` en étant policier en service ; elle affiche les citoyens connectés, les unités LSPD et les appels actifs, permet d'accepter un dispatch et de placer un GPS sur un citoyen.
 - La ressource `rp_crime` est démarrée après `job_police`. Commandes : `/robnpc` (touche G), `/sellcontraband item quantité`, `/sellitem ID item quantité prix`, `/acceptdispatch numéro` et `/clearcrimeblips`.
 
 ## Vérifications à effectuer avec FXServer
