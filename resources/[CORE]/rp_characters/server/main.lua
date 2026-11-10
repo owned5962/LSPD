@@ -128,11 +128,20 @@ RegisterNetEvent('rp_characters:server:checkPlayer', function()
             local value = GetPlayerIdentifier(src, i)
             if value and value:sub(1, 8) == 'discord:' then discord = value:gsub('^discord:', '') break end
         end
-        MySQL.insert.await(
-            'INSERT INTO users (identifier, license, discord, name, `group`) VALUES (?, ?, ?, ?, ?)',
+        local insertOk, insertResult = pcall(MySQL.insert.await,
+            'INSERT IGNORE INTO users (identifier, license, discord, name, `group`) VALUES (?, ?, ?, ?, ?)',
             { identifier, license, discord, GetPlayerName(src) or 'Citoyen', 'user' }
         )
-        user = { identifier = identifier, group = 'user' }
+        if not insertOk then
+            print(('[rp_characters] Account creation failed for %s: %s'):format(identifier, tostring(insertResult)))
+            Notify(src, 'Impossible de créer ou charger votre compte. Réessayez plus tard.')
+            return
+        end
+        user = MySQL.single.await('SELECT identifier, `group` FROM users WHERE identifier = ?', { identifier })
+        if not user then
+            Notify(src, 'Impossible de charger votre compte. Réessayez plus tard.')
+            return
+        end
     else
         MySQL.update.await('UPDATE users SET name = ?, last_seen = CURRENT_TIMESTAMP WHERE identifier = ?',
             { GetPlayerName(src) or 'Citoyen', identifier })
