@@ -1,4 +1,5 @@
 local onDuty = false
+local dutyRequestPending = false
 
 Citizen.CreateThread(function()
     while true do
@@ -13,9 +14,9 @@ Citizen.CreateThread(function()
             if dist < 1.5 then
                 local label = onDuty and "[E] Fin de service" or "[E] Prise de service"
                 exports['rp_ui']:ShowTextUI(label .. ' (' .. Config.Label .. ')')
-                if IsControlJustPressed(0, 38) then
-                    onDuty = not onDuty
-                    TriggerServerEvent('job_bus_driver:setDuty', onDuty)
+                if IsControlJustPressed(0, 38) and not dutyRequestPending then
+                    dutyRequestPending = true
+                    TriggerServerEvent('job_bus_driver:setDuty', not onDuty)
                 end
             end
         end
@@ -24,7 +25,8 @@ Citizen.CreateThread(function()
 end)
 
 RegisterNetEvent('job_bus_driver:dutyUpdated', function(status)
-    onDuty = status
+    dutyRequestPending = false
+    onDuty = status == true
     if onDuty then
         TriggerEvent('rp_core:notify', 'success', 'Prise de service validée : ' .. Config.Label)
     else
