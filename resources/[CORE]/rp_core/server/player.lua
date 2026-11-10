@@ -207,7 +207,20 @@ function CreateRPPlayer(source, identifier, charData)
             print(('[rp_core] SQL save failed for character %s: %s'):format(self.charId, tostring(result)))
             return false
         end
-        return result and result > 0
+        if type(result) ~= 'number' then return false end
+        if result > 0 then return true end
+
+        -- oxmysql reports changed rows: a valid no-op UPDATE can return 0.
+        -- Confirm the character still exists before treating that save as successful.
+        local existsOk, exists = pcall(MySQL.scalar.await,
+            'SELECT 1 FROM characters WHERE id = ? AND identifier = ? LIMIT 1',
+            { self.charId, self.identifier }
+        )
+        if not existsOk then
+            print(('[rp_core] SQL save verification failed for character %s: %s'):format(self.charId, tostring(exists)))
+            return false
+        end
+        return tonumber(exists) == 1
     end
 
     function self.syncClient()
