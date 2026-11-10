@@ -511,6 +511,19 @@ def test_core_save_treats_unchanged_existing_character_as_success():
 
 
 
+def test_core_save_releases_lock_after_native_json_or_sql_failure():
+    player = read("resources/[CORE]/rp_core/server/player.lua")
+    save_start = player.index("function self.save(skipPosition)")
+    save_end = player.index("function self.syncClient()", save_start)
+    save = player[save_start:save_end]
+    assert "saveLocks[self.charId] = true" in save
+    assert "local ok, result = pcall(function()" in save
+    assert "saveLocks[self.charId] = nil" in save
+    assert save.index("saveLocks[self.charId] = nil") > save.index("local ok, result = pcall(function()")
+    assert "return result == true" in save
+
+
+
 def test_reconnect_waits_for_final_disconnect_save():
     core = read("resources/[CORE]/rp_core/server/main.lua")
     characters = read("resources/[CORE]/rp_characters/server/main.lua")
