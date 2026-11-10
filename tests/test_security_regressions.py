@@ -280,6 +280,42 @@ if __name__ == "__main__":
         test_followup_hardening_keeps_internal_logs_private_and_money_atomic,
         test_job_duty_events_validate_job_and_boolean_status,
         test_job_hiring_only_confirms_persisted_changes,
+        test_pay_command_uses_atomic_transfer_and_rate_limit,
+        test_job_center_application_is_rate_limited_and_payload_validated,
+        test_admin_tablet_rate_limits_and_persists_audit_logs,
     ):
         check()
     print("All security and persistence regression checks passed.")
+
+
+def test_pay_command_uses_atomic_transfer_and_rate_limit():
+    commands = read("resources/[CORE]/rp_core/server/commands.lua")
+    core = read("resources/[CORE]/rp_core/server/main.lua")
+    player = read("resources/[CORE]/rp_core/server/player.lua")
+    assert "CanPerformAction(src, 'pay', 1500)" in commands
+    assert "TransferCash(src, targetId, amount)" in commands
+    assert "amount > 1000000" in commands
+    assert "UPDATE characters AS sender" in player
+    assert "JOIN characters AS recipient" in player
+    assert "sender.cash >= ?" in player
+    assert "exports('TransferCash', TransferCash)" in player
+    assert "exports('CanPerformAction', CanPerformAction)" in core
+
+
+def test_job_center_application_is_rate_limited_and_payload_validated():
+    source = read("resources/[FUNCTION]/rp_jobs/server/main.lua")
+    assert "CanPerformAction(src, 'job_center_hire', 5000)" in source
+    assert "type(jobName) ~= 'string' or #jobName > 50" in source
+
+
+def test_admin_tablet_rate_limits_and_persists_audit_logs():
+    source = read("resources/[FUNCTION]/rp_tablet_admin/server/main.lua")
+    manifest = read("resources/[FUNCTION]/rp_tablet_admin/fxmanifest.lua")
+    sql = read("database.sql")
+    assert "local function LogAdminAction" in source
+    assert "INSERT INTO admin_logs" in source
+    assert "CREATE TABLE IF NOT EXISTS `admin_logs`" in sql
+    assert "local function AllowAdminAction" in source
+    for action in ("kick", "freeze", "goto", "bring", "revive", "economy", "setjob", "world", "broadcast"):
+        assert f"AllowAdminAction(src, '{action}'" in source
+    assert "@oxmysql/lib/MySQL.lua" in manifest
