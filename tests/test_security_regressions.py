@@ -486,3 +486,12 @@ def test_core_resources_declare_runtime_dependencies_explicitly():
     assert "'oxmysql', 'rp_core'" in characters
     assert "'rp_core', 'rp_jobs'" in admin
     assert "lua54 'yes'" in inventory
+
+
+def test_character_database_reads_fail_gracefully():
+    source = read("resources/[CORE]/rp_characters/server/main.lua")
+    assert "local function SafeDatabaseCall(src, operation, callback)" in source
+    assert "local ok, result = pcall(callback)" in source
+    assert "La base de données est temporairement indisponible." in source
+    for operation in ("account lookup", "character list query", "character selection query", "character count query", "character slot query"):
+        assert operation in source
