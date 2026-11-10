@@ -110,6 +110,15 @@ RegisterNUICallback('broadcastAnnouncement', function(data, cb)
     cb('ok')
 end)
 
+RegisterNUICallback('requestAuditLogs', function(data, cb)
+    TriggerServerEvent('rp_tablet_admin:server:requestAuditLogs')
+    cb('ok')
+end)
+
+RegisterNetEvent('rp_tablet_admin:client:auditLogs', function(logs)
+    SendNUIMessage({ action = 'auditLogs', logs = logs or {} })
+end)
+
 RegisterNetEvent('rp_tablet_admin:client:freezeToggle', function(freeze)
     FreezeEntityPosition(PlayerPedId(), freeze)
 end)
