@@ -1,3 +1,6 @@
+local transferLocks = {}
+local saveLocks = {}
+
 function CreateRPPlayer(source, identifier, charData)
     local self = {}
     self.source = tonumber(source)
@@ -136,6 +139,10 @@ function CreateRPPlayer(source, identifier, charData)
     end
 
     function self.save()
+        -- Prevent stale periodic saves from overwriting a concurrent cash transfer.
+        if transferLocks[self.charId] or saveLocks[self.charId] then return false end
+        saveLocks[self.charId] = true
+
         local position = self.position or Config.DefaultSpawn
         local ped = GetPlayerPed(self.source)
         if ped and ped ~= 0 and DoesEntityExist(ped) then
@@ -164,6 +171,7 @@ function CreateRPPlayer(source, identifier, charData)
             }
         )
 
+        saveLocks[self.charId] = nil
         if not ok then
             print(('[rp_core] SQL save failed for character %s: %s'):format(self.charId, tostring(result)))
             return false
@@ -209,7 +217,7 @@ function TransferCash(fromSource, toSource, amount)
 
     local sender, recipient = Players[fromSource], Players[toSource]
     if not sender or not recipient or sender.cash < amount then return false end
-    if transferLocks[sender.charId] or transferLocks[recipient.charId] then return false end
+    if transferLocks[sender.charId] or transferLocks[recipient.charId]\n        or saveLocks[sender.charId] or saveLocks[recipient.charId] then return false end
 
     transferLocks[sender.charId], transferLocks[recipient.charId] = true, true
     local ok, affected = pcall(MySQL.update.await, [[
@@ -222,7 +230,7 @@ function TransferCash(fromSource, toSource, amount)
           sender.charId, sender.identifier, amount })
     transferLocks[sender.charId], transferLocks[recipient.charId] = nil, nil
 
-    if not ok or not affected or affected < 1 then
+    if not ok or not affected or affected < 2 then
         if not ok then print(('[rp_core] Cash transfer SQL error: %s'):format(tostring(affected))) end
         return false
     end
