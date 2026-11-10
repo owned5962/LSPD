@@ -88,6 +88,7 @@ end
 
 RegisterNetEvent('rp_inventory:requestData', function()
     local src = source
+    if not exports['rp_core']:CanPerformAction(src, 'inventory:request_data', 2000) then return end
     local player = exports['rp_core']:GetPlayerFromId(src)
     if not player then return end
     if not playerInventories[src] then
@@ -103,6 +104,7 @@ end)
 
 RegisterNetEvent('rp_inventory:useItem', function(itemName)
     local src = source
+    if not exports['rp_core']:CanPerformAction(src, 'inventory:use_item', 1000) then return end
     local player = exports['rp_core']:GetPlayerFromId(src)
     local inventory = playerInventories[src]
     if not player or not inventory or type(itemName) ~= 'string' then return end
@@ -163,6 +165,10 @@ RegisterNetEvent('rp_inventory:useItem', function(itemName)
         updatedInventory[updatedIndex].count = updatedInventory[updatedIndex].count - 1
     end
 
+    if not exports['rp_core']:AcquireCharacterLock({ player.charId }) then
+        notify(src, 'error', 'Une sauvegarde de votre personnage est en cours. Réessayez.')
+        return
+    end
     transferLocks[src] = true
     local persisted, persistError = pcall(function()
         local ok = MySQL.transaction.await({
@@ -178,6 +184,7 @@ RegisterNetEvent('rp_inventory:useItem', function(itemName)
         if not ok then error('Item use transaction rejected') end
     end)
     transferLocks[src] = nil
+    exports['rp_core']:ReleaseCharacterLock({ player.charId })
     if not persisted then
         print(('[rp_inventory] Item use failed for character %s: %s'):format(player.charId, tostring(persistError)))
         notify(src, 'error', 'Impossible d’utiliser cet objet : sauvegarde indisponible.')
