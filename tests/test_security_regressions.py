@@ -9,6 +9,13 @@ def read(path):
     return (ROOT / path).read_text(encoding="utf-8")
 
 
+def test_admin_tablet_freeze_control_toggles_both_states():
+    app = read("resources/[FUNCTION]/rp_tablet_admin/html/js/app.js")
+    assert "const frozenPlayers = new Set()" in app
+    assert "payload.freeze = !frozenPlayers.has(selectedPlayerId)" in app
+    assert "frozenPlayers.delete(selectedPlayerId)" in app
+
+
 def test_admin_tablet_has_no_source_one_bypass():
     source = read("resources/[FUNCTION]/rp_tablet_admin/server/main.lua")
     assert "if source == 1 then" not in source
