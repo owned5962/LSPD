@@ -514,3 +514,10 @@ def test_disconnect_save_does_not_read_a_reused_player_source_id():
     assert "player.save(true)" in core
     assert "function self.save(skipPosition)" in player
     assert "local ped = not skipPosition and GetPlayerPed(self.source) or 0" in player
+
+
+def test_bank_transaction_events_are_rate_limited():
+    economy = read("resources/[FUNCTION]/rp_economy/server/main.lua")
+    assert "CanPerformAction(src, 'economy:deposit', 1500)" in economy
+    assert "CanPerformAction(src, 'economy:withdraw', 1500)" in economy
+    assert "CanPerformAction(src, 'economy:transfer', 2000)" in economy
