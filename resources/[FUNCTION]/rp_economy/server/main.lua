@@ -46,6 +46,7 @@ end)
 
 RegisterNetEvent('rp_economy:server:deposit', function(rawAmount)
     local src = source
+    if not exports['rp_core']:CanPerformAction(src, 'economy:deposit', 1500) then return end
     local player = exports['rp_core']:GetPlayerFromId(src)
     local amount = validAmount(rawAmount)
     if not player or not amount then return end
@@ -74,6 +75,7 @@ end)
 
 RegisterNetEvent('rp_economy:server:withdraw', function(rawAmount)
     local src = source
+    if not exports['rp_core']:CanPerformAction(src, 'economy:withdraw', 1500) then return end
     local player = exports['rp_core']:GetPlayerFromId(src)
     local amount = validAmount(rawAmount)
     if not player or not amount then return end
@@ -102,6 +104,7 @@ end)
 
 RegisterNetEvent('rp_economy:server:transfer', function(rawTargetId, rawAmount)
     local src = source
+    if not exports['rp_core']:CanPerformAction(src, 'economy:transfer', 2000) then return end
     local targetId = tonumber(rawTargetId)
     local amount = validAmount(rawAmount)
     local player = exports['rp_core']:GetPlayerFromId(src)
