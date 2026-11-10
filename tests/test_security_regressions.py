@@ -292,7 +292,7 @@ def test_admin_tablet_uses_live_players_and_never_fakes_success():
     assert "function filterPlayers()" in ui
     assert "data.players" in ui
     assert "Permissions enregistrées avec succès" not in ui
-    assert "Cette action n’est pas encore disponible." in ui
+    assert "Cette fonction n’est pas encore disponible." in ui
     assert 'id="players-list"></div>' in html
     assert "Sarah_Connor" not in html and "Alexandre_Vance" not in html
     assert "RegisterNUICallback('setWeatherTime'" in client
