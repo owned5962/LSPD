@@ -16,6 +16,16 @@ def test_admin_tablet_freeze_control_toggles_both_states():
     assert "frozenPlayers.delete(selectedPlayerId)" in app
 
 
+def test_admin_freeze_state_is_restored_from_server_on_tablet_open():
+    server = read("resources/[FUNCTION]/rp_tablet_admin/server/main.lua")
+    client = read("resources/[FUNCTION]/rp_tablet_admin/client/main.lua")
+    app = read("resources/[FUNCTION]/rp_tablet_admin/html/js/app.js")
+    assert server.index("local FrozenPlayers = {}") < server.index("RegisterNetEvent('rp_tablet_admin:server:requestOpen'")
+    assert "frozenPlayers[#frozenPlayers + 1] = targetId" in server
+    assert "frozenPlayers = frozenPlayers or {}" in client
+    assert "data.frozenPlayers.forEach" in app
+
+
 def test_admin_tablet_has_no_source_one_bypass():
     source = read("resources/[FUNCTION]/rp_tablet_admin/server/main.lua")
     assert "if source == 1 then" not in source
