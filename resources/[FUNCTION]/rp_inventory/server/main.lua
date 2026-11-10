@@ -203,6 +203,7 @@ end)
 
 RegisterNetEvent('rp_inventory:giveItem', function(rawTargetId, itemName, rawCount)
     local src = source
+    if not exports['rp_core']:CanPerformAction(src, 'inventory:give_item', 1500) then return end
     local targetId, count = tonumber(rawTargetId), tonumber(rawCount)
     local player = exports['rp_core']:GetPlayerFromId(src)
     local target = targetId and exports['rp_core']:GetPlayerFromId(targetId)
