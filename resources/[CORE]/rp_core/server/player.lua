@@ -196,3 +196,46 @@ function CreateRPPlayer(source, identifier, charData)
 end
 
 exports('CreateRPPlayer', CreateRPPlayer)
+
+
+-- Atomic cash transfer: both character balances are updated by one SQL statement.
+-- The client never supplies balances or character identifiers.
+local transferLocks = {}
+
+function TransferCash(fromSource, toSource, amount)
+    fromSource, toSource, amount = tonumber(fromSource), tonumber(toSource), tonumber(amount)
+    if not fromSource or not toSource or fromSource == toSource or not amount
+        or amount < 1 or amount % 1 ~= 0 or amount > 1000000 then return false end
+
+    local sender, recipient = Players[fromSource], Players[toSource]
+    if not sender or not recipient or sender.cash < amount then return false end
+    if transferLocks[sender.charId] or transferLocks[recipient.charId] then return false end
+
+    transferLocks[sender.charId], transferLocks[recipient.charId] = true, true
+    local ok, affected = pcall(MySQL.update.await, [[
+        UPDATE characters AS sender
+        JOIN characters AS recipient ON recipient.id = ? AND recipient.identifier = ?
+        SET sender.cash = sender.cash - ?, recipient.cash = recipient.cash + ?
+        WHERE sender.id = ? AND sender.identifier = ? AND sender.cash >= ?
+          AND sender.id <> recipient.id
+    ]], { recipient.charId, recipient.identifier, amount, amount,
+          sender.charId, sender.identifier, amount })
+    transferLocks[sender.charId], transferLocks[recipient.charId] = nil, nil
+
+    if not ok or not affected or affected < 1 then
+        if not ok then print(('[rp_core] Cash transfer SQL error: %s'):format(tostring(affected))) end
+        return false
+    end
+
+    sender.cash = sender.cash - amount
+    recipient.cash = recipient.cash + amount
+    TriggerClientEvent('rp_core:client:updateCash', fromSource, sender.cash)
+    TriggerClientEvent('rp_core:client:updateCash', toSource, recipient.cash)
+    TriggerClientEvent('rp_core:client:notify', fromSource,
+        '- ' .. Utils.FormatCurrency(amount) .. ' (Virement à ' .. recipient.firstname .. ' ' .. recipient.lastname .. ')', 'warning')
+    TriggerClientEvent('rp_core:client:notify', toSource,
+        '+ ' .. Utils.FormatCurrency(amount) .. ' (Virement de ' .. sender.firstname .. ' ' .. sender.lastname .. ')', 'success')
+    return true
+end
+
+exports('TransferCash', TransferCash)
