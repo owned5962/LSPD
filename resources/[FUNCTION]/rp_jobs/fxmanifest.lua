@@ -25,3 +25,5 @@ client_scripts {
 server_scripts {
     'server/main.lua'
 }
+
+dependency 'rp_core'
