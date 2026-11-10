@@ -90,6 +90,11 @@ AddEventHandler('playerDropped', function()
 end)
 
 local function LoadCharacter(src, identifier, userGroup, char)
+    if exports['rp_core']:IsCharacterSavePending(char.id) then
+        Notify(src, 'Votre dernière sauvegarde est en cours. Réessayez dans quelques secondes.', 'warning')
+        return
+    end
+
     local currentSession = exports['rp_core']:GetPlayerByIdentifier(identifier)
     if currentSession then
         if currentSession.source ~= src then
