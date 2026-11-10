@@ -8,9 +8,15 @@ end
 
 RegisterNetEvent('job_delivery:setDuty', function(status)
     local src = source
+    if not exports['rp_core']:CanPerformAction(src, 'job_delivery:duty', 2000) then
+        TriggerClientEvent('rp_core:client:notify', src, 'Patientez avant de changer votre état de service.', 'warning')
+        TriggerClientEvent('job_delivery:dutyUpdated', src, dutyPlayers[src] == true)
+        return
+    end
     local player = exports['rp_core']:GetPlayerFromId(src)
     if not player or player.job ~= 'delivery' or type(status) ~= 'boolean' or not isAt(Config.DutyCoords, src, 5.0) then
         TriggerClientEvent('rp_core:client:notify', src, 'Accès refusé ou état de service invalide.', 'error')
+        TriggerClientEvent('job_delivery:dutyUpdated', src, dutyPlayers[src] == true)
         return
     end
 
@@ -19,6 +25,10 @@ RegisterNetEvent('job_delivery:setDuty', function(status)
     print(string.format('[JOB_DELIVERY] Player %s is now %s duty', player.name or src, status and 'ON' or 'OFF'))
 end)
 
+
+exports('IsOnDuty', function(src)
+    return dutyPlayers[tonumber(src)] == true
+end)
 
 AddEventHandler('playerDropped', function()
     dutyPlayers[source] = nil
