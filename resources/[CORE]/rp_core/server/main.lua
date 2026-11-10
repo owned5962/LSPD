@@ -1,5 +1,20 @@
 Players = {}
 
+local actionCooldowns = {}
+
+local function CanPerformAction(src, action, cooldownMs)
+    src = tonumber(src)
+    if not src or src < 1 or type(action) ~= 'string' or action == '' then return false end
+    local now = GetGameTimer()
+    actionCooldowns[src] = actionCooldowns[src] or {}
+    local nextAllowed = actionCooldowns[src][action] or 0
+    if now < nextAllowed then return false end
+    actionCooldowns[src][action] = now + math.max(0, tonumber(cooldownMs) or 1000)
+    return true
+end
+
+exports('CanPerformAction', CanPerformAction)
+
 function GetPlayerFromId(source)
     return Players[tonumber(source)]
 end
@@ -38,6 +53,7 @@ end)
 
 AddEventHandler('playerDropped', function(reason)
     local src = source
+    actionCooldowns[src] = nil
     local player = Players[src]
     if player then
         print(string.format('[rp_core] Player %s (%s) disconnected: %s',
