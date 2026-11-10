@@ -6,6 +6,8 @@ author 'FiveM RP Team'
 description 'Modern Tablet-Style Admin Menu OS with Player Management, Economy, 50 Jobs, Weather & Vehicles'
 version '1.0.0'
 
+dependency 'oxmysql'
+
 ui_page 'html/index.html'
 
 files {
@@ -19,5 +21,6 @@ client_scripts {
 }
 
 server_scripts {
+    '@oxmysql/lib/MySQL.lua',
     'server/main.lua'
 }
