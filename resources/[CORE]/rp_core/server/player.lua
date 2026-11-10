@@ -169,13 +169,13 @@ function CreateRPPlayer(source, identifier, charData)
         return true
     end
 
-    function self.save()
+    function self.save(skipPosition)
         -- Prevent stale periodic saves from overwriting a concurrent cash transfer.
         if transferLocks[self.charId] or saveLocks[self.charId] then return false end
         saveLocks[self.charId] = true
 
         local position = self.position or Config.DefaultSpawn
-        local ped = GetPlayerPed(self.source)
+        local ped = not skipPosition and GetPlayerPed(self.source) or 0
         if ped and ped ~= 0 and DoesEntityExist(ped) then
             local coords = GetEntityCoords(ped)
             position = {
