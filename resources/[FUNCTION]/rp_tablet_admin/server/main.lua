@@ -1,3 +1,5 @@
+local FrozenPlayers = {}
+
 local function IsPlayerAdmin(source)
     if IsPlayerAceAllowed(source, "rp_admin") then
         return true
@@ -96,7 +98,6 @@ RegisterNetEvent('rp_tablet_admin:server:kickPlayer', function(targetId, reason)
     NotifyAdmin(src, 'Joueur ' .. targetId .. ' expulsé.', 'success')
 end)
 
-local FrozenPlayers = {}
 RegisterNetEvent('rp_tablet_admin:server:freezePlayer', function(targetId, freezeState)
     local src = source
     if not AllowAdminAction(src, 'freeze', 500) then return end
