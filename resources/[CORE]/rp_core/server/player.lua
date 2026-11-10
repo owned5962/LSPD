@@ -208,7 +208,6 @@ exports('CreateRPPlayer', CreateRPPlayer)
 
 -- Atomic cash transfer: both character balances are updated by one SQL statement.
 -- The client never supplies balances or character identifiers.
-local transferLocks = {}
 
 function TransferCash(fromSource, toSource, amount)
     fromSource, toSource, amount = tonumber(fromSource), tonumber(toSource), tonumber(amount)
