@@ -258,35 +258,6 @@ def test_character_creator_persists_genetics_and_face_morphs():
     assert "father" in ui and "mother" in ui and "faceFeatures" in ui
     assert "sendAppearancePreview" in ui
 
-if __name__ == "__main__":
-    for check in (
-        test_admin_tablet_has_no_source_one_bypass,
-        test_character_creation_uses_database_and_license,
-        test_core_exposes_player_factory_and_saves,
-        test_database_schema_has_unique_character_slots_and_one_job_grades_table,
-        test_startup_orders_oxmysql_before_core,
-        test_character_ui_has_selection_and_creation_callbacks,
-        test_new_character_onboarding_is_shown_and_persisted_per_character,
-        test_character_appearance_is_applied_and_persisted,
-        test_character_creator_persists_genetics_and_face_morphs,
-        test_clothing_presets_and_outfits_are_saved,
-        test_clothing_saved_outfits_can_be_listed_and_applied_safely,
-        test_legacy_core_exports_and_notifications_are_compatible,
-        test_mysql_manifests_use_oxmysql_only,
-        test_interaction_actions_are_authorized_and_distance_checked,
-        test_inventory_is_persistent_and_server_validates_transfers,
-        test_economy_has_sql_logging_and_transaction_limits,
-        test_anticheat_rate_limits_reports_and_persists_bans,
-        test_followup_hardening_keeps_internal_logs_private_and_money_atomic,
-        test_job_duty_events_validate_job_and_boolean_status,
-        test_job_hiring_only_confirms_persisted_changes,
-        test_pay_command_uses_atomic_transfer_and_rate_limit,
-        test_job_center_application_is_rate_limited_and_payload_validated,
-        test_admin_tablet_rate_limits_and_persists_audit_logs,
-    ):
-        check()
-    print("All security and persistence regression checks passed.")
-
 
 def test_pay_command_uses_atomic_transfer_and_rate_limit():
     commands = read("resources/[CORE]/rp_core/server/commands.lua")
@@ -319,3 +290,34 @@ def test_admin_tablet_rate_limits_and_persists_audit_logs():
     for action in ("kick", "freeze", "goto", "bring", "revive", "economy", "setjob", "world", "broadcast"):
         assert f"AllowAdminAction(src, '{action}'" in source
     assert "@oxmysql/lib/MySQL.lua" in manifest
+
+
+if __name__ == "__main__":
+    for check in (
+        test_admin_tablet_has_no_source_one_bypass,
+        test_character_creation_uses_database_and_license,
+        test_core_exposes_player_factory_and_saves,
+        test_database_schema_has_unique_character_slots_and_one_job_grades_table,
+        test_startup_orders_oxmysql_before_core,
+        test_character_ui_has_selection_and_creation_callbacks,
+        test_new_character_onboarding_is_shown_and_persisted_per_character,
+        test_character_appearance_is_applied_and_persisted,
+        test_character_creator_persists_genetics_and_face_morphs,
+        test_clothing_presets_and_outfits_are_saved,
+        test_clothing_saved_outfits_can_be_listed_and_applied_safely,
+        test_legacy_core_exports_and_notifications_are_compatible,
+        test_mysql_manifests_use_oxmysql_only,
+        test_interaction_actions_are_authorized_and_distance_checked,
+        test_inventory_is_persistent_and_server_validates_transfers,
+        test_economy_has_sql_logging_and_transaction_limits,
+        test_anticheat_rate_limits_reports_and_persists_bans,
+        test_followup_hardening_keeps_internal_logs_private_and_money_atomic,
+        test_job_duty_events_validate_job_and_boolean_status,
+        test_job_hiring_only_confirms_persisted_changes,
+        test_pay_command_uses_atomic_transfer_and_rate_limit,
+        test_job_center_application_is_rate_limited_and_payload_validated,
+        test_admin_tablet_rate_limits_and_persists_audit_logs,
+    ):
+        check()
+    print("All security and persistence regression checks passed.")
+
