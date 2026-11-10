@@ -515,11 +515,16 @@ def test_reconnect_waits_for_final_disconnect_save():
     core = read("resources/[CORE]/rp_core/server/main.lua")
     characters = read("resources/[CORE]/rp_characters/server/main.lua")
     assert "local pendingDisconnectSaves = {}" in core
+    assert "local pendingDisconnectPlayers = {}" in core
     assert "exports('IsCharacterSavePending', IsCharacterSavePending)" in core
     assert "pendingDisconnectSaves[characterId] = true" in core
+    assert "pendingDisconnectPlayers[characterId] = player" in core
     assert "pcall(player.save, true)" in core
-    assert "for attempt = 1, 5 do" in core
-    assert "pendingDisconnectSaves[characterId] = nil" in core
+    assert "for attempt = 1, 20 do" in core
+    assert "if saved and characterId then" in core
+    assert "elseif characterId then" in core
+    assert "Keep reconnect blocked" in core
+    assert "AddEventHandler('onResourceStop'" in core
     assert "exports['rp_core']:IsCharacterSavePending(char.id)" in characters
     assert "Votre dernière sauvegarde est en cours." in characters
 
