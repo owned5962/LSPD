@@ -43,6 +43,7 @@ RegisterNetEvent('rp_tablet_admin:server:requestOpen', function()
         NotifyAdmin(src, "Accès refusé : permissions administrateur requises.")
         return
     end
+    if not exports['rp_core']:CanPerformAction(src, 'admin:open', 1000) then return end
 
     local adminPlayer = exports['rp_core']:GetPlayerFromId(src)
     local adminData = {
