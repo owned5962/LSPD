@@ -53,7 +53,7 @@
                             <!-- Left: Players List -->
                             <div class="admin-card players-card">
                                 <div class="card-header">
-                                    <h3><i class="fas fa-users"></i> Joueurs Connectés (<span id="player-count">3</span>)</h3>
+                                    <h3><i class="fas fa-users"></i> Joueurs Connectés (<span id="player-count">0</span>)</h3>
                                     <input type="text" id="player-search" placeholder="Rechercher ID ou nom..." onkeyup="filterPlayers()">
                                 </div>
                                 <div class="player-list-scrollable" id="players-list"></div>
@@ -62,7 +62,7 @@
                             <!-- Right: Target Player Actions & Controls -->
                             <div class="admin-card actions-card">
                                 <div class="card-header">
-                                    <h3><i class="fas fa-crosshairs"></i> Actions sur la Cible : <span id="selected-target-name" class="highlight-red">Alexandre Vance [ID: 1]</span></h3>
+                                    <h3><i class="fas fa-crosshairs"></i> Actions sur la Cible : <span id="selected-target-name" class="highlight-red">Aucune cible</span></h3>
                                 </div>
                                 <div class="actions-category">
                                     <h4>Téléportation & Mouvement</h4>
@@ -107,7 +107,7 @@
                                 <p>Panneau Maître du Fondateur : Attribution des droits d'accès et contrôle du serveur</p>
                             </div>
                             <div class="server-status-pill">
-                                <span class="pulse-blue"></span> STATUT DU SERVEUR : OPÉRATIONNEL (64 SLOTS)
+                                <span class="pulse-blue"></span> CONTRÔLE DU SERVEUR
                             </div>
                         </div>
 
@@ -134,9 +134,9 @@
                                 <div class="card-header blue-border">
                                     <div class="card-title-group">
                                         <h3><i class="fas fa-tasks"></i> Droits d'Accès du Rôle : <span id="active-grade-title" class="highlight-blue">SuperOpérateur</span></h3>
-                                        <p class="subtitle">Cochez ou décochez les fonctions autorisées dans le menu admin pour ce grade</p>
+                                        <p class="subtitle">Aperçu local uniquement : ces cases ne modifient pas les permissions réelles du serveur</p>
                                     </div>
-                                    <button class="btn-save-perms" onclick="saveCurrentPermissions()"><i class="fas fa-save"></i> Enregistrer les Permissions</button>
+                                    <button class="btn-save-perms" type="button" disabled title="Gestion des permissions persistantes non disponible"><i class="fas fa-lock"></i> Permissions non configurables</button>
                                 </div>
 
                                 <div class="perms-grid" id="permissions-container">
