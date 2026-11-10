@@ -79,6 +79,24 @@ RegisterNetEvent('rp_tablet_admin:server:requestOpen', function()
     TriggerClientEvent('rp_tablet_admin:client:openAuthorized', src, adminData, onlinePlayers, jobs, frozenPlayers)
 end)
 
+RegisterNetEvent('rp_tablet_admin:server:requestAuditLogs', function()
+    local src = source
+    if not AllowAdminAction(src, 'audit_logs', 2000) then
+        NotifyAdmin(src, 'Accès aux journaux refusé ou demande trop fréquente.')
+        return
+    end
+
+    local ok, logs = pcall(MySQL.query.await,
+        'SELECT admin_name, action, target_identifier, details, created_at FROM admin_logs ORDER BY id DESC LIMIT 50')
+    if not ok then
+        print(('[rp_tablet_admin] Audit log query failed: %s'):format(tostring(logs)))
+        NotifyAdmin(src, 'Impossible de charger les journaux administrateur.')
+        return
+    end
+
+    TriggerClientEvent('rp_tablet_admin:client:auditLogs', src, logs or {})
+end)
+
 RegisterNetEvent('rp_tablet_admin:server:kickPlayer', function(targetId, reason)
     local src = source
     if not AllowAdminAction(src, 'kick', 500) then return end
