@@ -272,6 +272,7 @@ def test_pay_command_uses_atomic_transfer_and_rate_limit():
     assert "exports('TransferCash', TransferCash)" in player
     assert "exports('CanPerformAction', CanPerformAction)" in core
     assert "local saveLocks = {}" in player
+    assert player.count("local transferLocks = {}") == 1
     assert "if transferLocks[self.charId] or saveLocks[self.charId] then return false end" in player
     assert "or saveLocks[sender.charId] or saveLocks[recipient.charId]" in player
     assert "affected < 2" in player
