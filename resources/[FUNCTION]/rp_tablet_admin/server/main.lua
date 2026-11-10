@@ -70,7 +70,11 @@ RegisterNetEvent('rp_tablet_admin:server:requestOpen', function()
     end
 
     local jobs = exports['rp_jobs']:GetAllJobs()
-    TriggerClientEvent('rp_tablet_admin:client:openAuthorized', src, adminData, onlinePlayers, jobs)
+    local frozenPlayers = {}
+    for targetId, isFrozen in pairs(FrozenPlayers) do
+        if isFrozen and GetPlayerName(targetId) then frozenPlayers[#frozenPlayers + 1] = targetId end
+    end
+    TriggerClientEvent('rp_tablet_admin:client:openAuthorized', src, adminData, onlinePlayers, jobs, frozenPlayers)
 end)
 
 RegisterNetEvent('rp_tablet_admin:server:kickPlayer', function(targetId, reason)
