@@ -29,6 +29,16 @@ local function Notify(src, message, kind)
     TriggerClientEvent('rp_core:client:notify', src, message, kind or 'error')
 end
 
+local function SafeDatabaseCall(src, operation, callback)
+    local ok, result = pcall(callback)
+    if not ok then
+        print(('[rp_characters] %s failed for player %s: %s'):format(operation, tostring(src), tostring(result)))
+        Notify(src, 'La base de données est temporairement indisponible. Réessayez dans quelques instants.', 'error')
+        return false, nil
+    end
+    return true, result
+end
+
 local function DecodeJson(value, fallback)
     if type(value) == 'table' then return value end
     if type(value) ~= 'string' or value == '' then return fallback end
@@ -120,7 +130,10 @@ RegisterNetEvent('rp_characters:server:checkPlayer', function()
         return
     end
 
-    local user = MySQL.single.await('SELECT identifier, `group` FROM users WHERE identifier = ?', { identifier })
+    local dbOk, user = SafeDatabaseCall(src, 'account lookup', function()
+        return MySQL.single.await('SELECT identifier, `group` FROM users WHERE identifier = ?', { identifier })
+    end)
+    if not dbOk then return end
     if not user then
         local license = identifier:gsub('^license:', '')
         local discord
@@ -137,20 +150,31 @@ RegisterNetEvent('rp_characters:server:checkPlayer', function()
             Notify(src, 'Impossible de créer ou charger votre compte. Réessayez plus tard.')
             return
         end
-        user = MySQL.single.await('SELECT identifier, `group` FROM users WHERE identifier = ?', { identifier })
+        local reloadOk
+        reloadOk, user = SafeDatabaseCall(src, 'account reload', function()
+            return MySQL.single.await('SELECT identifier, `group` FROM users WHERE identifier = ?', { identifier })
+        end)
+        if not reloadOk then return end
         if not user then
             Notify(src, 'Impossible de charger votre compte. Réessayez plus tard.')
             return
         end
     else
-        MySQL.update.await('UPDATE users SET name = ?, last_seen = CURRENT_TIMESTAMP WHERE identifier = ?',
-            { GetPlayerName(src) or 'Citoyen', identifier })
+        local updateOk = SafeDatabaseCall(src, 'last-seen update', function()
+            return MySQL.update.await('UPDATE users SET name = ?, last_seen = CURRENT_TIMESTAMP WHERE identifier = ?',
+                { GetPlayerName(src) or 'Citoyen', identifier })
+        end)
+        if not updateOk then return end
     end
 
-    local characters = MySQL.query.await(
-        'SELECT id, char_id, firstname, lastname, dateofbirth, sex, height, cash, bank, job, job_grade, position, skin, metadata FROM characters WHERE identifier = ? ORDER BY char_id ASC',
-        { identifier }
-    ) or {}
+    local charactersOk, characters = SafeDatabaseCall(src, 'character list query', function()
+        return MySQL.query.await(
+            'SELECT id, char_id, firstname, lastname, dateofbirth, sex, height, cash, bank, job, job_grade, position, skin, metadata FROM characters WHERE identifier = ? ORDER BY char_id ASC',
+            { identifier }
+        )
+    end)
+    if not charactersOk then return end
+    characters = characters or {}
 
     if #characters == 0 then
         TriggerClientEvent('rp_characters:client:openMenu', src, MAX_CHARACTERS)
@@ -169,16 +193,22 @@ RegisterNetEvent('rp_characters:server:selectCharacter', function(slot)
         return
     end
 
-    local user = MySQL.single.await('SELECT `group` FROM users WHERE identifier = ?', { identifier })
+    local userOk, user = SafeDatabaseCall(src, 'character account lookup', function()
+        return MySQL.single.await('SELECT `group` FROM users WHERE identifier = ?', { identifier })
+    end)
+    if not userOk then return end
     if not user then
         Notify(src, 'Compte introuvable. Reconnectez-vous.')
         return
     end
 
-    local char = MySQL.single.await(
-        'SELECT id, char_id, firstname, lastname, dateofbirth, sex, height, cash, bank, job, job_grade, position, skin, metadata FROM characters WHERE identifier = ? AND char_id = ?',
-        { identifier, slot }
-    )
+    local charOk, char = SafeDatabaseCall(src, 'character selection query', function()
+        return MySQL.single.await(
+            'SELECT id, char_id, firstname, lastname, dateofbirth, sex, height, cash, bank, job, job_grade, position, skin, metadata FROM characters WHERE identifier = ? AND char_id = ?',
+            { identifier, slot }
+        )
+    end)
+    if not charOk then return end
     if not char then
         Notify(src, 'Personnage introuvable.')
         return
@@ -223,22 +253,33 @@ RegisterNetEvent('rp_characters:server:createCharacter', function(data)
         return
     end
 
-    local user = MySQL.single.await('SELECT `group` FROM users WHERE identifier = ?', { identifier })
+    local userOk, user = SafeDatabaseCall(src, 'character creation account lookup', function()
+        return MySQL.single.await('SELECT `group` FROM users WHERE identifier = ?', { identifier })
+    end)
+    if not userOk then return end
     if not user then
         Notify(src, 'Compte introuvable. Reconnectez-vous.')
         return
     end
 
-    local count = MySQL.scalar.await('SELECT COUNT(*) FROM characters WHERE identifier = ?', { identifier }) or 0
+    local countOk, count = SafeDatabaseCall(src, 'character count query', function()
+        return MySQL.scalar.await('SELECT COUNT(*) FROM characters WHERE identifier = ?', { identifier })
+    end)
+    if not countOk then return end
+    count = count or 0
     if count >= MAX_CHARACTERS then
         Notify(src, ('Vous avez atteint la limite de %s personnages.'):format(MAX_CHARACTERS))
         return
     end
 
-    local slot = (MySQL.scalar.await(
-        'SELECT COALESCE(MIN(t.slot), 1) FROM (SELECT 1 AS slot UNION SELECT 2 UNION SELECT 3) t LEFT JOIN characters c ON c.char_id = t.slot AND c.identifier = ? WHERE c.id IS NULL',
-        { identifier }
-    ) or 1)
+    local slotOk, slot = SafeDatabaseCall(src, 'character slot query', function()
+        return MySQL.scalar.await(
+            'SELECT COALESCE(MIN(t.slot), 1) FROM (SELECT 1 AS slot UNION SELECT 2 UNION SELECT 3) t LEFT JOIN characters c ON c.char_id = t.slot AND c.identifier = ? WHERE c.id IS NULL',
+            { identifier }
+        )
+    end)
+    if not slotOk then return end
+    slot = slot or 1
     slot = tonumber(slot) or 1
 
     local allowedSpawns = {
