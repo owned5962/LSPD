@@ -26,12 +26,24 @@ exports('GetJob', GetJob)
 exports('GetJobGrade', GetJobGrade)
 exports('GetAllJobs', GetAllJobs)
 
+local JobCenterCoords = vector3(-268.3, -956.8, 31.2)
+
+local function IsAtJobCenter(src)
+    local ped = GetPlayerPed(src)
+    if not ped or ped == 0 or not DoesEntityExist(ped) then return false end
+    return #(GetEntityCoords(ped) - JobCenterCoords) <= 5.0
+end
+
 RegisterNetEvent('rp_jobs:server:chooseJob', function(jobName)
     local src = source
     if not exports['rp_core']:CanPerformAction(src, 'job_center_hire', 5000) then return end
     if type(jobName) ~= 'string' or #jobName > 50 then return end
     local player = exports['rp_core']:GetPlayerFromId(src)
     if not player then return end
+    if not IsAtJobCenter(src) then
+        TriggerClientEvent('rp_core:client:notify', src, 'Vous devez être au Pôle Emploi pour choisir un métier.', 'error')
+        return
+    end
 
     local job = JobsMap[jobName]
     if not job then
