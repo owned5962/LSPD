@@ -8,6 +8,11 @@ end
 
 RegisterNetEvent('job_ambulance:setDuty', function(status)
     local src = source
+    if not exports['rp_core']:CanPerformAction(src, 'job_ambulance:setDuty', 2000) then
+        TriggerClientEvent('rp_core:client:notify', src, 'Patientez avant de changer votre état de service.', 'warning')
+        TriggerClientEvent('job_ambulance:dutyUpdated', src, dutyPlayers[src] == true)
+        return
+    end
     local player = exports['rp_core']:GetPlayerFromId(src)
     if not player or player.job ~= 'ambulance' or type(status) ~= 'boolean' or not isAt(Config.DutyCoords, src, 5.0) then
         TriggerClientEvent('rp_core:client:notify', src, 'Accès refusé ou état de service invalide.', 'error')
