@@ -60,7 +60,8 @@ AddEventHandler('playerDropped', function(reason)
             GetPlayerName(src) or tostring(src), player.identifier or 'unknown', reason or 'unknown'))
         -- Keep the player object alive in this closure while the SQL save completes.
         CreateThread(function()
-            player.save()
+            -- The FiveM source ID may be reused after disconnect; never read a new player's ped.
+            player.save(true)
         end)
         Players[src] = nil
     end
