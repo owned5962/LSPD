@@ -78,25 +78,28 @@ AddEventHandler('playerDropped', function(reason)
 
         CreateThread(function()
             -- The FiveM source ID may be reused after disconnect; never read a new player's ped.
-            -- Retry briefly when an autosave or another character save currently owns the lock.
-            local saved = false
-            for attempt = 1, 20 do
+            -- Keep retrying with bounded backoff: a fixed retry count could leave a character
+            -- permanently locked while the server is still running and the database recovers.
+            local attempt = 0
+            while true do
+                attempt = attempt + 1
                 local ok, result = pcall(player.save, true)
                 if ok and result == true then
-                    saved = true
+                    if characterId then
+                        pendingDisconnectSaves[characterId] = nil
+                        pendingDisconnectPlayers[characterId] = nil
+                    end
+                    print(('[rp_core] Final disconnect save completed for character %s after %s attempt(s)'):format(tostring(characterId), attempt))
                     break
                 end
-                Wait(500)
-            end
-            if not saved then
-                print(('[rp_core] Final disconnect save failed for character %s after 20 attempts'):format(tostring(characterId)))
-            end
-            if saved and characterId then
-                pendingDisconnectSaves[characterId] = nil
-                pendingDisconnectPlayers[characterId] = nil
-            elseif characterId then
-                -- Keep reconnect blocked: loading stale SQL data is worse than requiring recovery.
-                print(('[rp_core] Character %s remains locked until its final save can be recovered'):format(tostring(characterId)))
+
+                if attempt == 1 or attempt % 20 == 0 then
+                    print(('[rp_core] Final disconnect save still pending for character %s (attempt %s): %s'):format(
+                        tostring(characterId), attempt, tostring(result)))
+                end
+
+                local backoff = math.min(30000, 500 * (2 ^ math.min(attempt - 1, 6)))
+                Wait(backoff)
             end
         end)
     end
