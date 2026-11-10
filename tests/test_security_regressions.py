@@ -271,6 +271,10 @@ def test_pay_command_uses_atomic_transfer_and_rate_limit():
     assert "sender.cash >= ?" in player
     assert "exports('TransferCash', TransferCash)" in player
     assert "exports('CanPerformAction', CanPerformAction)" in core
+    assert "local saveLocks = {}" in player
+    assert "if transferLocks[self.charId] or saveLocks[self.charId] then return false end" in player
+    assert "or saveLocks[sender.charId] or saveLocks[recipient.charId]" in player
+    assert "affected < 2" in player
 
 
 def test_job_center_application_is_rate_limited_and_payload_validated():
