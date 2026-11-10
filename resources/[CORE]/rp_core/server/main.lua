@@ -2,6 +2,7 @@ Players = {}
 
 local actionCooldowns = {}
 local pendingDisconnectSaves = {}
+local pendingDisconnectPlayers = {}
 
 local function CanPerformAction(src, action, cooldownMs)
     src = tonumber(src)
@@ -69,25 +70,59 @@ AddEventHandler('playerDropped', function(reason)
         -- Block a fast reconnect from loading stale SQL data while this final save is pending.
         -- Character IDs are database-primary keys and remain stable across FiveM source reuse.
         local characterId = tonumber(player.charId)
-        if characterId then pendingDisconnectSaves[characterId] = true end
+        if characterId then
+            pendingDisconnectSaves[characterId] = true
+            pendingDisconnectPlayers[characterId] = player
+        end
         Players[src] = nil
 
         CreateThread(function()
             -- The FiveM source ID may be reused after disconnect; never read a new player's ped.
             -- Retry briefly when an autosave or another character save currently owns the lock.
             local saved = false
-            for attempt = 1, 5 do
+            for attempt = 1, 20 do
                 local ok, result = pcall(player.save, true)
                 if ok and result == true then
                     saved = true
                     break
                 end
-                Wait(250)
+                Wait(500)
             end
             if not saved then
-                print(('[rp_core] Final disconnect save failed for character %s after 5 attempts'):format(tostring(characterId)))
+                print(('[rp_core] Final disconnect save failed for character %s after 20 attempts'):format(tostring(characterId)))
             end
-            if characterId then pendingDisconnectSaves[characterId] = nil end
+            if saved and characterId then
+                pendingDisconnectSaves[characterId] = nil
+                pendingDisconnectPlayers[characterId] = nil
+            elseif characterId then
+                -- Keep reconnect blocked: loading stale SQL data is worse than requiring recovery.
+                print(('[rp_core] Character %s remains locked until its final save can be recovered'):format(tostring(characterId)))
+            end
         end)
+    end
+end)
+
+
+-- Best-effort flush when rp_core itself is stopped or restarted.
+-- player.save() uses oxmysql await and returns false on SQL/lock failures.
+AddEventHandler('onResourceStop', function(resourceName)
+    if resourceName ~= GetCurrentResourceName() then return end
+
+    for _, player in pairs(Players) do
+        if player and player.save then
+            local ok, saved = pcall(player.save)
+            if not ok or saved ~= true then
+                print(('[rp_core] Resource-stop save failed for character %s'):format(tostring(player.charId)))
+            end
+        end
+    end
+
+    for characterId, player in pairs(pendingDisconnectPlayers) do
+        if player and player.save then
+            local ok, saved = pcall(player.save, true)
+            if not ok or saved ~= true then
+                print(('[rp_core] Resource-stop final save failed for character %s'):format(tostring(characterId)))
+            end
+        end
     end
 end)
