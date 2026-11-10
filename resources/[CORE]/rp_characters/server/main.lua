@@ -42,6 +42,7 @@ local tutorialStarted = {}
 
 RegisterNetEvent('rp_characters:server:requestTutorial', function()
     local src = source
+    if not exports['rp_core']:CanPerformAction(src, 'character:tutorial_request', 5000) then return end
     local player = exports['rp_core']:GetPlayerFromId(src)
     if not player or type(player.metadata) ~= 'table' then return end
     if player.metadata.tutorialCompleted == true then return end
@@ -52,6 +53,7 @@ end)
 
 RegisterNetEvent('rp_characters:server:completeTutorial', function()
     local src = source
+    if not exports['rp_core']:CanPerformAction(src, 'character:tutorial_complete', 3000) then return end
     if tutorialStarted[src] ~= true then return end
 
     local player = exports['rp_core']:GetPlayerFromId(src)
@@ -105,6 +107,7 @@ end
 
 RegisterNetEvent('rp_characters:server:checkPlayer', function()
     local src = source
+    if not exports['rp_core']:CanPerformAction(src, 'character:check_player', 5000) then return end
     local identifier = GetLicenseIdentifier(src)
     if not identifier then
         DropPlayer(src, 'Identifiant FiveM license introuvable.')
@@ -149,6 +152,7 @@ end)
 
 RegisterNetEvent('rp_characters:server:selectCharacter', function(slot)
     local src = source
+    if not exports['rp_core']:CanPerformAction(src, 'character:select', 3000) then return end
     local identifier = GetLicenseIdentifier(src)
     slot = tonumber(slot)
     if not identifier or not slot or slot % 1 ~= 0 or slot < 1 or slot > MAX_CHARACTERS then
@@ -176,6 +180,7 @@ end)
 
 RegisterNetEvent('rp_characters:server:createCharacter', function(data)
     local src = source
+    if not exports['rp_core']:CanPerformAction(src, 'character:create', 5000) then return end
     local identifier = GetLicenseIdentifier(src)
     if not identifier or type(data) ~= 'table' then
         Notify(src, 'Données de création invalides.')
