@@ -326,6 +326,20 @@ def test_admin_tablet_uses_live_players_and_never_fakes_success():
     assert "RegisterNUICallback('broadcastAnnouncement'" in client
 
 
+def test_admin_tablet_can_read_audit_logs_only_through_authorized_server_event():
+    server = read("resources/[FUNCTION]/rp_tablet_admin/server/main.lua")
+    client = read("resources/[FUNCTION]/rp_tablet_admin/client/main.lua")
+    ui = read("resources/[FUNCTION]/rp_tablet_admin/html/js/app.js")
+    html = read("resources/[FUNCTION]/rp_tablet_admin/html/index.html")
+    assert "AllowAdminAction(src, 'audit_logs', 2000)" in server
+    assert "ORDER BY id DESC LIMIT 50" in server
+    assert "rp_tablet_admin:client:auditLogs" in client
+    assert "RegisterNUICallback('requestAuditLogs'" in client
+    assert "function renderAuditLogs(logs)" in ui
+    assert "details.textContent" in ui
+    assert 'id="admin-audit-logs"' in html
+
+
 def test_admin_tablet_rate_limits_and_persists_audit_logs():
     source = read("resources/[FUNCTION]/rp_tablet_admin/server/main.lua")
     manifest = read("resources/[FUNCTION]/rp_tablet_admin/fxmanifest.lua")
