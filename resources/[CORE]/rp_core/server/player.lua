@@ -1,6 +1,33 @@
 local transferLocks = {}
 local saveLocks = {}
 
+-- Shared lock for balance-changing SQL transactions in other server resources.
+-- It prevents periodic character saves from writing stale cash/bank values.
+local function AcquireCharacterLock(characterIds)
+    if type(characterIds) ~= 'table' or #characterIds < 1 then return false end
+    local ids, seen = {}, {}
+    for _, rawId in ipairs(characterIds) do
+        local id = tonumber(rawId)
+        if not id or id < 1 or id % 1 ~= 0 or seen[id]
+            or transferLocks[id] or saveLocks[id] then return false end
+        ids[#ids + 1], seen[id] = id, true
+    end
+    for _, id in ipairs(ids) do transferLocks[id] = true end
+    return true
+end
+
+local function ReleaseCharacterLock(characterIds)
+    if type(characterIds) ~= 'table' then return false end
+    for _, rawId in ipairs(characterIds) do
+        local id = tonumber(rawId)
+        if id and id > 0 then transferLocks[id] = nil end
+    end
+    return true
+end
+
+exports('AcquireCharacterLock', AcquireCharacterLock)
+exports('ReleaseCharacterLock', ReleaseCharacterLock)
+
 function CreateRPPlayer(source, identifier, charData)
     local self = {}
     self.source = tonumber(source)
