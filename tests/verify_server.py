@@ -39,6 +39,10 @@ def test_dedicated_jobs():
         job_dir = os.path.join(jobs_dir, job)
         for relative in ('fxmanifest.lua', 'config.lua', 'client/main.lua', 'server/main.lua'):
             assert os.path.isfile(os.path.join(job_dir, relative)), f"{job} missing {relative}"
+        with open(os.path.join(job_dir, 'fxmanifest.lua'), encoding='utf-8') as manifest_file:
+            manifest = manifest_file.read()
+        assert "'rp_core'" in manifest, f"{job} does not declare rp_core dependency"
+        assert "'rp_ui'" in manifest, f"{job} does not declare rp_ui dependency"
         with open(os.path.join(job_dir, 'config.lua'), encoding='utf-8') as config_file:
             config = config_file.read()
         assert f"Config.Job = '{job[4:]}'" in config, f"{job} Config.Job mismatch"
