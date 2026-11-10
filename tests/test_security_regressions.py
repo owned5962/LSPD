@@ -225,6 +225,18 @@ def test_followup_hardening_keeps_internal_logs_private_and_money_atomic():
     assert "isAt(Config.ArmoryCoords" in police
 
 
+def test_delivery_duty_is_rate_limited_and_server_authoritative():
+    server = read("resources/[JOB]/job_delivery/server/main.lua")
+    client = read("resources/[JOB]/job_delivery/client/main.lua")
+    assert "CanPerformAction(src, 'job_delivery:duty', 2000)" in server
+    assert "TriggerClientEvent('job_delivery:dutyUpdated', src, dutyPlayers[src] == true)" in server
+    assert "exports('IsOnDuty'" in server
+    assert "local dutyRequestPending = false" in client
+    assert "if not dutyRequestPending then" in client
+    assert "onDuty = status == true" in client
+    assert "onDuty = not onDuty" not in client
+
+
 def test_job_duty_events_validate_job_and_boolean_status():
     jobs = (
         "police", "taxi", "miner", "chef", "diver", "pilot", "judge",
