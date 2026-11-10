@@ -186,6 +186,10 @@ function saveCurrentPermissions() {
 // Actions du Menu Admin
 function handleTabletMessage(event) {
     const data = event.data || {};
+    if (data.action === 'auditLogs') {
+        renderAuditLogs(data.logs);
+        return;
+    }
     if (data.action !== 'openTablet') return;
     onlinePlayers = Array.isArray(data.players) ? data.players : [];
     frozenPlayers.clear();
@@ -193,6 +197,35 @@ function handleTabletMessage(event) {
     renderOnlinePlayers();
     const rank = document.getElementById('current-rank-label');
     if (rank) rank.textContent = String(data.admin?.role || 'ADMIN').toUpperCase();
+}
+
+function requestAuditLogs() {
+    nuiPost('requestAuditLogs').then(() => showToast('Demande de journaux envoyée.'))
+        .catch(() => showToast('Impossible de demander les journaux.'));
+}
+
+function renderAuditLogs(logs) {
+    const container = document.getElementById('admin-audit-logs');
+    if (!container) return;
+    container.replaceChildren();
+    if (!Array.isArray(logs) || logs.length === 0) {
+        const empty = document.createElement('p');
+        empty.textContent = 'Aucune action enregistrée.';
+        container.append(empty);
+        return;
+    }
+    logs.forEach(log => {
+        const entry = document.createElement('article');
+        entry.className = 'audit-log-entry';
+        const heading = document.createElement('strong');
+        heading.textContent = `${log.admin_name || 'Administrateur'} · ${log.action || 'action'}`;
+        const details = document.createElement('p');
+        details.textContent = `${log.details || ''}${log.target_identifier ? ` · Cible : ${log.target_identifier}` : ''}`;
+        const date = document.createElement('small');
+        date.textContent = log.created_at ? String(log.created_at) : '';
+        entry.append(heading, details, date);
+        container.append(entry);
+    });
 }
 
 function renderOnlinePlayers() {
