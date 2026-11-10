@@ -308,6 +308,7 @@ def test_admin_tablet_rate_limits_and_persists_audit_logs():
     assert "INSERT INTO admin_logs" in source
     assert "CREATE TABLE IF NOT EXISTS `admin_logs`" in sql
     assert "local function AllowAdminAction" in source
+    assert "CanPerformAction(src, 'admin:open', 1000)" in source
     for action in ("kick", "freeze", "goto", "bring", "revive", "economy", "setjob", "world", "broadcast"):
         assert f"AllowAdminAction(src, '{action}'" in source
     assert "@oxmysql/lib/MySQL.lua" in manifest
