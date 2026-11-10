@@ -453,3 +453,11 @@ def test_character_lifecycle_events_are_rate_limited_server_side():
     for event, action in expected.items():
         assert f"rp_characters:server:{event}" in source
         assert f"CanPerformAction(src, '{action}'," in source
+
+
+def test_first_account_creation_is_idempotent_and_reloads_database_group():
+    source = read("resources/[CORE]/rp_characters/server/main.lua")
+    assert "INSERT IGNORE INTO users" in source
+    assert "SELECT identifier, `group` FROM users WHERE identifier = ?" in source
+    assert "if not user then" in source
+    assert "Impossible de créer ou charger votre compte." in source
