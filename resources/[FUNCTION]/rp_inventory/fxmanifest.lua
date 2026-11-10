@@ -1,5 +1,6 @@
 fx_version 'cerulean'
 game 'gta5'
+lua54 'yes'
 
 author 'FiveM RP Framework'
 description 'Grid-based Drag & Drop Inventory System'
@@ -26,4 +27,5 @@ files {
     'html/js/app.js'
 }
 
-dependency 'oxmysql'
+dependencies { 'oxmysql', 'rp_core' }
+
