@@ -1,4 +1,5 @@
 local onDuty = false
+local dutyRequestPending = false
 
 Citizen.CreateThread(function()
     while true do
@@ -14,8 +15,10 @@ Citizen.CreateThread(function()
                 local label = onDuty and "[E] Fin de service" or "[E] Prise de service"
                 exports['rp_ui']:ShowTextUI(label .. ' (' .. Config.Label .. ')')
                 if IsControlJustPressed(0, 38) then
-                    onDuty = not onDuty
-                    TriggerServerEvent('job_delivery:setDuty', onDuty)
+                    if not dutyRequestPending then
+                        dutyRequestPending = true
+                        TriggerServerEvent('job_delivery:setDuty', not onDuty)
+                    end
                 end
             end
         end
@@ -24,7 +27,8 @@ Citizen.CreateThread(function()
 end)
 
 RegisterNetEvent('job_delivery:dutyUpdated', function(status)
-    onDuty = status
+    dutyRequestPending = false
+    onDuty = status == true
     if onDuty then
         TriggerEvent('rp_core:notify', 'success', 'Prise de service validée : ' .. Config.Label)
     else
