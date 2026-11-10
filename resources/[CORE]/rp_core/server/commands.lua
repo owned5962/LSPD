@@ -1,26 +1,24 @@
 RegisterCommand('pay', function(source, args)
     local src = source
-    local targetId = tonumber(args[1])
-    local amount = tonumber(args[2])
-    if not targetId or not amount or amount <= 0 then
-        TriggerClientEvent('rp_core:client:notify', src, 'Utilisation: /pay [ID] [Montant]', 'error')
+    if src <= 0 then return end
+    if not exports['rp_core']:CanPerformAction(src, 'pay', 1500) then
+        TriggerClientEvent('rp_core:client:notify', src, 'Veuillez patienter avant un nouveau virement.', 'warning')
         return
     end
 
-    local sender = exports['rp_core']:GetPlayerFromId(src)
-    local receiver = exports['rp_core']:GetPlayerFromId(targetId)
-
-    if not sender or not receiver then
+    local targetId = tonumber(args[1])
+    local amount = tonumber(args[2])
+    if not targetId or targetId % 1 ~= 0 or not amount or amount % 1 ~= 0 or amount < 1 or amount > 1000000 then
+        TriggerClientEvent('rp_core:client:notify', src, 'Utilisation : /pay [ID] [Montant entier, max. 1 000 000]', 'error')
+        return
+    end
+    if not exports['rp_core']:GetPlayerFromId(targetId) then
         TriggerClientEvent('rp_core:client:notify', src, 'Joueur introuvable.', 'error')
         return
     end
 
-    if sender.removeCash(amount) then
-        receiver.addCash(amount)
-        TriggerClientEvent('rp_core:client:notify', src, 'Vous avez donné ' .. Utils.FormatCurrency(amount) .. ' à ' .. receiver.firstname .. ' ' .. receiver.lastname, 'success')
-        TriggerClientEvent('rp_core:client:notify', targetId, 'Vous avez reçu ' .. Utils.FormatCurrency(amount) .. ' de ' .. sender.firstname .. ' ' .. sender.lastname, 'info')
-    else
-        TriggerClientEvent('rp_core:client:notify', src, 'Fonds insuffisants en espèces.', 'error')
+    if not exports['rp_core']:TransferCash(src, targetId, amount) then
+        TriggerClientEvent('rp_core:client:notify', src, 'Virement impossible : fonds insuffisants ou sauvegarde refusée.', 'error')
     end
 end, false)
 
