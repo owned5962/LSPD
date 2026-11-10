@@ -804,3 +804,11 @@ input:checked + .slider:before {
 }
 .audit-log-entry p { color: #c4cad6; font-size: 12px; }
 .audit-log-entry small { color: #8492a8; font-size: 11px; }
+
+
+button:disabled {
+    opacity: .42;
+    cursor: not-allowed;
+    filter: grayscale(.55);
+    box-shadow: none;
+}
