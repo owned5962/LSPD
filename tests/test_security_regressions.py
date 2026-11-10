@@ -502,8 +502,8 @@ def test_inventory_give_item_event_is_rate_limited():
 
 def test_core_save_treats_unchanged_existing_character_as_success():
     player = read("resources/[CORE]/rp_core/server/player.lua")
-    assert "if type(result) ~= 'number' then return false end" in player
-    assert "if result > 0 then return true end" in player
+    assert "if type(affected) ~= 'number' then" in player
+    assert "if affected > 0 then return true end" in player
     assert "SELECT 1 FROM characters WHERE id = ? AND identifier = ? LIMIT 1" in player
     assert "return tonumber(exists) == 1" in player
 
