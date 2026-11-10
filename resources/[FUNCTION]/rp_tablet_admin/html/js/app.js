@@ -1,7 +1,16 @@
 // State & Configuration
 let currentMode = 'admin'; // 'admin' ou 'creator'
 let activeGrade = 'superoperator';
-let selectedPlayerId = 1;
+let selectedPlayerId = null;
+let onlinePlayers = [];
+
+function nuiPost(endpoint, payload) {
+    if (typeof GetParentResourceName !== 'function') return Promise.reject(new Error('NUI indisponible'));
+    return fetch(`https://${GetParentResourceName()}/${endpoint}`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json; charset=UTF-8' },
+        body: JSON.stringify(payload || {})
+    }).then(response => { if (!response.ok) throw new Error(`HTTP ${response.status}`); return response.json().catch(() => ({})); });
+}
 
 // Permissions catalog with default values per grade
 const allPermissions = [
@@ -83,6 +92,7 @@ const rolePermissions = {
 document.addEventListener('DOMContentLoaded', () => {
     setupTabSwitching();
     renderPermissionsMatrix();
+    window.addEventListener('message', handleTabletMessage);
     updateClock();
     setInterval(updateClock, 1000);
 });
@@ -179,55 +189,83 @@ function saveCurrentPermissions() {
 }
 
 // Actions du Menu Admin
-function selectPlayer(id, name, job) {
-    selectedPlayerId = id;
-    document.querySelectorAll('.player-entry').forEach(el => el.classList.remove('selected'));
-    event.currentTarget.classList.add('selected');
-    document.getElementById('selected-target-name').textContent = `${name.replace('_', ' ')} [ID: ${id}]`;
+function handleTabletMessage(event) {
+    const data = event.data || {};
+    if (data.action !== 'openTablet') return;
+    onlinePlayers = Array.isArray(data.players) ? data.players : [];
+    renderOnlinePlayers();
+    const rank = document.getElementById('current-rank-label');
+    if (rank) rank.textContent = String(data.admin?.role || 'ADMIN').toUpperCase();
 }
 
-function playerAction(action) {
-    showToast(`Action '${action.toUpperCase()}' exécutée sur le joueur #${selectedPlayerId}`);
-    if (window.invokeNative) {
-        fetch(`https://${GetParentResourceName()}/adminAction`, {
-            method: 'POST',
-            body: JSON.stringify({ action: action, target: selectedPlayerId })
-        });
+function renderOnlinePlayers() {
+    const list = document.getElementById('players-list');
+    const count = document.getElementById('player-count');
+    if (!list) return;
+    if (count) count.textContent = String(onlinePlayers.length);
+    list.replaceChildren();
+    onlinePlayers.forEach(player => {
+        const entry = document.createElement('button');
+        entry.type = 'button'; entry.className = 'player-entry';
+        const info = document.createElement('span'); info.className = 'player-info';
+        const name = document.createElement('span'); name.className = 'name';
+        name.textContent = `${player.name || player.rawName || 'Joueur'} [ID: ${player.id}]`;
+        const meta = document.createElement('span'); meta.className = 'meta';
+        meta.textContent = `Métier : ${player.jobLabel || player.job || 'Inconnu'} · Grade : ${player.grade ?? 0}`;
+        info.append(name, meta); entry.append(info);
+        entry.addEventListener('click', () => selectPlayer(player.id, player.name || player.rawName || 'Joueur', player.job, entry));
+        list.append(entry);
+    });
+    if (onlinePlayers.length) selectPlayer(onlinePlayers[0].id, onlinePlayers[0].name || onlinePlayers[0].rawName || 'Joueur', onlinePlayers[0].job, list.firstElementChild);
+    else {
+        selectedPlayerId = null;
+        const target = document.getElementById('selected-target-name');
+        if (target) target.textContent = 'Aucune cible';
     }
 }
 
+function selectPlayer(id, name, job, element) {
+    selectedPlayerId = Number(id);
+    document.querySelectorAll('.player-entry').forEach(el => el.classList.remove('selected'));
+    if (element) element.classList.add('selected');
+    const target = document.getElementById('selected-target-name');
+    if (target) target.textContent = `${name} [ID: ${id}]`;
+}
+
+function playerAction(action) {
+    if (!Number.isInteger(selectedPlayerId) || selectedPlayerId < 1) return showToast('Sélectionnez un joueur connecté.');
+    const endpoints = { goto: 'teleportToPlayer', bring: 'bringPlayer', freeze: 'freezePlayer', revive: 'revivePlayer', kick: 'kickPlayer' };
+    const endpoint = endpoints[action];
+    if (!endpoint) return showToast('Cette fonction n’est pas encore disponible.');
+    const payload = { playerId: selectedPlayerId };
+    if (action === 'freeze') payload.freeze = true;
+    if (action === 'kick') payload.reason = 'Expulsé par un administrateur.';
+    nuiPost(endpoint, payload).then(() => showToast('Demande envoyée au serveur.')).catch(() => showToast('Impossible de contacter le serveur.'));
+}
+
 function triggerAdminAction(act) {
-    showToast(`Action globale exécutée : ${act}`);
+    showToast('Cette action globale n’est pas encore disponible.');
 }
 
 // Commandes du serveur depuis le Menu Créateur
 function setWeather(weather) {
-    showToast(`Météo du serveur changée en : ${weather}`);
+    nuiPost('setWeatherTime', { weather }).then(() => showToast('Demande météo envoyée.')).catch(() => showToast('Échec de la demande météo.'));
 }
 
 function setTime(h, m) {
-    showToast(`Heure du monde ajustée : ${h}h00`);
+    nuiPost('setWeatherTime', { hours: h, minutes: m }).then(() => showToast('Demande horaire envoyée.')).catch(() => showToast('Échec de la demande horaire.'));
 }
 
 function sendBroadcast() {
     const input = document.getElementById('broadcast-msg');
     const msg = input.value.trim();
-    if (!msg) return;
-    showToast(`Annonce Créateur diffusée : "${msg}"`);
-    input.value = '';
+    if (!msg) return showToast('Saisissez une annonce.');
+    nuiPost('broadcastAnnouncement', { message: msg }).then(() => { showToast('Annonce transmise au serveur.'); input.value = ''; }).catch(() => showToast('Échec de l’envoi de l’annonce.'));
 }
 
-function wipeVehicles() {
-    showToast('Purge de tous les véhicules abandonnés lancée !');
-}
-
-function wipePeds() {
-    showToast('Nettoyage des entités et PNJ achevé.');
-}
-
-function toggleWhitelist() {
-    showToast('Statut de protection et verrouillage du serveur basculé.');
-}
+function wipeVehicles() { showToast('Purge des véhicules non disponible : aucune action serveur sécurisée.'); }
+function wipePeds() { showToast('Purge des PNJ non disponible : aucune action serveur sécurisée.'); }
+function toggleWhitelist() { showToast('Verrouillage serveur non disponible : aucune action serveur sécurisée.'); }
 
 function showToast(msg) {
     const toast = document.getElementById('toast-notify');
