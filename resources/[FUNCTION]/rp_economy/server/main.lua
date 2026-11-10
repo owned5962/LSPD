@@ -50,10 +50,16 @@ RegisterNetEvent('rp_economy:server:deposit', function(rawAmount)
     local amount = validAmount(rawAmount)
     if not player or not amount then return end
 
+    local lockedIds = { player.charId }
+    if not exports['rp_core']:AcquireCharacterLock(lockedIds) then
+        notify(src, 'Une opération sur votre compte est en cours. Réessayez.', 'warning')
+        return
+    end
     local ok, affected = pcall(MySQL.update.await,
         'UPDATE characters SET cash = cash - ?, bank = bank + ? WHERE id = ? AND identifier = ? AND cash >= ?',
         { amount, amount, player.charId, player.identifier, amount }
     )
+    exports['rp_core']:ReleaseCharacterLock(lockedIds)
     if not ok or tonumber(affected) ~= 1 then
         notify(src, 'Dépôt impossible : solde insuffisant ou base indisponible.', 'error')
         return
@@ -72,10 +78,16 @@ RegisterNetEvent('rp_economy:server:withdraw', function(rawAmount)
     local amount = validAmount(rawAmount)
     if not player or not amount then return end
 
+    local lockedIds = { player.charId }
+    if not exports['rp_core']:AcquireCharacterLock(lockedIds) then
+        notify(src, 'Une opération sur votre compte est en cours. Réessayez.', 'warning')
+        return
+    end
     local ok, affected = pcall(MySQL.update.await,
         'UPDATE characters SET bank = bank - ?, cash = cash + ? WHERE id = ? AND identifier = ? AND bank >= ?',
         { amount, amount, player.charId, player.identifier, amount }
     )
+    exports['rp_core']:ReleaseCharacterLock(lockedIds)
     if not ok or tonumber(affected) ~= 1 then
         notify(src, 'Retrait impossible : solde insuffisant ou base indisponible.', 'error')
         return
@@ -100,10 +112,16 @@ RegisterNetEvent('rp_economy:server:transfer', function(rawTargetId, rawAmount)
         return
     end
 
+    local lockedIds = { player.charId, target.charId }
+    if not exports['rp_core']:AcquireCharacterLock(lockedIds) then
+        notify(src, 'Une opération sur un des comptes est en cours. Réessayez.', 'warning')
+        return
+    end
     local ok, affected = pcall(MySQL.update.await,
         'UPDATE characters AS sender JOIN characters AS recipient ON sender.id = ? AND recipient.id = ? SET sender.bank = sender.bank - ?, recipient.bank = recipient.bank + ? WHERE sender.identifier = ? AND recipient.identifier = ? AND sender.bank >= ?',
         { player.charId, target.charId, amount, amount, player.identifier, target.identifier, amount }
     )
+    exports['rp_core']:ReleaseCharacterLock(lockedIds)
     if not ok or tonumber(affected) ~= 2 then
         notify(src, 'Virement impossible : solde modifié ou base indisponible.', 'error')
         return
