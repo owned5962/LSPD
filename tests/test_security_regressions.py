@@ -430,3 +430,12 @@ if __name__ == "__main__":
         check()
     print("All security and persistence regression checks passed.")
 
+
+
+def test_player_job_assignment_rejects_unknown_job_names():
+    jobs = read("resources/[FUNCTION]/rp_jobs/server/main.lua")
+    player = read("resources/[CORE]/rp_core/server/player.lua")
+    assert "function IsValidJob(name)" in jobs
+    assert "exports('IsValidJob', IsValidJob)" in jobs
+    assert "if not exports['rp_jobs']:IsValidJob(jobName) then" in player
+    assert "Métier inconnu. Aucun changement appliqué." in player
