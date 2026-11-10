@@ -252,7 +252,7 @@ def test_job_center_hiring_requires_server_side_proximity():
 def test_delivery_duty_is_rate_limited_and_server_authoritative():
     server = read("resources/[JOB]/job_delivery/server/main.lua")
     client = read("resources/[JOB]/job_delivery/client/main.lua")
-    assert "CanPerformAction(src, 'job_delivery:duty', 2000)" in server
+    assert "CanPerformAction(src, 'job_delivery:setDuty', 2000)" in server
     assert "TriggerClientEvent('job_delivery:dutyUpdated', src, dutyPlayers[src] == true)" in server
     assert "exports('IsOnDuty'" in server
     assert "local dutyRequestPending = false" in client
