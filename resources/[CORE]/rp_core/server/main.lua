@@ -1,6 +1,7 @@
 Players = {}
 
 local actionCooldowns = {}
+local pendingDisconnectSaves = {}
 
 local function CanPerformAction(src, action, cooldownMs)
     src = tonumber(src)
@@ -14,6 +15,13 @@ local function CanPerformAction(src, action, cooldownMs)
 end
 
 exports('CanPerformAction', CanPerformAction)
+
+local function IsCharacterSavePending(characterId)
+    characterId = tonumber(characterId)
+    return characterId ~= nil and pendingDisconnectSaves[characterId] == true
+end
+
+exports('IsCharacterSavePending', IsCharacterSavePending)
 
 function GetPlayerFromId(source)
     return Players[tonumber(source)]
@@ -58,11 +66,28 @@ AddEventHandler('playerDropped', function(reason)
     if player then
         print(string.format('[rp_core] Player %s (%s) disconnected: %s',
             GetPlayerName(src) or tostring(src), player.identifier or 'unknown', reason or 'unknown'))
-        -- Keep the player object alive in this closure while the SQL save completes.
+        -- Block a fast reconnect from loading stale SQL data while this final save is pending.
+        -- Character IDs are database-primary keys and remain stable across FiveM source reuse.
+        local characterId = tonumber(player.charId)
+        if characterId then pendingDisconnectSaves[characterId] = true end
+        Players[src] = nil
+
         CreateThread(function()
             -- The FiveM source ID may be reused after disconnect; never read a new player's ped.
-            player.save(true)
+            -- Retry briefly when an autosave or another character save currently owns the lock.
+            local saved = false
+            for attempt = 1, 5 do
+                local ok, result = pcall(player.save, true)
+                if ok and result == true then
+                    saved = true
+                    break
+                end
+                Wait(250)
+            end
+            if not saved then
+                print(('[rp_core] Final disconnect save failed for character %s after 5 attempts'):format(tostring(characterId)))
+            end
+            if characterId then pendingDisconnectSaves[characterId] = nil end
         end)
-        Players[src] = nil
     end
 end)
