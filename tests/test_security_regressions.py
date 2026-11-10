@@ -495,3 +495,14 @@ def test_character_database_reads_fail_gracefully():
     assert "La base de données est temporairement indisponible." in source
     for operation in ("account lookup", "character list query", "character selection query", "character count query", "character slot query"):
         assert operation in source
+
+
+def test_inventory_item_use_cannot_be_overwritten_by_core_autosave():
+    inventory = read("resources/[FUNCTION]/rp_inventory/server/main.lua")
+    assert "CanPerformAction(src, 'inventory:request_data', 2000)" in inventory
+    assert "CanPerformAction(src, 'inventory:use_item', 1000)" in inventory
+    start = inventory.index("RegisterNetEvent('rp_inventory:useItem'")
+    end = inventory.index("RegisterNetEvent('rp_inventory:giveItem'", start)
+    handler = inventory[start:end]
+    assert handler.index("AcquireCharacterLock({ player.charId })") < handler.index("MySQL.transaction.await")
+    assert handler.index("MySQL.transaction.await") < handler.index("ReleaseCharacterLock({ player.charId })")
