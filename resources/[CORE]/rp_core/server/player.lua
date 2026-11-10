@@ -217,7 +217,8 @@ function TransferCash(fromSource, toSource, amount)
 
     local sender, recipient = Players[fromSource], Players[toSource]
     if not sender or not recipient or sender.cash < amount then return false end
-    if transferLocks[sender.charId] or transferLocks[recipient.charId]\n        or saveLocks[sender.charId] or saveLocks[recipient.charId] then return false end
+    if transferLocks[sender.charId] or transferLocks[recipient.charId]
+        or saveLocks[sender.charId] or saveLocks[recipient.charId] then return false end
 
     transferLocks[sender.charId], transferLocks[recipient.charId] = true, true
     local ok, affected = pcall(MySQL.update.await, [[
