@@ -283,6 +283,22 @@ def test_job_center_application_is_rate_limited_and_payload_validated():
     assert "type(jobName) ~= 'string' or #jobName > 50" in source
 
 
+def test_admin_tablet_uses_live_players_and_never_fakes_success():
+    ui = read("resources/[FUNCTION]/rp_tablet_admin/html/js/app.js")
+    html = read("resources/[FUNCTION]/rp_tablet_admin/html/index.html")
+    client = read("resources/[FUNCTION]/rp_tablet_admin/client/main.lua")
+    assert "function handleTabletMessage(event)" in ui
+    assert "function renderOnlinePlayers()" in ui
+    assert "function filterPlayers()" in ui
+    assert "data.players" in ui
+    assert "Permissions enregistrées avec succès" not in ui
+    assert "Cette action n’est pas encore disponible." in ui
+    assert 'id="players-list"></div>' in html
+    assert "Sarah_Connor" not in html and "Alexandre_Vance" not in html
+    assert "RegisterNUICallback('setWeatherTime'" in client
+    assert "RegisterNUICallback('broadcastAnnouncement'" in client
+
+
 def test_admin_tablet_rate_limits_and_persists_audit_logs():
     source = read("resources/[FUNCTION]/rp_tablet_admin/server/main.lua")
     manifest = read("resources/[FUNCTION]/rp_tablet_admin/fxmanifest.lua")
@@ -321,6 +337,7 @@ if __name__ == "__main__":
         test_pay_command_uses_atomic_transfer_and_rate_limit,
         test_job_center_application_is_rate_limited_and_payload_validated,
         test_admin_tablet_rate_limits_and_persists_audit_logs,
+        test_admin_tablet_uses_live_players_and_never_fakes_success,
     ):
         check()
     print("All security and persistence regression checks passed.")
