@@ -22,7 +22,7 @@ def test_admin_tablet_has_no_client_only_vehicle_spawn_or_delete_callbacks():
     assert "RegisterNUICallback('spawnVehicle'" not in client
     assert "RegisterNUICallback('deleteVehicle'" not in client
     assert "ADMINISTRATEUR</span>" in html
-    assert "current-rank-label">FONDATEUR" not in html
+    assert '<span id="current-rank-label">FONDATEUR</span>' not in html
 
 
 def test_admin_freeze_state_is_restored_from_server_on_tablet_open():
