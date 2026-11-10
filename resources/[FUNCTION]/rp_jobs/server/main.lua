@@ -28,6 +28,8 @@ exports('GetAllJobs', GetAllJobs)
 
 RegisterNetEvent('rp_jobs:server:chooseJob', function(jobName)
     local src = source
+    if not exports['rp_core']:CanPerformAction(src, 'job_center_hire', 5000) then return end
+    if type(jobName) ~= 'string' or #jobName > 50 then return end
     local player = exports['rp_core']:GetPlayerFromId(src)
     if not player then return end
 
