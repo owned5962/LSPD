@@ -9,6 +9,10 @@ function GetJob(name)
     return JobsMap[name] or DefaultJob
 end
 
+function IsValidJob(name)
+    return type(name) == 'string' and JobsMap[name] ~= nil
+end
+
 function GetJobGrade(jobName, grade)
     local job = GetJob(jobName)
     grade = tonumber(grade) or 0
@@ -23,6 +27,7 @@ function GetAllJobs()
 end
 
 exports('GetJob', GetJob)
+exports('IsValidJob', IsValidJob)
 exports('GetJobGrade', GetJobGrade)
 exports('GetAllJobs', GetAllJobs)
 
