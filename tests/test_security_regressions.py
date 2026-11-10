@@ -351,3 +351,23 @@ def test_police_mdt_is_duty_gated_and_uses_live_dispatch_data():
     assert "ui_page 'html/index.html'" in manifest
     assert "textContent" in ui
     assert "innerHTML" not in ui
+
+
+def test_pay_command_uses_atomic_transfer_and_rate_limit():
+    commands = read("resources/[CORE]/rp_core/server/commands.lua")
+    core = read("resources/[CORE]/rp_core/server/main.lua")
+    player = read("resources/[CORE]/rp_core/server/player.lua")
+    assert "CanPerformAction(src, 'pay', 1500)" in commands
+    assert "TransferCash(src, targetId, amount)" in commands
+    assert "amount > 1000000" in commands
+    assert "UPDATE characters AS sender" in player
+    assert "JOIN characters AS recipient" in player
+    assert "sender.cash >= ?" in player
+    assert "exports('TransferCash', TransferCash)" in player
+    assert "exports('CanPerformAction', CanPerformAction)" in core
+
+
+def test_job_center_application_is_rate_limited_and_payload_validated():
+    source = read("resources/[FUNCTION]/rp_jobs/server/main.lua")
+    assert "CanPerformAction(src, 'job_center_hire', 5000)" in source
+    assert "type(jobName) ~= 'string' or #jobName > 50" in source
