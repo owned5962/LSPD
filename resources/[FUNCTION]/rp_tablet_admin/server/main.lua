@@ -320,3 +320,8 @@ RegisterNetEvent('rp_tablet_admin:server:broadcastAnnouncement', function(messag
     })
     TriggerClientEvent('rp_core:client:notify', -1, 'ANNONCE : ' .. message, 'warning')
 end)
+
+
+AddEventHandler('playerDropped', function()
+    FrozenPlayers[source] = nil
+end)
