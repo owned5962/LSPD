@@ -44,8 +44,8 @@
                                 <p>Supervision des joueurs, modération en temps réel et sanctions immédiates</p>
                             </div>
                             <div class="quick-admin-actions">
-                                <button class="action-btn-red" onclick="triggerAdminAction('revive_all')"><i class="fas fa-heartbeat"></i> Revive All</button>
-                                <button class="action-btn-red" onclick="triggerAdminAction('clean_area')"><i class="fas fa-broom"></i> Clean Zone</button>
+                                <button class="action-btn-red" disabled title="Fonction non implémentée côté serveur"><i class="fas fa-heartbeat"></i> Revive All</button>
+                                <button class="action-btn-red" disabled title="Fonction non implémentée côté serveur"><i class="fas fa-broom"></i> Clean Zone</button>
                             </div>
                         </div>
 
@@ -70,17 +70,17 @@
                                         <button class="btn-red" data-perm="tp_to" onclick="playerAction('goto')"><i class="fas fa-location-arrow"></i> Se téléporter à lui</button>
                                         <button class="btn-red" data-perm="tp_here" onclick="playerAction('bring')"><i class="fas fa-magnet"></i> Téléporter sur moi</button>
                                         <button class="btn-red" data-perm="freeze" onclick="playerAction('freeze')"><i class="fas fa-snowflake"></i> Freeze / Défreeze</button>
-                                        <button class="btn-red" data-perm="spectate" onclick="playerAction('spectate')"><i class="fas fa-eye"></i> Mode Spectateur</button>
+                                        <button class="btn-red" data-perm="spectate" disabled title="Fonction non implémentée côté serveur"><i class="fas fa-eye"></i> Mode Spectateur</button>
                                     </div>
                                 </div>
 
                                 <div class="actions-category">
                                     <h4>Santé & Modération</h4>
                                     <div class="btn-group">
-                                        <button class="btn-red" data-perm="heal" onclick="playerAction('heal')"><i class="fas fa-medkit"></i> Soigner (Heal)</button>
+                                        <button class="btn-red" data-perm="heal" disabled title="Fonction non implémentée côté serveur"><i class="fas fa-medkit"></i> Soigner (Heal)</button>
                                         <button class="btn-red" data-perm="revive" onclick="playerAction('revive')"><i class="fas fa-heart"></i> Réanimer (Revive)</button>
-                                        <button class="btn-red" data-perm="noclip" onclick="playerAction('noclip')"><i class="fas fa-ghost"></i> Basculer NoClip</button>
-                                        <button class="btn-red" data-perm="godmode" onclick="playerAction('godmode')"><i class="fas fa-shield-virus"></i> Invincible (GodMode)</button>
+                                        <button class="btn-red" data-perm="noclip" disabled title="Fonction non implémentée côté serveur"><i class="fas fa-ghost"></i> Basculer NoClip</button>
+                                        <button class="btn-red" data-perm="godmode" disabled title="Fonction non implémentée côté serveur"><i class="fas fa-shield-virus"></i> Invincible (GodMode)</button>
                                     </div>
                                 </div>
 
@@ -88,9 +88,9 @@
                                     <h4>Sanctions & Expulsions</h4>
                                     <div class="btn-group">
                                         <button class="btn-red alert" data-perm="kick" onclick="playerAction('kick')"><i class="fas fa-user-times"></i> Expulser (Kick)</button>
-                                        <button class="btn-red alert" data-perm="ban" onclick="playerAction('ban')"><i class="fas fa-ban"></i> Bannir Joueur</button>
-                                        <button class="btn-red" data-perm="give_money" onclick="playerAction('givemoney')"><i class="fas fa-money-bill-wave"></i> Donner Argent</button>
-                                        <button class="btn-red" data-perm="spawn_veh" onclick="playerAction('spawncar')"><i class="fas fa-car"></i> Véhicule Staff</button>
+                                        <button class="btn-red alert" data-perm="ban" disabled title="Fonction non implémentée côté serveur"><i class="fas fa-ban"></i> Bannir Joueur</button>
+                                        <button class="btn-red" data-perm="give_money" disabled title="Fonction non implémentée côté serveur"><i class="fas fa-money-bill-wave"></i> Donner Argent</button>
+                                        <button class="btn-red" data-perm="spawn_veh" disabled title="Fonction non implémentée côté serveur"><i class="fas fa-car"></i> Véhicule Staff</button>
                                     </div>
                                 </div>
                             </div>
@@ -181,9 +181,9 @@
                                             <p>Gestion des entités et anticheat</p>
                                         </div>
                                         <div class="ctrl-buttons">
-                                            <button class="btn-blue-sm" onclick="wipeVehicles()"><i class="fas fa-car-crash"></i> Purge Véhicules Vides</button>
-                                            <button class="btn-blue-sm" onclick="wipePeds()"><i class="fas fa-walking"></i> Purge PNJ Fous</button>
-                                            <button class="btn-blue-sm" onclick="toggleWhitelist()"><i class="fas fa-lock"></i> Verrouiller Serveur</button>
+                                            <button class="btn-blue-sm" disabled title="Fonction non implémentée côté serveur"><i class="fas fa-car-crash"></i> Purge Véhicules Vides</button>
+                                            <button class="btn-blue-sm" disabled title="Fonction non implémentée côté serveur"><i class="fas fa-walking"></i> Purge PNJ Fous</button>
+                                            <button class="btn-blue-sm" disabled title="Fonction non implémentée côté serveur"><i class="fas fa-lock"></i> Verrouiller Serveur</button>
                                         </div>
                                     </div>
 
