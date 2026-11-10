@@ -364,12 +364,14 @@ def test_admin_tablet_uses_live_players_and_never_fakes_success():
 
 def test_unsupported_admin_controls_are_disabled_in_the_tablet():
     html = read("resources/[FUNCTION]/rp_tablet_admin/html/index.html")
-    for action in ("spectate", "heal", "noclip", "godmode", "ban", "givemoney", "spawncar"):
-        button = next(line for line in html.splitlines() if f"playerAction('{action}')" in line)
-        assert "disabled" in button, action
-    for action in ("revive_all", "clean_area"):
-        button = next(line for line in html.splitlines() if f"triggerAdminAction('{action}')" in line)
-        assert "disabled" in button, action
+    for permission in ("spectate", "heal", "noclip", "godmode", "ban", "give_money", "spawn_veh"):
+        button = next(line for line in html.splitlines() if f'data-perm="{permission}"' in line)
+        assert "disabled" in button, permission
+    assert '<i class="fas fa-heartbeat"></i> Revive All' in html
+    assert '<i class="fas fa-broom"></i> Clean Zone' in html
+    for label in ("Revive All", "Clean Zone"):
+        button = next(line for line in html.splitlines() if label in line)
+        assert "disabled" in button, label
 
 
 def test_admin_tablet_can_read_audit_logs_only_through_authorized_server_event():
