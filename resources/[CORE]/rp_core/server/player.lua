@@ -114,6 +114,10 @@ function CreateRPPlayer(source, identifier, charData)
     end
 
     function self.setJob(jobName, grade)
+        if not exports['rp_jobs']:IsValidJob(jobName) then
+            TriggerClientEvent('rp_core:client:notify', self.source, 'Métier inconnu. Aucun changement appliqué.', 'error')
+            return false
+        end
         local jobObj = exports['rp_jobs']:GetJob(jobName)
         if not jobObj then
             jobName = 'unemployed'
