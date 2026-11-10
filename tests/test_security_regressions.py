@@ -439,3 +439,17 @@ def test_player_job_assignment_rejects_unknown_job_names():
     assert "exports('IsValidJob', IsValidJob)" in jobs
     assert "if not exports['rp_jobs']:IsValidJob(jobName) then" in player
     assert "Métier inconnu. Aucun changement appliqué." in player
+
+
+def test_character_lifecycle_events_are_rate_limited_server_side():
+    source = read("resources/[CORE]/rp_characters/server/main.lua")
+    expected = {
+        "requestTutorial": "character:tutorial_request",
+        "completeTutorial": "character:tutorial_complete",
+        "checkPlayer": "character:check_player",
+        "selectCharacter": "character:select",
+        "createCharacter": "character:create",
+    }
+    for event, action in expected.items():
+        assert f"rp_characters:server:{event}" in source
+        assert f"CanPerformAction(src, '{action}'," in source
