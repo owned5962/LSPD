@@ -371,3 +371,14 @@ def test_job_center_application_is_rate_limited_and_payload_validated():
     source = read("resources/[FUNCTION]/rp_jobs/server/main.lua")
     assert "CanPerformAction(src, 'job_center_hire', 5000)" in source
     assert "type(jobName) ~= 'string' or #jobName > 50" in source
+
+
+def test_admin_tablet_rate_limits_and_persists_audit_logs():
+    source = read("resources/[FUNCTION]/rp_tablet_admin/server/main.lua")
+    manifest = read("resources/[FUNCTION]/rp_tablet_admin/fxmanifest.lua")
+    assert "local function LogAdminAction" in source
+    assert "INSERT INTO admin_logs" in source
+    assert "local function AllowAdminAction" in source
+    for action in ("kick", "freeze", "goto", "bring", "revive", "economy", "setjob", "world", "broadcast"):
+        assert f"AllowAdminAction(src, '{action}'" in source
+    assert "@oxmysql/lib/MySQL.lua" in manifest
