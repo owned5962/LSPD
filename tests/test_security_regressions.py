@@ -461,3 +461,14 @@ def test_first_account_creation_is_idempotent_and_reloads_database_group():
     assert "SELECT identifier, `group` FROM users WHERE identifier = ?" in source
     assert "if not user then" in source
     assert "Impossible de créer ou charger votre compte." in source
+
+
+def test_bank_transactions_share_character_locks_with_core_saves():
+    core = read("resources/[CORE]/rp_core/server/player.lua")
+    economy = read("resources/[FUNCTION]/rp_economy/server/main.lua")
+    assert "exports('AcquireCharacterLock', AcquireCharacterLock)" in core
+    assert "exports('ReleaseCharacterLock', ReleaseCharacterLock)" in core
+    assert "transferLocks[id] or saveLocks[id]" in core
+    assert economy.count("AcquireCharacterLock(lockedIds)") == 3
+    assert economy.count("ReleaseCharacterLock(lockedIds)") == 3
+    assert "local lockedIds = { player.charId, target.charId }" in economy
