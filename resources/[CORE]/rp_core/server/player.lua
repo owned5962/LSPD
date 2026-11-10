@@ -170,57 +170,60 @@ function CreateRPPlayer(source, identifier, charData)
     end
 
     function self.save(skipPosition)
-        -- Prevent stale periodic saves from overwriting a concurrent cash transfer.
+        -- Serialize saves against transfers and other saves for this character.
         if transferLocks[self.charId] or saveLocks[self.charId] then return false end
         saveLocks[self.charId] = true
 
-        local position = self.position or Config.DefaultSpawn
-        local ped = not skipPosition and GetPlayerPed(self.source) or 0
-        if ped and ped ~= 0 and DoesEntityExist(ped) then
-            local coords = GetEntityCoords(ped)
-            position = {
-                x = coords.x,
-                y = coords.y,
-                z = coords.z,
-                heading = GetEntityHeading(ped)
-            }
-            self.position = position
-        end
+        -- Protect the entire operation, not only the SQL call: native lookups and
+        -- JSON encoding can also fail. The lock must always be released.
+        local ok, result = pcall(function()
+            local position = self.position or Config.DefaultSpawn
+            local ped = not skipPosition and GetPlayerPed(self.source) or 0
+            if ped and ped ~= 0 and DoesEntityExist(ped) then
+                local coords = GetEntityCoords(ped)
+                position = {
+                    x = coords.x,
+                    y = coords.y,
+                    z = coords.z,
+                    heading = GetEntityHeading(ped)
+                }
+                self.position = position
+            end
 
-        local ok, result = pcall(MySQL.update.await,
-            'UPDATE characters SET cash = ?, bank = ?, job = ?, job_grade = ?, position = ?, skin = ?, metadata = ? WHERE id = ? AND identifier = ?',
-            {
-                self.cash,
-                self.bank,
-                self.job,
-                self.jobGrade,
-                json.encode(position),
-                json.encode(self.skin or {}),
-                json.encode(self.metadata or {}),
-                self.charId,
-                self.identifier
-            }
-        )
+            local affected = MySQL.update.await(
+                'UPDATE characters SET cash = ?, bank = ?, job = ?, job_grade = ?, position = ?, skin = ?, metadata = ? WHERE id = ? AND identifier = ?',
+                {
+                    self.cash,
+                    self.bank,
+                    self.job,
+                    self.jobGrade,
+                    json.encode(position),
+                    json.encode(self.skin or {}),
+                    json.encode(self.metadata or {}),
+                    self.charId,
+                    self.identifier
+                }
+            )
+            if type(affected) ~= 'number' then
+                error('Unexpected SQL update result: ' .. tostring(affected))
+            end
+            if affected > 0 then return true end
+
+            -- oxmysql reports changed rows: a valid no-op UPDATE can return 0.
+            -- Confirm the character still exists before treating that save as successful.
+            local exists = MySQL.scalar.await(
+                'SELECT 1 FROM characters WHERE id = ? AND identifier = ? LIMIT 1',
+                { self.charId, self.identifier }
+            )
+            return tonumber(exists) == 1
+        end)
 
         saveLocks[self.charId] = nil
         if not ok then
             print(('[rp_core] SQL save failed for character %s: %s'):format(self.charId, tostring(result)))
             return false
         end
-        if type(result) ~= 'number' then return false end
-        if result > 0 then return true end
-
-        -- oxmysql reports changed rows: a valid no-op UPDATE can return 0.
-        -- Confirm the character still exists before treating that save as successful.
-        local existsOk, exists = pcall(MySQL.scalar.await,
-            'SELECT 1 FROM characters WHERE id = ? AND identifier = ? LIMIT 1',
-            { self.charId, self.identifier }
-        )
-        if not existsOk then
-            print(('[rp_core] SQL save verification failed for character %s: %s'):format(self.charId, tostring(exists)))
-            return false
-        end
-        return tonumber(exists) == 1
+        return result == true
     end
 
     function self.syncClient()
