@@ -97,44 +97,8 @@ RegisterNUICallback('setJob', function(data, cb)
     cb('ok')
 end)
 
-RegisterNUICallback('spawnVehicle', function(data, cb)
-    local model = data.model
-    if not model or model == '' then return cb('error') end
-    local hash = GetHashKey(model)
-    if not IsModelInCdimage(hash) or not IsModelAVehicle(hash) then
-        TriggerEvent('rp_core:client:notify', 'Modèle de véhicule invalide ou inexistant.', 'error')
-        return cb('error')
-    end
-
-    RequestModel(hash)
-    while not HasModelLoaded(hash) do Wait(10) end
-
-    local ped = PlayerPedId()
-    local coords = GetEntityCoords(ped)
-    local heading = GetEntityHeading(ped)
-    local veh = CreateVehicle(hash, coords.x, coords.y, coords.z, heading, true, false)
-    SetPedIntoVehicle(ped, veh, -1)
-    SetVehicleEngineOn(veh, true, true, false)
-    TriggerEvent('rp_core:client:notify', 'Véhicule apparu: ' .. model, 'success')
-    cb('ok')
-end)
-
-RegisterNUICallback('deleteVehicle', function(data, cb)
-    local ped = PlayerPedId()
-    local veh = GetVehiclePedIsIn(ped, false)
-    if veh and DoesEntityExist(veh) then
-        DeleteEntity(veh)
-        TriggerEvent('rp_core:client:notify', 'Véhicule supprimé.', 'info')
-    else
-        local coords = GetEntityCoords(ped)
-        local closeVeh = GetClosestVehicle(coords.x, coords.y, coords.z, 5.0, 0, 71)
-        if closeVeh and DoesEntityExist(closeVeh) then
-            DeleteEntity(closeVeh)
-            TriggerEvent('rp_core:client:notify', 'Véhicule proche supprimé.', 'info')
-        end
-    end
-    cb('ok')
-end)
+-- Vehicle spawning/deletion are intentionally unavailable until they use
+-- server-authorized entity creation and ownership validation.
 
 RegisterNUICallback('setWeatherTime', function(data, cb)
     TriggerServerEvent('rp_tablet_admin:server:setWeatherTime', data.weather, tonumber(data.hours), tonumber(data.minutes))
