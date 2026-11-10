@@ -225,6 +225,15 @@ def test_followup_hardening_keeps_internal_logs_private_and_money_atomic():
     assert "isAt(Config.ArmoryCoords" in police
 
 
+def test_job_center_hiring_requires_server_side_proximity():
+    server = read("resources/[FUNCTION]/rp_jobs/server/main.lua")
+    assert "local JobCenterCoords = vector3(-268.3, -956.8, 31.2)" in server
+    assert "local function IsAtJobCenter(src)" in server
+    assert "GetEntityCoords(ped) - JobCenterCoords" in server
+    assert "if not IsAtJobCenter(src) then" in server
+    assert "Vous devez être au Pôle Emploi" in server
+
+
 def test_delivery_duty_is_rate_limited_and_server_authoritative():
     server = read("resources/[JOB]/job_delivery/server/main.lua")
     client = read("resources/[JOB]/job_delivery/client/main.lua")
