@@ -482,7 +482,7 @@ def test_inventory_item_use_cannot_be_overwritten_by_core_autosave():
 def test_disconnect_save_does_not_read_a_reused_player_source_id():
     core = read("resources/[CORE]/rp_core/server/main.lua")
     player = read("resources/[CORE]/rp_core/server/player.lua")
-    assert "player.save(true)" in core
+    assert "pcall(player.save, true)" in core
     assert "function self.save(skipPosition)" in player
     assert "local ped = not skipPosition and GetPlayerPed(self.source) or 0" in player
 
