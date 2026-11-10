@@ -225,6 +225,21 @@ def test_followup_hardening_keeps_internal_logs_private_and_money_atomic():
     assert "isAt(Config.ArmoryCoords" in police
 
 
+def test_all_job_duty_events_are_rate_limited_and_reconcile_state():
+    job_root = ROOT / "resources" / "[JOB]"
+    server_files = sorted(job_root.glob("job_*/server/main.lua"))
+    assert server_files, "No job server scripts found"
+    for path in server_files:
+        source = path.read_text(encoding="utf-8")
+        if "RegisterNetEvent(" not in source or ":setDuty" not in source:
+            continue
+        job_name = path.parent.parent.name
+        event_name = f"{job_name}:setDuty"
+        assert f"CanPerformAction(src, '{event_name}', 2000)" in source, path
+        assert f"{job_name}:dutyUpdated" in source, path
+        assert "dutyPlayers[src] == true" in source, path
+
+
 def test_job_center_hiring_requires_server_side_proximity():
     server = read("resources/[FUNCTION]/rp_jobs/server/main.lua")
     assert "local JobCenterCoords = vector3(-268.3, -956.8, 31.2)" in server
