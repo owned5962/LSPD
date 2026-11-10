@@ -3,6 +3,7 @@ let currentMode = 'admin'; // 'admin' ou 'creator'
 let activeGrade = 'superoperator';
 let selectedPlayerId = null;
 let onlinePlayers = [];
+const frozenPlayers = new Set();
 
 function nuiPost(endpoint, payload) {
     if (typeof GetParentResourceName !== 'function') return Promise.reject(new Error('NUI indisponible'));
@@ -239,9 +240,17 @@ function playerAction(action) {
     const endpoint = endpoints[action];
     if (!endpoint) return showToast('Cette fonction n’est pas encore disponible.');
     const payload = { playerId: selectedPlayerId };
-    if (action === 'freeze') payload.freeze = true;
+    if (action === 'freeze') {
+        payload.freeze = !frozenPlayers.has(selectedPlayerId);
+    }
     if (action === 'kick') payload.reason = 'Expulsé par un administrateur.';
-    nuiPost(endpoint, payload).then(() => showToast('Demande envoyée au serveur.')).catch(() => showToast('Impossible de contacter le serveur.'));
+    nuiPost(endpoint, payload).then(() => {
+        if (action === 'freeze') {
+            if (payload.freeze) frozenPlayers.add(selectedPlayerId);
+            else frozenPlayers.delete(selectedPlayerId);
+        }
+        showToast(action === 'freeze' ? (payload.freeze ? 'Demande de gel envoyée.' : 'Demande de dégel envoyée.') : 'Demande envoyée au serveur.');
+    }).catch(() => showToast('Impossible de contacter le serveur.'));
 }
 
 function triggerAdminAction(act) {
