@@ -186,6 +186,19 @@
                                             <button class="btn-blue-sm" onclick="toggleWhitelist()"><i class="fas fa-lock"></i> Verrouiller Serveur</button>
                                         </div>
                                     </div>
+
+                                    <div class="ctrl-box">
+                                        <div class="ctrl-info">
+                                            <h4>Journal d'administration</h4>
+                                            <p>Consulter les 50 dernières actions enregistrées côté serveur</p>
+                                        </div>
+                                        <div class="ctrl-buttons">
+                                            <button class="btn-blue-sm" onclick="requestAuditLogs()"><i class="fas fa-clipboard-list"></i> Actualiser les journaux</button>
+                                        </div>
+                                        <div id="admin-audit-logs" class="audit-log-list" aria-live="polite">
+                                            <p>Appuyez sur Actualiser pour charger les journaux.</p>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
