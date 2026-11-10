@@ -472,3 +472,17 @@ def test_bank_transactions_share_character_locks_with_core_saves():
     assert economy.count("AcquireCharacterLock(lockedIds)") == 3
     assert economy.count("ReleaseCharacterLock(lockedIds)") == 3
     assert "local lockedIds = { player.charId, target.charId }" in economy
+
+
+def test_core_resources_declare_runtime_dependencies_explicitly():
+    jobs = read("resources/[FUNCTION]/rp_jobs/fxmanifest.lua")
+    economy = read("resources/[FUNCTION]/rp_economy/fxmanifest.lua")
+    inventory = read("resources/[FUNCTION]/rp_inventory/fxmanifest.lua")
+    characters = read("resources/[CORE]/rp_characters/fxmanifest.lua")
+    admin = read("resources/[FUNCTION]/rp_tablet_admin/fxmanifest.lua")
+    assert "dependency 'rp_core'" in jobs
+    assert "'rp_core', 'rp_jobs'" in economy
+    assert "'oxmysql', 'rp_core'" in inventory
+    assert "'oxmysql', 'rp_core'" in characters
+    assert "'rp_core', 'rp_jobs'" in admin
+    assert "lua54 'yes'" in inventory
