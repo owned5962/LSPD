@@ -258,6 +258,55 @@ def test_character_creator_persists_genetics_and_face_morphs():
     assert "father" in ui and "mother" in ui and "faceFeatures" in ui
     assert "sendAppearancePreview" in ui
 
+
+
+def test_inventory_use_requires_persisted_inventory_row():
+    source = read("resources/[FUNCTION]/rp_inventory/server/main.lua")
+    load_handler = source.split("local function loadInventory(player)", 1)[1].split("RegisterNetEvent('rp_inventory:requestData'", 1)[0]
+    use_handler = source.split("RegisterNetEvent('rp_inventory:useItem'", 1)[1].split("RegisterNetEvent('rp_inventory:giveItem'", 1)[0]
+    assert "if not saveInventory(player) then" in load_handler
+    assert "Unable to persist the initial inventory" in load_handler
+    assert "INSERT INTO player_inventories (character_id, items) VALUES (?, ?) ON DUPLICATE KEY UPDATE items = VALUES(items)" in use_handler
+
+
+def test_admin_economy_and_job_actions_only_report_persisted_success():
+    source = read("resources/[FUNCTION]/rp_tablet_admin/server/main.lua")
+    assert "succeeded = target.addCash(amount)" in source
+    assert "succeeded = target.addBank(amount, 'Donation Administrative')" in source
+    assert "if not target.setJob(jobName, grade) then" in source
+    assert "Modification du métier impossible : la sauvegarde a échoué." in source
+    assert "succeeded = true" not in source
+    weather_handler = source.split("RegisterNetEvent('rp_tablet_admin:server:setWeatherTime'", 1)[1].split("RegisterNetEvent('rp_tablet_admin:server:broadcastAnnouncement'", 1)[0]
+    assert weather_handler.index("if hasTime then") < weather_handler.index("TriggerClientEvent('rp_tablet_admin:client:syncWeather'")
+    assert "if not hasWeather and not hasTime then" in weather_handler
+
+
+
+def test_crime_system_uses_server_validated_inventory_and_police_dispatch():
+    inventory_config = read("resources/[FUNCTION]/rp_inventory/config.lua")
+    inventory_server = read("resources/[FUNCTION]/rp_inventory/server/main.lua")
+    crime_config = read("resources/[FUNCTION]/rp_crime/config.lua")
+    crime_server = read("resources/[FUNCTION]/rp_crime/server/main.lua")
+    crime_client = read("resources/[FUNCTION]/rp_crime/client/main.lua")
+    server_cfg = read("server.cfg")
+    assert "weed_bag" in inventory_config and "coke_bag" in inventory_config
+    assert "exports('AddItem'" in inventory_server
+    assert "exports('RemoveItem'" in inventory_server
+    assert "exports('GetItemCount'" in inventory_server
+    assert len([line for line in crime_config.splitlines() if "zone = vector3" in line]) >= 8
+    assert "Wait(data.wait)" in crime_server
+    assert "nearPoint(src, data.zone, 5.0)" in crime_server
+    assert "rp_crime:server:sellToNPC" in crime_server
+    assert "rp_crime:server:sellToPlayer" in crime_server
+    assert "NetworkGetEntityFromNetworkId(netId)" in crime_server
+    assert "GetEntityType(npc) ~= 1" in crime_server
+    assert "GetPlayerPed(tonumber(playerId)) == npc" in crime_server
+    assert "exports['job_police']:IsOnDuty(src)" in crime_server
+    assert "rp_crime:server:acceptDispatch" in crime_server
+    assert "SetNewWaypoint(c.x, c.y)" in crime_client
+    assert "ensure rp_crime" in server_cfg
+
+
 if __name__ == "__main__":
     for check in (
         test_admin_tablet_has_no_source_one_bypass,
@@ -269,6 +318,8 @@ if __name__ == "__main__":
         test_new_character_onboarding_is_shown_and_persisted_per_character,
         test_character_appearance_is_applied_and_persisted,
         test_character_creator_persists_genetics_and_face_morphs,
+        test_inventory_use_requires_persisted_inventory_row,
+        test_admin_economy_and_job_actions_only_report_persisted_success,
         test_clothing_presets_and_outfits_are_saved,
         test_clothing_saved_outfits_can_be_listed_and_applied_safely,
         test_legacy_core_exports_and_notifications_are_compatible,
@@ -280,6 +331,54 @@ if __name__ == "__main__":
         test_followup_hardening_keeps_internal_logs_private_and_money_atomic,
         test_job_duty_events_validate_job_and_boolean_status,
         test_job_hiring_only_confirms_persisted_changes,
+        test_crime_system_uses_server_validated_inventory_and_police_dispatch,
     ):
         check()
     print("All security and persistence regression checks passed.")
+
+
+def test_police_mdt_is_duty_gated_and_uses_live_dispatch_data():
+    server = read("resources/[FUNCTION]/rp_police_mdt/server/main.lua")
+    client = read("resources/[FUNCTION]/rp_police_mdt/client/main.lua")
+    manifest = read("resources/[FUNCTION]/rp_police_mdt/fxmanifest.lua")
+    crime = read("resources/[FUNCTION]/rp_crime/server/main.lua")
+    ui = read("resources/[FUNCTION]/rp_police_mdt/html/js/app.js")
+    assert "player.job ~= 'police'" in server
+    assert "exports['job_police']:IsOnDuty(src)" in server
+    assert "GetActiveDispatches" in server and "exports('GetActiveDispatches'" in crime
+    assert "rp_crime:server:acceptDispatch" in client
+    assert "locateCitizen" in server and "SetNewWaypoint" in client
+    assert "ui_page 'html/index.html'" in manifest
+    assert "textContent" in ui
+    assert "innerHTML" not in ui
+
+
+def test_pay_command_uses_atomic_transfer_and_rate_limit():
+    commands = read("resources/[CORE]/rp_core/server/commands.lua")
+    core = read("resources/[CORE]/rp_core/server/main.lua")
+    player = read("resources/[CORE]/rp_core/server/player.lua")
+    assert "CanPerformAction(src, 'pay', 1500)" in commands
+    assert "TransferCash(src, targetId, amount)" in commands
+    assert "amount > 1000000" in commands
+    assert "UPDATE characters AS sender" in player
+    assert "JOIN characters AS recipient" in player
+    assert "sender.cash >= ?" in player
+    assert "exports('TransferCash', TransferCash)" in player
+    assert "exports('CanPerformAction', CanPerformAction)" in core
+
+
+def test_job_center_application_is_rate_limited_and_payload_validated():
+    source = read("resources/[FUNCTION]/rp_jobs/server/main.lua")
+    assert "CanPerformAction(src, 'job_center_hire', 5000)" in source
+    assert "type(jobName) ~= 'string' or #jobName > 50" in source
+
+
+def test_admin_tablet_rate_limits_and_persists_audit_logs():
+    source = read("resources/[FUNCTION]/rp_tablet_admin/server/main.lua")
+    manifest = read("resources/[FUNCTION]/rp_tablet_admin/fxmanifest.lua")
+    assert "local function LogAdminAction" in source
+    assert "INSERT INTO admin_logs" in source
+    assert "local function AllowAdminAction" in source
+    for action in ("kick", "freeze", "goto", "bring", "revive", "economy", "setjob", "world", "broadcast"):
+        assert f"AllowAdminAction(src, '{action}'" in source
+    assert "@oxmysql/lib/MySQL.lua" in manifest

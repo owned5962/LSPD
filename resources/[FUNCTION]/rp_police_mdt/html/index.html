@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>LSPD Mobile Data Terminal</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <main id="app" class="tablet hidden" aria-label="Tablette de police LSPD">
+    <header class="topbar">
+      <div class="brand"><div class="badge">★</div><div><strong>LOS SANTOS POLICE DEPARTMENT</strong><small>MOBILE DATA TERMINAL · MDT</small></div></div>
+      <div class="officer-status"><span class="live-dot"></span><div><b>EN SERVICE</b><small id="unit-label">Unité LSPD</small></div><div class="clock"><b id="clock">--:--</b><small id="date">--/--/----</small></div><div class="profile"><span>♙</span><div><b id="officer-name">Officier</b><small id="officer-grade">Grade non renseigné</small></div></div></div>
+      <button id="close" class="close" aria-label="Fermer">×</button>
+    </header>
+    <div class="layout">
+      <nav class="sidebar">
+        <button class="nav active" data-view="dashboard"><b>⌂</b> Tableau de bord</button>
+        <button class="nav" data-view="dispatch"><b>◉</b> Dispatch <span id="dispatch-count" class="count">0</span></button>
+        <button class="nav" data-view="citizens"><b>♙</b> Annuaire</button>
+        <button class="nav" data-view="units"><b>▣</b> Unités LSPD</button>
+        <button class="nav" data-view="gps"><b>⌖</b> GPS citoyen</button>
+        <div class="side-footer"><span class="shield">LSPD</span><small>SECURE TERMINAL<br>LOS SANTOS · SAN ANDREAS</small></div>
+      </nav>
+      <section class="content">
+        <div class="page-head"><div><p class="eyebrow">CENTRE OPÉRATIONNEL</p><h1 id="page-title">Tableau de bord</h1><p class="muted">Vue opérationnelle du service de police</p></div><button id="refresh" class="refresh">↻ Actualiser</button></div>
+        <section id="dashboard" class="view active">
+          <div class="stats">
+            <article class="stat"><span>Citoyens en ville</span><strong id="citizen-total">0</strong><small>Joueurs connectés</small></article>
+            <article class="stat"><span>Effectif connecté</span><strong id="officer-total">0</strong><small>Policiers en service</small></article>
+            <article class="stat alert-stat"><span>Appels en cours</span><strong id="call-total">0</strong><small>Interventions non attribuées</small></article>
+            <article class="stat"><span>Unités actives</span><strong id="unit-total">0</strong><small>Effectif LSPD disponible</small></article>
+          </div>
+          <div class="main-grid">
+            <article class="panel calls-panel"><div class="panel-title"><div><h2>Appels en cours</h2><p>Signalements reçus par le dispatch</p></div><button class="text-btn" data-go="dispatch">Voir tout →</button></div><div id="recent-calls" class="rows empty">Aucun appel actif.</div></article>
+            <article class="panel map-panel"><div class="panel-title"><div><h2>Carte de Los Santos</h2><p>Repères visuels des interventions</p></div><span class="live-label">● LIVE</span></div><div class="city-map"><div class="map-grid"></div><div class="road road-a"></div><div class="road road-b"></div><div class="road road-c"></div><div class="road road-d"></div><div class="map-water"></div><div class="map-label label-north">VINEWOOD</div><div class="map-label label-center">DOWNTOWN</div><div class="map-label label-south">SOUTH LS</div><div id="map-markers"></div><div class="map-legend"><span><i class="marker-blue"></i> LSPD</span><span><i class="marker-red"></i> Appel</span></div></div></article>
+          </div>
+          <div class="bottom-grid">
+            <article class="panel"><div class="panel-title"><div><h2>Recherche rapide</h2><p>Retrouver un citoyen connecté</p></div></div><div class="quick-search"><input id="quick-search" class="search" placeholder="Nom, ID, métier…" autocomplete="off"><button id="quick-search-btn" class="primary">Rechercher</button></div><div class="quick-links"><button data-go="citizens">♙ Citoyen</button><button data-go="units">▣ Unité LSPD</button><button data-go="dispatch">◉ Dispatch</button></div></article>
+            <article class="panel"><div class="panel-title"><div><h2>Unités en service</h2><p>Effectifs actuellement de garde</p></div><button class="text-btn" data-go="units">Tout voir →</button></div><div id="recent-units" class="rows empty">Aucune unité en service.</div></article>
+          </div>
+        </section>
+        <section id="dispatch" class="view"><article class="panel"><div class="panel-title"><div><h2>Centre de dispatch</h2><p>Appels transmis au LSPD</p></div><span class="live-label">● EN DIRECT</span></div><div id="dispatch-list" class="rows empty">Aucun appel actif.</div></article></section>
+        <section id="citizens" class="view"><article class="panel"><div class="panel-title"><div><h2>Annuaire des citoyens</h2><p>Joueurs actuellement connectés</p></div></div><input id="citizen-search" class="search" type="search" placeholder="Rechercher un nom, un métier ou un ID…"><div class="table-wrap"><table><thead><tr><th>ID</th><th>Identité</th><th>Métier</th><th>Grade</th><th>Ping</th><th>Action</th></tr></thead><tbody id="citizen-list"></tbody></table></div><p id="citizen-empty" class="empty-note">Aucun citoyen ne correspond à la recherche.</p></article></section>
+        <section id="units" class="view"><article class="panel"><div class="panel-title"><div><h2>Unités LSPD</h2><p>Policiers dont la prise de service est validée</p></div></div><div id="unit-list" class="rows empty">Aucune unité en service.</div></article></section>
+        <section id="gps" class="view"><article class="panel"><div class="panel-title"><div><h2>Localisation citoyen</h2><p>Choisir un joueur connecté pour définir un point GPS</p></div></div><input id="gps-search" class="search" placeholder="Nom ou ID du citoyen"><div id="gps-list" class="rows empty">Aucun citoyen connecté.</div></article></section>
+        <footer class="footnote">LSPD MDT · Accès réservé aux policiers en service · Données fournies par le serveur.</footer>
+      </section>
+    </div>
+  </main>
+  <script src="js/app.js"></script>
+</body>
+</html>

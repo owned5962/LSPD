@@ -19,6 +19,24 @@ local function NotifyAdmin(source, message, kind)
     TriggerClientEvent('rp_core:client:notify', source, message, kind or 'error')
 end
 
+
+local function LogAdminAction(src, action, targetId, details)
+    local admin = exports['rp_core']:GetPlayerFromId(src)
+    local target = targetId and exports['rp_core']:GetPlayerFromId(targetId) or nil
+    local adminName = admin and ((admin.firstname or '') .. ' ' .. (admin.lastname or '')) or (GetPlayerName(src) or 'Administrateur')
+    local adminIdentifier = admin and admin.identifier or ('server:' .. tostring(src))
+    local targetIdentifier = target and target.identifier or nil
+    details = type(details) == 'string' and details:gsub('[%c]', ' '):sub(1, 500) or ''
+    local ok, err = pcall(MySQL.insert.await,
+        'INSERT INTO admin_logs (admin_identifier, admin_name, action, target_identifier, details) VALUES (?, ?, ?, ?, ?)',
+        { adminIdentifier, adminName:sub(1, 64), tostring(action):sub(1, 64), targetIdentifier, details })
+    if not ok then print(('[rp_tablet_admin] Audit log failed: %s'):format(tostring(err))) end
+end
+
+local function AllowAdminAction(src, action, cooldown)
+    return IsPlayerAdmin(src) and exports['rp_core']:CanPerformAction(src, 'admin:' .. action, cooldown or 500)
+end
+
 RegisterNetEvent('rp_tablet_admin:server:requestOpen', function()
     local src = source
     if not IsPlayerAdmin(src) then
@@ -56,7 +74,7 @@ end)
 
 RegisterNetEvent('rp_tablet_admin:server:kickPlayer', function(targetId, reason)
     local src = source
-    if not IsPlayerAdmin(src) then return end
+    if not AllowAdminAction(src, 'kick', 500) then return end
 
     targetId = GetOnlineTargetId(targetId)
     if not targetId or targetId == src then
@@ -68,6 +86,7 @@ RegisterNetEvent('rp_tablet_admin:server:kickPlayer', function(targetId, reason)
     reason = reason:gsub('[%c]', ' '):sub(1, 120)
     if reason == '' then reason = 'Expulsé par un administrateur.' end
 
+    LogAdminAction(src, 'kick', targetId, reason)
     DropPlayer(targetId, '[ADMINISTRATION] ' .. reason)
     NotifyAdmin(src, 'Joueur ' .. targetId .. ' expulsé.', 'success')
 end)
@@ -75,7 +94,7 @@ end)
 local FrozenPlayers = {}
 RegisterNetEvent('rp_tablet_admin:server:freezePlayer', function(targetId, freezeState)
     local src = source
-    if not IsPlayerAdmin(src) then return end
+    if not AllowAdminAction(src, 'freeze', 500) then return end
 
     targetId = GetOnlineTargetId(targetId)
     if not targetId or type(freezeState) ~= 'boolean' then
@@ -84,13 +103,14 @@ RegisterNetEvent('rp_tablet_admin:server:freezePlayer', function(targetId, freez
     end
 
     FrozenPlayers[targetId] = freezeState
+    LogAdminAction(src, freezeState and 'freeze' or 'unfreeze', targetId, 'État de gel modifié')
     TriggerClientEvent('rp_tablet_admin:client:freezeToggle', targetId, freezeState)
     NotifyAdmin(src, 'Joueur ' .. targetId .. (freezeState and ' gelé.' or ' dégelé.'), 'info')
 end)
 
 RegisterNetEvent('rp_tablet_admin:server:teleportToPlayer', function(targetId)
     local src = source
-    if not IsPlayerAdmin(src) then return end
+    if not AllowAdminAction(src, 'goto', 500) then return end
 
     targetId = GetOnlineTargetId(targetId)
     if not targetId then
@@ -101,6 +121,7 @@ RegisterNetEvent('rp_tablet_admin:server:teleportToPlayer', function(targetId)
     local targetPed = GetPlayerPed(targetId)
     if targetPed and targetPed ~= 0 and DoesEntityExist(targetPed) then
         local coords = GetEntityCoords(targetPed)
+        LogAdminAction(src, 'goto', targetId, 'Téléportation administrateur vers le joueur')
         TriggerClientEvent('rp_tablet_admin:client:teleport', src, coords)
         NotifyAdmin(src, 'Téléporté vers le joueur ' .. targetId, 'success')
     end
@@ -108,7 +129,7 @@ end)
 
 RegisterNetEvent('rp_tablet_admin:server:bringPlayer', function(targetId)
     local src = source
-    if not IsPlayerAdmin(src) then return end
+    if not AllowAdminAction(src, 'bring', 500) then return end
 
     targetId = GetOnlineTargetId(targetId)
     if not targetId or targetId == src then
@@ -119,6 +140,7 @@ RegisterNetEvent('rp_tablet_admin:server:bringPlayer', function(targetId)
     local adminPed = GetPlayerPed(src)
     if adminPed and adminPed ~= 0 and DoesEntityExist(adminPed) then
         local coords = GetEntityCoords(adminPed)
+        LogAdminAction(src, 'bring', targetId, 'Joueur téléporté vers administrateur')
         TriggerClientEvent('rp_tablet_admin:client:teleport', targetId, coords)
         NotifyAdmin(src, 'Joueur ' .. targetId .. ' téléporté sur vous.', 'success')
         NotifyAdmin(targetId, 'Vous avez été téléporté par un administrateur.', 'info')
@@ -127,7 +149,7 @@ end)
 
 RegisterNetEvent('rp_tablet_admin:server:revivePlayer', function(targetId)
     local src = source
-    if not IsPlayerAdmin(src) then return end
+    if not AllowAdminAction(src, 'revive', 500) then return end
 
     targetId = GetOnlineTargetId(targetId)
     if not targetId then
@@ -135,13 +157,14 @@ RegisterNetEvent('rp_tablet_admin:server:revivePlayer', function(targetId)
         return
     end
 
+    LogAdminAction(src, 'revive', targetId, 'Réanimation administrateur')
     TriggerClientEvent('rp_tablet_admin:client:revive', targetId)
     NotifyAdmin(src, 'Joueur ' .. targetId .. ' réanimé.', 'success')
 end)
 
 RegisterNetEvent('rp_tablet_admin:server:manageEconomy', function(targetId, moneyType, amount, operation)
     local src = source
-    if not IsPlayerAdmin(src) then return end
+    if not AllowAdminAction(src, 'economy', 1000) then return end
 
     targetId = GetOnlineTargetId(targetId)
     amount = tonumber(amount)
@@ -167,11 +190,10 @@ RegisterNetEvent('rp_tablet_admin:server:manageEconomy', function(targetId, mone
     local succeeded = false
     if operation == 'give' then
         if moneyType == 'cash' then
-            target.addCash(amount)
+            succeeded = target.addCash(amount)
         else
-            target.addBank(amount, 'Donation Administrative')
+            succeeded = target.addBank(amount, 'Donation Administrative')
         end
-        succeeded = true
     elseif moneyType == 'cash' then
         succeeded = target.removeCash(amount)
     else
@@ -179,16 +201,17 @@ RegisterNetEvent('rp_tablet_admin:server:manageEconomy', function(targetId, mone
     end
 
     if not succeeded then
-        NotifyAdmin(src, 'Fonds insuffisants : opération annulée.')
+        NotifyAdmin(src, 'Opération non effectuée : fonds insuffisants ou sauvegarde impossible.')
         return
     end
 
+    LogAdminAction(src, 'economy', targetId, operation .. ' ' .. amount .. ' ' .. moneyType)
     NotifyAdmin(src, (operation == 'give' and 'Ajouté ' or 'Retiré ') .. amount .. ' $ (' .. moneyType .. ') au joueur ' .. targetId, 'success')
 end)
 
 RegisterNetEvent('rp_tablet_admin:server:setJob', function(targetId, jobName, grade)
     local src = source
-    if not IsPlayerAdmin(src) then return end
+    if not AllowAdminAction(src, 'setjob', 500) then return end
 
     targetId = GetOnlineTargetId(targetId)
     grade = tonumber(grade)
@@ -215,13 +238,18 @@ RegisterNetEvent('rp_tablet_admin:server:setJob', function(targetId, jobName, gr
         return
     end
 
-    target.setJob(jobName, grade)
+    if not target.setJob(jobName, grade) then
+        NotifyAdmin(src, 'Modification du métier impossible : la sauvegarde a échoué.')
+        return
+    end
+
+    LogAdminAction(src, 'setjob', targetId, jobName .. ' grade ' .. grade)
     NotifyAdmin(src, 'Métier du joueur ' .. targetId .. ' défini sur ' .. jobName .. ' (Grade ' .. grade .. ')', 'success')
 end)
 
 RegisterNetEvent('rp_tablet_admin:server:setWeatherTime', function(weather, hours, minutes)
     local src = source
-    if not IsPlayerAdmin(src) then return end
+    if not AllowAdminAction(src, 'world', 500) then return end
 
     local allowedWeather = {
         EXTRASUNNY = true, CLEAR = true, CLOUDS = true, SMOG = true,
@@ -230,30 +258,44 @@ RegisterNetEvent('rp_tablet_admin:server:setWeatherTime', function(weather, hour
         SNOWLIGHT = true, XMAS = true, HALLOWEEN = true
     }
 
-    if weather ~= nil and weather ~= '' then
-        if type(weather) ~= 'string' or not allowedWeather[weather] then
-            NotifyAdmin(src, 'Météo invalide.')
-            return
-        end
-        TriggerClientEvent('rp_tablet_admin:client:syncWeather', -1, weather)
+    -- Validate the complete request before applying either change. This avoids
+    -- changing the weather when the accompanying time value is invalid.
+    local hasWeather = weather ~= nil and weather ~= ''
+    if hasWeather and (type(weather) ~= 'string' or not allowedWeather[weather]) then
+        NotifyAdmin(src, 'Météo invalide.')
+        return
     end
 
-    if hours ~= nil or minutes ~= nil then
+    local hasTime = hours ~= nil or minutes ~= nil
+    if hasTime then
         hours = tonumber(hours)
         minutes = tonumber(minutes)
-        if not hours or not minutes or hours % 1 ~= 0 or minutes % 1 ~= 0 or hours < 0 or hours > 23 or minutes < 0 or minutes > 59 then
+        if not hours or not minutes or hours % 1 ~= 0 or minutes % 1 ~= 0
+            or hours < 0 or hours > 23 or minutes < 0 or minutes > 59 then
             NotifyAdmin(src, 'Heure invalide.')
             return
         end
+    end
+
+    if not hasWeather and not hasTime then
+        NotifyAdmin(src, 'Aucune modification météo ou horaire fournie.')
+        return
+    end
+
+    if hasWeather then
+        TriggerClientEvent('rp_tablet_admin:client:syncWeather', -1, weather)
+    end
+    if hasTime then
         TriggerClientEvent('rp_tablet_admin:client:syncTime', -1, hours, minutes)
     end
 
+    LogAdminAction(src, 'world', nil, 'Météo=' .. tostring(weather or 'inchangée') .. ', heure=' .. tostring(hours or 'inchangée') .. ':' .. tostring(minutes or 'inchangée'))
     NotifyAdmin(src, 'Météo / heure synchronisée sur le serveur.', 'info')
 end)
 
 RegisterNetEvent('rp_tablet_admin:server:broadcastAnnouncement', function(message)
     local src = source
-    if not IsPlayerAdmin(src) then return end
+    if not AllowAdminAction(src, 'broadcast', 500) then return end
 
     if type(message) ~= 'string' then
         NotifyAdmin(src, 'Annonce invalide.')
@@ -265,6 +307,7 @@ RegisterNetEvent('rp_tablet_admin:server:broadcastAnnouncement', function(messag
         return
     end
 
+    LogAdminAction(src, 'broadcast', nil, message)
     TriggerClientEvent('chat:addMessage', -1, {
         color = {255, 69, 0},
         args = {'[ANNONCE ADMIN]', message}

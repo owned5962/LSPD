@@ -83,7 +83,11 @@ local function loadInventory(player)
 
     playerInventories[player.source] = normalizeInventory(DEFAULT_INVENTORY)
     inventoryCharacterIds[player.source] = player.charId
-    saveInventory(player)
+    if not saveInventory(player) then
+        playerInventories[player.source] = nil
+        inventoryCharacterIds[player.source] = nil
+        error('Unable to persist the initial inventory')
+    end
 end
 
 RegisterNetEvent('rp_inventory:requestData', function()
@@ -167,8 +171,8 @@ RegisterNetEvent('rp_inventory:useItem', function(itemName)
     local persisted, persistError = pcall(function()
         local ok = MySQL.transaction.await({
             {
-                query = 'UPDATE player_inventories SET items = ? WHERE character_id = ?',
-                values = { json.encode(updatedInventory), player.charId }
+                query = 'INSERT INTO player_inventories (character_id, items) VALUES (?, ?) ON DUPLICATE KEY UPDATE items = VALUES(items)',
+                values = { player.charId, json.encode(updatedInventory) }
             },
             {
                 query = 'UPDATE characters SET metadata = ? WHERE id = ? AND identifier = ?',
@@ -304,4 +308,53 @@ AddEventHandler('playerDropped', function()
     playerInventories[src] = nil
     inventoryCharacterIds[src] = nil
     transferLocks[src] = nil
+end)
+
+
+-- API serveur sécurisée pour les ressources qui récompensent/consomment des objets.
+local function ensurePlayerInventory(player)
+    if not player or not player.source then return false end
+    if playerInventories[player.source] and inventoryCharacterIds[player.source] == player.charId then return true end
+    local ok = pcall(loadInventory, player)
+    return ok and playerInventories[player.source] ~= nil
+end
+
+local function changeInventoryItem(src, itemName, amount, operation)
+    local player = exports['rp_core']:GetPlayerFromId(src)
+    amount = tonumber(amount)
+    if not player or type(itemName) ~= 'string' or not amount or amount % 1 ~= 0 or amount < 1 or amount > 1000 then return false end
+    local definition = Config.DefaultItems[itemName]
+    if not definition or transferLocks[src] or not ensurePlayerInventory(player) then return false end
+    local current = normalizeInventory(playerInventories[src])
+    local index, found
+    for i, item in ipairs(current) do if item.name == itemName then index, found = i, item break end end
+    if operation == 'remove' and (not found or found.count < amount) then return false end
+    if operation == 'add' then
+        if getInventoryWeight(current) + definition.weight * amount > Config.MaxWeight then return false end
+        if found then found.count = found.count + amount
+        else current[#current + 1] = { name = itemName, count = amount, label = definition.label, weight = definition.weight } end
+    else
+        if found.count == amount then table.remove(current, index) else found.count = found.count - amount end
+    end
+    transferLocks[src] = true
+    local ok = pcall(function()
+        local saved = MySQL.update.await(
+            'INSERT INTO player_inventories (character_id, items) VALUES (?, ?) ON DUPLICATE KEY UPDATE items = VALUES(items)',
+            { player.charId, json.encode(current) })
+        if saved == nil then error('Inventory save returned nil') end
+    end)
+    transferLocks[src] = nil
+    if not ok then return false end
+    playerInventories[src] = current
+    sendInventory(src, player)
+    return true
+end
+
+exports('AddItem', function(src, itemName, amount) return changeInventoryItem(tonumber(src), itemName, amount, 'add') end)
+exports('RemoveItem', function(src, itemName, amount) return changeInventoryItem(tonumber(src), itemName, amount, 'remove') end)
+exports('GetItemCount', function(src, itemName)
+    local player = exports['rp_core']:GetPlayerFromId(tonumber(src))
+    if not player or type(itemName) ~= 'string' or not ensurePlayerInventory(player) then return 0 end
+    for _, item in ipairs(playerInventories[player.source]) do if item.name == itemName then return item.count end end
+    return 0
 end)
