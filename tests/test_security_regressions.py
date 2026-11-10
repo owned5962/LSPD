@@ -521,3 +521,8 @@ def test_bank_transaction_events_are_rate_limited():
     assert "CanPerformAction(src, 'economy:deposit', 1500)" in economy
     assert "CanPerformAction(src, 'economy:withdraw', 1500)" in economy
     assert "CanPerformAction(src, 'economy:transfer', 2000)" in economy
+
+
+def test_inventory_give_item_event_is_rate_limited():
+    inventory = read("resources/[FUNCTION]/rp_inventory/server/main.lua")
+    assert "CanPerformAction(src, 'inventory:give_item', 1500)" in inventory
