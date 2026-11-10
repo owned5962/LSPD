@@ -780,3 +780,27 @@ input:checked + .slider:before {
     display: none;
     animation: fadeIn 0.3s ease;
 }
+
+
+.audit-log-list {
+    display: grid;
+    gap: 8px;
+    max-height: 260px;
+    overflow-y: auto;
+    margin-top: 12px;
+}
+.audit-log-entry {
+    padding: 10px 12px;
+    border: 1px solid rgba(80, 150, 255, .22);
+    border-radius: 8px;
+    background: rgba(10, 20, 38, .55);
+    overflow-wrap: anywhere;
+}
+.audit-log-entry strong,
+.audit-log-entry p,
+.audit-log-entry small {
+    display: block;
+    margin: 0 0 4px;
+}
+.audit-log-entry p { color: #c4cad6; font-size: 12px; }
+.audit-log-entry small { color: #8492a8; font-size: 11px; }
