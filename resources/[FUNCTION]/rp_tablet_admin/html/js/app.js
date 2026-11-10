@@ -179,13 +179,7 @@ function togglePermission(permId, value) {
 }
 
 function saveCurrentPermissions() {
-    showToast(`Permissions enregistrées avec succès pour ${activeGrade.toUpperCase()} !`);
-    if (window.invokeNative) {
-        fetch(`https://${GetParentResourceName()}/savePermissions`, {
-            method: 'POST',
-            body: JSON.stringify({ grade: activeGrade, permissions: rolePermissions[activeGrade] })
-        });
-    }
+    showToast('La gestion persistante des permissions par grade reste à implémenter côté serveur.');
 }
 
 // Actions du Menu Admin
@@ -222,6 +216,13 @@ function renderOnlinePlayers() {
         const target = document.getElementById('selected-target-name');
         if (target) target.textContent = 'Aucune cible';
     }
+}
+
+function filterPlayers() {
+    const query = (document.getElementById('player-search')?.value || '').trim().toLowerCase();
+    document.querySelectorAll('.player-entry').forEach(entry => {
+        entry.hidden = query !== '' && !entry.textContent.toLowerCase().includes(query);
+    });
 }
 
 function selectPlayer(id, name, job, element) {
