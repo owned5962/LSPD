@@ -8,7 +8,7 @@ end
 
 RegisterNetEvent('job_delivery:setDuty', function(status)
     local src = source
-    if not exports['rp_core']:CanPerformAction(src, 'job_delivery:duty', 2000) then
+    if not exports['rp_core']:CanPerformAction(src, 'job_delivery:setDuty', 2000) then
         TriggerClientEvent('rp_core:client:notify', src, 'Patientez avant de changer votre état de service.', 'warning')
         TriggerClientEvent('job_delivery:dutyUpdated', src, dutyPlayers[src] == true)
         return
