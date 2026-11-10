@@ -38,7 +38,7 @@ function StopTabletAnimation()
     end
 end
 
-RegisterNetEvent('rp_tablet_admin:client:openAuthorized', function(adminData, playersList, jobsList)
+RegisterNetEvent('rp_tablet_admin:client:openAuthorized', function(adminData, playersList, jobsList, frozenPlayers)
     isTabletOpen = true
     StartTabletAnimation()
     SetNuiFocus(true, true)
@@ -46,7 +46,8 @@ RegisterNetEvent('rp_tablet_admin:client:openAuthorized', function(adminData, pl
         action = "openTablet",
         admin = adminData,
         players = playersList,
-        jobs = jobsList
+        jobs = jobsList,
+        frozenPlayers = frozenPlayers or {}
     })
 end)
 
