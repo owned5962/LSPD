@@ -59,7 +59,7 @@ function setStage(stage, detail, jobCount) {
 
 function renderUpdates(data) {
     if (!updatesList) return;
-    const updates = Array.isArray(data.updates) ? data.updates.slice(0, 4) : [];
+    const updates = Array.isArray(data.updates) ? data.updates.slice(0, 6) : [];
     updatesList.replaceChildren();
 
     if (updates.length === 0) {
@@ -75,14 +75,14 @@ function renderUpdates(data) {
             main.className = 'update-main';
             const title = document.createElement('div');
             title.className = 'update-title';
-            title.textContent = String(update.title || 'Mise à jour du serveur').slice(0, 100);
+            title.textContent = String(typeof update === 'string' ? update : (update.title || 'Mise à jour du serveur')).slice(0, 100);
             const meta = document.createElement('div');
             meta.className = 'update-meta';
-            meta.textContent = String(update.date || 'Date indisponible');
+            meta.textContent = String(typeof update === 'string' ? 'Nouveauté récente' : (update.date || 'Date indisponible'));
             main.append(title, meta);
             const badge = document.createElement('span');
             badge.className = 'update-badge';
-            badge.textContent = String(update.sha || '').slice(0, 7);
+            badge.textContent = String(typeof update === 'string' ? '' : (update.sha || '')).slice(0, 7);
             row.append(main, badge);
             updatesList.appendChild(row);
         });
