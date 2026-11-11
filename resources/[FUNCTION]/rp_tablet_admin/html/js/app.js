@@ -424,7 +424,7 @@ function setupPlayerMap() {
     const GTA_CRS = L.extend({}, L.CRS.Simple, { transformation: new L.Transformation(1/32, 0, 1/32, 0) });
     mapInstance = L.map(container, { crs:GTA_CRS, minZoom:0, maxZoom:5, zoomSnap:0.25, attributionControl:false, zoomControl:false });
     const bounds = L.latLngBounds([[0,0],[8192,8192]]);
-    L.tileLayer('https://viruxe.github.io/gtav-map-tiles/atlas/{z}/{x}-{y}.webp', { minZoom:0, maxZoom:5, noWrap:true, bounds, tileSize:256, attribution:'GTA V map tiles · viruxe/gtav-map-tiles' }).addTo(mapInstance);
+    L.tileLayer('https://viruxe.github.io/gtav-map-tiles/satelite/{z}/{x}-{y}.webp', { minZoom:0, maxZoom:5, noWrap:true, bounds, tileSize:256, attribution:'GTA V map tiles · viruxe/gtav-map-tiles' }).addTo(mapInstance);
     mapInstance.fitBounds(bounds); mapInstance.setMaxBounds(bounds.pad(0.03));
 }
 const GTA_WORLD = { minX:-4500, maxX:4500, minY:-4500, maxY:8500 };
