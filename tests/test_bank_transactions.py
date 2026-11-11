@@ -76,6 +76,8 @@ def test_nui_has_biometric_gate_close_button_and_transaction_callbacks():
     assert 'id="fingerprint-btn"' in html
     assert 'id="close-bank"' in html
     assert "Escape" in ui
+    assert "TriggerServerEvent('rp_economy:server:logout')" in client
+    assert "Aucune réponse du lecteur" in ui
 
 
 if __name__ == "__main__":
