@@ -1,0 +1,41 @@
+name: Vehicle rental verification
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'resources/[FUNCTION]/rp_vehicle_rental/**'
+      - 'tests/test_vehicle_rental.py'
+      - '.github/workflows/vehicle-rental.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'resources/[FUNCTION]/rp_vehicle_rental/**'
+      - 'tests/test_vehicle_rental.py'
+      - '.github/workflows/vehicle-rental.yml'
+  workflow_dispatch:
+
+jobs:
+  rental-validation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Lua 5.4
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y lua5.4
+      - name: Run rental regression checks
+        run: python tests/test_vehicle_rental.py
+      - name: Compile rental Lua files
+        run: |
+          luac5.4 -p 'resources/[FUNCTION]/rp_vehicle_rental/config.lua'
+          luac5.4 -p 'resources/[FUNCTION]/rp_vehicle_rental/client/main.lua'
+          luac5.4 -p 'resources/[FUNCTION]/rp_vehicle_rental/server/main.lua'
+      - name: Check rental NUI JavaScript
+        run: node --check 'resources/[FUNCTION]/rp_vehicle_rental/html/js/app.js'
