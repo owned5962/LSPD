@@ -433,3 +433,60 @@ body {
     text-overflow: ellipsis;
     text-transform: uppercase;
 }
+
+
+/* Final HUD layout: needs sit immediately to the right of the minimap;
+   the digital speedometer stays horizontally centered at the bottom. */
+#player-hud {
+    left: clamp(185px, 17vw, 330px) !important;
+    bottom: 3.5vh !important;
+    width: auto !important;
+    max-width: calc(100vw - clamp(185px, 17vw, 330px) - 20px) !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+}
+#player-hud .hud-vitals {
+    display: flex !important;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 9px;
+}
+.hud-vital-circle {
+    width: 46px;
+    height: 46px;
+}
+#vehicle-hud {
+    left: 50% !important;
+    bottom: 3vh !important;
+    transform: translateX(-50%) !important;
+    width: 270px;
+    min-width: 250px;
+}
+@media (max-width: 900px) {
+    #player-hud {
+        left: clamp(165px, 19vw, 210px) !important;
+        bottom: 3vh !important;
+        max-width: calc(100vw - 230px) !important;
+    }
+    .hud-vital-circle { width: 42px; height: 42px; }
+}
+@media (max-width: 600px) {
+    #player-hud {
+        left: 150px !important;
+        bottom: 3vh !important;
+        max-width: calc(100vw - 160px) !important;
+    }
+    #vehicle-hud {
+        width: 235px;
+        min-width: 235px;
+        bottom: 2vh !important;
+        padding: 8px 10px;
+        gap: 10px;
+    }
+    .speed-digital strong { font-size: 32px; }
+    .vehicle-fuel { min-width: 88px; }
+}
