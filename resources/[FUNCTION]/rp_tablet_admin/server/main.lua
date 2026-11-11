@@ -39,6 +39,33 @@ local function AllowAdminAction(src, action, cooldown)
     return IsPlayerAdmin(src) and exports['rp_core']:CanPerformAction(src, 'admin:' .. action, cooldown or 500)
 end
 
+local function BuildOnlinePlayers()
+    local onlinePlayers = {}
+    for _, rawId in ipairs(GetPlayers()) do
+        local playerId = tonumber(rawId)
+        local player = playerId and exports['rp_core']:GetPlayerFromId(playerId) or nil
+        local ped = playerId and GetPlayerPed(playerId) or 0
+        local position = nil
+        if ped and ped ~= 0 and DoesEntityExist(ped) then
+            local coords = GetEntityCoords(ped)
+            position = { x = coords.x, y = coords.y, z = coords.z }
+        end
+        local jobName = player and player.job or 'unemployed'
+        local job = exports['rp_jobs']:GetJob(jobName)
+        onlinePlayers[#onlinePlayers + 1] = {
+            id = playerId,
+            name = player and ((player.firstname or '') .. ' ' .. (player.lastname or '')) or (GetPlayerName(playerId) or ('Joueur ' .. tostring(playerId))),
+            rawName = GetPlayerName(playerId) or ('Joueur ' .. tostring(playerId)),
+            job = jobName, jobLabel = job and job.label or jobName,
+            grade = player and player.jobGrade or 0,
+            cash = player and player.cash or 0, bank = player and player.bank or 0,
+            group = player and player.group or 'user',
+            ping = GetPlayerPing(playerId), position = position
+        }
+    end
+    table.sort(onlinePlayers, function(a, b) return a.id < b.id end)
+    return onlinePlayers
+end
 RegisterNetEvent('rp_tablet_admin:server:requestOpen', function()
     local src = source
     if not IsPlayerAdmin(src) then
@@ -54,22 +81,7 @@ RegisterNetEvent('rp_tablet_admin:server:requestOpen', function()
         id = src
     }
 
-    local onlinePlayers = {}
-    local all = exports['rp_core']:GetAllPlayers()
-    for pid, player in pairs(all) do
-        local job = exports['rp_jobs']:GetJob(player.job)
-        table.insert(onlinePlayers, {
-            id = pid,
-            name = (player.firstname or '') .. ' ' .. (player.lastname or ''),
-            rawName = GetPlayerName(pid) or ('Joueur ' .. pid),
-            job = player.job,
-            jobLabel = job and job.label or (player.job or 'Inconnu'),
-            grade = player.jobGrade,
-            cash = player.cash,
-            bank = player.bank,
-            group = player.group
-        })
-    end
+    local onlinePlayers = BuildOnlinePlayers()
 
     local jobs = exports['rp_jobs']:GetAllJobs()
     local frozenPlayers = {}
@@ -77,6 +89,12 @@ RegisterNetEvent('rp_tablet_admin:server:requestOpen', function()
         if isFrozen and GetPlayerName(targetId) then frozenPlayers[#frozenPlayers + 1] = targetId end
     end
     TriggerClientEvent('rp_tablet_admin:client:openAuthorized', src, adminData, onlinePlayers, jobs, frozenPlayers)
+end)
+
+RegisterNetEvent('rp_tablet_admin:server:requestPlayerPositions', function()
+    local src = source
+    if not AllowAdminAction(src, 'positions', 1800) then return end
+    TriggerClientEvent('rp_tablet_admin:client:playerPositions', src, BuildOnlinePlayers())
 end)
 
 RegisterNetEvent('rp_tablet_admin:server:requestAuditLogs', function()
@@ -184,6 +202,16 @@ RegisterNetEvent('rp_tablet_admin:server:revivePlayer', function(targetId)
     LogAdminAction(src, 'revive', targetId, 'Réanimation administrateur')
     TriggerClientEvent('rp_tablet_admin:client:revive', targetId)
     NotifyAdmin(src, 'Joueur ' .. targetId .. ' réanimé.', 'success')
+end)
+
+RegisterNetEvent('rp_tablet_admin:server:healPlayer', function(targetId)
+    local src = source
+    if not AllowAdminAction(src, 'heal', 500) then return end
+    targetId = GetOnlineTargetId(targetId)
+    if not targetId then NotifyAdmin(src, 'Joueur cible introuvable.'); return end
+    LogAdminAction(src, 'heal', targetId, 'Soin administrateur')
+    TriggerClientEvent('rp_tablet_admin:client:heal', targetId)
+    NotifyAdmin(src, 'Joueur ' .. targetId .. ' soigné.', 'success')
 end)
 
 RegisterNetEvent('rp_tablet_admin:server:manageEconomy', function(targetId, moneyType, amount, operation)
