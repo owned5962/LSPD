@@ -1039,11 +1039,15 @@ def test_anticheat_server_protects_weapon_damage_and_explosion_spam():
     assert "RegisterNetEvent('rp_anticheat:setAdminInvulnerability'" not in server
 
 
-def test_admin_map_uses_local_custom_artwork_and_player_overlay():
-    manifest = read("resources/[FUNCTION]/rp_tablet_admin/fxmanifest.lua")
+def test_admin_map_uses_real_gta_v_tiles_and_live_player_markers():
+    html = read("resources/[FUNCTION]/rp_tablet_admin/html/index.html")
     ui = read("resources/[FUNCTION]/rp_tablet_admin/html/js/app.js")
-    assert "html/images/los_santos_map.svg" in manifest
-    assert "backgroundSize" in ui and "getMapMarkers" in ui
+    css = read("resources/[FUNCTION]/rp_tablet_admin/html/css/style.css")
+    assert "leaflet@1.9.4" in html
+    assert "viruxe.github.io/gtav-map-tiles/atlas/{z}/{x}-{y}.webp" in ui
+    assert "worldToMap(position)" in ui
+    assert "gta-player-marker" in css
+    assert 'id="player-map"' in html
 
 
 def test_spectate_is_server_authorized_and_streams_target_coordinates():
