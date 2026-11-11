@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Creator Control</title><link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+<main id="tablet" class="hidden">
+  <header><div class="brand"><i class="fa-solid fa-crown"></i><div><strong>CREATOR CONTROL</strong><small>LOS SANTOS STORIES · <span id="role">CRÉATEUR</span></small></div></div><button id="close" aria-label="Fermer"><i class="fa-solid fa-xmark"></i></button></header>
+  <section class="intro"><span class="live"></span> CONSOLE CRÉATEUR <p>Contrôle de l'environnement serveur et communication globale.</p></section>
+  <section class="grid">
+    <article class="panel"><h2><i class="fa-solid fa-cloud-sun"></i> Météo & environnement</h2><div class="buttons">
+      <button data-weather="EXTRASUNNY">Soleil</button><button data-weather="CLEAR">Dégagé</button><button data-weather="CLOUDS">Nuageux</button><button data-weather="RAIN">Pluie</button><button data-weather="THUNDER">Orage</button><button data-weather="SNOW">Neige</button>
+    </div><label>Heure du serveur</label><div class="time-row"><input id="hours" type="number" min="0" max="23" value="12"><span>:</span><input id="minutes" type="number" min="0" max="59" value="0"><button id="apply-time">Appliquer</button></div></article>
+    <article class="panel"><h2><i class="fa-solid fa-bullhorn"></i> Annonce globale</h2><textarea id="announcement" maxlength="300" placeholder="Écrire une annonce pour tous les citoyens..."></textarea><button id="send" class="primary"><i class="fa-solid fa-paper-plane"></i> Diffuser l'annonce</button></article>
+  </section>
+  <footer><span id="status">Prêt · Les actions sont contrôlées côté serveur.</span><kbd>ÉCHAP</kbd></footer>
+</main><script src="app.js"></script>
+</body></html>
