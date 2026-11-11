@@ -20,7 +20,7 @@ def test_admin_tablet_vehicle_spawn_is_server_authorized_and_has_no_delete_callb
     client = read("resources/[FUNCTION]/rp_tablet_admin/client/main.lua")
     server = read("resources/[FUNCTION]/rp_tablet_admin/server/extended.lua")
     html = read("resources/[FUNCTION]/rp_tablet_admin/html/index.html")
-    assert "RegisterNUICallback('spawnVehicle'" in client
+    assert "RegisterServerCallback('spawnVehicle'" in client
     assert "TriggerServerEvent('rp_tablet_admin:server:spawnVehicle', data.model)" in client
     assert "RegisterNUICallback('deleteVehicle'" not in client
     assert "AllowExtendedAction(src, 'spawn_vehicle', 1000)" in server
@@ -830,9 +830,9 @@ def test_admin_advanced_actions_are_server_authorized():
     for action in ("spectate", "noclip", "godmode", "spawn_vehicle"):
         assert "AllowExtendedAction(src, '" + action + "'" in server
     assert "RegisterServerCallback('spectatePlayer'" in client
-    assert "RegisterNUICallback('toggleNoclip'" in client
-    assert "RegisterNUICallback('toggleGodmode'" in client
-    assert "RegisterNUICallback('spawnVehicle'" in client
+    assert "RegisterServerCallback('toggleNoclip'" in client
+    assert "RegisterServerCallback('toggleGodmode'" in client
+    assert "RegisterServerCallback('spawnVehicle'" in client
     assert 'onclick="toggleAdminMode(\'noclip\')"' in html
     assert "function spawnAdminVehicle()" in ui
 
@@ -1012,8 +1012,8 @@ def test_admin_give_actions_are_server_authorized_and_audited():
     assert "AllowExtendedAction(src, 'give_vehicle', 1000)" in server
     assert "AllowExtendedAction(src, 'give_weapon', 750)" in server
     assert "AllowedAdminWeapons[weapon]" in server
-    assert "RegisterNUICallback('giveVehicle'" in client
-    assert "RegisterNUICallback('giveWeapon'" in client
+    assert "RegisterServerCallback('giveVehicle'" in client
+    assert "RegisterServerCallback('giveWeapon'" in client
     assert "LogExtendedAction(src, 'give_vehicle'" in server
     assert "LogExtendedAction(src, 'give_weapon'" in server
 
