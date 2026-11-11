@@ -41,8 +41,8 @@ RegisterNetEvent('rp_vehicle_loot:server:stealTire', function(rawNetId, rawWheel
         stolen[key][wheel] = nil
         TriggerClientEvent('rp_core:client:notify', src, 'Inventaire plein : aucun objet récupéré.', 'error'); return
     end
-    TriggerClientEvent('rp_vehicle_loot:client:success', -1, netId, wheel,
-        ('Pneu démonté : %s x%d récupéré(s).'):format(reward.item, count))
+    TriggerClientEvent('rp_vehicle_loot:client:success', -1, netId, wheel)
+    TriggerClientEvent('rp_core:client:notify', src, ('Butin récupéré : %s x%d.'):format(reward.item, count), 'success')
     TriggerClientEvent('rp_core:client:notify', src, ('Butin récupéré : %s x%d.'):format(reward.item, count), 'success')
 end)
 
