@@ -1,3 +1,11 @@
+local AdminModes = {}
+local AllowedAdminWeapons = {
+    WEAPON_PISTOL = true, WEAPON_COMBATPISTOL = true, WEAPON_SNSPISTOL = true,
+    WEAPON_STUNGUN = true, WEAPON_FLASHLIGHT = true, WEAPON_KNIFE = true,
+    WEAPON_NIGHTSTICK = true, WEAPON_SMG = true, WEAPON_CARBINERIFLE = true,
+    WEAPON_PUMPSHOTGUN = true
+}
+
 local function IsExtendedAdmin(src)
     if IsPlayerAceAllowed(src, 'rp_admin') then return true end
     local player = exports['rp_core']:GetPlayerFromId(src)
@@ -99,15 +107,21 @@ end)
 RegisterNetEvent('rp_tablet_admin:server:toggleNoclip', function()
     local src = source
     if not AllowExtendedAction(src, 'noclip', 500) then return end
-    LogExtendedAction(src, 'noclip', nil, 'Bascule du mode NoClip')
-    TriggerClientEvent('rp_tablet_admin:client:toggleNoclip', src)
+    AdminModes[src] = AdminModes[src] or { godmode = false, noclip = false }
+    AdminModes[src].noclip = not AdminModes[src].noclip
+    TriggerEvent('rp_anticheat:setAdminInvulnerability', src, AdminModes[src].noclip or AdminModes[src].godmode)
+    LogExtendedAction(src, 'noclip', nil, AdminModes[src].noclip and 'Activation NoClip' or 'Désactivation NoClip')
+    TriggerClientEvent('rp_tablet_admin:client:toggleNoclip', src, AdminModes[src].noclip)
 end)
 
 RegisterNetEvent('rp_tablet_admin:server:toggleGodmode', function()
     local src = source
     if not AllowExtendedAction(src, 'godmode', 500) then return end
-    LogExtendedAction(src, 'godmode', nil, 'Bascule du GodMode')
-    TriggerClientEvent('rp_tablet_admin:client:toggleGodmode', src)
+    AdminModes[src] = AdminModes[src] or { godmode = false, noclip = false }
+    AdminModes[src].godmode = not AdminModes[src].godmode
+    TriggerEvent('rp_anticheat:setAdminInvulnerability', src, AdminModes[src].noclip or AdminModes[src].godmode)
+    LogExtendedAction(src, 'godmode', nil, AdminModes[src].godmode and 'Activation GodMode' or 'Désactivation GodMode')
+    TriggerClientEvent('rp_tablet_admin:client:toggleGodmode', src, AdminModes[src].godmode)
 end)
 
 RegisterNetEvent('rp_tablet_admin:server:spawnVehicle', function(rawModel)
@@ -120,6 +134,97 @@ RegisterNetEvent('rp_tablet_admin:server:spawnVehicle', function(rawModel)
 
     LogExtendedAction(src, 'spawn_vehicle', nil, rawModel)
     TriggerClientEvent('rp_tablet_admin:client:spawnVehicle', src, rawModel)
+end)
+
+RegisterNetEvent('rp_tablet_admin:server:giveVehicle', function(rawTargetId, rawModel)
+    local src = source
+    if not AllowExtendedAction(src, 'give_vehicle', 1000) then return end
+    local targetId = TargetId(rawTargetId)
+    if not targetId or type(rawModel) ~= 'string' or #rawModel < 2 or #rawModel > 40 or not rawModel:match('^[%w_]+
+    local src = source
+    if not AllowExtendedAction(src, 'ban', 1500) then return end
+    local targetId = TargetId(rawTargetId)
+    if not targetId or targetId == src then
+        NotifyExtended(src, 'Joueur cible invalide.')
+        return
+    end
+
+    local reason = type(rawReason) == 'string' and rawReason:gsub('[%c]', ' '):sub(1, 180) or ''
+    if reason == '' then
+        NotifyExtended(src, 'Un motif de bannissement est obligatoire.')
+        return
+    end
+
+    local license
+    for _, identifier in ipairs(GetPlayerIdentifiers(targetId)) do
+        if identifier:sub(1, 8) == 'license:' then license = identifier; break end
+    end
+    if not license then
+        NotifyExtended(src, 'Identifiant license introuvable : bannissement annulé.')
+        return
+    end
+
+    local adminLicense
+    for _, identifier in ipairs(GetPlayerIdentifiers(src)) do
+        if identifier:sub(1, 8) == 'license:' then adminLicense = identifier; break end
+    end
+
+    local ok, err = pcall(MySQL.insert.await, [[
+        INSERT INTO player_bans (identifier, reason, banned_by)
+        VALUES (?, ?, ?)
+        ON DUPLICATE KEY UPDATE reason = VALUES(reason), banned_by = VALUES(banned_by), created_at = CURRENT_TIMESTAMP
+    ]], { license, reason, adminLicense or ('server:' .. tostring(src)) })
+    if not ok then
+        print('[rp_tablet_admin] Persistent ban failed: ' .. tostring(err))
+        NotifyExtended(src, 'Erreur SQL : bannissement annulé.')
+        return
+    end
+
+    LogExtendedAction(src, 'ban', targetId, reason)
+    DropPlayer(targetId, '[ADMINISTRATION - BAN PERMANENT] ' .. reason)
+    NotifyExtended(src, 'Joueur ' .. targetId .. ' banni durablement.', 'success')
+end)
+
+RegisterNetEvent('rp_tablet_admin:server:healPlayer', function(rawTargetId)
+    local src = source
+    if not AllowExtendedAction(src, 'heal', 500) then return end
+    local targetId = TargetId(rawTargetId)
+    if not targetId then
+        NotifyExtended(src, 'Joueur cible introuvable.')
+        return
+    end
+
+    LogExtendedAction(src, 'heal', targetId, 'Soin administrateur')
+    TriggerClientEvent('rp_tablet_admin:client:heal', targetId)
+    NotifyExtended(src, 'Joueur ' .. targetId .. ' soigné.', 'success')
+end)
+) then
+        NotifyExtended(src, 'Joueur ou modèle de véhicule invalide.')
+        return
+    end
+    LogExtendedAction(src, 'give_vehicle', targetId, rawModel)
+    TriggerClientEvent('rp_tablet_admin:client:spawnVehicleForPlayer', targetId, rawModel:lower())
+    NotifyExtended(src, 'Création du véhicule demandée pour le joueur ' .. targetId .. '.', 'success')
+end)
+
+RegisterNetEvent('rp_tablet_admin:server:giveWeapon', function(rawTargetId, rawWeapon)
+    local src = source
+    if not AllowExtendedAction(src, 'give_weapon', 750) then return end
+    local targetId = TargetId(rawTargetId)
+    local weapon = type(rawWeapon) == 'string' and rawWeapon:upper() or ''
+    if not targetId or not AllowedAdminWeapons[weapon] then
+        NotifyExtended(src, 'Joueur ou arme non autorisée.')
+        return
+    end
+    LogExtendedAction(src, 'give_weapon', targetId, weapon)
+    TriggerClientEvent('rp_tablet_admin:client:giveWeapon', targetId, weapon)
+    NotifyExtended(src, 'Arme attribuée au joueur ' .. targetId .. '.', 'success')
+end)
+
+AddEventHandler('playerDropped', function()
+    local src = source
+    AdminModes[src] = nil
+    TriggerEvent('rp_anticheat:setAdminInvulnerability', src, false)
 end)
 
 RegisterNetEvent('rp_tablet_admin:server:banPlayer', function(rawTargetId, rawReason)
