@@ -1,24 +1,16 @@
-RegisterNetEvent('rp_core:client:notify', function(message, type, duration)
-    type = type or 'info'
-    duration = duration or 4000
-    
+local function ShowFallbackNotification(message, kind)
     SetNotificationTextEntry('STRING')
-    AddTextComponentSubstringPlayerName(message)
-    local title = "~b~ROLEPLAY"
-    if type == 'success' then
-        title = "~g~SUCCÈS"
-    elseif type == 'error' then
-        title = "~r~ERREUR"
-    elseif type == 'warning' then
-        title = "~y~ATTENTION"
-    end
+    AddTextComponentSubstringPlayerName(tostring(message or ''))
     DrawNotification(false, false)
-    
-    -- Print to chat as fallback
-    TriggerEvent('chat:addMessage', {
-        color = type == 'error' and {255, 50, 50} or (type == 'success' and {50, 255, 50} or {80, 180, 255}),
-        args = {"[RP]", message}
-    })
+end
+
+RegisterNetEvent('rp_core:client:notify', function(message, kind, duration)
+    kind = kind or 'info'
+    if GetResourceState('rp_ui') == 'started' then
+        TriggerEvent('rp_ui:notify', message, kind, duration)
+    else
+        ShowFallbackNotification(message, kind)
+    end
 end)
 
 -- Compatibility bridge for legacy resources using rp_core:notify(type, message).
