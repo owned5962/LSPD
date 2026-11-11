@@ -205,3 +205,10 @@ RegisterNetEvent('rp_tablet_creator:server:saveJobBlip', function(data)
     TriggerClientEvent('rp_tablet_creator:client:syncJobBlips', -1, rows)
     reply(src, 'Blip du métier sauvegardé et synchronisé.', true)
 end)
+
+
+RegisterNetEvent('rp_tablet_creator:server:requestJobBlips', function()
+    local src = source
+    local ok, rows = pcall(MySQL.query.await, 'SELECT job, label, x, y, z, sprite, color, scale, enabled FROM rp_creator_job_blips')
+    if ok then TriggerClientEvent('rp_tablet_creator:client:jobBlips', src, rows or {}) end
+end)
