@@ -58,6 +58,8 @@ def test_admin_gta_map_uses_real_satellite_tiles_and_world_positions():
     assert "gtav-map-tiles/satelite/{z}/{x}-{y}.webp" in ui
     assert "new L.Transformation(1/32, 0, 1/32, 0)" in ui
     assert "function worldToMap(position)" in ui
+    assert "const GTA_MAP_SCALE = 8192 / (GTA_WORLD.maxY - GTA_WORLD.minY)" in ui
+    assert "const GTA_MAP_OFFSET_X" in ui
     assert "L.marker(worldToMap(player.position)" in ui
     assert "gta-player-marker" in css
 
