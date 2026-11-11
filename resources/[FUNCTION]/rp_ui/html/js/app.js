@@ -19,7 +19,11 @@ window.addEventListener('message', function(event) {
         const speed = document.getElementById('vehicle-speed'); if (speed) speed.textContent = String(Math.max(0, Number(data.speed) || 0));
         const fuel = Math.max(0, Math.min(100, Number(data.fuel) || 0));
         const fuelText = document.getElementById('vehicle-fuel'); if (fuelText) fuelText.textContent = Math.round(fuel) + '%';
-        const fuelBar = document.getElementById('vehicle-fuel-bar'); if (fuelBar) fuelBar.style.width = fuel + '%';
+        const fuelBar = document.getElementById('vehicle-fuel-bar');
+        if (fuelBar) {
+            fuelBar.style.width = fuel + '%';
+            fuelBar.style.background = fuel <= 15 ? '#ef4444' : fuel <= 30 ? '#f59e0b' : '#34d399';
+        }
         const gear = document.getElementById('vehicle-gear'); if (gear) gear.textContent = Number(data.gear) === 0 ? 'R' : String(data.gear || 'N');
     } else if (data.action === 'hideVehicleHUD') {
         document.getElementById('vehicle-hud')?.classList.add('hidden');
@@ -104,9 +108,9 @@ function updatePlayerHUD(data) {
     const hud = document.getElementById('player-hud');
     if (!hud) return;
     const setText = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = String(value); };
-    const setBar = (id, value) => {
+    const setCircle = (id, value) => {
         const el = document.getElementById(id);
-        if (el) el.style.width = Math.max(0, Math.min(100, Number(value) || 0)) + '%';
+        if (el) el.style.setProperty('--progress', Math.max(0, Math.min(100, Number(value) || 0)) + '%');
     };
     setText('hud-job', data.job || 'Sans-emploi');
     setText('hud-grade', data.grade || '');
@@ -114,7 +118,7 @@ function updatePlayerHUD(data) {
     ['health', 'armor', 'hunger', 'thirst'].forEach(key => {
         const value = Math.max(0, Math.min(100, Number(data[key]) || 0));
         setText('hud-' + key, Math.round(value) + '%');
-        setBar('hud-' + key + '-bar', value);
+        if (key === 'hunger' || key === 'thirst') setCircle('hud-' + key + '-circle', value);
     });
     hud.classList.toggle('hidden', data.visible !== true);
 }
