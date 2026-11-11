@@ -1,5 +1,12 @@
 local isInventoryOpen = false
 
+AddEventHandler('onClientResourceStart', function(resourceName)
+    if resourceName ~= GetCurrentResourceName() then return end
+    isInventoryOpen = false
+    SetNuiFocus(false, false)
+    SendNUIMessage({ action = 'close' })
+end)
+
 RegisterKeyMapping('openinventory', 'Ouvrir l\'inventaire', 'keyboard', 'F2')
 
 RegisterCommand('openinventory', function()
