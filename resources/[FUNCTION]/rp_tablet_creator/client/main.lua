@@ -91,6 +91,10 @@ RegisterNUICallback('updatePlayerAccess', function(data, cb)
     cb({ ok = true })
 end)
 
+RegisterNetEvent('rp_tablet_creator:client:refreshTools', function()
+    if isOpen then TriggerServerEvent('rp_tablet_creator:server:requestTools') end
+end)
+
 RegisterNetEvent('rp_tablet_creator:client:toolsData', function(jobs, blips, mapping, catalog, players, items, settings, modules)
     local coords = GetEntityCoords(PlayerPedId())
     SendNUIMessage({
