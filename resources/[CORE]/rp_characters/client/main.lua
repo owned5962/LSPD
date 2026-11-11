@@ -318,6 +318,15 @@ local function ApplyCharacterAppearance(gender, skin)
     return true
 end
 
+RegisterNetEvent('rp_characters:client:adminApplySkin', function(gender, skin)
+    if gender ~= 'm' and gender ~= 'f' then return end
+    if type(skin) ~= 'table' then skin = {} end
+    local applied = ApplyCharacterAppearance(gender, skin)
+    if not applied then
+        print('[rp_characters] Admin skin change could not be fully applied; default appearance was restored.')
+    end
+end)
+
 local function OpenCreator(maxCharacters)
     SetPlayerControl(PlayerId(), false, 0)
     SetNuiFocus(true, true)
