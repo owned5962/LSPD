@@ -142,6 +142,10 @@ RegisterServerCallback('broadcastAnnouncement', 'rp_tablet_admin:server:broadcas
 RegisterServerCallback('requestPlayerPositions', 'rp_tablet_admin:server:requestPlayerPositions', {})
 RegisterServerCallback('requestAuditLogs', 'rp_tablet_admin:server:requestAuditLogs', {})
 
+RegisterNetEvent('rp_tablet_admin:client:weaponPolicySaveFailed', function(message)
+    SendNUIMessage({ action = 'weaponPolicySaveFailed', message = tostring(message or 'Enregistrement impossible.') })
+end)
+
 RegisterNetEvent('rp_tablet_admin:client:weaponPolicySaved', function(policy)
     SendNUIMessage({ action = 'weaponPolicySaved', weaponPolicy = policy or {} })
 end)
