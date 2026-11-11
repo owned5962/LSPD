@@ -416,6 +416,45 @@ local function syncDrops(target)
     end
 end
 
+local function spawnSavedDrop(row)
+    local id = tostring(row.id)
+    local object = CreateObjectNoOffset(DROP_MODEL, tonumber(row.x), tonumber(row.y), tonumber(row.z), true, true, false)
+    if not object or object == 0 or not DoesEntityExist(object) then
+        print(('[rp_inventory] Could not recreate ground drop %s; database row retained for retry.'):format(id))
+        return false
+    end
+    SetEntityHeading(object, tonumber(row.heading) or 0.0)
+    FreezeEntityPosition(object, true)
+    local definition = Config.DefaultItems[row.item_name]
+    if not definition then
+        DeleteEntity(object)
+        print(('[rp_inventory] Unknown item %s in ground drop %s; row retained.'):format(tostring(row.item_name), id))
+        return false
+    end
+    groundDrops[id] = {
+        entity = object,
+        x = tonumber(row.x), y = tonumber(row.y), z = tonumber(row.z),
+        heading = tonumber(row.heading) or 0.0,
+        label = definition.label, count = tonumber(row.count),
+        itemName = row.item_name, bucket = tonumber(row.routing_bucket) or 0
+    }
+    return true
+end
+
+CreateThread(function()
+    Wait(1000)
+    local ok, rows = pcall(MySQL.query.await,
+        'SELECT id, item_name, count, x, y, z, heading, routing_bucket FROM player_inventory_drops')
+    if not ok then
+        print(('[rp_inventory] Ground drop restoration failed: %s'):format(tostring(rows)))
+        return
+    end
+    for _, row in ipairs(rows or {}) do
+        spawnSavedDrop(row)
+    end
+    syncDrops()
+end)
+
 RegisterNetEvent('rp_inventory:server:requestDrops', function()
     syncDrops(source)
 end)
@@ -439,9 +478,9 @@ RegisterNetEvent('rp_inventory:dropItem', function(itemName, rawCount)
 
     local definition = Config.DefaultItems[itemName]
     local inventory = playerInventories[src]
-    local index, item
+    local itemIndex, item
     for i, entry in ipairs(inventory or {}) do
-        if entry.name == itemName then index, item = i, entry break end
+        if entry.name == itemName then itemIndex, item = i, entry break end
     end
     if not definition or not item or item.count < count then
         notify(src, 'error', 'Vous ne possédez pas cette quantité.')
@@ -457,12 +496,13 @@ RegisterNetEvent('rp_inventory:dropItem', function(itemName, rawCount)
     local coords = GetEntityCoords(ped)
     local forward = GetEntityForwardVector(ped)
     local dropX, dropY, dropZ = coords.x + forward.x * 0.8, coords.y + forward.y * 0.8, coords.z - 0.85
+    local heading = GetEntityHeading(ped)
     local object = CreateObjectNoOffset(DROP_MODEL, dropX, dropY, dropZ, true, true, false)
     if not object or object == 0 or not DoesEntityExist(object) then
         notify(src, 'error', 'Impossible de créer le paquet au sol. Aucun objet retiré.')
         return
     end
-    SetEntityHeading(object, GetEntityHeading(ped))
+    SetEntityHeading(object, heading)
     FreezeEntityPosition(object, true)
 
     local updated = normalizeInventory(inventory)
@@ -483,26 +523,43 @@ RegisterNetEvent('rp_inventory:dropItem', function(itemName, rawCount)
         return
     end
     transferLocks[src] = true
+    nextDropId = nextDropId + 1
+    local dropId = ('%d-%d-%d'):format(os.time(), src, nextDropId)
     local persisted, persistError = pcall(function()
-        MySQL.insert.await([[
-            INSERT INTO player_inventories (character_id, items) VALUES (?, ?)
-            ON DUPLICATE KEY UPDATE items = VALUES(items)
-        ]], { player.charId, json.encode(updated) })
+        local ok = MySQL.transaction.await({
+            {
+                query = [[
+                    INSERT INTO player_inventories (character_id, items) VALUES (?, ?)
+                    ON DUPLICATE KEY UPDATE items = VALUES(items)
+                ]],
+                values = { player.charId, json.encode(updated) }
+            },
+            {
+                query = [[
+                    INSERT INTO player_inventory_drops
+                        (id, item_name, count, x, y, z, heading, routing_bucket)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                ]],
+                values = {
+                    dropId, itemName, count, dropX, dropY, dropZ, heading,
+                    GetPlayerRoutingBucket(src)
+                }
+            }
+        })
+        if not ok then error('Ground drop transaction rejected') end
     end)
     transferLocks[src] = nil
     exports['rp_core']:ReleaseCharacterLock({ player.charId })
     if not persisted then
         DeleteEntity(object)
-        print(('[rp_inventory] Drop save failed for character %s: %s'):format(player.charId, tostring(persistError)))
+        print(('[rp_inventory] Drop transaction failed for character %s: %s'):format(player.charId, tostring(persistError)))
         notify(src, 'error', 'Sauvegarde impossible : objet conservé dans votre inventaire.')
         return
     end
 
     playerInventories[src] = updated
-    nextDropId = nextDropId + 1
-    local dropId = nextDropId
     groundDrops[dropId] = {
-        entity = object, x = dropX, y = dropY, z = dropZ,
+        entity = object, x = dropX, y = dropY, z = dropZ, heading = heading,
         label = definition.label, count = count, itemName = itemName,
         bucket = GetPlayerRoutingBucket(src)
     }
@@ -514,8 +571,8 @@ end)
 RegisterNetEvent('rp_inventory:server:pickupDrop', function(rawDropId)
     local src = source
     if not exports['rp_core']:CanPerformAction(src, 'inventory:pickup_drop', 1000) then return end
-    local dropId = tonumber(rawDropId)
-    local drop = dropId and groundDrops[dropId]
+    local dropId = type(rawDropId) == 'string' and rawDropId or tostring(rawDropId or '')
+    local drop = dropId ~= '' and groundDrops[dropId]
     local player = exports['rp_core']:GetPlayerFromId(src)
     if not drop or not player then return end
     if drop.bucket ~= GetPlayerRoutingBucket(src) then return end
@@ -570,10 +627,20 @@ RegisterNetEvent('rp_inventory:server:pickupDrop', function(rawDropId)
     end
     transferLocks[src] = true
     local persisted, persistError = pcall(function()
-        MySQL.insert.await([[
-            INSERT INTO player_inventories (character_id, items) VALUES (?, ?)
-            ON DUPLICATE KEY UPDATE items = VALUES(items)
-        ]], { player.charId, json.encode(updated) })
+        local ok = MySQL.transaction.await({
+            {
+                query = [[
+                    INSERT INTO player_inventories (character_id, items) VALUES (?, ?)
+                    ON DUPLICATE KEY UPDATE items = VALUES(items)
+                ]],
+                values = { player.charId, json.encode(updated) }
+            },
+            {
+                query = 'DELETE FROM player_inventory_drops WHERE id = ?',
+                values = { dropId }
+            }
+        })
+        if not ok then error('Ground pickup transaction rejected') end
     end)
     transferLocks[src] = nil
     exports['rp_core']:ReleaseCharacterLock({ player.charId })
