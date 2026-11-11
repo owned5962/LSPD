@@ -1,9 +1,15 @@
 local CanUseTablet
 
-local function isCreator(src)
-    if IsPlayerAceAllowed(src, 'rp_creator') then return true end
+local function isFounder(src)
+    if IsPlayerAceAllowed(src, 'rp_founder') then return true end
     local player = exports['rp_core']:GetPlayerFromId(src)
-    return player ~= nil and (player.group == 'superadmin' or player.group == 'fondateur')
+    return player ~= nil and player.group == 'fondateur'
+end
+
+local function isCreator(src)
+    if isFounder(src) or IsPlayerAceAllowed(src, 'rp_creator') then return true end
+    local player = exports['rp_core']:GetPlayerFromId(src)
+    return player ~= nil and player.group == 'superadmin'
 end
 
 local function creatorAccessAllowed(src)
@@ -298,6 +304,10 @@ local function IsManagedCreatorModule(name)
 end
 
 CanUseTablet = function(src, tablet)
+    -- Le fondateur ACE conserve l'accès aux trois tablettes, même si une
+    -- restriction individuelle a été enregistrée dans rp_creator_player_access.
+    if isFounder(src) then return true end
+
     local column = TABLET_COLUMNS[tablet]
     local identifier = CreatorLicense(tonumber(src))
     if not column or not identifier then return false end
