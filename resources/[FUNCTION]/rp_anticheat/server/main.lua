@@ -8,6 +8,34 @@ local explosionWindows = {}
 local entityWindows = {}
 local spectateRequestAt = {}
 
+local function detectionCategory(reason)
+    if reason:find('GodMode', 1, true) then return 'godmode', 'critical' end
+    if reason:find('argent', 1, true) or reason:find('money', 1, true) then return 'money', 'critical' end
+    if reason:find('véhicule', 1, true) or reason:find('vehicle', 1, true) then return 'vehicle_spawn', 'high' end
+    if reason:find('Arme', 1, true) then return 'weapon_spawn', 'critical' end
+    if reason:find('SpeedHack', 1, true) then return 'speedhack', 'high' end
+    if reason:find('gravité', 1, true) or reason:find('gravity', 1, true) then return 'gravity', 'high' end
+    if reason:find('spam', 1, true) then return 'spam', 'medium' end
+    if reason:find('Vision', 1, true) then return 'vision', 'medium' end
+    return 'other', 'low'
+end
+
+local function ensureDetectionStatsTable()
+    MySQL.query.await([[
+        CREATE TABLE IF NOT EXISTS anticheat_detections (
+            id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+            player_name VARCHAR(100) NOT NULL,
+            detection_type VARCHAR(40) NOT NULL,
+            reason VARCHAR(180) NOT NULL,
+            severity VARCHAR(16) NOT NULL,
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (id),
+            INDEX idx_anticheat_created (created_at),
+            INDEX idx_anticheat_type_created (detection_type, created_at)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    ]])
+end
+
 local function getPlayer(src)
     return exports['rp_core']:GetPlayerFromId(tonumber(src))
 end
@@ -68,6 +96,14 @@ local function recordDetection(src, reason)
         timestamp = now,
         severity = 'high'
     }
+    alert.category, alert.severity = detectionCategory(safe)
+    local persisted, persistError = pcall(function()
+        MySQL.insert.await('INSERT INTO anticheat_detections (player_name, detection_type, reason, severity) VALUES (?, ?, ?, ?)',
+            { alert.playerName, alert.category, alert.reason, alert.severity })
+    end)
+    if not persisted then
+        print('[rp_anticheat][stats] Échec enregistrement statistique: ' .. tostring(persistError))
+    end
     table.insert(detectionsLog, 1, alert)
     if #detectionsLog > 250 then table.remove(detectionsLog) end
 
@@ -196,6 +232,30 @@ local function allowStaffAction(src, action, cooldownSeconds)
     return true
 end
 
+RegisterNetEvent('rp_anticheat:requestStatistics', function(period)
+    local src = source
+    if not isStaff(src) or not canUseAnticheatTablet(src) or not allowStaffAction(src, 'request_statistics', 2) then return end
+    local formats = { day = '%Y-%m-%d', month = '%Y-%m', year = '%Y' }
+    local format = formats[period]
+    if not format then notify(src, 'error', 'Période statistique invalide.') return end
+    local ok, rows = pcall(function()
+        return MySQL.query.await([[
+            SELECT DATE_FORMAT(created_at, ?) AS bucket, detection_type AS category,
+                   severity, COUNT(*) AS total
+            FROM anticheat_detections
+            WHERE created_at >= DATE_SUB(NOW(), INTERVAL 1 YEAR)
+            GROUP BY bucket, detection_type, severity
+            ORDER BY bucket ASC
+        ]], { format })
+    end)
+    if not ok then
+        print('[rp_anticheat][stats] Chargement des statistiques impossible: ' .. tostring(rows))
+        notify(src, 'error', 'Impossible de charger les statistiques anticheat.')
+        return
+    end
+    TriggerClientEvent('rp_anticheat:updateStatistics', src, { period = period, rows = rows or {} })
+end)
+
 RegisterNetEvent('rp_anticheat:requestLogs', function()
     local src = source
     if not isStaff(src) or not canUseAnticheatTablet(src) or not allowStaffAction(src, 'request_logs', 1) then return end
@@ -272,6 +332,12 @@ local function BuildSurveillanceSnapshot()
     end
     return playersList
 end
+
+CreateThread(function()
+    Wait(1000)
+    local ok, err = pcall(ensureDetectionStatsTable)
+    if not ok then print('[rp_anticheat][stats] Création table impossible: ' .. tostring(err)) end
+end)
 
 CreateThread(function()
     while true do
