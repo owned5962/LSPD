@@ -1,0 +1,34 @@
+name: Business map locations
+
+on:
+  push:
+    paths:
+      - "resources/[FUNCTION]/rp_businesses/**"
+      - "resources/[FUNCTION]/rp_clothing/client/main.lua"
+      - "server.cfg"
+      - "tests/test_business_locations.py"
+      - ".github/workflows/business-locations.yml"
+  pull_request:
+    paths:
+      - "resources/[FUNCTION]/rp_businesses/**"
+      - "resources/[FUNCTION]/rp_clothing/client/main.lua"
+      - "server.cfg"
+      - "tests/test_business_locations.py"
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - name: Validate business locations
+        run: python tests/test_business_locations.py
+      - name: Install Lua compiler
+        run: sudo apt-get update && sudo apt-get install -y lua5.4
+      - name: Compile Lua resources
+        run: |
+          luac5.4 -p "resources/[FUNCTION]/rp_businesses/shared/locations.lua"
+          luac5.4 -p "resources/[FUNCTION]/rp_businesses/client/main.lua"
+          luac5.4 -p "resources/[FUNCTION]/rp_clothing/client/main.lua"
