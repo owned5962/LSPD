@@ -20,8 +20,9 @@
                 <button class="nav-item active" data-tab="dashboard"><i class="fa-solid fa-chart-line"></i> Vue générale</button>
                 <button class="nav-item" data-tab="protections"><i class="fa-solid fa-shield"></i> Protections <span id="nav-protection-count">7</span></button>
                 <button class="nav-item" data-tab="players"><i class="fa-solid fa-users"></i> Joueurs</button>
-                <button class="nav-item" data-tab="surveillance"><i class="fa-solid fa-eye"></i> Surveillance</button>
+                <button class="nav-item surveillance-nav inactive" data-tab="surveillance" id="nav-surveillance" disabled aria-disabled="true"><i class="fa-solid fa-eye"></i> Surveillance <span id="nav-surveillance-count">0</span></button>
                 <button class="nav-item" data-tab="statistics"><i class="fa-solid fa-chart-column"></i> Statistiques</button>
+                <button class="nav-item" data-tab="configuration"><i class="fa-solid fa-sliders"></i> Configuration</button>
                 <button class="nav-item" data-tab="logs"><i class="fa-solid fa-triangle-exclamation"></i> Détections <span id="nav-alert-count">0</span></button>
                 <button class="nav-item" data-tab="bans"><i class="fa-solid fa-ban"></i> Bannissements</button>
             </nav>
@@ -73,8 +74,26 @@
             </section>
 
             <section class="tab-pane" id="pane-logs">
-                <div class="section-intro"><div><h2>Centre des détections</h2><p>Historique conservé en mémoire pendant la session serveur (250 événements maximum).</p></div><div class="search-box"><i class="fa-solid fa-filter"></i><input id="log-search" type="search" placeholder="Filtrer les alertes..."></div></div>
+                <div class="section-intro"><div><h2>Centre des détections</h2><p>Registre persistant des événements enregistrés en base de données.</p></div><div class="search-box"><i class="fa-solid fa-filter"></i><input id="log-search" type="search" placeholder="Filtrer les alertes..."></div></div>
                 <article class="panel table-panel"><div class="table-wrap"><table class="ac-table"><thead><tr><th>Heure</th><th>Joueur</th><th>Détection</th><th>Niveau</th><th>Action</th></tr></thead><tbody id="logs-table-body"><tr><td colspan="5" class="empty-state">Aucune détection enregistrée.</td></tr></tbody></table></div></article>
+            </section>
+
+            <section class="tab-pane" id="pane-configuration">
+                <div class="section-intro">
+                    <div><h2>Configuration des sanctions automatiques</h2><p>Choisis l’action appliquée automatiquement selon la catégorie de détection. Les réglages sont enregistrés en base de données.</p></div>
+                    <span class="info-chip"><i class="fa-solid fa-database"></i> Configuration persistante</span>
+                </div>
+                <article class="panel sanction-config-panel">
+                    <div class="panel-heading"><div><h3>Règles par type de détection</h3><p>Par défaut, chaque détection déclenche uniquement un avertissement.</p></div></div>
+                    <div id="sanction-config-list" class="sanction-config-list"><div class="empty-state">Chargement de la configuration...</div></div>
+                    <div class="prison-duration">
+                        <label for="prison-minutes">Durée de prison (minutes)</label>
+                        <input id="prison-minutes" type="number" min="1" max="1440" value="30">
+                        <small>Utilisée lorsqu’une règle applique la sanction Prison. Maximum : 24 heures.</small>
+                    </div>
+                    <div class="sanction-config-actions"><span id="sanction-config-status">Modifications non enregistrées</span><button id="btn-save-sanctions" class="primary-btn"><i class="fa-solid fa-floppy-disk"></i> Enregistrer la configuration</button></div>
+                </article>
+                <article class="panel sanction-warning-panel"><i class="fa-solid fa-circle-info"></i><p>Les détections peuvent parfois être des faux positifs. Les sanctions automatiques les plus lourdes (kick, ban et prison) sont donc désactivées par défaut : active-les uniquement après avoir vérifié tes seuils de détection.</p></article>
             </section>
 
             <section class="tab-pane" id="pane-bans">
