@@ -670,7 +670,7 @@ def test_admin_tablet_exposes_working_heal_economy_and_job_actions():
     assert 'onclick="setSelectedJob()"' in html
     assert "function manageAdminMoney()" in ui
     assert "getPanelTarget('economy')" in ui
-    assert "operation, amount" not in ui
+    assert "{ playerId: targetId, type, amount, operation }" in ui
     assert "function setSelectedJob()" in ui
 
 
