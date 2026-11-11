@@ -964,7 +964,7 @@ def test_character_player_controls_stay_locked_until_a_character_is_loaded():
     assert "SetPlayerControl(PlayerId(), false, 0)" in client
     assert "SetPlayerControl(PlayerId(), true, 0)" in client
     assert "SetEntityVisible(ped, false, false)" in client
-    assert "FreezeEntityPosition(ped, not characterSessionReady)" in client
+    assert "FreezeEntityPosition(PlayerPedId(), not characterSessionReady)" in client
 
 
 def test_admin_server_has_no_duplicate_legacy_event_handlers():
