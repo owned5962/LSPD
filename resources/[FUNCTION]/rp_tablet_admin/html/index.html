@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Administration OS</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
@@ -34,168 +35,24 @@
                     <!-- VUE 1 : MENU ADMIN (THÈME NOIR & ROUGE NÉON)   -->
                     <!-- ============================================== -->
                     <div id="view-admin" class="view-panel active">
-                        <div class="panel-header admin-accent">
-                            <div class="header-titles">
-                                <h2><i class="fas fa-terminal"></i> MENU D'ADMINISTRATION EN DIRECT</h2>
-                                <p>Supervision des joueurs, modération en temps réel et sanctions immédiates</p>
-                            </div>
-                            <div class="quick-admin-actions">
-                                <span class="live-status"><span class="live-dot"></span> SURVEILLANCE EN DIRECT</span>
-                                <button class="action-btn-red" type="button" onclick="refreshPlayerMap()"><i class="fas fa-sync-alt"></i> Actualiser</button>
-                            </div>
-                        </div>
-
-                        <div class="admin-subnav">
-                            <button type="button" class="admin-subnav-btn active" data-admin-view="players"><i class="fas fa-users"></i> Joueurs & Actions</button>
-                            <button type="button" class="admin-subnav-btn" data-admin-view="map"><i class="fas fa-map-marked-alt"></i> Carte des joueurs <span id="map-player-count">0</span></button>
-                            <button type="button" class="admin-subnav-btn" data-admin-view="audit"><i class="fas fa-clipboard-list"></i> Journal d'audit</button>
-                        </div>
-                        <section id="admin-players-view" class="admin-subview active">
-                        <div class="admin-grid-layout">
-                            <!-- Left: Players List -->
-                            <div class="admin-card players-card">
-                                <div class="card-header">
-                                    <h3><i class="fas fa-users"></i> Joueurs Connectés (<span id="player-count">0</span>)</h3>
-                                    <input type="text" id="player-search" placeholder="Rechercher ID ou nom..." onkeyup="filterPlayers()">
-                                </div>
-                                <div class="player-list-scrollable" id="players-list"></div>
-                            </div>
-
-                            <!-- Right: Target Player Actions & Controls -->
-                            <div class="admin-card actions-card">
-                                <div class="card-header">
-                                    <h3><i class="fas fa-crosshairs"></i> Actions sur la Cible : <span id="selected-target-name" class="highlight-red">Aucune cible</span></h3>
-                                </div>
-                                <div class="actions-category">
-                                    <h4>Téléportation & Mouvement</h4>
-                                    <div class="btn-group">
-                                        <button class="btn-red" data-perm="tp_to" onclick="playerAction('goto')"><i class="fas fa-location-arrow"></i> Se téléporter à lui</button>
-                                        <button class="btn-red" data-perm="tp_here" onclick="playerAction('bring')"><i class="fas fa-magnet"></i> Téléporter sur moi</button>
-                                        <button class="btn-red" data-perm="freeze" onclick="playerAction('freeze')"><i class="fas fa-snowflake"></i> Freeze / Défreeze</button>
-                                        <button class="btn-red" data-perm="spectate" onclick="playerAction('spectate')"><i class="fas fa-eye"></i> Mode Spectateur</button>
-                                    </div>
-                                </div>
-
-                                <div class="actions-category">
-                                    <h4>Santé & Modération</h4>
-                                    <div class="btn-group">
-                                        <button class="btn-red" data-perm="heal" onclick="playerAction('heal')"><i class="fas fa-medkit"></i> Soigner (Heal)</button>
-                                        <button class="btn-red" data-perm="revive" onclick="playerAction('revive')"><i class="fas fa-heart"></i> Réanimer (Revive)</button>
-                                        <button class="btn-red" data-perm="noclip" onclick="toggleAdminMode('noclip')"><i class="fas fa-ghost"></i> Basculer NoClip</button>
-                                        <button class="btn-red" data-perm="godmode" onclick="toggleAdminMode('godmode')"><i class="fas fa-shield-virus"></i> Invincible (GodMode)</button>
-                                    </div>
-                                </div>
-
-                                <div class="actions-category">
-                                    <h4>Sanctions & Expulsions</h4>
-                                    <div class="btn-group">
-                                        <button class="btn-red alert" data-perm="kick" onclick="playerAction('kick')"><i class="fas fa-user-times"></i> Expulser (Kick)</button>
-                                        <button class="btn-red alert" data-perm="ban" onclick="banSelectedPlayer()"><i class="fas fa-ban"></i> Bannir définitivement</button>
-                                    </div>
-                                    <div class="admin-inline-form">
-                                        <input id="admin-ban-reason" type="text" maxlength="180" placeholder="Motif obligatoire du bannissement">
-                                    </div>
-                                </div>
-                                <div class="actions-category">
-                                    <h4>Économie du joueur</h4>
-                                    <div class="admin-inline-form">
-                                        <select id="admin-money-type"><option value="cash">Liquide</option><option value="bank">Banque</option></select>
-                                        <input id="admin-money-amount" type="number" min="1" max="1000000" step="1" placeholder="Montant">
-                                        <button type="button" class="btn-red" onclick="manageSelectedMoney('give')"><i class="fas fa-plus"></i> Ajouter</button>
-                                        <button type="button" class="btn-red alert" onclick="manageSelectedMoney('remove')"><i class="fas fa-minus"></i> Retirer</button>
-                                    </div>
-                                </div>
-                                <div class="actions-category">
-                                    <h4>Surveillance & véhicules</h4>
-                                    <div class="admin-inline-form">
-                                        <button type="button" class="btn-red" onclick="stopAdminSpectate()"><i class="fas fa-eye-slash"></i> Arrêter la surveillance</button>
-                                        <input id="admin-vehicle-model" type="text" maxlength="40" placeholder="Modèle véhicule (ex. sultan)">
-                                        <button type="button" class="btn-red" onclick="spawnAdminVehicle()"><i class="fas fa-car"></i> Faire apparaître pour moi</button>
-                                        <button type="button" class="btn-red" onclick="giveAdminVehicle()"><i class="fas fa-car-side"></i> Donner au joueur sélectionné</button>
-                                    </div>
-                                </div>
-                                <div class="actions-category">
-                                    <h4>Changer le métier</h4>
-                                    <div class="admin-inline-form">
-                                        <select id="admin-job-name" aria-label="Métier disponible"><option value="">Choisir un métier…</option></select>
-                                        <select id="admin-job-grade" aria-label="Grade du métier"><option value="0">Grade 0</option></select>
-                                        <button type="button" class="btn-red" onclick="setSelectedJob()"><i class="fas fa-briefcase"></i> Appliquer</button>
-                                    </div>
-                                </div>
-                                <div class="actions-category">
-                                    <h4>Donner une arme</h4>
-                                    <div class="admin-inline-form">
-                                        <select id="admin-weapon-name" aria-label="Arme à attribuer">
-                                            <option value="WEAPON_PISTOL">Pistolet</option>
-                                            <option value="WEAPON_COMBATPISTOL">Pistolet de combat</option>
-                                            <option value="WEAPON_SNSPISTOL">Pistolet SNS</option>
-                                            <option value="WEAPON_STUNGUN">Taser</option>
-                                            <option value="WEAPON_FLASHLIGHT">Lampe torche</option>
-                                            <option value="WEAPON_KNIFE">Couteau</option>
-                                            <option value="WEAPON_NIGHTSTICK">Matraque</option>
-                                            <option value="WEAPON_SMG">SMG</option>
-                                            <option value="WEAPON_CARBINERIFLE">Carabine</option>
-                                            <option value="WEAPON_PUMPSHOTGUN">Fusil à pompe</option>
-                                        </select>
-                                        <button type="button" class="btn-red" onclick="giveAdminWeapon()"><i class="fas fa-crosshairs"></i> Attribuer l’arme</button>
-                                    </div>
-                                </div>
-                                <div class="actions-category">
-                                    <h4>Heure et météo du serveur</h4>
-                                    <div class="admin-inline-form">
-                                        <select id="admin-weather">
-                                            <option value="">Conserver la météo</option>
-                                            <option value="EXTRASUNNY">Très ensoleillé</option>
-                                            <option value="CLEAR">Dégagé</option>
-                                            <option value="CLOUDS">Nuageux</option>
-                                            <option value="OVERCAST">Couvert</option>
-                                            <option value="FOGGY">Brouillard</option>
-                                            <option value="RAIN">Pluie</option>
-                                            <option value="THUNDER">Orage</option>
-                                            <option value="SNOW">Neige</option>
-                                        </select>
-                                        <input id="admin-world-hours" type="number" min="0" max="23" value="12" aria-label="Heure (0 à 23)" placeholder="Heure">
-                                        <input id="admin-world-minutes" type="number" min="0" max="59" value="0" aria-label="Minutes (0 à 59)" placeholder="Minutes">
-                                        <button type="button" class="btn-red" onclick="applyAdminWorldTime()"><i class="fas fa-clock"></i> Appliquer heure / météo</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        </section>
-                        <section id="admin-audit-view" class="admin-subview">
-                            <div class="audit-toolbar">
-                                <div>
-                                    <h3><i class="fas fa-clipboard-list"></i> Journal des actions administrateur</h3>
-                                    <p>50 dernières actions enregistrées sur le serveur</p>
-                                </div>
-                                <button type="button" class="action-btn-red" onclick="requestAuditLogs()"><i class="fas fa-sync-alt"></i> Actualiser</button>
-                            </div>
-                            <div id="admin-audit-logs" class="audit-log-list" aria-live="polite">
-                                <p>Ouvrez cet onglet pour charger les journaux.</p>
-                            </div>
-                        </section>
-                        <section id="admin-map-view" class="admin-subview">
-                            <div class="map-toolbar">
-                                <div><strong>CARTE TACTIQUE LOS SANTOS</strong><span>Positions monde FiveM · actualisation automatique</span></div>
-                                <div class="map-controls">
-                                    <button type="button" onclick="changeMapZoom(1.25)" title="Zoom avant">+</button>
-                                    <button type="button" onclick="changeMapZoom(0.8)" title="Zoom arrière">−</button>
-                                    <button type="button" onclick="resetMapView()" title="Recentrer"><i class="fas fa-expand"></i></button>
-                                    <span id="map-updated-at">En attente des positions…</span>
-                                </div>
-                            </div>
-                            <div class="map-layout">
-                                <div class="map-canvas-wrap">
-                                    <canvas id="player-map" aria-label="Carte interactive des positions des joueurs"></canvas>
-                                    <div class="map-hint"><i class="fas fa-mouse"></i> Molette : zoom · Glisser : déplacer · Cliquer sur un point : sélectionner</div>
-                                </div>
-                                <aside class="map-player-panel">
-                                    <h3><i class="fas fa-satellite-dish"></i> Joueurs visibles</h3>
-                                    <div id="map-player-list" class="map-player-list"></div>
-                                </aside>
-                            </div>
-                        </section>
-                    </div>
+<div class="panel-header admin-accent"><div class="header-titles"><h2><i class="fas fa-terminal"></i> CENTRE D'ADMINISTRATION</h2><p>Gestion des joueurs, attributions, sanctions et supervision du serveur</p></div><div class="quick-admin-actions"><span class="live-status"><span class="live-dot"></span> SURVEILLANCE EN DIRECT</span><button class="action-btn-red" type="button" onclick="refreshPlayerMap()"><i class="fas fa-sync-alt"></i> Actualiser</button></div></div>
+<nav class="admin-subnav" aria-label="Navigation administration"><button type="button" class="admin-subnav-btn active" data-admin-view="players"><i class="fas fa-users"></i> Joueurs</button><button type="button" class="admin-subnav-btn" data-admin-view="gives"><i class="fas fa-gift"></i> Gives</button><button type="button" class="admin-subnav-btn" data-admin-view="sanctions"><i class="fas fa-gavel"></i> Sanction</button><button type="button" class="admin-subnav-btn" data-admin-view="functions"><i class="fas fa-screwdriver-wrench"></i> Fonction</button><button type="button" class="admin-subnav-btn" data-admin-view="jobs"><i class="fas fa-briefcase"></i> Job</button><button type="button" class="admin-subnav-btn" data-admin-view="weather"><i class="fas fa-cloud-sun"></i> Météo</button><button type="button" class="admin-subnav-btn" data-admin-view="map"><i class="fas fa-map-marked-alt"></i> Carte GTA V <span id="map-player-count">0</span></button><button type="button" class="admin-subnav-btn" data-admin-view="audit"><i class="fas fa-clipboard-list"></i> Journal d'audit</button></nav>
+<section id="admin-players-view" class="admin-subview active"><div class="admin-card player-directory"><div class="card-header"><div><h3><i class="fas fa-users"></i> Joueurs connectés <span class="counter-pill" id="player-count">0</span></h3><p>Rechercher par ID ou nom, puis sélectionner un joueur</p></div><input type="search" id="player-search" placeholder="Rechercher ID ou nom…" oninput="filterPlayers()"></div><div class="player-list-scrollable directory-list" id="players-list"></div></div></section>
+<section id="admin-gives-view" class="admin-subview"><div class="admin-card admin-page-card"><div class="page-heading"><div><h3><i class="fas fa-gift"></i> Attribution de ressources</h3><p>Choisissez le destinataire par ID ou dans la liste des joueurs connectés</p></div></div><div class="target-picker"><label for="give-player-search">Rechercher un joueur</label><input id="give-player-search" type="search" placeholder="ID du joueur ou nom…" autocomplete="off"><select id="give-player-target"><option value="">Sélectionner un joueur connecté…</option></select><span class="target-selected" id="give-player-selected">Aucun destinataire sélectionné</span></div><div class="give-grid">
+<article class="give-card"><h4><i class="fas fa-car"></i> Véhicule</h4><p>Faire apparaître un véhicule pour le joueur sélectionné.</p><input id="admin-vehicle-model" type="text" maxlength="40" placeholder="Modèle (ex. sultan)"><button type="button" class="btn-red" onclick="giveAdminVehicle()">Attribuer le véhicule</button></article>
+<article class="give-card"><h4><i class="fas fa-money-bill-wave"></i> Argent liquide</h4><p>Créditer le portefeuille du personnage.</p><input id="admin-give-cash-amount" type="number" min="1" max="1000000" step="1" placeholder="Montant en $"><button type="button" class="btn-red" onclick="giveAdminMoney('cash')">Donner l'argent</button></article>
+<article class="give-card"><h4><i class="fas fa-building-columns"></i> Argent en banque</h4><p>Créditer directement le compte bancaire.</p><input id="admin-give-bank-amount" type="number" min="1" max="1000000" step="1" placeholder="Montant en $"><button type="button" class="btn-red" onclick="giveAdminMoney('bank')">Donner en banque</button></article>
+<article class="give-card"><h4><i class="fas fa-gun"></i> Arme</h4><p>Attribuer une arme autorisée au personnage.</p><select id="admin-weapon-name"><option value="WEAPON_PISTOL">Pistolet</option><option value="WEAPON_COMBATPISTOL">Pistolet de combat</option><option value="WEAPON_SNSPISTOL">Pistolet SNS</option><option value="WEAPON_STUNGUN">Taser</option><option value="WEAPON_FLASHLIGHT">Lampe torche</option><option value="WEAPON_KNIFE">Couteau</option><option value="WEAPON_NIGHTSTICK">Matraque</option><option value="WEAPON_SMG">SMG</option><option value="WEAPON_CARBINERIFLE">Carabine</option><option value="WEAPON_PUMPSHOTGUN">Fusil à pompe</option></select><button type="button" class="btn-red" onclick="giveAdminWeapon()">Donner l'arme</button></article>
+<article class="give-card"><h4><i class="fas fa-box-open"></i> Item</h4><p>Choisir un objet du catalogue et sa quantité.</p><select id="admin-item-name"><option value="">Chargement du catalogue…</option></select><input id="admin-item-count" type="number" min="1" max="1000" step="1" value="1" placeholder="Quantité"><button type="button" class="btn-red" onclick="giveAdminItem()">Donner l'item</button></article>
+</div></div></section>
+<section id="admin-sanctions-view" class="admin-subview"><div class="admin-card admin-page-card"><div class="page-heading"><div><h3><i class="fas fa-gavel"></i> Sanctions</h3><p>Expulsion et bannissement des joueurs</p></div></div><div class="target-picker"><label for="sanction-player-search">Rechercher un joueur</label><input id="sanction-player-search" type="search" placeholder="ID du joueur ou nom…"><select id="sanction-player-target"><option value="">Sélectionner un joueur connecté…</option></select><span class="target-selected" id="sanction-player-selected">Aucun joueur sélectionné</span></div><div class="sanction-grid"><article class="give-card"><h4>Expulser (Kick)</h4><p>Déconnecter immédiatement le joueur du serveur.</p><input id="admin-kick-reason" type="text" maxlength="180" placeholder="Motif de l'expulsion"><button class="btn-red alert" type="button" onclick="sanctionPlayer('kick')">Expulser le joueur</button></article><article class="give-card"><h4>Bannir définitivement</h4><p>Bannissement permanent avec motif obligatoire.</p><input id="admin-ban-reason" type="text" maxlength="180" placeholder="Motif obligatoire du bannissement"><button class="btn-red alert" type="button" onclick="banSelectedPlayer()">Bannir définitivement</button></article></div></div></section>
+<section id="admin-functions-view" class="admin-subview"><div class="admin-card admin-page-card"><div class="page-heading"><div><h3><i class="fas fa-screwdriver-wrench"></i> Fonctions administrateur</h3><p>Outils de gestion et d'assistance sur un joueur connecté</p></div></div><div class="target-picker"><label for="function-player-search">Rechercher un joueur</label><input id="function-player-search" type="search" placeholder="ID du joueur ou nom…"><select id="function-player-target"><option value="">Sélectionner un joueur connecté…</option></select><span class="target-selected" id="function-player-selected">Aucun joueur sélectionné</span></div><div class="function-grid">
+<button class="function-action" onclick="playerAction('goto')"><i class="fas fa-location-arrow"></i><span><strong>Goto</strong><small>Se téléporter au joueur</small></span></button><button class="function-action" onclick="playerAction('bring')"><i class="fas fa-magnet"></i><span><strong>Bring</strong><small>Amener le joueur à soi</small></span></button><button class="function-action" onclick="playerAction('freeze')"><i class="fas fa-snowflake"></i><span><strong>Freeze / Défreeze</strong><small>Bloquer ses mouvements</small></span></button><button class="function-action" onclick="playerAction('spectate')"><i class="fas fa-eye"></i><span><strong>Spectateur</strong><small>Observer le joueur</small></span></button><button class="function-action" onclick="playerAction('heal')"><i class="fas fa-kit-medical"></i><span><strong>Heal</strong><small>Restaurer sa santé</small></span></button><button class="function-action" onclick="playerAction('revive')"><i class="fas fa-heart-pulse"></i><span><strong>Revive</strong><small>Réanimation</small></span></button><button class="function-action" onclick="toggleAdminMode('noclip')"><i class="fas fa-ghost"></i><span><strong>NoClip</strong><small>Vol staff</small></span></button><button class="function-action" onclick="toggleAdminMode('godmode')"><i class="fas fa-shield-halved"></i><span><strong>GodMode</strong><small>Invincibilité staff</small></span></button><button class="function-action" onclick="stopAdminSpectate()"><i class="fas fa-eye-slash"></i><span><strong>Arrêter spectateur</strong><small>Quitter la surveillance</small></span></button></div></div></section>
+<section id="admin-jobs-view" class="admin-subview"><div class="admin-card admin-page-card"><div class="page-heading"><div><h3><i class="fas fa-briefcase"></i> Attribution d'un job</h3><p>Choisissez un joueur, un métier et son grade</p></div></div><div class="target-picker"><label for="job-player-search">Rechercher un joueur</label><input id="job-player-search" type="search" placeholder="ID du joueur ou nom…"><select id="job-player-target"><option value="">Sélectionner un joueur connecté…</option></select><span class="target-selected" id="job-player-selected">Aucun joueur sélectionné</span></div><div class="job-assignment-form"><label for="admin-job-name">Métier</label><select id="admin-job-name"><option value="">Choisir un métier…</option></select><label for="admin-job-grade">Grade</label><select id="admin-job-grade"><option value="0">Grade 0</option></select><button type="button" class="btn-red" onclick="setSelectedJob()">Attribuer le job</button></div></div></section>
+<section id="admin-weather-view" class="admin-subview"><div class="admin-card admin-page-card weather-page"><div class="page-heading"><div><h3><i class="fas fa-cloud-sun"></i> Météo et heure du serveur</h3><p>Synchronisation globale pour tous les joueurs connectés</p></div></div><div class="weather-form"><label for="admin-weather">Météo</label><select id="admin-weather"><option value="">Conserver la météo actuelle</option><option value="EXTRASUNNY">Très ensoleillé</option><option value="CLEAR">Dégagé</option><option value="CLOUDS">Nuageux</option><option value="OVERCAST">Couvert</option><option value="FOGGY">Brouillard</option><option value="RAIN">Pluie</option><option value="THUNDER">Orage</option><option value="SNOW">Neige</option><option value="BLIZZARD">Tempête de neige</option><option value="XMAS">Noël</option><option value="HALLOWEEN">Halloween</option></select><div class="time-inputs"><div><label for="admin-world-hours">Heure</label><input id="admin-world-hours" type="number" min="0" max="23" value="12"></div><div><label for="admin-world-minutes">Minutes</label><input id="admin-world-minutes" type="number" min="0" max="59" value="0"></div></div><button type="button" class="btn-red" onclick="applyAdminWorldTime()">Appliquer météo et heure</button></div></div></section>
+<section id="admin-audit-view" class="admin-subview"><div class="admin-card admin-page-card"><div class="audit-toolbar"><div><h3><i class="fas fa-clipboard-list"></i> Journal des actions administrateur</h3><p>50 dernières actions enregistrées sur le serveur</p></div><button type="button" class="action-btn-red" onclick="requestAuditLogs()">Actualiser</button></div><div class="audit-table-wrap"><table class="audit-table"><thead><tr><th>Administrateur</th><th>Action</th><th>Cible</th><th>Détails</th><th>Date / heure</th></tr></thead><tbody id="admin-audit-table-body"><tr><td colspan="5">Ouvrez cet onglet pour charger les journaux.</td></tr></tbody></table></div></div></section>
+<section id="admin-map-view" class="admin-subview"><div class="map-toolbar"><div><strong>CARTE DU MONDE GTA V · SAN ANDREAS</strong><span>Carte du jeu · positions des joueurs en direct</span></div><div class="map-controls"><button type="button" onclick="changeMapZoom(1.25)">+</button><button type="button" onclick="changeMapZoom(0.8)">−</button><button type="button" onclick="resetMapView()"><i class="fas fa-expand"></i></button><span id="map-updated-at">En attente des positions…</span></div></div><div class="map-layout"><div class="map-canvas-wrap"><div id="player-map" aria-label="Carte GTA V avec positions des joueurs"></div><div class="map-hint">Molette : zoom · Glisser : déplacer · Cliquer sur un joueur : sélectionner</div></div><aside class="map-player-panel"><h3>Joueurs visibles</h3><div id="map-player-list" class="map-player-list"></div></aside></div><div class="map-attribution">Tuiles communautaires GTA V · viruxe/gtav-map-tiles · non affilié à Rockstar Games</div></section>
+</div>
 
 
                 </div>
@@ -209,6 +66,7 @@
     <!-- Notification Toast -->
     <div id="toast-notify" class="toast">Action effectuée avec succès</div>
 
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
     <script src="js/app.js"></script>
 </body>
 </html>
