@@ -122,7 +122,12 @@ end)
 
 RegisterNetEvent('rp_fuel:client:purchaseResult', function(success, message, netId, fuel)
     if not success then
-        SendNUIMessage({ action = 'purchaseFailed', message = message or 'Paiement refusé.' })
+        if isRefueling then
+            setVehicleAfterRefuel(true)
+            SendNUIMessage({ action = 'fuelingCancelled', message = message or 'Ravitaillement annulé.' })
+        else
+            SendNUIMessage({ action = 'purchaseFailed', message = message or 'Paiement refusé.' })
+        end
         notify(message or 'Paiement refusé.', 'error')
         return
     end
