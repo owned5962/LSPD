@@ -321,7 +321,8 @@ function buildSnapshotDetails(snapshot) {
     const name = document.createElement('strong');
     name.textContent = playerDisplayName(player);
     const meta = document.createElement('small');
-    const snapshot = player.snapshot || player;\n    meta.textContent = `ID ${player.id} · ${snapshot.jobLabel || player.job || 'Sans emploi'} · ${snapshot.jobGradeLabel || (snapshot.jobGrade != null ? 'Grade ' + snapshot.jobGrade : 'Grade inconnu')}`;
+    const snapshot = player.snapshot || player;
+    meta.textContent = `ID ${player.id} · ${snapshot.jobLabel || player.job || 'Sans emploi'} · ${snapshot.jobGradeLabel || (snapshot.jobGrade != null ? 'Grade ' + snapshot.jobGrade : 'Grade inconnu')}`;
     title.append(name, meta);
     head.append(avatar, title);
     panel.appendChild(head);
