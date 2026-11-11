@@ -4,16 +4,21 @@ local lastCoords = nil
 local lastCheck = 0
 local isAnticheatUIOpen = false
 
--- In-game Anticheat UI command for Admins
-RegisterKeyMapping('openanticheat', 'Ouvrir le menu Anticheat', 'keyboard', 'F9')
-
-RegisterCommand('openanticheat', function()
+-- Commande locale d'ouverture du menu Anticheat.
+local function ToggleAnticheatTablet()
     if isSpectating then
         StopSpectate()
     else
         TriggerServerEvent('rp_anticheat:requestOpen')
     end
-end, false)
+end
+
+-- Déclarer la commande avant de lui associer F9.
+RegisterCommand('openanticheat', ToggleAnticheatTablet, false)
+RegisterKeyMapping('openanticheat', 'Ouvrir le menu Anticheat', 'keyboard', 'F9')
+
+-- Alias pour tester l'ouverture depuis le chat.
+RegisterCommand('anticheat', ToggleAnticheatTablet, false)
 
 local function markCurrentPlayer(playersList)
     local ownServerId = GetPlayerServerId(PlayerId())
