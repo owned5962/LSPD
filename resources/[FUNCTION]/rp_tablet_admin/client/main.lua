@@ -4,6 +4,10 @@ local tabletEntity = nil
 local tabletDict = "amb@code_human_in_bus_passenger_idles@female@tablet@base"
 local tabletAnim = "base"
 local tabletModel = GetHashKey('prop_cs_tablet')
+local isAdminNoclip = false
+local isAdminGodmode = false
+local isAdminSpectating = false
+local spectateTargetPed = nil
 
 -- A resource restart must never leave the NUI visible or focused.
 AddEventHandler('onClientResourceStart', function(resourceName)
@@ -84,6 +88,30 @@ RegisterNUICallback('close', function(data, cb)
     cb('ok')
 end)
 
+RegisterNUICallback('spectatePlayer', function(data, cb)
+    TriggerServerEvent('rp_tablet_admin:server:spectatePlayer', data.playerId)
+    cb('ok')
+end)
+
+RegisterNUICallback('stopSpectate', function(data, cb)
+    TriggerServerEvent('rp_tablet_admin:server:stopSpectate')
+    cb('ok')
+end)
+
+RegisterNUICallback('toggleNoclip', function(data, cb)
+    TriggerServerEvent('rp_tablet_admin:server:toggleNoclip')
+    cb('ok')
+end)
+
+RegisterNUICallback('toggleGodmode', function(data, cb)
+    TriggerServerEvent('rp_tablet_admin:server:toggleGodmode')
+    cb('ok')
+end)
+
+RegisterNUICallback('spawnVehicle', function(data, cb)
+    TriggerServerEvent('rp_tablet_admin:server:spawnVehicle', data.model)
+    cb('ok')
+end)
 RegisterNUICallback('banPlayer', function(data, cb)
     TriggerServerEvent('rp_tablet_admin:server:banPlayer', data.playerId, data.reason)
     cb('ok')
@@ -160,6 +188,94 @@ RegisterNetEvent('rp_tablet_admin:client:playerPositions', function(players)
     SendNUIMessage({ action = 'playerPositions', players = players or {} })
 end)
 
+RegisterNetEvent('rp_tablet_admin:client:startSpectate', function(targetId)
+    local playerIndex = GetPlayerFromServerId(tonumber(targetId) or -1)
+    if playerIndex == -1 or not NetworkIsPlayerActive(playerIndex) then
+        TriggerEvent('rp_core:client:notify', 'error', 'Joueur introuvable pour la surveillance.')
+        return
+    end
+    local targetPed = GetPlayerPed(playerIndex)
+    if not targetPed or targetPed == 0 or not DoesEntityExist(targetPed) then return end
+    spectateTargetPed = targetPed
+    isAdminSpectating = true
+    NetworkSetInSpectatorMode(true, targetPed)
+    TriggerEvent('rp_core:client:notify', 'info', 'Surveillance activée.')
+end)
+
+RegisterNetEvent('rp_tablet_admin:client:stopSpectate', function()
+    if not isAdminSpectating then return end
+    NetworkSetInSpectatorMode(false, spectateTargetPed or PlayerPedId())
+    isAdminSpectating = false
+    spectateTargetPed = nil
+    TriggerEvent('rp_core:client:notify', 'success', 'Surveillance arrêtée.')
+end)
+
+RegisterNetEvent('rp_tablet_admin:client:toggleGodmode', function()
+    isAdminGodmode = not isAdminGodmode
+    SetPlayerInvincible(PlayerId(), isAdminGodmode or isAdminNoclip)
+    SetEntityInvincible(PlayerPedId(), isAdminGodmode or isAdminNoclip)
+    TriggerEvent('rp_core:client:notify', 'info', isAdminGodmode and 'GodMode activé.' or 'GodMode désactivé.')
+end)
+
+RegisterNetEvent('rp_tablet_admin:client:toggleNoclip', function()
+    isAdminNoclip = not isAdminNoclip
+    local enabled = isAdminNoclip
+    local ped = PlayerPedId()
+    SetEntityCollision(ped, not enabled, not enabled)
+    SetEntityInvincible(ped, enabled or isAdminGodmode)
+    SetPlayerInvincible(PlayerId(), enabled or isAdminGodmode)
+    TriggerEvent('rp_core:client:notify', 'info', enabled and 'NoClip activé. WASD / Espace / Ctrl pour bouger.' or 'NoClip désactivé.')
+    if enabled then
+        CreateThread(function()
+            while isAdminNoclip do
+                Wait(0)
+                ped = PlayerPedId()
+                local camRot = GetGameplayCamRot(2)
+                local pitch = math.rad(camRot.x)
+                local heading = math.rad(camRot.z)
+                local forward = vector3(-math.sin(heading) * math.cos(pitch), math.cos(heading) * math.cos(pitch), math.sin(pitch))
+                local right = vector3(math.cos(heading), math.sin(heading), 0.0)
+                local position = GetEntityCoords(ped)
+                local speed = IsControlPressed(0, 21) and 4.0 or 1.2
+                if IsControlPressed(0, 32) then position = position + forward * speed end
+                if IsControlPressed(0, 33) then position = position - forward * speed end
+                if IsControlPressed(0, 35) then position = position + right * speed end
+                if IsControlPressed(0, 34) then position = position - right * speed end
+                if IsControlPressed(0, 22) then position = position + vector3(0.0, 0.0, speed) end
+                if IsControlPressed(0, 36) then position = position - vector3(0.0, 0.0, speed) end
+                SetEntityVelocity(ped, 0.0, 0.0, 0.0)
+                SetEntityCoordsNoOffset(ped, position.x, position.y, position.z, true, true, true)
+            end
+            ped = PlayerPedId()
+            SetEntityCollision(ped, true, true)
+            SetEntityInvincible(ped, isAdminGodmode)
+            SetPlayerInvincible(PlayerId(), isAdminGodmode)
+        end)
+    end
+end)
+
+RegisterNetEvent('rp_tablet_admin:client:spawnVehicle', function(model)
+    if type(model) ~= 'string' then return end
+    local hash = GetHashKey(model)
+    if not IsModelInCdimage(hash) or not IsModelAVehicle(hash) then
+        TriggerEvent('rp_core:client:notify', 'error', 'Modèle de véhicule inconnu ou invalide.')
+        return
+    end
+    RequestModel(hash)
+    local deadline = GetGameTimer() + 5000
+    while not HasModelLoaded(hash) and GetGameTimer() < deadline do Wait(10) end
+    if not HasModelLoaded(hash) then TriggerEvent('rp_core:client:notify', 'error', 'Chargement du véhicule impossible.'); return end
+    local ped = PlayerPedId()
+    local coords = GetOffsetFromEntityInWorldCoords(ped, 0.0, 4.0, 0.0)
+    local vehicle = CreateVehicle(hash, coords.x, coords.y, coords.z, GetEntityHeading(ped), true, true)
+    if vehicle and vehicle ~= 0 then
+        SetPedIntoVehicle(ped, vehicle, -1)
+        SetVehicleOnGroundProperly(vehicle)
+        SetEntityAsMissionEntity(vehicle, true, true)
+        TriggerEvent('rp_core:client:notify', 'success', 'Véhicule créé : ' .. model)
+    end
+    SetModelAsNoLongerNeeded(hash)
+end)
 RegisterNetEvent('rp_tablet_admin:client:heal', function()
     local ped = PlayerPedId()
     SetEntityHealth(ped, GetEntityMaxHealth(ped))
