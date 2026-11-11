@@ -20,11 +20,7 @@
                         <span id="tablet-time">14:32</span>
                         <span class="carrier"><i class="fas fa-shield-alt"></i> SYSTEM SECURE OS</span>
                     </div>
-                    <div class="mode-switcher">
-                        <button class="mode-btn active admin-tab" data-mode="admin"><i class="fas fa-user-shield"></i> MENU ADMIN</button>
-                        <button class="mode-btn creator-tab" data-mode="creator"><i class="fas fa-crown"></i> MENU CRÉATEUR & PERMISSIONS</button>
-                    </div>
-                    <div class="right-status">
+                        <div class="right-status">
                         <span id="admin-badge" class="badge-role"><i class="fas fa-key"></i> <span id="current-rank-label">ADMINISTRATEUR</span></span>
                         <span><i class="fas fa-battery-full"></i> 100%</span>
                         <button id="btn-close-tablet" title="Fermer"><i class="fas fa-times"></i></button>
@@ -151,113 +147,6 @@
                         </section>
                     </div>
 
-                    <!-- ======================================================== -->
-                    <!-- VUE 2 : MENU CRÉATEUR & PERMISSIONS (THÈME NOIR & BLEU)  -->
-                    <!-- ======================================================== -->
-                    <div id="view-creator" class="view-panel">
-                        <div class="panel-header creator-accent">
-                            <div class="header-titles">
-                                <h2><i class="fas fa-crown"></i> MENU CRÉATEUR & GESTION DES PERMISSIONS</h2>
-                                <p>Panneau Maître du Fondateur : Attribution des droits d'accès et contrôle du serveur</p>
-                            </div>
-                            <div class="server-status-pill">
-                                <span class="pulse-blue"></span> CONTRÔLE DU SERVEUR
-                            </div>
-                        </div>
-
-                        <!-- Grade Selector Tabs -->
-                        <div class="grade-selector-bar">
-                            <span class="selector-label"><i class="fas fa-user-tag"></i> Configurer le grade :</span>
-                            <button class="grade-tab active" data-grade="superoperator" onclick="changeGradeConfig('superoperator')">
-                                <i class="fas fa-medal"></i> SuperOpérateur
-                            </button>
-                            <button class="grade-tab" data-grade="operator" onclick="changeGradeConfig('operator')">
-                                <i class="fas fa-id-badge"></i> Opérateur
-                            </button>
-                            <button class="grade-tab" data-grade="helper" onclick="changeGradeConfig('helper')">
-                                <i class="fas fa-hands-helping"></i> Helper
-                            </button>
-                            <button class="grade-tab" data-grade="fondateur" onclick="changeGradeConfig('fondateur')">
-                                <i class="fas fa-crown"></i> Fondateur (Tous droits)
-                            </button>
-                        </div>
-
-                        <div class="creator-content-layout">
-                            <!-- Permissions Matrix Checkboxes -->
-                            <div class="creator-card perms-card">
-                                <div class="card-header blue-border">
-                                    <div class="card-title-group">
-                                        <h3><i class="fas fa-tasks"></i> Droits d'Accès du Rôle : <span id="active-grade-title" class="highlight-blue">SuperOpérateur</span></h3>
-                                        <p class="subtitle">Aperçu local uniquement : ces cases ne modifient pas les permissions réelles du serveur</p>
-                                    </div>
-                                    <button class="btn-save-perms" type="button" disabled title="Gestion des permissions persistantes non disponible"><i class="fas fa-lock"></i> Permissions non configurables</button>
-                                </div>
-
-                                <div class="perms-grid" id="permissions-container">
-                                    <!-- Dynamic Checkboxes populated via JS -->
-                                </div>
-                            </div>
-
-                            <!-- Server Master Controls -->
-                            <div class="creator-card server-ctrl-card">
-                                <div class="card-header blue-border">
-                                    <h3><i class="fas fa-server"></i> Commandes Maîtres du Serveur</h3>
-                                </div>
-
-                                <div class="server-controls-grid">
-                                    <div class="ctrl-box">
-                                        <div class="ctrl-info">
-                                            <h4>Météo & Temps</h4>
-                                            <p>Ajuster l'atmosphère de Los Santos</p>
-                                        </div>
-                                        <div class="ctrl-buttons">
-                                            <button class="btn-blue-sm" onclick="setWeather('EXTRASUNNY')"><i class="fas fa-sun"></i> Soleil</button>
-                                            <button class="btn-blue-sm" onclick="setWeather('RAIN')"><i class="fas fa-cloud-showers-heavy"></i> Pluie</button>
-                                            <button class="btn-blue-sm" onclick="setTime(12, 0)"><i class="fas fa-clock"></i> Midi</button>
-                                            <button class="btn-blue-sm" onclick="setTime(23, 0)"><i class="fas fa-moon"></i> Nuit</button>
-                                        </div>
-                                    </div>
-
-                                    <div class="ctrl-box">
-                                        <div class="ctrl-info">
-                                            <h4>Maintenance & Annonces</h4>
-                                            <p>Diffuser un message à tous les citoyens</p>
-                                        </div>
-                                        <div class="announcement-input-group">
-                                            <input type="text" id="broadcast-msg" placeholder="Texte de l'annonce officielle...">
-                                            <button class="btn-blue-main" onclick="sendBroadcast()"><i class="fas fa-bullhorn"></i> Diffuser</button>
-                                        </div>
-                                    </div>
-
-                                    <div class="ctrl-box">
-                                        <div class="ctrl-info">
-                                            <h4>Purge & Sécurité</h4>
-                                            <p>Gestion des entités et anticheat</p>
-                                        </div>
-                                        <div class="ctrl-buttons">
-                                            <button class="btn-blue-sm" disabled title="Fonction non implémentée côté serveur"><i class="fas fa-car-crash"></i> Purge Véhicules Vides</button>
-                                            <button class="btn-blue-sm" disabled title="Fonction non implémentée côté serveur"><i class="fas fa-walking"></i> Purge PNJ Fous</button>
-                                            <button class="btn-blue-sm" disabled title="Fonction non implémentée côté serveur"><i class="fas fa-lock"></i> Verrouiller Serveur</button>
-                                        </div>
-                                    </div>
-
-                                    <div class="ctrl-box">
-                                        <div class="ctrl-info">
-                                            <h4>Journal d'administration</h4>
-                                            <p>Consulter les 50 dernières actions enregistrées côté serveur</p>
-                                        </div>
-                                        <div class="ctrl-buttons">
-                                            <button class="btn-blue-sm" onclick="requestAuditLogs()"><i class="fas fa-clipboard-list"></i> Actualiser les journaux</button>
-                                        </div>
-                                        <div id="admin-audit-logs" class="audit-log-list" aria-live="polite">
-                                            <p>Appuyez sur Actualiser pour charger les journaux.</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                    </div>
 
                 </div>
 
