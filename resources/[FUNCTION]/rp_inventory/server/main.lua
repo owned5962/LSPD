@@ -524,7 +524,7 @@ RegisterNetEvent('rp_inventory:dropItem', function(itemName, rawCount)
     end
     transferLocks[src] = true
     nextDropId = nextDropId + 1
-    local dropId = ('%d-%d-%d'):format(os.time(), src, nextDropId)
+    local dropId = ('%d-%d-%d-%d'):format(os.time(), GetGameTimer(), src, nextDropId)
     local persisted, persistError = pcall(function()
         local ok = MySQL.transaction.await({
             {
