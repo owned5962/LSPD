@@ -158,9 +158,9 @@ AddEventHandler('gameEventTriggered', function(name, args)
     if name ~= 'CEventNetworkEntityDamage' or inCustody then return end
     local victim, attacker = args[1], args[2]
     local playerPed = PlayerPedId()
-    if attacker ~= playerPed or victim == playerPed or not DoesEntityExist(victim) then return end
-    if IsEntityAVehicle(attacker) and GetPedInVehicleSeat(attacker, -1) == playerPed
-        and IsEntityAPed(victim) and not IsPedAPlayer(victim) then
+    local playerVehicleHit = IsEntityAVehicle(attacker) and GetPedInVehicleSeat(attacker, -1) == playerPed
+    if (attacker ~= playerPed and not playerVehicleHit) or victim == playerPed or not DoesEntityExist(victim) then return end
+    if playerVehicleHit and IsEntityAPed(victim) and not IsPedAPlayer(victim) then
         report('pedestrian_collision')
         return
     end
@@ -181,7 +181,6 @@ CreateThread(function()
     while true do
         local ped = PlayerPedId()
         if not inCustody and IsPedShooting(ped) then
-            local coords = GetEntityCoords(ped)
             if not IsPedInAnyPoliceVehicle(ped) then
                 report('public_shooting')
             end
