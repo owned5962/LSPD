@@ -186,12 +186,22 @@ RegisterNetEvent('rp_economy:server:transfer', function(rawTargetId, rawAmount)
         'UPDATE characters AS sender JOIN characters AS recipient ON sender.id = ? AND recipient.id = ? SET sender.bank = sender.bank - ?, recipient.bank = recipient.bank + ? WHERE sender.identifier = ? AND recipient.identifier = ? AND sender.bank >= ?',
         { player.charId, target.charId, amount, amount, player.identifier, target.identifier, amount }
     )
+    -- Both live balances must be synchronized while both character save locks
+    -- are still held, otherwise an autosave can restore stale account values.
+    if ok and tonumber(affected) == 2 then
+        player.bank, target.bank = player.bank - amount, target.bank + amount
+    end
     exports['rp_core']:ReleaseCharacterLock(lockedIds)
-    if not ok or tonumber(affected) ~= 2 then
-        notify(src, 'Virement impossible : solde modifié ou base indisponible.', 'error')
+    if not ok then
+        print(('[rp_economy] Transfer SQL error for characters %s -> %s: %s'):format(
+            tostring(player.charId), tostring(target.charId), tostring(affected)))
+        notify(src, 'Virement impossible : erreur de base de données.', 'error')
         return
     end
-    player.bank, target.bank = player.bank - amount, target.bank + amount
+    if tonumber(affected) ~= 2 then
+        notify(src, 'Virement impossible : solde insuffisant ou compte introuvable.', 'error')
+        return
+    end
     TriggerEvent('rp_economy:server:logTransaction', player.charId, 'transfer_send', amount, target.firstname .. ' ' .. target.lastname, 'Virement envoyé')
     TriggerEvent('rp_economy:server:logTransaction', target.charId, 'transfer_receive', amount, player.firstname .. ' ' .. player.lastname, 'Virement reçu')
     TriggerClientEvent('rp_core:client:updateBank', src, player.bank)
