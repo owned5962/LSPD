@@ -8,9 +8,10 @@ let adminTabletOpen = false;
 let mapViewState = { zoom: 1, panX: 0, panY: 0, dragging: false, dragMoved: false, lastX: 0, lastY: 0 };
 const frozenPlayers = new Set();
 
+const ADMIN_NUI_RESOURCE = 'rp_tablet_admin';
+
 function nuiPost(endpoint, payload) {
-    if (typeof GetParentResourceName !== 'function') return Promise.reject(new Error('NUI indisponible'));
-    return fetch(`https://${GetParentResourceName()}/${endpoint}`, {
+    return fetch(`https://${ADMIN_NUI_RESOURCE}/${endpoint}`, {
         method: 'POST', headers: { 'Content-Type': 'application/json; charset=UTF-8' },
         body: JSON.stringify(payload || {})
     }).then(response => { if (!response.ok) throw new Error(`HTTP ${response.status}`); return response.json().catch(() => ({})); });
