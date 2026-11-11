@@ -163,6 +163,10 @@ RegisterNetEvent('rp_characters:server:checkPlayer', function()
         DropPlayer(src, 'Une session est déjà active avec ce compte.')
         return
     end
+    if exports['rp_core']:GetPlayerFromId(src) then
+        TriggerClientEvent('rp_characters:client:resumeLoadedCharacter', src)
+        return
+    end
 
     local dbOk, user = SafeDatabaseCall(src, 'account lookup', function()
         return MySQL.single.await('SELECT identifier, `group` FROM users WHERE identifier = ?', { identifier })
