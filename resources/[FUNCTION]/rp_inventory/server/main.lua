@@ -144,7 +144,7 @@ RegisterNetEvent('rp_inventory:requestData', function()
         TriggerClientEvent('rp_inventory:requestFailed', src, 'Votre personnage n’est pas encore chargé. Réessayez après être entré en ville.')
         return
     end
-    if not playerInventories[src] then
+    if not playerInventories[src] or inventoryCharacterIds[src] ~= player.charId then
         local ok, err = pcall(loadInventory, player)
         if not ok then
             print(('[rp_inventory] Load failed for character %s: %s'):format(player.charId, tostring(err)))
@@ -160,8 +160,13 @@ RegisterNetEvent('rp_inventory:useItem', function(itemName)
     local src = source
     if not exports['rp_core']:CanPerformAction(src, 'inventory:use_item', 1000) then return end
     local player = exports['rp_core']:GetPlayerFromId(src)
+    if not player then return end
+    if not playerInventories[src] or inventoryCharacterIds[src] ~= player.charId then
+        local ok = pcall(loadInventory, player)
+        if not ok then notify(src, 'error', 'Impossible de charger votre inventaire.'); return end
+    end
     local inventory = playerInventories[src]
-    if not player or not inventory or type(itemName) ~= 'string' then return end
+    if not inventory or type(itemName) ~= 'string' then return end
     if transferLocks[src] then
         notify(src, 'error', 'Un transfert est en cours. Réessayez.')
         return
@@ -612,7 +617,7 @@ local function AddItem(source, itemName, rawCount)
     if not player or type(itemName) ~= 'string' or not count or count % 1 ~= 0 or count < 1 or count > 20 then return false end
     local definition = Config.DefaultItems[itemName]
     if not definition then return false end
-    if not playerInventories[src] then
+    if not playerInventories[src] or inventoryCharacterIds[src] ~= player.charId then
         local ok = pcall(loadInventory, player)
         if not ok then return false end
     end
@@ -650,7 +655,7 @@ local function AdminSetItem(source, itemName, operation, rawCount)
         return false
     end
 
-    if not playerInventories[src] then
+    if not playerInventories[src] or inventoryCharacterIds[src] ~= player.charId then
         local ok = pcall(loadInventory, player)
         if not ok then return false end
     end
