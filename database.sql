@@ -33,6 +33,42 @@ CREATE TABLE IF NOT EXISTS `characters` (
     CONSTRAINT `fk_characters_users` FOREIGN KEY (`identifier`) REFERENCES `users` (`identifier`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Migrations intégrées : ce fichier peut aussi compléter une base existante.
+-- 001_character_persistence : convertit les dates valides de VARCHAR vers DATE si nécessaire.
+SET @rp_dateofbirth_type = (
+    SELECT DATA_TYPE
+    FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = 'characters'
+      AND COLUMN_NAME = 'dateofbirth'
+    LIMIT 1
+);
+SET @rp_dateofbirth_sql = IF(
+    @rp_dateofbirth_type IS NOT NULL AND @rp_dateofbirth_type <> 'date',
+    'ALTER TABLE `characters` MODIFY COLUMN `dateofbirth` DATE NOT NULL',
+    'SELECT 1'
+);
+PREPARE rp_dateofbirth_stmt FROM @rp_dateofbirth_sql;
+EXECUTE rp_dateofbirth_stmt;
+DEALLOCATE PREPARE rp_dateofbirth_stmt;
+
+-- 004_character_metadata : ajoute la colonne uniquement si elle manque.
+SET @rp_metadata_exists = (
+    SELECT COUNT(*)
+    FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = 'characters'
+      AND COLUMN_NAME = 'metadata'
+);
+SET @rp_metadata_sql = IF(
+    @rp_metadata_exists = 0,
+    'ALTER TABLE `characters` ADD COLUMN `metadata` LONGTEXT DEFAULT NULL',
+    'SELECT 1'
+);
+PREPARE rp_metadata_stmt FROM @rp_metadata_sql;
+EXECUTE rp_metadata_stmt;
+DEALLOCATE PREPARE rp_metadata_stmt;
+
 -- Politique des armes : 1 = autorisée, 0 = interdite.
 -- Le catalogue complet est inséré automatiquement par rp_anticheat au premier démarrage.
 CREATE TABLE IF NOT EXISTS `anticheat_weapon_rules` (
