@@ -1,8 +1,19 @@
+RegisterNetEvent('rp_ui:server:requestDiagnosticsAccess', function()
+    local src = source
+    if not IsPlayerAceAllowed(src, 'rp_founder') then
+        TriggerClientEvent('rp_ui:client:denyFounderDiagnostics', src)
+        return
+    end
+    if not exports['rp_core']:CanPerformAction(src, 'ui:founder_diagnostics_open', 1500) then return end
+    TriggerClientEvent('rp_ui:client:openFounderDiagnostics', src)
+end)
+
 -- Server-side aggregate statistics for the F12 information panel.
 -- Only aggregate counts are exposed; no character identifiers or personal data.
 
 RegisterNetEvent('rp_ui:server:requestDiagnosticsStats', function()
     local src = source
+    if not IsPlayerAceAllowed(src, 'rp_founder') then return end
     if not exports['rp_core']:CanPerformAction(src, 'ui:diagnostics_stats', 3000) then return end
 
     local onlineJobs = {}
