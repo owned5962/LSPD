@@ -8,6 +8,20 @@ local BankPositions = {
     { x = 236.4, y = 217.4, z = 106.2, label = "Pacific Standard Public Bank" }
 }
 
+RegisterNetEvent('rp_businesses:client:locations', function(locations)
+    if type(locations) ~= 'table' then return end
+    local banks = {}
+    for _, location in ipairs(locations) do
+        if location.location_type == 'bank' then
+            banks[#banks + 1] = {
+                x = tonumber(location.x), y = tonumber(location.y), z = tonumber(location.z),
+                label = location.name or 'Guichet bancaire'
+            }
+        end
+    end
+    if #banks > 0 then BankPositions = banks end
+end)
+
 local ATMModels = { 'prop_atm_01', 'prop_atm_02', 'prop_atm_03', 'prop_fleeca_atm' }
 
 local function GetNearbyATM(maxDistance)
