@@ -15,6 +15,35 @@
     </div><label>Heure du serveur</label><div class="time-row"><input id="hours" type="number" min="0" max="23" value="12"><span>:</span><input id="minutes" type="number" min="0" max="59" value="0"><button id="apply-time">Appliquer</button></div></article>
     <article class="panel"><h2><i class="fa-solid fa-bullhorn"></i> Annonce globale</h2><textarea id="announcement" maxlength="300" placeholder="Écrire une annonce pour tous les citoyens..."></textarea><button id="send" class="primary"><i class="fa-solid fa-paper-plane"></i> Diffuser l'annonce</button></article>
   </section>
+  <section class="grid creator-tools-grid">
+    <article class="panel">
+      <h2><i class="fa-solid fa-cubes"></i> Mapping en direct</h2>
+      <p class="panel-help">Sélectionnez un objet du catalogue FiveM puis placez-le devant votre personnage. Les objets sont synchronisés et sauvegardés.</p>
+      <label for="mapping-prop">Catalogue d'objets</label>
+      <select id="mapping-prop"></select>
+      <button id="place-prop" class="primary"><i class="fa-solid fa-plus"></i> Placer l'objet devant moi</button>
+      <div class="mapping-list" id="mapping-list"><small>Chargement des objets sauvegardés…</small></div>
+    </article>
+    <article class="panel">
+      <h2><i class="fa-solid fa-map-pin"></i> Blips par métier</h2>
+      <p class="panel-help">Activez ou désactivez un repère et modifiez son emplacement, son icône et sa couleur. Il sera visible uniquement par le métier concerné.</p>
+      <label for="blip-job">Métier</label><select id="blip-job"></select>
+      <label for="blip-label">Nom du repère</label><input id="blip-label" maxlength="80" placeholder="Ex. Garage municipal">
+      <div class="coord-grid">
+        <label>X<input id="blip-x" type="number" step="0.1"></label>
+        <label>Y<input id="blip-y" type="number" step="0.1"></label>
+        <label>Z<input id="blip-z" type="number" step="0.1"></label>
+      </div>
+      <div class="coord-grid">
+        <label>Sprite<input id="blip-sprite" type="number" min="1" max="1000" value="1"></label>
+        <label>Couleur<input id="blip-color" type="number" min="0" max="85" value="3"></label>
+        <label>Échelle<input id="blip-scale" type="number" min="0.2" max="2" step="0.1" value="0.7"></label>
+      </div>
+      <label class="check-line"><input id="blip-enabled" type="checkbox" checked> Blip activé pour ce métier</label>
+      <button id="save-blip" class="primary"><i class="fa-solid fa-floppy-disk"></i> Enregistrer le blip</button>
+      <small id="blip-help">Sélectionnez un métier pour charger sa configuration.</small>
+    </article>
+  </section>
   <footer><span id="status">Prêt · Les actions sont contrôlées côté serveur.</span><kbd>ÉCHAP</kbd></footer>
 </main><script src="app.js"></script>
 </body></html>
