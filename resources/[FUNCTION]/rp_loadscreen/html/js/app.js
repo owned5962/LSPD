@@ -6,6 +6,7 @@ const detailText = document.getElementById('load-detail');
 const phaseSteps = Array.from(document.querySelectorAll('[data-phase]'));
 const updatesList = document.getElementById('updates-list');
 const updatesRefresh = document.getElementById('updates-refresh');
+const futureList = document.getElementById('future-list');
 
 const STAGES = {
     map: { label: 'Chargement de la carte', color: '#46b9ff', glow: 'rgba(70,185,255,.46)', detail: 'Préparation du monde de Los Santos...' },
@@ -87,10 +88,26 @@ function renderUpdates(data) {
         });
     }
 
+    if (futureList) {
+        const future = Array.isArray(data.future) ? data.future.slice(0, 10) : [];
+        futureList.replaceChildren();
+        if (future.length === 0) {
+            const empty = document.createElement('li');
+            empty.textContent = 'Aucune annonce pour le moment.';
+            futureList.appendChild(empty);
+        } else {
+            future.forEach((item) => {
+                const entry = document.createElement('li');
+                entry.textContent = String(item).slice(0, 140);
+                futureList.appendChild(entry);
+            });
+        }
+    }
+
     if (updatesRefresh) {
-        updatesRefresh.textContent = data.source === 'github'
-            ? 'Dernière synchronisation : ' + (data.fetchedAt || 'à l’instant') + ' • Historique GitHub'
-            : 'Flux de nouveautés temporairement indisponible • Réessayez à la prochaine connexion';
+        updatesRefresh.textContent = data.source === 'files'
+            ? 'Dernière synchronisation : ' + (data.fetchedAt || 'à l’instant') + ' • Fichiers du projet'
+            : 'Fichiers de nouveautés indisponibles • Réessayez à la prochaine connexion';
     }
 }
 
