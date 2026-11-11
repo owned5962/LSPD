@@ -9,7 +9,7 @@ let mapInstance = null;
 let mapMarkers = new Map();
 let itemCatalog = [];
 let weaponPolicy = [];
-const panelTargets = { give: null, sanction: null, function: null, job: null };
+const panelTargets = { give: null, economy: null, sanction: null, function: null, job: null };
 const frozenPlayers = new Set();
 
 const ADMIN_NUI_RESOURCE = 'rp_tablet_admin';
@@ -337,13 +337,13 @@ function selectPlayer(id, name, job, element) {
     renderMapPlayerList(); renderPlayerMap();
 }
 function setupPlayerPickers() {
-    ['give','sanction','function','job'].forEach(prefix => {
+    ['give','economy','sanction','function','job'].forEach(prefix => {
         const search = document.getElementById(prefix + '-player-search'), select = document.getElementById(prefix + '-player-target');
         if (search) search.addEventListener('input', () => renderPlayerPicker(prefix));
         if (select) select.addEventListener('change', () => { panelTargets[prefix] = Number(select.value) || null; updatePanelTargetLabel(prefix); });
     });
 }
-function renderPlayerPickers() { ['give','sanction','function','job'].forEach(prefix => renderPlayerPicker(prefix)); }
+function renderPlayerPickers() { ['give','economy','sanction','function','job'].forEach(prefix => renderPlayerPicker(prefix)); }
 function renderPlayerPicker(prefix) {
     const search = document.getElementById(prefix + '-player-search'), select = document.getElementById(prefix + '-player-target');
     if (!select) return;
@@ -466,12 +466,18 @@ function renderMapPlayerList() {
 function changeMapZoom(factor) { if (!mapInstance) return; mapInstance.setZoom(Math.max(0,Math.min(5,mapInstance.getZoom()+(factor>1?1:-1)))); }
 function resetMapView() { if (mapInstance) mapInstance.fitBounds([[0,0],[8192,8192]]); }
 
-function giveAdminMoney(type) {
-    const targetId = getPanelTarget('give'); if (!targetId) return;
-    const inputId = type === 'bank' ? 'admin-give-bank-amount' : 'admin-give-cash-amount';
-    const amount = Number(document.getElementById(inputId)?.value);
-    if (!Number.isInteger(amount) || amount < 1 || amount > 1000000) return showToast('Montant invalide (1 à 1 000 000).');
-    nuiPost('manageEconomy', { playerId: targetId, type, amount, operation: 'give' }).then(() => showToast((type === 'bank' ? 'Argent bancaire' : 'Argent liquide') + ' attribué au joueur ID ' + targetId + '.')).catch(() => showToast('Impossible d’attribuer cet argent.'));
+function manageAdminMoney() {
+    const targetId = getPanelTarget('economy');
+    if (!targetId) return;
+    const type = document.getElementById('admin-economy-account')?.value;
+    const operation = document.getElementById('admin-economy-operation')?.value;
+    const amount = Number(document.getElementById('admin-economy-amount')?.value);
+    if (!['cash', 'bank'].includes(type)) return showToast('Sélectionnez un compte valide.');
+    if (!['give', 'remove'].includes(operation)) return showToast('Sélectionnez une opération valide.');
+    if (!Number.isSafeInteger(amount) || amount < 1 || amount > 1000000) return showToast('Montant invalide (1 à 1 000 000).');
+    nuiPost('manageEconomy', { playerId: targetId, type, amount, operation })
+        .then(() => showToast('Demande transmise : le serveur confirme le résultat après sauvegarde MySQL.'))
+        .catch(() => showToast('Impossible de transmettre cette opération.'));
 }
 function giveAdminVehicle() {
     const targetId = getPanelTarget('give'); if (!targetId) return;
