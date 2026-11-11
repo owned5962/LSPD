@@ -115,12 +115,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Keep keyboard closing available while the NUI has focus.
     document.addEventListener('keydown', (event) => {
-        if (event.key !== 'Escape' && event.key !== 'F10') return;
+        if (event.key !== 'Escape') return;
         const wrapper = document.getElementById('tablet-wrapper');
         if (!wrapper || !wrapper.classList.contains('is-open')) return;
         event.preventDefault();
         event.stopPropagation();
-        closeAdminTablet(event.key === 'F10' ? 'f10' : 'escape');
+        closeAdminTablet('escape');
     });
 
     window.addEventListener('message', handleTabletMessage);
