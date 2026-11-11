@@ -220,3 +220,31 @@ RegisterNetEvent('rp_inventory:applyMedicalItem', function(heal)
     SetEntityHealth(ped, math.min(GetEntityMaxHealth(ped), GetEntityHealth(ped) + amount))
     ClearPedBloodDamage(ped)
 end)
+
+-- Les armes sont conservées dans les métadonnées du personnage et restaurées
+-- après la création du ped, une fois l'apparence et le spawn terminés.
+RegisterNetEvent('rp_characters:client:spawnPlayer', function()
+    CreateThread(function()
+        Wait(3000)
+        TriggerServerEvent('rp_inventory:server:requestWeapons')
+    end)
+end)
+
+RegisterNetEvent('rp_inventory:client:restoreWeapons', function(weapons)
+    if type(weapons) ~= 'table' then return end
+    local ped = PlayerPedId()
+    if ped == 0 or not DoesEntityExist(ped) or IsEntityDead(ped) then return end
+
+    for _, entry in ipairs(weapons) do
+        if type(entry) == 'table' and type(entry.name) == 'string'
+            and entry.name:match('^WEAPON_[A-Z0-9_]+$') then
+            local hash = GetHashKey(entry.name)
+            if IsWeaponValid(hash) then
+                local ammo = math.max(0, math.min(9999, math.floor(tonumber(entry.ammo) or 0)))
+                GiveWeaponToPed(ped, hash, ammo, false, false)
+                SetPedAmmo(ped, hash, ammo)
+            end
+        end
+    end
+end)
+
