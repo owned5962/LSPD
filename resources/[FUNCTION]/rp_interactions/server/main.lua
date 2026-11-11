@@ -41,6 +41,7 @@ end
 
 RegisterNetEvent('rp_interactions:requestJobMenu', function()
     local src = source
+    if not exports['rp_core']:CanPerformAction(src, 'interactions:request_menu', 750) then return end
     local player = getPlayer(src)
     if not player then return end
 
@@ -54,6 +55,7 @@ end)
 
 RegisterNetEvent('rp_interactions:executeVehicleAction', function(rawNetId, action)
     local src = source
+    if not exports['rp_core']:CanPerformAction(src, 'interactions:vehicle_action', 1200) then return end
     local netId = tonumber(rawNetId)
     if not netId or netId % 1 ~= 0 or netId < 1 or type(action) ~= 'string' then return end
 
@@ -110,6 +112,7 @@ end)
 
 RegisterNetEvent('rp_interactions:executeAction', function(targetId, action, amount)
     local src = source
+    if not exports['rp_core']:CanPerformAction(src, 'interactions:player_action', 1200) then return end
     targetId = tonumber(targetId)
     if not targetId or targetId == src or type(action) ~= 'string' then return end
 
@@ -172,12 +175,17 @@ RegisterNetEvent('rp_interactions:executeAction', function(targetId, action, amo
             notify(src, 'error', 'Le citoyen n’a pas assez d’argent en banque.')
             return
         end
-        local targetNewBank = target.bank - cost
-        local sourceNewBank = player.bank + cost
+        local lockedIds = { player.charId, target.charId }
+        if not exports['rp_core']:AcquireCharacterLock(lockedIds) then
+            notify(src, 'warning', 'Une opération bancaire est déjà en cours sur un des comptes.')
+            return
+        end
+
         local ok, affectedRows = pcall(MySQL.update.await,
-            'UPDATE characters AS sender JOIN characters AS target ON sender.id = ? AND target.id = ? SET sender.bank = sender.bank + ?, target.bank = target.bank - ? WHERE target.bank >= ?',
-            { player.charId, target.charId, cost, cost, cost }
+            'UPDATE characters AS sender JOIN characters AS target ON sender.id = ? AND target.id = ? SET sender.bank = sender.bank + ?, target.bank = target.bank - ? WHERE sender.identifier = ? AND target.identifier = ? AND target.bank >= ? AND sender.id <> target.id',
+            { player.charId, target.charId, cost, cost, player.identifier, target.identifier, cost }
         )
+        exports['rp_core']:ReleaseCharacterLock(lockedIds)
         if not ok or tonumber(affectedRows) ~= 2 then
             notify(src, 'error', 'Le paiement a échoué : solde modifié ou sauvegarde indisponible.')
             return
