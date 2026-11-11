@@ -64,32 +64,51 @@ end)
 
 
 -- In-game status HUD. It becomes visible only after a character is loaded.
+local function UpdatePlayerHUD()
+    local ok, data = pcall(function() return exports['rp_core']:GetPlayerData() end)
+    if not ok or type(data) ~= 'table' or not tonumber(data.charId) then
+        SendNUIMessage({ action = 'hideHUD' })
+        return false
+    end
+    local ped = PlayerPedId()
+    local maxHealth = math.max(1, GetEntityMaxHealth(ped) - 100)
+    local health = math.max(0, math.min(100, ((GetEntityHealth(ped) - 100) / maxHealth) * 100))
+    SendNUIMessage({
+        action = 'updateHUD', visible = true,
+        health = math.floor(health + 0.5),
+        armor = math.floor(math.max(0, math.min(100, GetPedArmour(ped))) + 0.5),
+        hunger = math.floor(math.max(0, math.min(100, tonumber(data.hunger) or 100)) + 0.5),
+        thirst = math.floor(math.max(0, math.min(100, tonumber(data.thirst) or 100)) + 0.5),
+        cash = tonumber(data.cash) or 0, bank = tonumber(data.bank) or 0,
+        job = tostring(data.jobLabel or data.job or 'Sans-emploi'),
+        grade = tostring(data.jobGradeLabel or '')
+    })
+    DisplayRadar(true)
+    return true
+end
+
+RegisterNetEvent('rp_core:client:setPlayerData', function()
+    CreateThread(function() Wait(100); UpdatePlayerHUD() end)
+end)
+RegisterNetEvent('rp_core:client:updateCash', function() UpdatePlayerHUD() end)
+RegisterNetEvent('rp_core:client:updateBank', function() UpdatePlayerHUD() end)
+RegisterNetEvent('rp_core:client:updateNeeds', function() UpdatePlayerHUD() end)
+
+AddEventHandler('onClientResourceStart', function(resourceName)
+    if resourceName ~= GetCurrentResourceName() then return end
+    SendNUIMessage({ action = 'hideHUD' })
+end)
+AddEventHandler('onClientResourceStop', function(resourceName)
+    if resourceName ~= GetCurrentResourceName() then return end
+    SendNUIMessage({ action = 'hideHUD' })
+end)
+
 CreateThread(function()
     local lastVisible = false
     while true do
-        local waitTime = 500
-        local ok, data = pcall(function() return exports['rp_core']:GetPlayerData() end)
-        if ok and type(data) == 'table' and data.charId then
-            local ped = PlayerPedId()
-            local maxHealth = math.max(1, GetEntityMaxHealth(ped) - 100)
-            local health = math.max(0, math.min(100, ((GetEntityHealth(ped) - 100) / maxHealth) * 100))
-            local armor = math.max(0, math.min(100, GetPedArmour(ped)))
-            SendNUIMessage({
-                action = 'updateHUD',
-                visible = true,
-                health = math.floor(health + 0.5),
-                armor = math.floor(armor + 0.5),
-                hunger = math.floor(math.max(0, math.min(100, tonumber(data.hunger) or 100)) + 0.5),
-                thirst = math.floor(math.max(0, math.min(100, tonumber(data.thirst) or 100)) + 0.5),
-                cash = tonumber(data.cash) or 0,
-                bank = tonumber(data.bank) or 0,
-                job = tostring(data.jobLabel or data.job or 'Sans-emploi'),
-                grade = tostring(data.jobGradeLabel or '')
-            })
-            if not lastVisible then DisplayRadar(true); lastVisible = true end
-        else
-            if lastVisible then SendNUIMessage({ action = 'hideHUD' }); lastVisible = false end
-        end
-        Wait(waitTime)
+        local visible = UpdatePlayerHUD()
+        if visible and not lastVisible then DisplayRadar(true) end
+        lastVisible = visible
+        Wait(500)
     end
 end)
