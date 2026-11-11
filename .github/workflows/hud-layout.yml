@@ -1,0 +1,26 @@
+name: HUD minimap layout
+
+on:
+  push:
+    paths:
+      - "resources/[FUNCTION]/rp_ui/html/css/style.css"
+      - "resources/[FUNCTION]/rp_ui/client/main.lua"
+      - "tests/test_hud_minimap_layout.py"
+      - ".github/workflows/hud-layout.yml"
+  pull_request:
+    paths:
+      - "resources/[FUNCTION]/rp_ui/html/css/style.css"
+      - "resources/[FUNCTION]/rp_ui/client/main.lua"
+      - "tests/test_hud_minimap_layout.py"
+      - ".github/workflows/hud-layout.yml"
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - name: Validate HUD placement
+        run: python tests/test_hud_minimap_layout.py
