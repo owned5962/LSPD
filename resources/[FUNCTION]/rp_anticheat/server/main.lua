@@ -373,6 +373,11 @@ local function recordDetection(src, reason, trustedServerEvent)
     alert.sanction = (Config.Sanctions and Config.Sanctions[alert.category]) or 'warn'
     alert.snapshot = capturePlayerSnapshot(src)
     local snapshot = alert.snapshot or {}
+    alert.items, alert.weapons = snapshot.items or {}, snapshot.weapons or {}
+    alert.cash, alert.bank = snapshot.cash, snapshot.bank
+    alert.job, alert.jobLabel = snapshot.job, snapshot.jobLabel
+    alert.jobGrade, alert.jobGradeLabel = snapshot.jobGrade, snapshot.jobGradeLabel
+    alert.snapshotAvailable = alert.snapshot ~= nil
     local persisted, persistError = pcall(function()
         MySQL.insert.await('INSERT INTO anticheat_detections (player_name, detection_type, reason, severity) VALUES (?, ?, ?, ?)',
             { alert.playerName, alert.category, alert.reason, alert.severity })
