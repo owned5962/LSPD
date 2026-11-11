@@ -6,7 +6,8 @@ const state = {
     selectedPlayerId: null,
     spectatingId: null,
     currentTab: 'dashboard',
-    pendingAction: null
+    pendingAction: null,
+    statistics: { period: 'day', rows: [] }
 };
 
 const $ = (id) => document.getElementById(id);
@@ -22,6 +23,7 @@ const tabTitles = {
     players: ['JOUEURS', 'Joueurs connectés'],
     surveillance: ['SURVEILLANCE', 'Surveillance en direct'],
     logs: ['DÉTECTIONS', 'Centre des détections'],
+    statistics: ['STATISTIQUES', 'Statistiques anticheat'],
     bans: ['BANNISSEMENTS', 'Gestion des bannissements']
 };
 
@@ -50,6 +52,7 @@ function setTab(tab) {
     });
     $('section-name').textContent = tabTitles[tab][0];
     $('page-title').textContent = tabTitles[tab][1];
+    if (tab === 'statistics') requestStatistics();
     if (tab === 'logs') nui('requestLogs').catch(() => showToast('Impossible de charger les détections.', true));
     if (tab === 'bans') nui('requestBans').catch(() => showToast('Impossible de charger les bannissements.', true));
     if (tab === 'players' || tab === 'surveillance') renderPlayers();
@@ -364,6 +367,78 @@ function punish(targetId, type) {
     });
 }
 
+const statLabels = {
+    godmode: 'God Mode / invincibilité',
+    money: 'Obtention d’argent',
+    vehicle_spawn: 'Spawn de véhicule',
+    weapon_spawn: 'Spawn d’arme',
+    speedhack: 'Speedhack',
+    gravity: 'Modification de gravité',
+    spam: 'Tentative de spam',
+    vision: 'Vision thermique / nocturne',
+    other: 'Autre détection'
+};
+const severityLabels = { low: 'Faible', medium: 'Moyenne', high: 'Élevée', critical: 'Critique' };
+function requestStatistics() {
+    const period = $('stats-period')?.value || 'day';
+    state.statistics.period = period;
+    nui('requestStatistics', { period }).catch(() => showToast('Impossible de charger les statistiques.', true));
+}
+function renderStatistics() {
+    const rows = state.statistics.rows || [];
+    const totals = {};
+    const buckets = {};
+    let total = 0, critical = 0;
+    rows.forEach(item => {
+        const count = Number(item.total) || 0;
+        const category = item.category || 'other';
+        totals[category] = (totals[category] || 0) + count;
+        buckets[item.bucket] = (buckets[item.bucket] || 0) + count;
+        total += count;
+        if (item.severity === 'critical') critical += count;
+    });
+    $('stats-total').textContent = total;
+    $('stats-critical').textContent = critical;
+    $('stats-buckets').textContent = Object.keys(buckets).length;
+    const categoryRoot = $('stats-categories');
+    categoryRoot.replaceChildren();
+    const colors = { low: '#39c98a', medium: '#e8c547', high: '#f39b38', critical: '#ef4658' };
+    Object.entries(statLabels).forEach(([key, label]) => {
+        const count = totals[key] || 0;
+        const line = document.createElement('div'); line.className = 'stats-category';
+        const head = document.createElement('div'); head.className = 'stats-category-head';
+        const name = document.createElement('span'); name.textContent = label;
+        const value = document.createElement('strong'); value.textContent = count;
+        head.append(name, value);
+        const bar = document.createElement('div'); bar.className = 'stats-bar';
+        const fill = document.createElement('i'); fill.style.width = total ? (count / total * 100) + '%' : '0%';
+        const severity = key === 'godmode' || key === 'money' || key === 'weapon_spawn' ? 'critical' : key === 'spam' ? 'medium' : 'high';
+        fill.style.background = colors[severity]; bar.appendChild(fill); line.append(head, bar); categoryRoot.appendChild(line);
+    });
+    const timeline = $('stats-timeline'); timeline.replaceChildren();
+    const entries = Object.entries(buckets).sort((a,b) => a[0].localeCompare(b[0])).slice(-14);
+    if (!entries.length) timeline.innerHTML = '<div class="empty-state">Aucune détection enregistrée pour cette période.</div>';
+    else {
+        const max = Math.max(1, ...entries.map(x => x[1]));
+        entries.forEach(([bucket, count]) => {
+            const line = document.createElement('div'); line.className = 'timeline-row';
+            const label = document.createElement('span'); label.textContent = bucket;
+            const bar = document.createElement('div'); bar.className = 'timeline-bar';
+            const fill = document.createElement('i'); fill.style.width = (count / max * 100) + '%'; bar.appendChild(fill);
+            const value = document.createElement('strong'); value.textContent = count;
+            line.append(label, bar, value); timeline.appendChild(line);
+        });
+    }
+    const body = $('stats-table-body'); body.replaceChildren();
+    if (!rows.length) { const tr=document.createElement('tr'); const td=document.createElement('td'); td.colSpan=4; td.className='empty-state'; td.textContent='Aucune statistique disponible.'; tr.appendChild(td); body.appendChild(tr); return; }
+    rows.forEach(item => {
+        const tr=document.createElement('tr');
+        const values=[item.bucket, statLabels[item.category] || item.category, severityLabels[item.severity] || item.severity, Number(item.total)||0];
+        values.forEach((value,index)=>{const td=document.createElement('td');td.textContent=value;if(index===2){const badge=document.createElement('span');badge.className='severity severity-'+item.severity;badge.textContent=value;td.replaceChildren(badge);}tr.appendChild(td);});
+        body.appendChild(tr);
+    });
+}
+
 function renderLogs() {
     const body = $('logs-table-body');
     const query = ($('log-search')?.value || '').trim().toLowerCase();
@@ -484,6 +559,9 @@ window.addEventListener('message', (event) => {
         state.logs = Array.isArray(data.logs) ? data.logs : [];
         renderLogs();
         renderDashboard();
+    } else if (data.action === 'updateStatistics') {
+        state.statistics = data.statistics || { period: 'day', rows: [] };
+        renderStatistics();
     } else if (data.action === 'updateBans') {
         state.bans = Array.isArray(data.bans) ? data.bans : [];
         renderBans();
@@ -522,6 +600,8 @@ $('action-cancel').addEventListener('click', closeActionModal);
 $('action-cancel-x').addEventListener('click', closeActionModal);
 $('btn-close').addEventListener('click', closeUI);
 $('btn-refresh').addEventListener('click', refreshAll);
+$('btn-refresh-statistics').addEventListener('click', requestStatistics);
+$('stats-period').addEventListener('change', requestStatistics);
 $('btn-refresh-bans').addEventListener('click', () => nui('requestBans').catch(() => showToast('Erreur de chargement.', true)));
 $('player-search').addEventListener('input', renderPlayers);
 $('log-search').addEventListener('input', renderLogs);
