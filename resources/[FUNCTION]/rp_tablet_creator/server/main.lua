@@ -66,15 +66,39 @@ end)
 
 
 -- Persistent creator mapping and per-job blip configuration.
+-- Curated GTA V / FiveM object catalogue. Model names are searchable in the creator tablet.
+-- Based on public game-object references; avoid _lod, _proxy and _dummy helper models.
 local PROP_CATALOG = {
+    -- Roadworks, barriers and signage
     prop_barrier_work05 = true, prop_barrier_work06a = true, prop_roadcone02a = true,
     prop_mp_cone_02 = true, prop_worklight_03b = true, prop_mp_arrow_barrier_01 = true,
-    prop_sign_road_01a = true, prop_container_05a = true, prop_dumpster_01a = true,
-    prop_bollard_02a = true, prop_gate_airport_01 = true, prop_fnclink_03gate5 = true,
-    prop_crate_11e = true, prop_toolchest_05 = true, prop_table_03b = true,
-    prop_chair_01a = true, prop_roadpole_01a = true, prop_traffic_03a = true,
-    prop_consign_02a = true, prop_parkingpay = true, prop_boxpile_07d = true,
-    prop_worklight_04a = true, prop_barrier_wat_03b = true, prop_roadcone01a = true
+    prop_sign_road_01a = true, prop_bollard_02a = true, prop_roadpole_01a = true,
+    prop_traffic_03a = true, prop_barrier_wat_03b = true, prop_roadcone01a = true,
+    prop_barrier_work01a = true, prop_barrier_work02a = true, prop_barrier_work04a = true,
+    prop_barrier_work06b = true, prop_consign_02a = true,
+    -- City, construction and storage
+    prop_container_05a = true, prop_dumpster_01a = true, prop_crate_11e = true,
+    prop_toolchest_05 = true, prop_boxpile_07d = true, prop_worklight_04a = true,
+    prop_parkingpay = true, prop_fnclink_03gate5 = true, prop_gate_airport_01 = true,
+    prop_table_03b = true, prop_chair_01a = true, prop_bench_01a = true,
+    prop_worklight_04b = true, prop_generator_03b = true, prop_generator_02a = true,
+    prop_pallet_02a = true, prop_pallet_03a = true, prop_skid_box_06 = true,
+    -- Roleplay, security and banking
+    prop_atm_01 = true, prop_atm_02 = true, prop_atm_03 = true, prop_fleeca_atm = true,
+    prop_ld_int_safe_01 = true, prop_money_bag_01 = true, prop_cash_pile_01 = true,
+    prop_cash_case_01 = true, prop_security_case_01 = true, prop_cs_heist_bag_02 = true,
+    prop_michael_backpack = true, prop_cs_cuffs_01 = true, prop_laptop_01a = true,
+    prop_notepad_01 = true, prop_ld_ammo_pack_01 = true,
+    -- Interior, leisure and food props
+    prop_tv_flat_01 = true, prop_cs_burger_01 = true, prop_ld_flow_bottle = true,
+    prop_ecola_can = true, prop_cs_beer_bot_01 = true, prop_wine_bot_01 = true,
+    prop_cs_whiskey_bottle = true, prop_tequila_bottle = true, prop_shot_glass = true,
+    prop_cs_ciggy_01 = true, prop_vend_soda_01 = true, prop_vend_snak_01 = true,
+    prop_bbq_1 = true, prop_beach_fire = true, prop_weed_02 = true,
+    -- Office and service furniture
+    prop_off_chair_04 = true, prop_office_desk_01 = true, prop_monitor_01c = true,
+    prop_keyboard_01a = true, prop_printer_01 = true, prop_cctv_cam_01a = true,
+    prop_phone_ing = true, prop_fax_01 = true
 }
 local spawnedMapping = {}
 
@@ -141,9 +165,14 @@ end)
 
 RegisterNetEvent('rp_tablet_creator:server:spawnProp', function(rawModel)
     local src = source
-    if not isCreator(src) then return end
+    if not isCreator(src) or not exports['rp_core']:CanPerformAction(src, 'creator:spawn_prop', 700) then return end
     if type(rawModel) ~= 'string' or not PROP_CATALOG[rawModel] then
         reply(src, 'Objet non autorisé. Choisissez un modèle du catalogue.', false); return
+    end
+    local countOk, count = pcall(MySQL.scalar.await, 'SELECT COUNT(*) FROM rp_creator_mapping')
+    if not countOk or tonumber(count) >= 300 then
+        reply(src, 'Limite de 300 objets de mapping atteinte ou base indisponible.', false)
+        return
     end
     local ped = GetPlayerPed(src)
     if not ped or ped == 0 or not DoesEntityExist(ped) then reply(src, 'Position du créateur introuvable.', false); return end
