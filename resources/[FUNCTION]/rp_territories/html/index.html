@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Revendiquer un territoire</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <main id="territory-panel" class="hidden">
+        <header>
+            <div class="logo">LS<span>RP</span></div>
+            <button id="close" aria-label="Fermer">×</button>
+        </header>
+        <div class="eyebrow">GESTION DU TERRITOIRE</div>
+        <h1 id="sector-title">Secteur LS-01</h1>
+        <p id="sector-description">Prends possession de cette parcelle et choisis sa couleur sur la carte.</p>
+        <div class="status" id="status"></div>
+        <section>
+            <div class="section-heading">Choisis ta couleur</div>
+            <div id="colors" class="colors"></div>
+        </section>
+        <div class="terms">
+            <div><span>Prix</span><strong id="price">100 $</strong></div>
+            <div><span>Durée</span><strong id="duration">7 jours</strong></div>
+        </div>
+        <button id="claim" class="claim-button">Revendiquer le secteur — 100 $</button>
+        <p class="footnote">Le paiement est effectué en liquide. Renouvelle avant la fin des 7 jours pour conserver ton secteur.</p>
+        <div id="feedback" role="status"></div>
+    </main>
+    <script src="app.js"></script>
+</body>
+</html>
