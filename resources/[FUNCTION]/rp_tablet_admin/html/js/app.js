@@ -242,6 +242,12 @@ function handleTabletMessage(event) {
         renderAuditLogs(data.logs);
         return;
     }
+    if (data.action === 'weaponPolicySaveFailed') {
+        const status = document.getElementById('weapon-policy-status');
+        if (status) status.textContent = 'Échec : ' + String(data.message || 'enregistrement impossible');
+        showToast(String(data.message || 'Enregistrement des armes impossible.'));
+        return;
+    }
     if (data.action === 'weaponPolicySaved') {
         weaponPolicy = Array.isArray(data.weaponPolicy) ? data.weaponPolicy : [];
         renderWeaponPolicy();
