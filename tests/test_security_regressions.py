@@ -1302,3 +1302,26 @@ def test_vehicle_hud_displays_vehicle_category_and_model():
     assert 'id="vehicle-type"' in html and 'id="vehicle-model"' in html
     assert "data.vehicleType" in ui and "data.vehicleName" in ui
     assert ".vehicle-identity" in css
+
+
+
+def test_job_center_has_profession_illustrations_and_statistics_view():
+    html = read("resources/[FUNCTION]/rp_jobs/html/index.html")
+    ui = read("resources/[FUNCTION]/rp_jobs/html/js/app.js")
+    css = read("resources/[FUNCTION]/rp_jobs/html/css/style.css")
+    client = read("resources/[FUNCTION]/rp_jobs/client/main.lua")
+    server = read("resources/[FUNCTION]/rp_jobs/server/main.lua")
+    manifest = read("resources/[FUNCTION]/rp_jobs/fxmanifest.lua")
+
+    assert 'class="hero-banner"' in html
+    assert 'data-view="statistics"' in html
+    assert 'id="job-stats-list"' in html
+    assert 'class="job-image"' in ui
+    assert "function jobIllustration(job)" in ui
+    assert "function renderJobStats()" in ui
+    assert "rp_jobs:server:requestJobStats" in client
+    assert "rp_jobs:client:jobStats" in client
+    assert "CREATE TABLE IF NOT EXISTS rp_job_selection_stats" in server
+    assert "selection_count = selection_count + 1" in server
+    assert "RecordJobSelection(jobName)" in server
+    assert "'@oxmysql/lib/MySQL.lua'" in manifest
