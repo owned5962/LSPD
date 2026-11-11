@@ -14,12 +14,12 @@ function IsValidJob(name)
 end
 
 function GetJobGrade(jobName, grade)
-    local job = GetJob(jobName)
-    grade = tonumber(grade) or 0
-    if job and job.grades and job.grades[grade] then
-        return job.grades[grade]
+    local job = JobsMap[jobName]
+    grade = tonumber(grade)
+    if not job or not grade or grade % 1 ~= 0 or not job.grades then
+        return nil
     end
-    return { label = "Grade " .. grade, salary = 200 }
+    return job.grades[grade]
 end
 
 function GetAllJobs()
