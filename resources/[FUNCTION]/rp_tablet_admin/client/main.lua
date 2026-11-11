@@ -104,6 +104,11 @@ RegisterNUICallback('bringPlayer', function(data, cb)
     cb('ok')
 end)
 
+RegisterNUICallback('healPlayer', function(data, cb)
+    TriggerServerEvent('rp_tablet_admin:server:healPlayer', data.playerId)
+    cb('ok')
+end)
+
 RegisterNUICallback('revivePlayer', function(data, cb)
     TriggerServerEvent('rp_tablet_admin:server:revivePlayer', data.playerId)
     cb('ok')
