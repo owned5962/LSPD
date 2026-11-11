@@ -86,8 +86,15 @@ AddEventHandler('onClientResourceStart', function(resourceName)
     SendNUIMessage({ action = 'closeBank' })
 end)
 
+AddEventHandler('onClientResourceStop', function(resourceName)
+    if resourceName ~= GetCurrentResourceName() then return end
+    isBankOpen = false
+    SetNuiFocus(false, false)
+    exports['rp_ui']:HideTextUI()
+end)
+
 CreateThread(function()
-    local showingPrompt = false
+    local activePrompt = nil
     while true do
         local waitTime = 900
         if not isBankOpen then
@@ -95,19 +102,19 @@ CreateThread(function()
             local atm = GetNearbyATM(2.0)
             if atm ~= 0 then
                 waitTime = 0
-                if not showingPrompt then exports['rp_ui']:ShowTextUI('[E] Utiliser le distributeur'); showingPrompt = true end
-                if IsControlJustReleased(0, 38) then OpenBankUI(true); showingPrompt = false end
+                if activePrompt ~= 'atm' then exports['rp_ui']:ShowTextUI('[E] Utiliser le distributeur'); activePrompt = 'atm' end
+                if IsControlJustReleased(0, 38) then OpenBankUI(true); activePrompt = nil end
             elseif nearbyBank then
                 waitTime = 0
                 if bankDistance < 2.2 then
-                    if not showingPrompt then exports['rp_ui']:ShowTextUI('[E] Accéder au guichet bancaire'); showingPrompt = true end
-                    if IsControlJustReleased(0, 38) then OpenBankUI(false); showingPrompt = false end
+                    if activePrompt ~= 'bank' then exports['rp_ui']:ShowTextUI('[E] Accéder au guichet bancaire'); activePrompt = 'bank' end
+                    if IsControlJustReleased(0, 38) then OpenBankUI(false); activePrompt = nil end
                 else
-                    if showingPrompt then exports['rp_ui']:HideTextUI(); showingPrompt = false end
+                    if activePrompt then exports['rp_ui']:HideTextUI(); activePrompt = nil end
                     DrawMarker(2, nearbyBank.x, nearbyBank.y, nearbyBank.z + 0.15, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.35, 0.35, 0.25, 35, 190, 130, 130, false, true, 2, false, nil, nil, false)
                 end
             else
-                if showingPrompt then exports['rp_ui']:HideTextUI(); showingPrompt = false end
+                if activePrompt then exports['rp_ui']:HideTextUI(); activePrompt = nil end
             end
         else
             waitTime = 500
