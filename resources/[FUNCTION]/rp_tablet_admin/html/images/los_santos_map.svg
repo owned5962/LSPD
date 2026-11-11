@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 1300" role="img" aria-label="Carte personnalisée de Los Santos et Blaine County">
+<defs>
+ <linearGradient id="land" x2="0" y2="1"><stop stop-color="#8e9a83"/><stop offset=".58" stop-color="#9eaa8b"/><stop offset="1" stop-color="#a8a58a"/></linearGradient>
+ <linearGradient id="water" x2="1" y2="1"><stop stop-color="#233f50"/><stop offset="1" stop-color="#162e3d"/></linearGradient>
+ <pattern id="blocks" width="34" height="28" patternUnits="userSpaceOnUse"><path d="M0 0H34M0 0V28" fill="none" stroke="#6d796a" stroke-width="1" opacity=".48"/></pattern>
+</defs>
+<rect width="900" height="1300" fill="url(#water)"/>
+<path d="M120 0H900V1300H40C70 1210 35 1130 80 1050C110 980 45 910 90 820C125 745 55 680 95 585C130 490 55 405 105 315C145 235 75 150 120 0Z" fill="url(#land)" stroke="#c2c8a7" stroke-width="7"/>
+<path d="M120 0H900V1300H40C70 1210 35 1130 80 1050C110 980 45 910 90 820C125 745 55 680 95 585C130 490 55 405 105 315C145 235 75 150 120 0Z" fill="url(#blocks)" opacity=".5"/>
+<path d="M170 30L320 40 390 155 350 265 470 330 440 455 300 490 190 405 135 270Z" fill="#7c9274" opacity=".75"/>
+<path d="M430 0L610 0 670 160 585 270 475 245 390 150Z" fill="#879879" opacity=".8"/>
+<path d="M650 60L820 40 870 250 760 350 650 280 590 160Z" fill="#7d8e70" opacity=".8"/>
+<path d="M720 0C700 120 750 200 700 310S730 500 680 610 720 780 660 890" fill="none" stroke="#315c6b" stroke-width="48" opacity=".9"/>
+<path d="M290 180Q380 135 445 205Q480 260 420 310Q335 345 280 290Z" fill="#426b78" stroke="#b6c09b" stroke-width="4"/>
+<path d="M145 670L270 600 405 625 510 570 660 630 730 790 690 1010 585 1135 420 1210 230 1150 115 1000 95 830Z" fill="#9ca38a" stroke="#697d6c" stroke-width="5"/>
+<path d="M155 700L270 635 405 660 510 610 650 665 700 805 660 990 570 1090 420 1165 250 1115 150 980 130 835Z" fill="url(#blocks)" opacity=".9"/>
+<g fill="none" stroke-linecap="round" stroke-linejoin="round">
+ <g stroke="#d7d0b3" stroke-width="22"><path d="M175 1150C210 1030 270 960 330 870S460 720 500 620"/><path d="M150 820C280 790 380 820 500 760S640 700 730 690"/><path d="M260 1180C350 1080 430 1020 560 970S670 890 700 800"/><path d="M260 620C300 520 380 440 480 380S630 290 760 220"/><path d="M110 970C240 900 350 900 470 900S640 940 700 1040"/></g>
+ <g stroke="#69776b" stroke-width="7"><path d="M175 1150C210 1030 270 960 330 870S460 720 500 620"/><path d="M150 820C280 790 380 820 500 760S640 700 730 690"/><path d="M260 1180C350 1080 430 1020 560 970S670 890 700 800"/><path d="M260 620C300 520 380 440 480 380S630 290 760 220"/><path d="M110 970C240 900 350 900 470 900S640 940 700 1040"/></g>
+ <g stroke="#e3e0c9" stroke-width="8"><path d="M185 730L245 805 310 735 385 790 455 710 530 775 610 700 680 760"/><path d="M170 900L245 960 330 900 410 970 500 900 590 960 675 900"/><path d="M235 1040L300 980 365 1050 435 990 510 1060 585 1000 650 1050"/><path d="M280 670L330 745 390 675 455 745 520 665 590 735 650 675"/></g>
+</g>
+<g font-family="Arial,sans-serif" font-weight="700" fill="#334a43" letter-spacing="3" opacity=".9">
+ <text x="250" y="150" font-size="25">PALETO BAY</text><text x="520" y="300" font-size="22">SANDY SHORES</text>
+ <text x="245" y="480" font-size="22">GRAPESEED</text><text x="475" y="535" font-size="18">VINEWOOD HILLS</text>
+ <text x="235" y="765" font-size="26">VINEWOOD</text><text x="480" y="840" font-size="23">DOWNTOWN</text>
+ <text x="210" y="930" font-size="20">ROCKFORD HILLS</text><text x="470" y="1035" font-size="22">STRAWBERRY</text>
+ <text x="260" y="1125" font-size="24">LOS SANTOS</text><text x="550" y="1160" font-size="18">AIRPORT</text>
+ <text x="65" y="610" font-size="17" fill="#a9c2c9" transform="rotate(-78 65 610)">PACIFIC OCEAN</text>
+</g>
+<g font-family="Arial,sans-serif" font-size="15" font-weight="800" text-anchor="middle">
+ <g transform="translate(375 920)"><circle r="25" fill="#173d50" stroke="#e7f0e9" stroke-width="4"/><path d="M-10 0H10M0-10V10" stroke="#fff" stroke-width="5"/><text y="43" fill="#233e46" font-size="12">HÔPITAL</text></g>
+ <g transform="translate(470 730)"><circle r="25" fill="#174f7b" stroke="#e7f0e9" stroke-width="4"/><path d="M0-13L13 0 0 13 -13 0Z" fill="none" stroke="#fff" stroke-width="4"/><text y="43" fill="#233e46" font-size="12">LSPD</text></g>
+ <g transform="translate(600 890)"><circle r="25" fill="#b58b35" stroke="#fff1c4" stroke-width="4"/><path d="M-10-7H10V7H-10Z M-5-12V-7M5-12V-7" fill="none" stroke="#fff" stroke-width="3"/><text y="43" fill="#233e46" font-size="12">BANQUE</text></g>
+ <g transform="translate(540 1080)"><circle r="25" fill="#3c765d" stroke="#e7f0e9" stroke-width="4"/><path d="M-13 6L0-12 13 6Z" fill="none" stroke="#fff" stroke-width="3"/><text y="43" fill="#233e46" font-size="12">AÉROPORT</text></g>
+ <g transform="translate(290 840)"><circle r="25" fill="#8d4d3c" stroke="#e7f0e9" stroke-width="4"/><path d="M-12 5L-6-7H6L12 5Z M-7 5V10M7 5V10" fill="none" stroke="#fff" stroke-width="3"/><text y="43" fill="#233e46" font-size="12">GARAGE</text></g>
+</g>
+<path d="M120 0H900V1300H40" fill="none" stroke="#d2d4b9" stroke-width="8" opacity=".6"/>
+<text x="30" y="1270" font-family="Arial,sans-serif" font-size="13" fill="#d8e4dc" letter-spacing="2">LOS SANTOS STORIES · CARTE STAFF</text>
+</svg>
