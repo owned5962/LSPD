@@ -580,6 +580,8 @@ def test_admin_tablet_stays_hidden_until_authorized_open_message():
 def test_character_loading_screen_closes_before_creator_or_selection_and_times_out():
     client = read("resources/[CORE]/rp_characters/client/main.lua")
     server = read("resources/[CORE]/rp_characters/server/main.lua")
+    loadscreen_manifest = read("resources/[FUNCTION]/rp_loadscreen/fxmanifest.lua")
+    assert "loadscreen_manual_shutdown 'yes'" in loadscreen_manifest
 
     assert "local function FinishCharacterBoot()" in client
     open_menu = client[client.index("RegisterNetEvent('rp_characters:client:openMenu'"):client.index("RegisterNetEvent('rp_characters:client:closeMenu'")]
