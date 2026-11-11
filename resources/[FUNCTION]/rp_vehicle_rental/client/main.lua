@@ -1,8 +1,32 @@
 local rentalPeds = {}
 local rentalTablets = {}
+local rentalBlips = {}
 local activeRental = nil
 local tabletOpen = false
 local promptVisible = false
+
+
+local function createRentalBlips()
+    if not Config.MapBlip or Config.MapBlip.enabled == false then return end
+
+    for key, location in pairs(Config.Locations) do
+        local point = location.ped
+        local blip = AddBlipForCoord(point.x, point.y, point.z)
+        if blip and blip ~= 0 then
+            SetBlipSprite(blip, Config.MapBlip.sprite or 225)
+            SetBlipDisplay(blip, Config.MapBlip.display or 4)
+            SetBlipScale(blip, Config.MapBlip.scale or 0.75)
+            SetBlipColour(blip, Config.MapBlip.colour or 3)
+            SetBlipAsShortRange(blip, Config.MapBlip.shortRange ~= false)
+
+            BeginTextCommandSetBlipName('STRING')
+            AddTextComponentSubstringPlayerName('Location de véhicules - ' .. location.label)
+            EndTextCommandSetBlipName(blip)
+
+            rentalBlips[key] = blip
+        end
+    end
+end
 
 local function notify(message, kind)
     TriggerEvent('rp_core:client:notify', message, kind or 'info')
@@ -193,6 +217,7 @@ end)
 
 CreateThread(function()
     Wait(1000)
+    createRentalBlips()
     createRentalPeds()
     local currentLocation = nil
     while true do
@@ -254,6 +279,9 @@ AddEventHandler('onClientResourceStop', function(resourceName)
     if resourceName ~= GetCurrentResourceName() then return end
     SetNuiFocus(false, false)
     if promptVisible then exports['rp_ui']:HideTextUI() end
+    for _, blip in pairs(rentalBlips) do
+        if DoesBlipExist(blip) then RemoveBlip(blip) end
+    end
     for _, tablet in pairs(rentalTablets) do
         if DoesEntityExist(tablet) then DeleteEntity(tablet) end
     end
