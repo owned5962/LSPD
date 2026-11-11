@@ -888,3 +888,15 @@ if __name__ == "__main__":
     for name, check in checks:
         check()
     print(f"All {len(checks)} security and persistence regression checks passed.")
+
+
+def test_character_has_a_visible_default_freemode_skin_when_saved_skin_is_missing_or_invalid():
+    client = read("resources/[CORE]/rp_characters/client/main.lua")
+    assert "local fallbackModel = joaat('mp_m_freemode_01')" in client
+    assert "SetPedDefaultComponentVariation(ped)" in client
+    assert "SetEntityVisible(ped, true, false)" in client
+    assert "ResetEntityAlpha(ped)" in client
+    assert "SetEntityCollision(ped, true, true)" in client
+    assert "local appearanceApplied = ApplyCharacterAppearance(gender, skin)" in client
+    assert "Appearance fallback was required" in client
+    assert "outfits.casual" in client
