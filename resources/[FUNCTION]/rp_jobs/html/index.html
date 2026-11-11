@@ -11,15 +11,29 @@
 <body>
     <div id="jobcenter-app" class="hidden">
         <div class="jobcenter-window">
+            <section class="hero-banner">
+                <div class="hero-copy">
+                    <span class="hero-kicker">LOS SANTOS · CARRIÈRES & OPPORTUNITÉS</span>
+                    <h1>Construisez votre avenir.</h1>
+                    <p>Découvrez les métiers de San Andreas et trouvez votre voie.</p>
+                </div>
+                <div class="hero-art" aria-hidden="true"><i class="fas fa-city"></i><span class="hero-orbit orbit-one"></span><span class="hero-orbit orbit-two"></span></div>
+            </section>
             <div class="header">
                 <div>
                     <div class="badge">AGENCE OFFICIELLE DU TRAVAIL</div>
-                    <h1>Pôle Emploi San Andreas</h1>
+                    <h2>Pôle Emploi San Andreas</h2>
                     <p>Faites votre choix parmi nos <span id="jobs-count">50</span> métiers disponibles dans la métropole</p>
                 </div>
                 <button class="close-btn" id="close-jobcenter">&times;</button>
             </div>
 
+            <div class="view-tabs" role="tablist" aria-label="Navigation du Pôle Emploi">
+                <button class="view-tab active" type="button" data-view="jobs"><i class="fas fa-briefcase"></i> Les métiers</button>
+                <button class="view-tab" type="button" data-view="statistics"><i class="fas fa-chart-column"></i> Statistiques</button>
+            </div>
+
+            <section id="jobs-view" class="view-panel active">
             <div class="search-and-filters">
                 <div class="search-input-wrap">
                     <i class="fas fa-search"></i>
@@ -40,6 +54,20 @@
             <div class="jobs-grid" id="jobs-container">
                 <!-- Dynamically generated job cards -->
             </div>
+            </section>
+
+            <section id="statistics-view" class="view-panel">
+                <div class="statistics-heading">
+                    <div><span class="section-kicker">TENDANCES DU SERVEUR</span><h2>Les métiers les plus choisis</h2><p>Classement basé sur les embauches validées au Pôle Emploi.</p></div>
+                    <button type="button" id="refresh-stats" class="refresh-stats"><i class="fas fa-rotate"></i> Actualiser</button>
+                </div>
+                <div class="statistics-summary">
+                    <article><small>EMBAUCHES ENREGISTRÉES</small><strong id="stats-total">0</strong></article>
+                    <article><small>MÉTIER N°1</small><strong id="stats-leader">En attente</strong></article>
+                </div>
+                <div id="job-stats-list" class="job-stats-list"><p class="stats-empty">Chargement des statistiques…</p></div>
+                <p id="stats-note" class="stats-note">Les statistiques se mettent à jour après chaque embauche validée.</p>
+            </section>
         </div>
     </div>
 
