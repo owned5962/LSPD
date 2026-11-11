@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tablette métier - Los Santos Stories</title>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+<main id="tablet" class="hidden">
+  <aside class="sidebar">
+    <div class="brand"><span class="brand-icon"><i class="fa-solid fa-briefcase"></i></span><div><b>LSS</b><small>ESPACE PROFESSIONNEL</small></div></div>
+    <nav>
+      <button class="nav active" data-tab="overview"><i class="fa-solid fa-gauge-high"></i> Tableau de bord</button>
+      <button class="nav" data-tab="team"><i class="fa-solid fa-users"></i> Équipe</button>
+      <button class="nav" data-tab="missions"><i class="fa-solid fa-list-check"></i> Missions</button>
+    </nav>
+    <div class="sidebar-bottom"><span class="online-dot"></span> Réseau professionnel actif</div>
+  </aside>
+  <section class="workspace">
+    <header><div><small>LOS SANTOS STORIES / PORTAIL MÉTIER</small><h1 id="job-title">Tablette professionnelle</h1></div><button id="close" aria-label="Fermer">×</button></header>
+    <section class="page active" id="overview">
+      <div class="welcome"><div><small>VOTRE ESPACE DE TRAVAIL</small><h2 id="grade-title">Bienvenue</h2><p>Retrouvez ici les outils liés à votre métier.</p></div><i class="fa-solid fa-building"></i></div>
+      <div class="stats"><article><small>MÉTIER</small><b id="job-name">—</b></article><article><small>GRADE</small><b id="grade-name">—</b></article><article><small>COLLÈGUES CONNECTÉS</small><b id="team-count">0</b></article></div>
+      <div class="duty-card"><div><small>STATUT PROFESSIONNEL</small><h3 id="duty-label">Hors service</h3><p>La prise de service reste validée par le système de votre métier.</p></div><button id="duty-toggle">Prendre mon service</button></div>
+      <div class="note" id="role-note">Les actions disponibles dépendent de votre métier et de vos autorisations.</div>
+    </section>
+    <section class="page" id="team">
+      <div class="section-title"><div><h2>Équipe en ligne</h2><p>Personnels partageant votre métier.</p></div><button class="secondary" id="refresh">Actualiser</button></div>
+      <div id="roster" class="roster"></div>
+    </section>
+    <section class="page" id="missions">
+      <div class="section-title"><div><h2>Missions de service</h2><p>Les missions proposées dépendent du métier actif.</p></div></div>
+      <div id="active-mission"></div><div id="mission-list" class="mission-list"></div>
+      <p class="note">Cette première version gère l’acceptation et la clôture des missions dans la session. Les objectifs sur la carte, récompenses et preuves de réalisation seront raccordés aux scripts métier concernés.</p>
+    </section>
+    <footer><span>LOS SANTOS STORIES</span><span>F4 · ÉCHAP POUR FERMER</span></footer>
+  </section>
+</main>
+<script src="app.js"></script>
+</body>
+</html>
