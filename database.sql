@@ -33,6 +33,15 @@ CREATE TABLE IF NOT EXISTS `characters` (
     CONSTRAINT `fk_characters_users` FOREIGN KEY (`identifier`) REFERENCES `users` (`identifier`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Politique des armes : 1 = autorisée, 0 = interdite.
+-- Le catalogue complet est inséré automatiquement par rp_anticheat au premier démarrage.
+CREATE TABLE IF NOT EXISTS `anticheat_weapon_rules` (
+    `weapon_name` VARCHAR(80) NOT NULL,
+    `enabled` TINYINT(1) NOT NULL DEFAULT 1,
+    `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`weapon_name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- Registre central des points d'intérêt de la carte (alimenté au démarrage par rp_businesses).
 -- Les coordonnées et réglages peuvent ensuite être modifiés directement en base.
 CREATE TABLE IF NOT EXISTS `rp_world_locations` (
