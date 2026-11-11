@@ -16,11 +16,15 @@ def test_admin_tablet_freeze_control_toggles_both_states():
     assert "frozenPlayers.delete(selectedPlayerId)" in app
 
 
-def test_admin_tablet_has_no_client_only_vehicle_spawn_or_delete_callbacks():
+def test_admin_tablet_vehicle_spawn_is_server_authorized_and_has_no_delete_callback():
     client = read("resources/[FUNCTION]/rp_tablet_admin/client/main.lua")
+    server = read("resources/[FUNCTION]/rp_tablet_admin/server/extended.lua")
     html = read("resources/[FUNCTION]/rp_tablet_admin/html/index.html")
-    assert "RegisterNUICallback('spawnVehicle'" not in client
+    assert "RegisterNUICallback('spawnVehicle'" in client
+    assert "TriggerServerEvent('rp_tablet_admin:server:spawnVehicle', data.model)" in client
     assert "RegisterNUICallback('deleteVehicle'" not in client
+    assert "AllowExtendedAction(src, 'spawn_vehicle', 1000)" in server
+    assert "type(rawModel) ~= 'string'" in server
     assert "ADMINISTRATEUR</span>" in html
     assert '<span id="current-rank-label">FONDATEUR</span>' not in html
 
