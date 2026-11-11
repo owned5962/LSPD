@@ -38,6 +38,17 @@ def test_statistics_are_persistent_and_access_controlled():
     assert "severity, sanction" in logs_query
     assert "detectionCount" in server and "totalDetections" in server
     assert "RegisterNetEvent('rp_anticheat:saveSanctionConfig'" in server
+    assert "items_snapshot LONGTEXT NULL" in server
+    assert "weapons_snapshot LONGTEXT NULL" in server
+    assert "cash_snapshot BIGINT NULL" in server and "bank_snapshot BIGINT NULL" in server
+    assert "job_grade_label VARCHAR(100) NULL" in server
+    assert "capturePlayerSnapshot(src)" in server
+    assert "GetPlayerInventory" in server and "exports('GetPlayerInventory'" in read("resources/[FUNCTION]/rp_inventory/server/main.lua")
+    assert "snapshot.items" in server and "snapshot.weapons" in server
+    assert "items_snapshot AS itemsSnapshot" in server
+    assert "buildSnapshotDetails(log)" in ui
+    assert "OBJETS" in ui and "ARMES" in ui and "BANQUE" in ui
+    assert "rp_inventory" in read("resources/[FUNCTION]/rp_anticheat/fxmanifest.lua")
     assert "applyConfiguredSanction(src, alert)" in server
     assert "warn = true" in server and "kick = true" in server and "ban = true" in server and "prison = true" in server
     assert "CREATE TABLE IF NOT EXISTS anticheat_jails" in server
