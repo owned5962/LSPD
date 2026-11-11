@@ -74,12 +74,12 @@ document.addEventListener('keydown', (e) => {
 });
 
 function closeUI() {
-    fetch(`https://${rp_inventory}/close`, { method: 'POST', body: '{}' });
+    fetch(`https://rp_inventory/close`, { method: 'POST', body: '{}' });
 }
 
 document.getElementById('btn-use').addEventListener('click', () => {
     if (!selectedItem) return;
-    fetch(`https://${rp_inventory}/useItem`, {
+    fetch(`https://rp_inventory/useItem`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ item: selectedItem.name })
@@ -89,7 +89,7 @@ document.getElementById('btn-use').addEventListener('click', () => {
 document.getElementById('btn-drop').addEventListener('click', () => {
     if (!selectedItem) return;
     const count = parseInt(document.getElementById('item-quantity').value) || 1;
-    fetch(`https://${rp_inventory}/dropItem`, {
+    fetch(`https://rp_inventory/dropItem`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ item: selectedItem.name, count: count })
@@ -99,7 +99,7 @@ document.getElementById('btn-drop').addEventListener('click', () => {
 document.getElementById('btn-give').addEventListener('click', () => {
     if (!selectedItem) return;
     const count = parseInt(document.getElementById('item-quantity').value) || 1;
-    fetch(`https://${rp_inventory}/giveItem`, {
+    fetch(`https://rp_inventory/giveItem`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ item: selectedItem.name, count: count })
