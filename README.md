@@ -23,7 +23,7 @@ Les noms des ressources FiveM (`rp_core`, `job_police`, etc.) restent inchangés
 1. Installez les artifacts FXServer.
 2. Installez les ressources standard depuis le dépôt officiel [cfx-server-data](https://github.com/citizenfx/cfx-server-data) dans le dossier `resources` du serveur. Sous Windows, depuis la racine du projet, exécutez `powershell -ExecutionPolicy Bypass -File .\\install-cfx-defaults.ps1` (ajoutez `-ResourceRoot "D:\\chemin\\vers\\resources"` si nécessaire). Sous Linux, exécutez `bash install-cfx-defaults.sh` (ou définissez `FXSERVER_RESOURCES_DIR` si le dossier resources est ailleurs). Ces scripts installent uniquement les ressources manquantes `spawnmanager`, `sessionmanager`, `hardcap` et `baseevents` dans `[cfx-default]`, sans écraser celles déjà présentes. Le `server.cfg` les démarre explicitement : ne laissez pas ces ressources absentes.
 3. Installez la ressource [oxmysql](https://github.com/overextended/oxmysql) dans votre dossier resources.
-4. Créez la base MySQL/MariaDB et importez `database.sql`.
+4. Créez la base MySQL/MariaDB puis importez une seule fois `database.sql` : le schéma, les inventaires, les bannissements, les métiers et les adaptations de structure prises en charge sont regroupés dans ce fichier.
 5. Modifiez `mysql_connection_string` dans `server.cfg` avec un compte SQL dédié disposant des droits nécessaires sur la base (évitez root).
 6. Remplacez les clés FiveM/Steam d'exemple.
 7. Ajoutez les administrateurs via ACE, par exemple :
@@ -35,10 +35,10 @@ Les noms des ressources FiveM (`rp_core`, `job_police`, etc.) restent inchangés
 ## Mise à jour d'une base existante
 1. Faites une sauvegarde complète de la base.
 2. Arrêtez le serveur.
-3. Exécutez une seule fois `migrations/001_character_persistence.sql`, `migrations/002_inventory_persistence.sql`, `migrations/003_persistent_bans.sql`, `migrations/004_character_metadata.sql` et `migrations/005_seed_jobs_and_grades.sql` sur la base existante. La migration 005 ajoute les 50 métiers, le métier `unemployed` et les grades/salaires par défaut sans écraser les entrées déjà personnalisées.
+3. Importez `database.sql` sur la base existante : les tables sont déclarées avec `IF NOT EXISTS`, les métiers sont ajoutés avec `INSERT IGNORE` et les adaptations `dateofbirth` / `metadata` sont conditionnelles. Les données et salaires déjà présents ne sont pas remplacés par le catalogue initial.
 4. Redémarrez le serveur avec oxmysql installé et configuré.
 
-La migration adapte le champ de date de naissance. Elle ne supprime aucun personnage. Si vous avez des dates invalides ou un schéma personnalisé, vérifiez la base avant l'exécution.
+Le passage de `dateofbirth` de `VARCHAR` à `DATE` suppose que les valeurs existantes sont des dates valides au format `YYYY-MM-DD`. Vérifiez les valeurs atypiques avant l'import. Les anciens fichiers du dossier `migrations/` sont conservés comme historique ; ils ne sont plus nécessaires pour une installation neuve ni pour la mise à jour standard décrite ici.
 
 ## État fonctionnel connu
 
