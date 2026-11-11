@@ -572,8 +572,9 @@ def test_admin_tablet_stays_hidden_until_authorized_open_message():
     assert "tabletWrapper.classList.add('is-open')" in ui
     assert "data.action === 'closeTablet'" in ui
     assert "SetNuiFocus(false, false)" in client
-    assert "RegisterCommand('admin'" in client
-    assert "RegisterKeyMapping('admin'" in client
+    assert "RegisterCommand('rp_admin_tablet_toggle'" in client
+    assert "RegisterKeyMapping('rp_admin_tablet_toggle', 'Ouvrir la Tablette Admin', 'keyboard', 'F10')" in client
+    assert "RegisterCommand('adminmenu', ToggleAdminTablet, false)" in client
 
 
 
