@@ -97,7 +97,7 @@ def test_anticheat_tablet_javascript_is_not_duplicated_or_corrupted():
     import re
 
     ui = read("resources/[FUNCTION]/rp_anticheat/html/js/app.js")
-    declarations = re.findall(r"^function\\s+([A-Za-z_$][\\w$]*)\\s*\\(", ui, re.MULTILINE)
+    declarations = re.findall(r"^function\s+([A-Za-z_$][\w$]*)\s*\(", ui, re.MULTILINE)
     duplicates = sorted({name for name in declarations if declarations.count(name) > 1})
     assert not duplicates, f"duplicate Anticheat UI functions: {duplicates}"
     assert ui.count("window.setInterval(updateClock, 1000)") == 1
