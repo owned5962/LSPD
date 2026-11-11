@@ -18,8 +18,8 @@ local function OpenInventory()
         if isInventoryPending and not isInventoryOpen then
             isInventoryPending = false
             SetNuiFocus(false, false)
-            TriggerEvent('rp_core:client:notify', 'error',
-                'L’inventaire ne répond pas. Vérifiez que votre personnage est bien chargé, puis réessayez.')
+            TriggerEvent('rp_core:client:notify',
+                'L’inventaire ne répond pas. Vérifiez que votre personnage est bien chargé, puis réessayez.', 'error')
         end
     end)
 end
@@ -96,7 +96,7 @@ RegisterNetEvent('rp_inventory:requestFailed', function(message)
     isInventoryPending = false
     isInventoryOpen = false
     SetNuiFocus(false, false)
-    TriggerEvent('rp_core:client:notify', 'error', message or 'Impossible d’ouvrir votre inventaire.')
+    TriggerEvent('rp_core:client:notify', message or 'Impossible d’ouvrir votre inventaire.', 'error')
 end)
 
 RegisterNUICallback('close', function(data, cb)
