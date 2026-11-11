@@ -11,7 +11,7 @@ def test_auto_rescue_resource_is_registered_and_configured():
     assert "'client/main.lua'" in manifest and "'server/main.lua'" in manifest
     assert "'rp_core'" in manifest
     assert "RecoveryDelay = 60" in config
-    assert "Config.Hospital" in config
+    assert "Hospital = { coords" in config
     assert "ensure rp_auto_rescue" in server_cfg
 
 
@@ -27,7 +27,7 @@ def test_auto_rescue_client_runs_ambulance_stretcher_hospital_and_revive_sequenc
     client = (RESOURCE / "client" / "main.lua").read_text(encoding="utf-8")
     for required in (
         "CreateVehicle(vehicleHash", "CreatePed(26", "TaskVehicleDriveToCoordLongrange",
-        "CreateObject(stretcherModel", "AttachEntityToEntity(patient, bed",
+        "CreateObject(model", "AttachEntityToEntity(patient, bed",
         "AttachEntityToEntity(bed, ambulance", "Config.Hospital.coords",
         "Wait(1000)", "NetworkResurrectLocalPlayer", "SetEntityHealth(ped, 200)"
     ):
