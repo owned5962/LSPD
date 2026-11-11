@@ -324,7 +324,9 @@ function updateTelemetry(player) {
 }
 
 function startSpectate(targetId) {
-    if (!targetId || Number(targetId) === Number(window.GetPlayerServerId)) return;
+    if (!targetId) return;
+    const target = state.players.find((player) => Number(player.id) === Number(targetId));
+    if (target?.isSelf) { showToast('Tu ne peux pas te surveiller toi-même.', true); return; }
     state.selectedPlayerId = Number(targetId);
     nui('spectatePlayer', { targetId: Number(targetId) })
         .then(() => showToast('Demande de surveillance envoyée.'))
@@ -471,9 +473,11 @@ window.addEventListener('message', (event) => {
         }
     } else if (data.action === 'spectateStarted') {
         state.spectatingId = Number(data.targetId);
+        $('anticheat-window').classList.add('hidden');
         showToast(`Surveillance active · ID ${data.targetId}`);
     } else if (data.action === 'spectateStopped') {
         state.spectatingId = null;
+        if (state.currentTab) $('anticheat-window').classList.remove('hidden');
         showToast('Surveillance arrêtée.');
     } else if (data.action === 'close') {
         $('anticheat-window').classList.add('hidden');
