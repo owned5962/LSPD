@@ -1,0 +1,39 @@
+name: Fuel system validation
+
+on:
+  push:
+    paths:
+      - "resources/[FUNCTION]/rp_fuel/**"
+      - "resources/[FUNCTION]/rp_economy/server/main.lua"
+      - "tests/test_fuel_system.py"
+      - ".github/workflows/fuel-system.yml"
+  pull_request:
+    paths:
+      - "resources/[FUNCTION]/rp_fuel/**"
+      - "resources/[FUNCTION]/rp_economy/server/main.lua"
+      - "tests/test_fuel_system.py"
+      - ".github/workflows/fuel-system.yml"
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install Lua 5.4
+        run: sudo apt-get update && sudo apt-get install -y lua5.4
+      - name: Validate fuel system requirements
+        run: python tests/test_fuel_system.py
+      - name: Compile fuel Lua scripts
+        run: |
+          luac5.4 -p "resources/[FUNCTION]/rp_fuel/shared/config.lua"
+          luac5.4 -p "resources/[FUNCTION]/rp_fuel/client/main.lua"
+          luac5.4 -p "resources/[FUNCTION]/rp_fuel/server/main.lua"
+          luac5.4 -p "resources/[FUNCTION]/rp_economy/server/main.lua"
+      - name: Validate fuel NUI JavaScript
+        run: node --check "resources/[FUNCTION]/rp_fuel/html/js/app.js"
