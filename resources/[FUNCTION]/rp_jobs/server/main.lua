@@ -62,8 +62,14 @@ RegisterNetEvent('rp_jobs:server:chooseJob', function(jobName)
         return
     end
 
-    if not player.setJob(jobName, 0) then
-        RespondToJobSelection(src, false, 'Votre embauche n’a pas pu être enregistrée. Vérifiez la base de données.')
+    local ok, applied = pcall(player.setJob, jobName, 0)
+    if not ok then
+        print(('[rp_jobs] Job application failed for player %s (%s): %s'):format(src, jobName, tostring(applied)))
+        RespondToJobSelection(src, false, 'Erreur interne pendant l’embauche. Consultez la console serveur.')
+        return
+    end
+    if applied ~= true then
+        RespondToJobSelection(src, false, 'Votre embauche n’a pas pu être enregistrée. Vérifiez la base de données et les logs.')
         return
     end
     local message = 'Félicitations ! Vous venez d\'être embauché en tant que ' .. job.label .. ' !'
