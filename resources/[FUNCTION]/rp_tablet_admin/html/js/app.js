@@ -330,7 +330,7 @@ function renderPlayerPicker(prefix) {
     const search = document.getElementById(prefix + '-player-search'), select = document.getElementById(prefix + '-player-target');
     if (!select) return;
     const query = (search?.value || '').trim().toLowerCase(), previous = panelTargets[prefix] || Number(select.value) || null;
-    const matches = onlinePlayers.filter(player => !query || String(player.id).includes(query) || String(player.name || '').toLowerCase().includes(query) || String(player.rawName || '').toLowerCase().includes(query));
+    const matches = onlinePlayers.filter(player => player.characterLoaded !== false && (!query || String(player.id).includes(query) || String(player.name || '').toLowerCase().includes(query) || String(player.rawName || '').toLowerCase().includes(query)));
     select.replaceChildren(new Option('Sélectionner un joueur connecté…', ''));
     matches.forEach(player => select.add(new Option((player.name || player.rawName || 'Joueur') + ' · ID ' + player.id, String(player.id))));
     if (previous && matches.some(player => Number(player.id) === Number(previous))) select.value = String(previous);
