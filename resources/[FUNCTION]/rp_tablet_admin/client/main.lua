@@ -308,6 +308,19 @@ RegisterNetEvent('rp_tablet_admin:client:syncWeather', function(weather)
     SetWeatherTypeNowPersist(weather)
 end)
 
+AddEventHandler('onClientResourceStop', function(resourceName)
+    if resourceName ~= GetCurrentResourceName() then return end
+    isAdminNoclip = false
+    if isAdminSpectating then NetworkSetInSpectatorMode(false, spectateTargetPed or PlayerPedId()) end
+    isAdminSpectating = false
+    spectateTargetPed = nil
+    local ped = PlayerPedId()
+    SetEntityCollision(ped, true, true)
+    SetEntityInvincible(ped, false)
+    SetPlayerInvincible(PlayerId(), false)
+    SetNuiFocus(false, false)
+    if tabletEntity and DoesEntityExist(tabletEntity) then DeleteEntity(tabletEntity); tabletEntity = nil end
+end)
 RegisterNetEvent('rp_tablet_admin:client:syncTime', function(hours, minutes)
     NetworkOverrideClockTime(hours, minutes, 0)
 end)
