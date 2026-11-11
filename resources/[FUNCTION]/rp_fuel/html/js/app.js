@@ -13,6 +13,7 @@ function update(){
   document.getElementById('total-price').textContent=money(n*price);
   document.getElementById('estimated-time').textContent=durationText(baseMs+n*perLitreMs);
   payButton.disabled=busy||isRefueling||maxLitres<1||n>maxLitres;
+  closeButton.disabled=busy||isRefueling;
 }
 function setProgress(percent,remaining){
   document.getElementById('progress-bar').style.width=Math.max(0,Math.min(100,percent))+'%';
@@ -71,11 +72,13 @@ window.addEventListener('message',e=>{
     startProgress(Number(d.durationMs)||0,Number(d.litres)||0);
   }else if(d.action==='purchaseFailed'){
     busy=false;
+    closeButton.disabled=false;
     status.textContent=d.message||'Paiement refusé.';
     update();
   }else if(d.action==='fuelingCancelled'){
     resetProgress();
     busy=false;
+    closeButton.disabled=false;
     status.textContent=d.message||'Ravitaillement annulé. Le remboursement est lancé.';
     update();
   }else if(d.action==='fuelPurchased'){
@@ -88,7 +91,7 @@ window.addEventListener('message',e=>{
   }
 });
 function close(){
-  if(isRefueling)return;
+  if(isRefueling||busy)return;
   panel.classList.add('hidden');
   post('close').catch(()=>{});
 }
@@ -96,13 +99,14 @@ closeButton.addEventListener('click',close);
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape'&&!panel.classList.contains('hidden')){
     e.preventDefault();
-    if(!isRefueling)close();
+    if(!isRefueling&&!busy)close();
   }
 });
 payButton.addEventListener('click',()=>{
   if(busy||isRefueling||maxLitres<1)return;
   busy=true;
   payButton.disabled=true;
+  closeButton.disabled=true;
   status.textContent='Vérification du solde et validation du paiement...';
   post('purchase',{litres:Number(litres.value),payment:document.getElementById('payment').value})
     .catch(()=>{busy=false;status.textContent='Erreur de communication avec le serveur.';update();});
