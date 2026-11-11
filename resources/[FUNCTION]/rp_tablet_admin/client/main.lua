@@ -84,6 +84,11 @@ RegisterNUICallback('close', function(data, cb)
     cb('ok')
 end)
 
+RegisterNUICallback('banPlayer', function(data, cb)
+    TriggerServerEvent('rp_tablet_admin:server:banPlayer', data.playerId, data.reason)
+    cb('ok')
+end)
+
 RegisterNUICallback('kickPlayer', function(data, cb)
     TriggerServerEvent('rp_tablet_admin:server:kickPlayer', data.playerId, data.reason)
     cb('ok')
