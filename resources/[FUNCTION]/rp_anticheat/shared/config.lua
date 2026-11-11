@@ -27,5 +27,5 @@ Config.AlertStaffChat = true
 Config.MaxExplosionsPerWindow = 5
 Config.ExplosionWindowSeconds = 5
 
-Config.MaxEntitiesPerWindow = 20
+Config.MaxEntitiesPerWindow = 35
 Config.EntityWindowSeconds = 10
