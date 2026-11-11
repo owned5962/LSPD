@@ -198,6 +198,8 @@ local function ToggleDiagnostics()
 end
 RegisterCommand('clientdiagnostics', ToggleDiagnostics, false)
 RegisterKeyMapping('clientdiagnostics', 'Afficher les statistiques client', 'keyboard', 'F12')
+RegisterCommand('diagnostics', ToggleDiagnostics, false)
+RegisterCommand('f12', ToggleDiagnostics, false)
 RegisterNUICallback('closeDiagnostics', function(_, cb)
     diagnosticsOpen = false
     SetNuiFocus(false, false)
