@@ -26,4 +26,4 @@ files {
     'html/js/app.js'
 }
 
-dependency 'oxmysql'
+dependencies { 'oxmysql', 'rp_tablet_creator' }
