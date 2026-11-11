@@ -1,10 +1,62 @@
 local CanUseTablet
+local FounderCodeSessions = {}
+local FounderCodeAttempts = {}
 
 local function isFounder(src)
     if IsPlayerAceAllowed(src, 'rp_founder') then return true end
+    if FounderCodeSessions[tonumber(src)] == true then return true end
     local player = exports['rp_core']:GetPlayerFromId(src)
     return player ~= nil and player.group == 'fondateur'
 end
+
+-- L'accès par code est temporaire, limité à la session FiveM et protégé contre
+-- les essais répétés. Le secret doit être défini dans la configuration privée du serveur.
+RegisterNetEvent('rp_tablet_creator:server:authenticateFounderCode', function(rawCode)
+    local src = source
+    local now = os.time()
+    local attempts = FounderCodeAttempts[src] or { count = 0, blockedUntil = 0 }
+    FounderCodeAttempts[src] = attempts
+
+    if attempts.blockedUntil > now then
+        TriggerClientEvent('rp_tablet_creator:client:founderCodeResult', src,
+            'Trop de tentatives. Réessayez dans quelques minutes.', false)
+        return
+    end
+
+    local expectedCode = GetConvar('rp_founder_access_code', '')
+    if expectedCode == '' then
+        TriggerClientEvent('rp_tablet_creator:client:founderCodeResult', src,
+            'Code de secours non configuré sur le serveur.', false)
+        return
+    end
+
+    if type(rawCode) ~= 'string' or #rawCode > 16 or rawCode ~= expectedCode then
+        attempts.count = attempts.count + 1
+        if attempts.count >= 5 then
+            attempts.count = 0
+            attempts.blockedUntil = now + 600
+        end
+        TriggerClientEvent('rp_tablet_creator:client:founderCodeResult', src,
+            'Code incorrect.', false)
+        return
+    end
+
+    FounderCodeAttempts[src] = nil
+    FounderCodeSessions[src] = true
+    TriggerClientEvent('rp_tablet_creator:client:founderCodeResult', src,
+        'Identification fondateur validée pour cette connexion.', true)
+    TriggerClientEvent('rp_tablet_creator:client:open', src, 'Fondateur')
+end)
+
+exports('HasFounderCodeAccess', function(src)
+    return FounderCodeSessions[tonumber(src)] == true
+end)
+
+AddEventHandler('playerDropped', function()
+    local src = source
+    FounderCodeSessions[src] = nil
+    FounderCodeAttempts[src] = nil
+end)
 
 local function isCreator(src)
     if isFounder(src) or IsPlayerAceAllowed(src, 'rp_creator') then return true end
