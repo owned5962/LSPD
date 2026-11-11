@@ -88,14 +88,21 @@ end
 
 RegisterNetEvent('rp_inventory:requestData', function()
     local src = source
-    if not exports['rp_core']:CanPerformAction(src, 'inventory:request_data', 2000) then return end
+    if not exports['rp_core']:CanPerformAction(src, 'inventory:request_data', 1000) then
+        TriggerClientEvent('rp_inventory:requestFailed', src, 'Patientez un instant avant de rouvrir votre inventaire.')
+        return
+    end
     local player = exports['rp_core']:GetPlayerFromId(src)
-    if not player then return end
+    if not player then
+        TriggerClientEvent('rp_inventory:requestFailed', src, 'Votre personnage n’est pas encore chargé. Réessayez après être entré en ville.')
+        return
+    end
     if not playerInventories[src] then
         local ok, err = pcall(loadInventory, player)
         if not ok then
             print(('[rp_inventory] Load failed for character %s: %s'):format(player.charId, tostring(err)))
             notify(src, 'error', 'Impossible de charger votre inventaire. Réessayez plus tard.')
+            TriggerClientEvent('rp_inventory:requestFailed', src, 'Le chargement de l’inventaire a échoué. Consultez la console serveur.')
             return
         end
     end
