@@ -1,5 +1,6 @@
 local isOpen = false
 local currentDuty = false
+local currentJob = nil
 
 local function notify(message, kind)
     TriggerEvent('rp_core:client:notify', tostring(message or ''), kind or 'info')
@@ -19,6 +20,7 @@ local function openTablet()
         notify('Votre personnage est encore en cours de chargement.', 'error')
         return
     end
+    currentJob = player.job
     isOpen = true
     SetNuiFocus(true, true)
     TriggerServerEvent('rp_tablet_job:server:requestData')
@@ -34,6 +36,9 @@ end)
 
 RegisterNUICallback('refresh', function(_, cb)
     TriggerServerEvent('rp_tablet_job:server:requestData')
+    if currentJob == 'police' and currentDuty then
+        TriggerServerEvent('rp_police_interaction:server:requestAlerts')
+    end
     cb({ ok = true })
 end)
 
@@ -58,25 +63,61 @@ RegisterNUICallback('toggleDuty', function(_, cb)
     cb({ ok = true })
 end)
 
+RegisterNUICallback('policeWaypoint', function(data, cb)
+    local x, y = tonumber(data.x), tonumber(data.y)
+    if currentJob ~= 'police' or not currentDuty or not x or not y then
+        cb({ ok = false })
+        return
+    end
+    SetNewWaypoint(x + 0.0, y + 0.0)
+    cb({ ok = true })
+end)
+
+RegisterNUICallback('markPoliceAlert', function(data, cb)
+    if currentJob ~= 'police' or not currentDuty then cb({ ok = false }); return end
+    TriggerServerEvent('rp_police_interaction:server:markAlert', tonumber(data.id), data.status)
+    cb({ ok = true })
+end)
+
 RegisterNetEvent('rp_tablet_job:client:openData', function(data)
     if not isOpen then return end
     currentDuty = data.duty == true
+    currentJob = data.jobName
     SendNUIMessage({ action = 'open', data = data })
+    if currentJob == 'police' and currentDuty then
+        TriggerServerEvent('rp_police_interaction:server:requestAlerts')
+    end
 end)
 
 RegisterNetEvent('rp_tablet_job:client:refreshData', function(data)
     if not isOpen then return end
     currentDuty = data.duty == true
+    currentJob = data.jobName
     SendNUIMessage({ action = 'update', data = data })
 end)
 
--- Existing job resources publish their validated duty state. Listen to all known
--- job events so the tablet stays synchronized without duplicating duty authority.
+RegisterNetEvent('rp_tablet_job:client:policeAlerts', function(alerts)
+    if isOpen and currentJob == 'police' and currentDuty then
+        SendNUIMessage({ action = 'policeAlerts', alerts = alerts or {} })
+    end
+end)
+
+RegisterNetEvent('rp_tablet_job:client:policeAlert', function(alert)
+    if isOpen and currentJob == 'police' and currentDuty then
+        SendNUIMessage({ action = 'policeAlert', alert = alert })
+    end
+end)
+
 for _, job in ipairs(JobsList or {}) do
     RegisterNetEvent('job_' .. job.name .. ':dutyUpdated', function(status)
         currentDuty = status == true
         TriggerServerEvent('rp_tablet_job:server:setDutyState', currentDuty)
-        if isOpen then TriggerServerEvent('rp_tablet_job:server:requestData') end
+        if isOpen then
+            TriggerServerEvent('rp_tablet_job:server:requestData')
+            if currentJob == 'police' and currentDuty then
+                TriggerServerEvent('rp_police_interaction:server:requestAlerts')
+            end
+        end
     end)
 end
 
