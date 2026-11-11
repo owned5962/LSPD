@@ -10,6 +10,19 @@ local function notify(message, kind)
     TriggerEvent('rp_core:client:notify', message, kind or 'info')
 end
 
+RegisterNetEvent('rp_businesses:client:locations', function(locations)
+    if type(locations) ~= 'table' then return end
+    local stations = {}
+    for _, location in ipairs(locations) do
+        if location.location_type == 'gas_station' then
+            stations[#stations + 1] = {
+                x = tonumber(location.x), y = tonumber(location.y), z = tonumber(location.z)
+            }
+        end
+    end
+    if #stations > 0 then FuelConfig.Stations = stations end
+end)
+
 local function nearestStation(coords, radius)
     local best, bestDistance
     for _, station in ipairs(FuelConfig.Stations) do
