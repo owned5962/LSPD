@@ -23,5 +23,5 @@ server_scripts {
     'server/main.lua'
 }
 
-dependencies { 'oxmysql', 'rp_core', 'rp_jobs' }
+dependencies { 'oxmysql', 'rp_core', 'rp_jobs', 'rp_businesses' }
 
