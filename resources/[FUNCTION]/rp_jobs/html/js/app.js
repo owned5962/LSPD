@@ -12,6 +12,7 @@ window.addEventListener('message', (event) => {
         renderJobs();
     } else if (data.action === 'jobSelectionResult') {
         clearTimeout(pendingJobTimeout);
+        activeJobRequest = false;
         const status = document.getElementById('job-status');
         if (status) status.textContent = data.message || (data.success ? 'Embauche confirmée.' : 'Candidature refusée.');
         document.querySelectorAll('.select-job-btn:not(.disabled)').forEach(button => {
@@ -74,7 +75,7 @@ function renderJobs() {
         if (isWhitelisted) actionBtn.disabled = true;
         if (!isWhitelisted) {
             actionBtn.addEventListener('click', () => {
-                chooseJob(job.name);
+                chooseJob(job.name, actionBtn);
             });
         }
 
@@ -83,10 +84,13 @@ function renderJobs() {
 }
 
 let pendingJobTimeout = null;
+let activeJobRequest = false;
 
-function chooseJob(jobName) {
-    const button = Array.from(document.querySelectorAll('.select-job-btn')).find(item => item.dataset.name === jobName);
-    if (!button || button.disabled) return;
+function chooseJob(jobName, button) {
+    // Ignore duplicate/re-entrant clicks while a single server response is pending.
+    if (activeJobRequest) return;
+    if (!button || button.disabled || typeof jobName !== 'string' || !jobName) return;
+    activeJobRequest = true;
     button.dataset.originalLabel = button.textContent;
     button.disabled = true;
     button.textContent = 'Envoi en cours…';
@@ -95,6 +99,7 @@ function chooseJob(jobName) {
     clearTimeout(pendingJobTimeout);
     pendingJobTimeout = setTimeout(() => {
         if (button.disabled) {
+            activeJobRequest = false;
             button.disabled = false;
             button.textContent = button.dataset.originalLabel || 'Postuler Immédiatement';
             if (status) status.textContent = 'Le serveur ne répond pas. Vérifiez la console serveur et réessayez.';
@@ -106,6 +111,8 @@ function chooseJob(jobName) {
     }).then(response => response.json()).then(result => {
         if (!result || result.status !== 'submitted') throw new Error('Demande non transmise');
     }).catch(() => {
+        activeJobRequest = false;
+        clearTimeout(pendingJobTimeout);
         button.disabled = false;
         button.textContent = button.dataset.originalLabel || 'Postuler Immédiatement';
         if (status) status.textContent = 'Erreur de communication avec le serveur. Réessayez.';
