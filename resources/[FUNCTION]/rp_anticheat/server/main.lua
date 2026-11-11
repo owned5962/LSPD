@@ -1,6 +1,8 @@
 local detectionsLog = {}
 local lastFlagAt = {}
 local openStaff = {}
+local adminInvulnerability = {}
+local explosionWindows = {}
 
 local function getPlayer(src)
     return exports['rp_core']:GetPlayerFromId(tonumber(src))
@@ -30,13 +32,80 @@ local function safeReason(reason)
         'GodMode / Invincible',
         'SpeedHack à pied',
         'Arme interdite détectée',
-        'Vision thermique/nocturne non autorisée'
+        'Vision thermique/nocturne non autorisée',
+        'Explosion spam détecté'
     }
     for _, prefix in ipairs(allowed) do
         if reason:sub(1, #prefix) == prefix then return reason end
     end
     return nil
 end
+
+local function recordDetection(src, reason)
+    local now = os.time()
+    if not GetPlayerName(src) or (lastFlagAt[src] and now - lastFlagAt[src] < 5) then return false end
+    local safe = safeReason(reason)
+    if not safe then return false end
+    lastFlagAt[src] = now
+
+    local alert = {
+        playerId = src,
+        playerName = GetPlayerName(src) or 'Inconnu',
+        reason = safe,
+        time = os.date('%H:%M:%S')
+    }
+    table.insert(detectionsLog, 1, alert)
+    if #detectionsLog > 100 then table.remove(detectionsLog) end
+
+    for _, pid in ipairs(GetPlayers()) do
+        local staffId = tonumber(pid)
+        if staffId and isStaff(staffId) then
+            TriggerClientEvent('rp_anticheat:notifyStaff', staffId, alert)
+        end
+    end
+    return true
+end
+
+-- This is a local server event: clients cannot grant themselves this exemption.
+AddEventHandler('rp_anticheat:setAdminInvulnerability', function(rawTargetId, enabled)
+    if source ~= 0 then return end
+    local targetId = tonumber(rawTargetId)
+    if not targetId or type(enabled) ~= 'boolean' or not isStaff(targetId) then return end
+    adminInvulnerability[targetId] = enabled and true or nil
+end)
+
+AddEventHandler('weaponDamageEvent', function(sender, data)
+    if not Config.Protections.weapon_damage or not Config.Protections.weapon_damage.enabled then return end
+    local src = tonumber(sender) or source
+    if type(data) ~= 'table' then return end
+    local weaponType = tonumber(data.weaponType)
+    if not weaponType then return end
+    for _, weaponHash in ipairs(Config.BlacklistedWeapons) do
+        if weaponType == weaponHash then
+            CancelEvent()
+            recordDetection(src, 'Arme interdite détectée')
+            return
+        end
+    end
+end)
+
+AddEventHandler('explosionEvent', function(sender, eventData)
+    if not Config.Protections.explosion_spam or not Config.Protections.explosion_spam.enabled then return end
+    local src = tonumber(sender) or source
+    if not GetPlayerName(src) or isStaff(src) then return end
+
+    local now = os.time()
+    local window = explosionWindows[src]
+    if not window or now - window.startedAt >= (Config.ExplosionWindowSeconds or 5) then
+        window = { startedAt = now, count = 0 }
+        explosionWindows[src] = window
+    end
+    window.count = window.count + 1
+    if window.count > (Config.MaxExplosionsPerWindow or 5) then
+        CancelEvent()
+        recordDetection(src, 'Explosion spam détecté')
+    end
+end)
 
 RegisterNetEvent('rp_anticheat:requestOpen', function()
     local src = source
@@ -123,26 +192,10 @@ end)
 
 RegisterNetEvent('rp_anticheat:flag', function(rawReason)
     local src = source
-    local now = os.time()
-    if lastFlagAt[src] and now - lastFlagAt[src] < 5 then return end
     local reason = safeReason(rawReason)
     if not reason then return end
-    lastFlagAt[src] = now
-
-    local alert = {
-        playerId = src,
-        playerName = GetPlayerName(src) or 'Inconnu',
-        reason = reason,
-        time = os.date('%H:%M:%S')
-    }
-    table.insert(detectionsLog, 1, alert)
-    if #detectionsLog > 100 then table.remove(detectionsLog) end
-
-    for _, pid in ipairs(GetPlayers()) do
-        if isStaff(tonumber(pid)) then
-            TriggerClientEvent('rp_anticheat:notifyStaff', tonumber(pid), alert)
-        end
-    end
+    if reason:sub(1, #'GodMode / Invincible') == 'GodMode / Invincible' and adminInvulnerability[src] then return end
+    recordDetection(src, reason)
 end)
 
 RegisterNetEvent('rp_anticheat:punish', function(rawTargetId, punishType, rawReason)
@@ -223,4 +276,6 @@ end, true)
 AddEventHandler('playerDropped', function()
     lastFlagAt[source] = nil
     openStaff[source] = nil
+    adminInvulnerability[source] = nil
+    explosionWindows[source] = nil
 end)
