@@ -17,9 +17,12 @@ local function IsNearBankOrATM(src, allowATM)
         if #(coords - bankCoords) <= 3.5 then return true end
     end
     if allowATM then
-        for _, object in ipairs(GetAllObjects()) do
-            if DoesEntityExist(object) and ATM_MODELS[GetEntityModel(object)] and #(coords - GetEntityCoords(object)) <= 2.5 then
-                return true
+        local ok, objects = pcall(GetAllObjects)
+        if ok and type(objects) == 'table' then
+            for _, object in ipairs(objects) do
+                if DoesEntityExist(object) and ATM_MODELS[GetEntityModel(object)] and #(coords - GetEntityCoords(object)) <= 2.5 then
+                    return true
+                end
             end
         end
     end
