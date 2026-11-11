@@ -7,7 +7,10 @@ const state = {
     spectatingId: null,
     currentTab: 'dashboard',
     pendingAction: null,
-    statistics: { period: 'day', rows: [] }
+    statistics: { period: 'day', rows: [] },
+    detectionCount: 0,
+    sanctionConfig: {},
+    prisonMinutes: 30
 };
 
 const $ = (id) => document.getElementById(id);
@@ -24,7 +27,8 @@ const tabTitles = {
     surveillance: ['SURVEILLANCE', 'Surveillance en direct'],
     logs: ['DÉTECTIONS', 'Centre des détections'],
     statistics: ['STATISTIQUES', 'Statistiques anticheat'],
-    bans: ['BANNISSEMENTS', 'Gestion des bannissements']
+    bans: ['BANNISSEMENTS', 'Gestion des bannissements'],
+    configuration: ['CONFIGURATION', 'Configuration des sanctions']
 };
 
 function escapeText(value) {
@@ -42,7 +46,7 @@ function showToast(message, isError = false) {
 }
 
 function setTab(tab) {
-    if (!tabTitles[tab]) return;
+    if (!tabTitles[tab] || (tab === 'surveillance' && state.detectionCount < 1)) return;
     state.currentTab = tab;
     document.querySelectorAll('.nav-item').forEach((button) => {
         button.classList.toggle('active', button.dataset.tab === tab);
@@ -53,6 +57,7 @@ function setTab(tab) {
     $('section-name').textContent = tabTitles[tab][0];
     $('page-title').textContent = tabTitles[tab][1];
     if (tab === 'statistics') requestStatistics();
+    if (tab === 'configuration') nui('requestSanctionConfig').catch(() => showToast('Impossible de charger la configuration.', true));
     if (tab === 'logs') nui('requestLogs').catch(() => showToast('Impossible de charger les détections.', true));
     if (tab === 'bans') nui('requestBans').catch(() => showToast('Impossible de charger les bannissements.', true));
     if (tab === 'players' || tab === 'surveillance') renderPlayers();
@@ -62,6 +67,17 @@ function updateClock() {
     $('current-clock').textContent = new Date().toLocaleTimeString('fr-FR', { hour12: false });
 }
 
+function updateSurveillanceTab() {
+    const button = $('nav-surveillance');
+    const count = $('nav-surveillance-count');
+    if (!button || !count) return;
+    const enabled = state.detectionCount > 0;
+    button.disabled = !enabled;
+    button.setAttribute('aria-disabled', enabled ? 'false' : 'true');
+    button.classList.toggle('inactive', !enabled);
+    count.textContent = String(state.detectionCount);
+}
+
 function renderDashboard() {
     const active = Object.values(state.protections).filter((item) => item && item.enabled === true).length;
     $('stat-players').textContent = state.players.length;
@@ -69,7 +85,8 @@ function renderDashboard() {
     $('stat-modules').textContent = `${active}/${Object.keys(state.protections).length}`;
     $('stat-bans').textContent = state.bans.length || '0';
     $('nav-protection-count').textContent = Object.keys(state.protections).length;
-    $('nav-alert-count').textContent = state.logs.length;
+    $('nav-alert-count').textContent = state.detectionCount;
+    updateSurveillanceTab();
 
     const feed = $('dashboard-alerts');
     feed.replaceChildren();
@@ -524,6 +541,54 @@ function renderBans() {
     $('stat-bans').textContent = state.bans.length;
 }
 
+const sanctionOptions = [
+    ['warn', 'Avertissement'],
+    ['kick', 'Kick'],
+    ['ban', 'Ban permanent'],
+    ['prison', 'Prison']
+];
+function renderSanctionConfig() {
+    const root = $('sanction-config-list');
+    root.replaceChildren();
+    Object.entries(statLabels).forEach(([key, label]) => {
+        const row = document.createElement('div');
+        row.className = 'sanction-rule';
+        const copy = document.createElement('div');
+        const title = document.createElement('strong');
+        title.textContent = label;
+        const hint = document.createElement('small');
+        hint.textContent = 'Sanction appliquée à chaque détection validée';
+        copy.append(title, hint);
+        const select = document.createElement('select');
+        select.dataset.category = key;
+        select.setAttribute('aria-label', 'Sanction pour ' + label);
+        sanctionOptions.forEach(([value, text]) => {
+            const option = document.createElement('option');
+            option.value = value;
+            option.textContent = text;
+            select.appendChild(option);
+        });
+        select.value = state.sanctionConfig[key] || 'warn';
+        select.addEventListener('change', () => { $('sanction-config-status').textContent = 'Modifications non enregistrées'; });
+        row.append(copy, select);
+        root.appendChild(row);
+    });
+    $('prison-minutes').value = state.prisonMinutes || 30;
+    $('sanction-config-status').textContent = 'Configuration chargée';
+}
+function saveSanctionConfig() {
+    const sanctions = {};
+    document.querySelectorAll('#sanction-config-list select[data-category]').forEach(select => {
+        sanctions[select.dataset.category] = select.value;
+    });
+    const prisonMinutes = Math.max(1, Math.min(1440, Number($('prison-minutes').value) || 30));
+    $('btn-save-sanctions').disabled = true;
+    nui('saveSanctionConfig', { sanctions, prisonMinutes })
+        .then(() => { $('sanction-config-status').textContent = 'Enregistrement demandé...'; showToast('Enregistrement de la configuration demandé.'); })
+        .catch(() => showToast('Impossible d’enregistrer la configuration.', true))
+        .finally(() => { $('btn-save-sanctions').disabled = false; });
+}
+
 function closeUI() {
     $('anticheat-window').classList.add('hidden');
     nui('close').catch(() => {});
@@ -541,6 +606,7 @@ window.addEventListener('message', (event) => {
         state.players = Array.isArray(data.players) ? data.players : [];
         state.protections = data.protections || {};
         state.logs = Array.isArray(data.logs) ? data.logs : [];
+        state.detectionCount = Math.max(0, Number(data.detectionCount) || state.logs.length);
         $('anticheat-window').classList.remove('hidden');
         setTab('dashboard');
         renderProtections();
@@ -558,11 +624,16 @@ window.addEventListener('message', (event) => {
         renderDashboard();
     } else if (data.action === 'updateLogs') {
         state.logs = Array.isArray(data.logs) ? data.logs : [];
+        state.detectionCount = Math.max(0, Number(data.detectionCount) || state.logs.length);
         renderLogs();
         renderDashboard();
     } else if (data.action === 'updateStatistics') {
         state.statistics = data.statistics || { period: 'day', rows: [] };
         renderStatistics();
+    } else if (data.action === 'updateSanctionConfig') {
+        state.sanctionConfig = data.sanctions || {};
+        state.prisonMinutes = Number(data.prisonMinutes) || 30;
+        renderSanctionConfig();
     } else if (data.action === 'updateBans') {
         state.bans = Array.isArray(data.bans) ? data.bans : [];
         renderBans();
@@ -571,6 +642,7 @@ window.addEventListener('message', (event) => {
         if (data.alert) {
             state.logs.unshift(data.alert);
             state.logs = state.logs.slice(0, 250);
+            state.detectionCount = Math.max(state.detectionCount + 1, Number(data.detectionCount) || 0);
             renderLogs();
             renderDashboard();
         }
@@ -602,6 +674,7 @@ $('action-cancel-x').addEventListener('click', closeActionModal);
 $('btn-close').addEventListener('click', closeUI);
 $('btn-refresh').addEventListener('click', refreshAll);
 $('btn-refresh-statistics').addEventListener('click', requestStatistics);
+$('btn-save-sanctions').addEventListener('click', saveSanctionConfig);
 $('stats-period').addEventListener('change', requestStatistics);
 $('btn-refresh-bans').addEventListener('click', () => nui('requestBans').catch(() => showToast('Erreur de chargement.', true)));
 $('player-search').addEventListener('input', renderPlayers);
