@@ -65,9 +65,7 @@ def test_statistics_are_persistent_and_access_controlled():
     assert "Non défini" in ui and "log.sanction" in ui
     assert "function saveSanctionConfig()" in ui
 
-if __name__ == "__main__":
-    test_statistics_are_persistent_and_access_controlled()
-    print("Anticheat statistics checks passed.")
+
 
 
 def test_weapon_policy_is_persistent_and_drives_client_and_server_anticheat():
@@ -90,3 +88,8 @@ def test_weapon_policy_is_persistent_and_drives_client_and_server_anticheat():
     assert "Config.BlacklistedWeapons" in client
     assert "RemoveWeaponFromPed(ped, weaponHash)" in client
     assert "weaponHash == nil" not in server
+
+if __name__ == "__main__":
+    test_statistics_are_persistent_and_access_controlled()
+    test_weapon_policy_is_persistent_and_drives_client_and_server_anticheat()
+    print("Anticheat statistics checks passed.")
