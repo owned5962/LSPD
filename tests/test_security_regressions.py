@@ -566,15 +566,7 @@ def test_character_spawn_cannot_wait_forever_on_screen_fade():
     assert "sending spawn event" in server
 
 
-if __name__ == "__main__":
-    checks = sorted(
-        (name, check)
-        for name, check in globals().items()
-        if name.startswith("test_") and callable(check)
-    )
-    for name, check in checks:
-        check()
-    print(f"All {len(checks)} security and persistence regression checks passed.")
+
 
 
 
@@ -592,3 +584,57 @@ def test_admin_tablet_close_controls_and_keyboard_bindings_do_not_conflict():
     assert "data.source == 'f10'" in admin
     assert "if wasOpen then StopTabletAnimation() end" in admin
     assert "SetNuiFocus(false, false)" in admin
+
+def test_admin_live_map_uses_authorized_server_world_positions():
+    server = read("resources/[FUNCTION]/rp_tablet_admin/server/main.lua")
+    client = read("resources/[FUNCTION]/rp_tablet_admin/client/main.lua")
+    ui = read("resources/[FUNCTION]/rp_tablet_admin/html/js/app.js")
+    html = read("resources/[FUNCTION]/rp_tablet_admin/html/index.html")
+    assert "local function BuildOnlinePlayers()" in server
+    assert "GetEntityCoords(ped)" in server
+    assert "position = { x = coords.x, y = coords.y, z = coords.z }" in server
+    assert "AllowAdminAction(src, 'positions', 1800)" in server
+    assert "RegisterNetEvent('rp_tablet_admin:server:requestPlayerPositions'" in server
+    assert "RegisterNUICallback('requestPlayerPositions'" in client
+    assert "RegisterNetEvent('rp_tablet_admin:client:playerPositions'" in client
+    assert "RegisterNUICallback('healPlayer'" in client
+    assert 'id="player-map"' in html and 'id="admin-map-view"' in html
+    assert "function renderPlayerMap()" in ui
+    assert "function changeMapZoom(factor)" in ui
+    assert "function updateOnlinePlayerPositions(players)" in ui
+
+
+def test_admin_tablet_exposes_working_heal_economy_and_job_actions():
+    server = read("resources/[FUNCTION]/rp_tablet_admin/server/main.lua")
+    client = read("resources/[FUNCTION]/rp_tablet_admin/client/main.lua")
+    html = read("resources/[FUNCTION]/rp_tablet_admin/html/index.html")
+    ui = read("resources/[FUNCTION]/rp_tablet_admin/html/js/app.js")
+    assert "AllowAdminAction(src, 'heal', 500)" in server
+    assert "rp_tablet_admin:client:heal" in server and "client:heal" in client
+    assert "RegisterNUICallback('manageEconomy'" in client
+    assert "RegisterNUICallback('setJob'" in client
+    assert 'onclick="playerAction(\'heal\')"' in html
+    assert 'onclick="manageSelectedMoney(\'give\')"' in html
+    assert 'onclick="manageSelectedMoney(\'remove\')"' in html
+    assert 'onclick="setSelectedJob()"' in html
+    assert "function manageSelectedMoney(operation)" in ui
+    assert "function setSelectedJob()" in ui
+
+
+def test_all_security_regressions_are_run_by_the_test_script():
+    source = read("tests/test_security_regressions.py")
+    runner_index = source.index('if __name__ == "__main__":')
+    assert runner_index > source.index("def test_admin_tablet_close_controls_and_keyboard_bindings_do_not_conflict():")
+    assert runner_index > source.index("def test_admin_live_map_uses_authorized_server_world_positions():")
+
+
+
+if __name__ == "__main__":
+    checks = sorted(
+        (name, check)
+        for name, check in globals().items()
+        if name.startswith("test_") and callable(check)
+    )
+    for name, check in checks:
+        check()
+    print(f"All {len(checks)} security and persistence regression checks passed.")
