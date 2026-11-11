@@ -642,7 +642,7 @@ window.addEventListener('message', (event) => {
         if (data.alert) {
             state.logs.unshift(data.alert);
             state.logs = state.logs.slice(0, 250);
-            state.detectionCount = Math.max(state.detectionCount + 1, Number(data.detectionCount) || 0);
+            state.detectionCount = Number(data.detectionCount) || (state.detectionCount + 1);
             renderLogs();
             renderDashboard();
         }
