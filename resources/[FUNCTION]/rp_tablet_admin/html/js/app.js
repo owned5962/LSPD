@@ -398,9 +398,12 @@ function setupAdminSubViews() {
             document.querySelectorAll('[data-admin-view]').forEach(item => item.classList.toggle('active', item === button));
             document.getElementById('admin-players-view')?.classList.toggle('active', target === 'players');
             document.getElementById('admin-map-view')?.classList.toggle('active', target === 'map');
+            document.getElementById('admin-audit-view')?.classList.toggle('active', target === 'audit');
             if (target === 'map') {
                 renderPlayerMap();
                 refreshPlayerMap();
+            } else if (target === 'audit') {
+                requestAuditLogs();
             }
         });
     });
