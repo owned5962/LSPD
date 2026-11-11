@@ -1102,7 +1102,10 @@ def test_founder_ace_has_unrestricted_access_to_all_three_staff_tablets():
     assert "add_principal identifier.fivem:12219878 group.fondateur" in config
     assert "add_ace group.fondateur rp_admin allow" in config
     assert "add_ace group.fondateur rp_founder allow" in config
-    assert "RegisterKeyMapping('openanticheat', 'Ouvrir le menu Anticheat', 'keyboard', 'F9')" in anticheat_client
+    assert "local ANTICHEAT_KEY_COMMAND = 'rp_anticheat_tablet_toggle_f9'" in anticheat_client
+    assert "RegisterCommand(ANTICHEAT_KEY_COMMAND, ToggleAnticheatTablet, false)" in anticheat_client
+    assert "RegisterKeyMapping(ANTICHEAT_KEY_COMMAND, 'Ouvrir le menu Anticheat', 'keyboard', 'F9')" in anticheat_client
+    assert "RegisterCommand('openanticheat'" not in anticheat_client
     assert "RegisterKeyMapping('rp_admin_tablet_toggle', 'Ouvrir la Tablette Admin', 'keyboard', 'F10')" in admin_client
     assert "RegisterKeyMapping('creator', 'Ouvrir la tablette Créateur', 'keyboard', 'F11')" in creator_client
 
