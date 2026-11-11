@@ -3,15 +3,10 @@ game 'gta5'
 lua54 'yes'
 
 author 'FiveM RP Framework'
-description 'Los Santos business locations and map blips'
-version '1.1.0'
+description 'Los Santos business locations, map blips and Ammu-Nation purchase tablet'
+version '1.2.0'
 
-server_scripts {
-    '@oxmysql/lib/MySQL.lua',
-    'server/main.lua'
-}
-
-dependencies { 'oxmysql', 'rp_core' }
+ui_page 'html/index.html'
 
 shared_scripts {
     'shared/locations.lua'
@@ -20,3 +15,17 @@ shared_scripts {
 client_scripts {
     'client/main.lua'
 }
+
+server_scripts {
+    '@oxmysql/lib/MySQL.lua',
+    'server/main.lua'
+}
+
+files {
+    'html/index.html',
+    'html/css/style.css',
+    'html/js/app.js',
+    'html/images/pistol.svg'
+}
+
+dependencies { 'oxmysql', 'rp_core', 'rp_ui' }
