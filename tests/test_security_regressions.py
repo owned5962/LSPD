@@ -588,4 +588,7 @@ def test_admin_tablet_close_controls_and_keyboard_bindings_do_not_conflict():
     assert "closeButton.addEventListener('click', closeAdminTablet)" in ui
     assert "nuiPost('close')" in ui
     assert "event.key !== 'Escape' && event.key !== 'F10'" in ui
+    assert "lastAdminToggleAt" in admin
+    assert "data.source == 'f10'" in admin
+    assert "if wasOpen then StopTabletAnimation() end" in admin
     assert "SetNuiFocus(false, false)" in admin
