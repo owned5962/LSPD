@@ -1,6 +1,14 @@
+local function IsFounder(src)
+    if IsPlayerAceAllowed(src, 'rp_founder') then return true end
+    local ok, player = pcall(function()
+        return exports['rp_core']:GetPlayerFromId(src)
+    end)
+    return ok and player ~= nil and player.group == 'fondateur'
+end
+
 RegisterNetEvent('rp_ui:server:requestDiagnosticsAccess', function()
     local src = source
-    if not IsPlayerAceAllowed(src, 'rp_founder') then
+    if not IsFounder(src) then
         TriggerClientEvent('rp_ui:client:denyFounderDiagnostics', src)
         return
     end
@@ -13,7 +21,7 @@ end)
 
 RegisterNetEvent('rp_ui:server:requestDiagnosticsStats', function()
     local src = source
-    if not IsPlayerAceAllowed(src, 'rp_founder') then return end
+    if not IsFounder(src) then return end
     if not exports['rp_core']:CanPerformAction(src, 'ui:diagnostics_stats', 3000) then return end
 
     local onlineJobs = {}
