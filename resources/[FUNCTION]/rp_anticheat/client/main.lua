@@ -40,13 +40,14 @@ RegisterNetEvent('rp_anticheat:syncProtections', function(protections)
     end
 end)
 
-RegisterNetEvent('rp_anticheat:openUI', function(protections, playersList)
+RegisterNetEvent('rp_anticheat:openUI', function(protections, playersList, logsList)
     isAnticheatUIOpen = true
     SetNuiFocus(true, true)
     SendNUIMessage({
         action = 'open',
         protections = protections,
-        players = markCurrentPlayer(playersList)
+        players = markCurrentPlayer(playersList),
+        logs = logsList or {}
     })
 end)
 
@@ -70,6 +71,29 @@ AddEventHandler('onClientResourceStop', function(resourceName)
     if resourceName ~= GetCurrentResourceName() then return end
     if isSpectating then StopSpectate() end
     SetNuiFocus(false, false)
+end)
+
+RegisterNetEvent('rp_anticheat:updateLogs', function(logsList)
+    if isAnticheatUIOpen then SendNUIMessage({ action = 'updateLogs', logs = logsList or {} }) end
+end)
+
+RegisterNetEvent('rp_anticheat:updateBans', function(bansList)
+    if isAnticheatUIOpen then SendNUIMessage({ action = 'updateBans', bans = bansList or {} }) end
+end)
+
+RegisterNUICallback('requestLogs', function(data, cb)
+    TriggerServerEvent('rp_anticheat:requestLogs')
+    cb({ ok = true })
+end)
+
+RegisterNUICallback('requestBans', function(data, cb)
+    TriggerServerEvent('rp_anticheat:requestBans')
+    cb({ ok = true })
+end)
+
+RegisterNUICallback('unban', function(data, cb)
+    TriggerServerEvent('rp_anticheat:unban', data.identifier)
+    cb({ ok = true })
 end)
 
 RegisterNUICallback('toggleProtection', function(data, cb)
