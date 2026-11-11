@@ -73,8 +73,8 @@ end
 RegisterNetEvent('rp_loadscreen:requestUpdates', function()
     local playerId = source
     local now = GetGameTimer()
-    local lastRequest = lastRequestByPlayer[playerId] or 0
-    if (now - lastRequest) < REQUEST_COOLDOWN_MS then return end
+    local lastRequest = lastRequestByPlayer[playerId]
+    if lastRequest and (now - lastRequest) < REQUEST_COOLDOWN_MS then return end
     lastRequestByPlayer[playerId] = now
 
     FetchLatestUpdates(function(payload)
