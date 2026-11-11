@@ -37,7 +37,7 @@ end
 
 RegisterNetEvent('rp_jobs:server:chooseJob', function(jobName)
     local src = source
-    if not exports['rp_core']:CanPerformAction(src, 'job_center_hire', 2500) then
+    if not exports['rp_core']:CanPerformAction(src, 'job_center_hire', 5000) then
         RespondToJobSelection(src, false, 'Patientez quelques secondes avant une nouvelle candidature.')
         return
     end
