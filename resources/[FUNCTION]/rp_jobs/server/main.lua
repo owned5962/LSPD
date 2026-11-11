@@ -31,41 +31,44 @@ exports('IsValidJob', IsValidJob)
 exports('GetJobGrade', GetJobGrade)
 exports('GetAllJobs', GetAllJobs)
 
-local JobCenterCoords = vector3(-268.3, -956.8, 31.2)
-
-local function IsAtJobCenter(src)
-    local ped = GetPlayerPed(src)
-    if not ped or ped == 0 or not DoesEntityExist(ped) then return false end
-    return #(GetEntityCoords(ped) - JobCenterCoords) <= 5.0
+local function RespondToJobSelection(src, success, message)
+    TriggerClientEvent('rp_jobs:client:jobSelectionResult', src, success == true, message)
 end
 
 RegisterNetEvent('rp_jobs:server:chooseJob', function(jobName)
     local src = source
-    if not exports['rp_core']:CanPerformAction(src, 'job_center_hire', 5000) then return end
-    if type(jobName) ~= 'string' or #jobName > 50 then return end
+    if not exports['rp_core']:CanPerformAction(src, 'job_center_hire', 2500) then
+        RespondToJobSelection(src, false, 'Patientez quelques secondes avant une nouvelle candidature.')
+        return
+    end
+    if type(jobName) ~= 'string' or #jobName > 50 then
+        RespondToJobSelection(src, false, 'Nom de métier invalide.')
+        return
+    end
     local player = exports['rp_core']:GetPlayerFromId(src)
-    if not player then return end
-    if not IsAtJobCenter(src) then
-        TriggerClientEvent('rp_core:client:notify', src, 'Vous devez être au Pôle Emploi pour choisir un métier.', 'error')
+    if not player then
+        RespondToJobSelection(src, false, 'Votre personnage n’est pas chargé.')
         return
     end
 
     local job = JobsMap[jobName]
     if not job then
-        TriggerClientEvent('rp_core:client:notify', src, 'Métier inexistant.', 'error')
+        RespondToJobSelection(src, false, 'Métier inexistant.')
         return
     end
 
     if job.whitelisted then
-        TriggerClientEvent('rp_core:client:notify', src, 'Ce métier nécessite un recrutement (Whitelist). Postulez auprès des services compétents !', 'warning')
+        RespondToJobSelection(src, false, 'Ce métier nécessite un recrutement. Contactez le service compétent.')
         return
     end
 
     if not player.setJob(jobName, 0) then
-        TriggerClientEvent('rp_core:client:notify', src, 'Votre embauche n’a pas pu être enregistrée.', 'error')
+        RespondToJobSelection(src, false, 'Votre embauche n’a pas pu être enregistrée. Vérifiez la base de données.')
         return
     end
-    TriggerClientEvent('rp_core:client:notify', src, 'Félicitations ! Vous venez d\'être embauché en tant que ' .. job.label .. ' !', 'success')
+    local message = 'Félicitations ! Vous venez d\'être embauché en tant que ' .. job.label .. ' !'
+    TriggerClientEvent('rp_core:client:notify', src, message, 'success')
+    RespondToJobSelection(src, true, message)
 end)
 
 RegisterCommand('setjob', function(source, args)
