@@ -3,6 +3,7 @@ const tabs = ['identity', 'heritage', 'face', 'appearance', 'spawn'];
 let selectedColor = 0;
 let selectedSpawn = 'airport';
 let maxCharacters = 3;
+let selectedCharacterSlot = null;
 const faceLabels = [
     'Largeur du nez','Hauteur du nez','Longueur du nez','Abaissement du nez','Pointe du nez','Décalage du nez',
     'Hauteur des sourcils','Profondeur des sourcils','Hauteur des pommettes','Largeur des pommettes',
@@ -77,32 +78,75 @@ window.addEventListener('message', (event) => {
     } else if (data.action === 'closeRegistration') {
         document.getElementById('registration-app').classList.add('hidden');
     } else if (data.action === 'openCharacterSelection') {
-        maxCharacters = data.maxCharacters || 3; renderCharacters(data.characters || []);
+        maxCharacters = Number(data.maxCharacters) || 3; selectedCharacterSlot = null; renderCharacters(Array.isArray(data.characters) ? data.characters : []);
         document.getElementById('registration-app').classList.add('hidden');
         document.getElementById('character-selection').classList.remove('hidden');
     } else if (data.action === 'closeCharacterSelection') {
         document.getElementById('character-selection').classList.add('hidden');
+        selectedCharacterSlot = null;
     }
 });
 function renderCharacters(characters) {
-    const list = document.getElementById('character-list'); list.replaceChildren();
+    const list = document.getElementById('character-list');
+    list.replaceChildren();
+    selectedCharacterSlot = null;
     const occupied = new Set();
+
     characters.forEach((character) => {
-        occupied.add(Number(character.char_id));
-        const card = document.createElement('button'); card.type = 'button'; card.className = 'character-card';
-        const name = document.createElement('strong'); name.textContent = `${character.firstname} ${character.lastname}`;
-        const details = document.createElement('span'); details.textContent = `Emplacement ${character.char_id} · ${character.job || 'Sans emploi'}`;
-        card.append(name, details); card.addEventListener('click', () => postNui('selectCharacter', { slot: Number(character.char_id) }));
+        const slot = Number(character.char_id);
+        if (!Number.isInteger(slot) || slot < 1 || slot > maxCharacters) return;
+        occupied.add(slot);
+
+        const card = document.createElement('button');
+        card.type = 'button';
+        card.className = 'character-card';
+        card.setAttribute('aria-pressed', 'false');
+
+        const name = document.createElement('strong');
+        name.textContent = `${character.firstname || 'Prénom'} ${character.lastname || 'inconnu'}`;
+        const details = document.createElement('span');
+        details.textContent = `Emplacement ${slot} · ${character.job || 'Sans emploi'}`;
+        card.append(name, details);
+
+        card.addEventListener('click', () => {
+            selectedCharacterSlot = slot;
+            list.querySelectorAll('.character-card').forEach((item) => {
+                item.classList.remove('selected');
+                item.setAttribute('aria-pressed', 'false');
+            });
+            card.classList.add('selected');
+            card.setAttribute('aria-pressed', 'true');
+            document.getElementById('enter-city-btn').disabled = false;
+        });
         list.appendChild(card);
     });
-    for (let slot = 1; slot <= maxCharacters; slot++) if (!occupied.has(slot)) {
-        const empty = document.createElement('div'); empty.className = 'character-card empty'; empty.textContent = `Emplacement ${slot} · Libre`; list.appendChild(empty);
+
+    for (let slot = 1; slot <= maxCharacters; slot++) {
+        if (!occupied.has(slot)) {
+            const empty = document.createElement('div');
+            empty.className = 'character-card empty';
+            empty.textContent = `Emplacement ${slot} · Libre`;
+            list.appendChild(empty);
+        }
     }
+
     const createButton = document.getElementById('create-character-btn');
-    createButton.disabled = characters.length >= maxCharacters;
-    createButton.textContent = characters.length >= maxCharacters ? 'Limite de personnages atteinte' : 'Créer un personnage';
+    createButton.disabled = occupied.size >= maxCharacters;
+    createButton.textContent = occupied.size >= maxCharacters
+        ? 'Limite de personnages atteinte'
+        : 'Créer un personnage';
+    document.getElementById('enter-city-btn').disabled = true;
 }
+
 document.getElementById('create-character-btn').addEventListener('click', () => postNui('beginCreation').catch(() => {}));
+document.getElementById('enter-city-btn').addEventListener('click', () => {
+    if (selectedCharacterSlot === null) return;
+    const slot = selectedCharacterSlot;
+    document.getElementById('enter-city-btn').disabled = true;
+    postNui('selectCharacter', { slot }).catch(() => {
+        document.getElementById('enter-city-btn').disabled = false;
+    });
+});
 function switchTab(index) {
     currentTabIndex = index; const tabName = tabs[index];
     document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === tabName));
