@@ -50,7 +50,7 @@ function jobIllustration(job) {
       <circle cx="520" cy="30" r="130" fill="white" opacity=".06"/><circle cx="570" cy="160" r="95" fill="white" opacity=".05"/>
       <path d="M0 150 L90 105 160 145 240 90 330 150 410 112 500 160 640 100 V180 H0Z" fill="white" opacity=".07"/>
       <text x="36" y="106" font-size="78" font-family="Arial,sans-serif">${emoji}</text>
-      <text x="160" y="83" fill="white" font-size="25" font-weight="700" font-family="Arial,sans-serif">${label.replace(/&/g,'&amp;')}</text>
+      <text x="160" y="83" fill="white" font-size="25" font-weight="700" font-family="Arial,sans-serif">${label}</text>
       <text x="162" y="112" fill="white" opacity=".62" font-size="12" letter-spacing="3" font-family="Arial,sans-serif">LOS SANTOS · CARRIÈRES</text>
     </svg>`;
     return 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg);
@@ -87,7 +87,7 @@ function renderJobStats() {
         const name = document.createElement('strong');
         name.textContent = `${index + 1}. ${row.job.label}`;
         const count = document.createElement('span');
-        count.textContent = `${row.count} ${row.count > 1 ? 'choix' : 'choix'}`;
+        count.textContent = `${row.count} embauche${row.count > 1 ? 's' : ''}`;
         heading.append(name, count);
         const track = document.createElement('div');
         track.className = 'job-stat-track';
