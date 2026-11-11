@@ -273,3 +273,45 @@ input[type="range"] {
 .face-sliders { display: flex; flex-direction: column; gap: 12px; max-height: 42vh; overflow-y: auto; padding-right: 6px; }
 #registration-app select { width: 100%; }
 #registration-app input[type="range"] { width: 100%; }
+
+
+/* Center both character flows on every supported screen size. */
+body {
+    justify-content: center;
+    padding: 20px;
+}
+
+#registration-app,
+#character-selection {
+    margin: auto;
+    width: min(480px, calc(100vw - 32px));
+    max-height: calc(100vh - 40px);
+}
+
+#character-selection .creator-wrapper {
+    padding: 32px;
+}
+
+.character-card.selected {
+    border-color: #38bdf8;
+    background: rgba(56, 189, 248, .18);
+    box-shadow: 0 0 0 1px rgba(56, 189, 248, .35), 0 8px 24px rgba(0, 0, 0, .22);
+}
+
+.selection-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.selection-actions .btn:disabled {
+    opacity: .45;
+    cursor: not-allowed;
+}
+
+@media (max-width: 600px) {
+    body { padding: 12px; }
+    #character-selection .creator-wrapper,
+    #registration-app .creator-wrapper { padding: 20px; }
+    .selection-actions { flex-direction: column; }
+}
