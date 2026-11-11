@@ -38,9 +38,7 @@ function closeBank() {
 document.getElementById('close-bank').addEventListener('click', closeBank);
 
 document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-        closeBank();
-    }
+    if (e.key === 'Escape') { e.preventDefault(); closeBank(); }
 });
 
 document.getElementById('deposit-btn').addEventListener('click', () => {
@@ -78,6 +76,3 @@ document.getElementById('transfer-btn').addEventListener('click', () => {
     document.getElementById('transfer-amount').value = '';
 });
 
-function GetParentResourceName() {
-    return window.GetParentResourceName ? window.GetParentResourceName() : 'rp_economy';
-}
