@@ -2,8 +2,8 @@ fx_version 'cerulean'
 game 'gta5'
 
 author 'FiveM RP Team'
-description 'In-Game Configurable Anticheat with Live Player Surveillance & Notifications'
-version '1.0.0'
+description 'AEGIS Security Center: live monitoring, detections, protections and ban management'
+version '2.0.0'
 
 ui_page 'html/index.html'
 
