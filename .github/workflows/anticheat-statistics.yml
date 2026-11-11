@@ -4,13 +4,13 @@ on:
   push:
     branches: [main, "fix/**"]
     paths:
-      - "resources/[FUNCTION]/rp_anticheat/**"
+      - "resources/**"
       - "tests/test_anticheat_statistics.py"
       - ".github/workflows/anticheat-statistics.yml"
   pull_request:
     branches: [main]
     paths:
-      - "resources/[FUNCTION]/rp_anticheat/**"
+      - "resources/**"
       - "tests/test_anticheat_statistics.py"
       - ".github/workflows/anticheat-statistics.yml"
 
