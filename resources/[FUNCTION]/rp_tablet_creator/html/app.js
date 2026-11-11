@@ -1,0 +1,9 @@
+const post=(name,data={})=>fetch('https://rp_tablet_creator/'+name,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)}).then(r=>r.json().catch(()=>({})));
+const tablet=document.getElementById('tablet'),status=document.getElementById('status');
+function close(){tablet.classList.add('hidden');post('close').catch(()=>{});}
+document.getElementById('close').addEventListener('click',close);
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!tablet.classList.contains('hidden')){e.preventDefault();close();}});
+window.addEventListener('message',e=>{const d=e.data||{};if(d.action==='open'){tablet.classList.remove('hidden');document.getElementById('role').textContent=String(d.role||'CRÉATEUR').toUpperCase();status.textContent='Connecté · Contrôles autorisés';}else if(d.action==='close'){tablet.classList.add('hidden');}else if(d.action==='result'){status.textContent=d.message||'';status.style.color=d.success?'#86efac':'#fca5a5';}});
+document.querySelectorAll('[data-weather]').forEach(button=>button.addEventListener('click',()=>post('setWorld',{weather:button.dataset.weather}).catch(()=>{status.textContent='Erreur de communication';})));
+document.getElementById('apply-time').addEventListener('click',()=>post('setWorld',{hours:Number(document.getElementById('hours').value),minutes:Number(document.getElementById('minutes').value)}).catch(()=>{status.textContent='Erreur de communication';}));
+document.getElementById('send').addEventListener('click',()=>{const message=document.getElementById('announcement').value.trim();if(!message){status.textContent='Saisissez une annonce avant de diffuser.';return;}post('broadcast',{message}).then(()=>{document.getElementById('announcement').value='';}).catch(()=>{status.textContent='Erreur de communication';});});
