@@ -95,6 +95,23 @@ document.addEventListener('DOMContentLoaded', () => {
     if (tabletWrapper) tabletWrapper.classList.remove('is-open');
     setupTabSwitching();
     renderPermissionsMatrix();
+
+    // The close button was present in the HTML but had no click handler.
+    const closeButton = document.getElementById('btn-close-tablet');
+    if (closeButton) {
+        closeButton.addEventListener('click', closeAdminTablet);
+    }
+
+    // Keep keyboard closing available while the NUI has focus.
+    document.addEventListener('keydown', (event) => {
+        if (event.key !== 'Escape' && event.key !== 'F10') return;
+        const wrapper = document.getElementById('tablet-wrapper');
+        if (!wrapper || !wrapper.classList.contains('is-open')) return;
+        event.preventDefault();
+        event.stopPropagation();
+        closeAdminTablet();
+    });
+
     window.addEventListener('message', handleTabletMessage);
     updateClock();
     setInterval(updateClock, 1000);
@@ -183,6 +200,11 @@ function togglePermission(permId, value) {
 
 function saveCurrentPermissions() {
     showToast('La gestion persistante des permissions par grade reste à implémenter côté serveur.');
+}
+
+// Close the Lua/NUI tablet through the registered NUI callback.
+function closeAdminTablet() {
+    nuiPost('close').catch(() => {});
 }
 
 // Actions du Menu Admin
