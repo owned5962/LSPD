@@ -269,12 +269,16 @@ RegisterNetEvent('rp_tablet_admin:client:spawnVehicle', function(model)
     local ped = PlayerPedId()
     local coords = GetOffsetFromEntityInWorldCoords(ped, 0.0, 4.0, 0.0)
     local vehicle = CreateVehicle(hash, coords.x, coords.y, coords.z, GetEntityHeading(ped), true, true)
-    if vehicle and vehicle ~= 0 then
-        SetPedIntoVehicle(ped, vehicle, -1)
-        SetVehicleOnGroundProperly(vehicle)
-        SetEntityAsMissionEntity(vehicle, true, true)
-        TriggerEvent('rp_core:client:notify', 'Véhicule créé : ' .. model, 'success')
+    if not vehicle or vehicle == 0 or not DoesEntityExist(vehicle) then
+        SetModelAsNoLongerNeeded(hash)
+        TriggerEvent('rp_core:client:notify', 'Création impossible : vérifiez les restrictions d’entités du serveur.', 'error')
+        return
     end
+
+    SetEntityAsMissionEntity(vehicle, true, true)
+    SetVehicleOnGroundProperly(vehicle)
+    SetPedIntoVehicle(ped, vehicle, -1)
+    TriggerEvent('rp_core:client:notify', 'Véhicule créé : ' .. model, 'success')
     SetModelAsNoLongerNeeded(hash)
 end)
 RegisterNetEvent('rp_tablet_admin:client:heal', function()
