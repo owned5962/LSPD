@@ -679,7 +679,10 @@ def test_jobcenter_resource_name_and_application_feedback_are_not_recursive_or_s
     assert "jobSelectionResult" in ui
     assert "RegisterNetEvent('rp_jobs:client:jobSelectionResult'" in client
     assert "RespondToJobSelection(src, true, message)" in server
-    assert "local function IsAtJobCenter" not in server
+    assert "local function IsAtJobCenter(src)" in server
+    assert "GetEntityCoords(ped) - JobCenterCoords" in server
+    assert "if not IsAtJobCenter(src) then" in server
+    assert "Vous devez être au Pôle Emploi" in server
 
 
 def test_bank_requires_physical_proximity_and_e_interaction():
