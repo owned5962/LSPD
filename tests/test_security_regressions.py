@@ -931,15 +931,6 @@ def test_jobcenter_blocks_duplicate_clicks_until_server_result():
     assert "activeJobRequest = false" in ui
     assert "chooseJob(job.name, actionBtn)" in ui
 
-if __name__ == "__main__":
-    checks = sorted(
-        (name, check)
-        for name, check in globals().items()
-        if name.startswith("test_") and callable(check)
-    )
-    for name, check in checks:
-        check()
-    print(f"All {len(checks)} security and persistence regression checks passed.")
 
 
 def test_character_has_a_visible_default_freemode_skin_when_saved_skin_is_missing_or_invalid():
@@ -1100,3 +1091,13 @@ def test_creator_skin_updates_use_existing_character_appearance_pipeline():
     client = read("resources/[CORE]/rp_characters/client/main.lua")
     assert "rp_characters:client:adminApplySkin" in client
     assert "ApplyCharacterAppearance(gender, skin)" in client
+
+if __name__ == "__main__":
+    checks = sorted(
+        (name, check)
+        for name, check in globals().items()
+        if name.startswith("test_") and callable(check)
+    )
+    for name, check in checks:
+        check()
+    print(f"All {len(checks)} security and persistence regression checks passed.")
