@@ -405,3 +405,31 @@ body {
     #vehicle-hud { width:245px; min-width:245px; bottom:2vh !important; padding:8px 12px; }
     .speed-digital strong { font-size:32px; }
 }
+
+
+/* Vehicle category and model shown above the digital speed readout. */
+.vehicle-identity {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin-bottom: 5px;
+    white-space: nowrap;
+    overflow: hidden;
+}
+.vehicle-identity span {
+    color: #7dd3fc;
+    font-size: 8px;
+    font-weight: 900;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+.vehicle-identity b {
+    max-width: 155px;
+    overflow: hidden;
+    color: #e2e8f0;
+    font-size: 9px;
+    font-weight: 700;
+    text-overflow: ellipsis;
+    text-transform: uppercase;
+}
