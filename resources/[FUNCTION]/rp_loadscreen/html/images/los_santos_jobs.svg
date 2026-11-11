@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+<defs>
+ <linearGradient id="sky" x2="0" y2="1"><stop stop-color="#13233c"/><stop offset=".6" stop-color="#a16b55"/><stop offset="1" stop-color="#1a2535"/></linearGradient>
+ <linearGradient id="warehouse" x2="0" y2="1"><stop stop-color="#344b63"/><stop offset="1" stop-color="#142236"/></linearGradient>
+ <filter id="glow"><feGaussianBlur stdDeviation="14"/></filter>
+</defs>
+<rect width="1920" height="1080" fill="url(#sky)"/>
+<circle cx="1480" cy="250" r="155" fill="#ffd09b" opacity=".22"/>
+<path d="M0 620h1920v460H0Z" fill="#101c2d"/>
+<path d="M100 390h760v330H100z" fill="url(#warehouse)" stroke="#607d9a" stroke-width="8"/>
+<path d="M80 390l400-210 400 210" fill="#263d55" stroke="#6f8ca6" stroke-width="10"/>
+<path d="M180 480h230v160H180zm290 0h230v160H470z" fill="#0c192a" stroke="#7795b0" stroke-width="8"/>
+<path d="M180 480h230v18H180zm290 0h230v18H470z" fill="#f0b56d" opacity=".8"/>
+<g stroke="#1c2c40" stroke-width="22" fill="none"><path d="M1120 720V170h28v550m-14-540h330m-330 0-140 180m140-180 160 200"/><path d="M1500 720V280h25v440m-12-430h250m-250 0-90 140"/></g>
+<g fill="#e8b46e" opacity=".8"><rect x="1110" y="162" width="50" height="12"/><rect x="1490" y="272" width="45" height="12"/></g>
+<path d="M0 790q480-65 960 0t960 0v290H0Z" fill="#263548"/>
+<path d="M0 905h1920" stroke="#d7a66f" stroke-width="6" stroke-dasharray="50 45" opacity=".4"/>
+<g transform="translate(1080 650)">
+ <ellipse cx="310" cy="270" rx="350" ry="40" fill="#050a12" opacity=".65"/>
+ <path d="M15 120h520l70 75v90H0V170Z" fill="#d6e0e9" stroke="#7b9ab4" stroke-width="7"/>
+ <path d="M45 132h130v110H35zm155 0h130v110H200zm155 0h130v110H355z" fill="#243e56"/>
+ <path d="M15 245h590v35H15z" fill="#4b9fd0"/><path d="M225 245h150v35H225z" fill="#f3b15f"/>
+ <circle cx="115" cy="285" r="42" fill="#08111d" stroke="#a3b2c2" stroke-width="12"/><circle cx="490" cy="285" r="42" fill="#08111d" stroke="#a3b2c2" stroke-width="12"/>
+</g>
+<g fill="#7dd3fc" filter="url(#glow)"><rect x="210" y="710" width="95" height="8"/><rect x="520" y="710" width="95" height="8"/></g>
+<rect width="1920" height="1080" fill="#081321" opacity=".2"/>
+</svg>
