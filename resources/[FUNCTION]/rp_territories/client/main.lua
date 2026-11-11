@@ -5,6 +5,23 @@ local uiOpen = false
 local nearestSector = nil
 local nearestDistance = nil
 
+local function DebugLog(level, event, details)
+    local caller = debug and debug.getinfo and debug.getinfo(2, 'Sl') or nil
+    local source = caller and caller.short_src or 'client/main.lua'
+    local line = caller and caller.currentline or 0
+    local message = ('[rp_territories][CLIENT][%s:%d][%s] %s')
+        :format(source, line, tostring(event), tostring(details or ''))
+    if level == 'error' then
+        print(('^1%s^7'):format(message))
+    elseif level == 'warn' then
+        print(('^3%s^7'):format(message))
+    else
+        print(('^5%s^7'):format(message))
+    end
+end
+
+DebugLog('info', 'BOOT', 'Client territoires chargé')
+
 local function RemoveMapBlips()
     for _, blip in ipairs(areaBlips) do if DoesBlipExist(blip) then RemoveBlip(blip) end end
     for _, blip in ipairs(pointBlips) do if DoesBlipExist(blip) then RemoveBlip(blip) end end
@@ -17,6 +34,7 @@ local function GetGroundLevel(x, y, fallback)
 end
 
 local function BuildMap()
+    DebugLog('info', 'MAP_BUILD_START', ('Construction carte avec %d secteurs'):format(#Config.Sectors))
     RemoveMapBlips()
     for _, sector in ipairs(Config.Sectors) do
         local owned = territories[sector.id]
@@ -27,6 +45,7 @@ local function BuildMap()
         SetBlipColour(area, color)
         SetBlipAlpha(area, alpha)
         SetBlipAsShortRange(area, false)
+        if not area or area == 0 then DebugLog('error', 'AREA_BLIP_FAILED', ('secteur=%s'):format(sector.id)) end
         areaBlips[#areaBlips + 1] = area
 
         local point = AddBlipForCoord(sector.x, sector.y, sector.z)
@@ -41,24 +60,38 @@ local function BuildMap()
             AddTextComponentString(('Secteur %s - À revendiquer'):format(sector.id))
         end
         EndTextCommandSetBlipName(point)
+        if not point or point == 0 then DebugLog('error', 'POINT_BLIP_FAILED', ('secteur=%s'):format(sector.id)) end
         pointBlips[#pointBlips + 1] = point
     end
+    DebugLog('info', 'MAP_BUILD_DONE', ('%d zones et %d points créés'):format(#areaBlips, #pointBlips))
 end
 
 RegisterNetEvent('rp_territories:client:sync', function(data)
     territories = type(data) == 'table' and data or {}
-    BuildMap()
+    local count = 0
+    for _ in pairs(territories) do count = count + 1 end
+    DebugLog('info', 'SYNC_RECEIVED', ('%d territoire(s) reçus du serveur'):format(count))
+    local ok, err = xpcall(BuildMap, debug.traceback)
+    if not ok then DebugLog('error', 'MAP_BUILD_CRASH', err) end
 end)
 
 RegisterNetEvent('rp_territories:client:openMenu', function(info)
-    if type(info) ~= 'table' then return end
+    if type(info) ~= 'table' then
+        DebugLog('error', 'OPEN_MENU_INVALID_DATA', ('type reçu=%s'):format(type(info)))
+        return
+    end
+    DebugLog('info', 'OPEN_MENU_RECEIVED', ('secteur=%s'):format(tostring(info.sectorId)))
     uiOpen = true
     SetNuiFocus(true, true)
     SendNUIMessage({ action = 'open', info = info })
 end)
 
 RegisterNetEvent('rp_territories:client:claimResult', function(result)
-    if type(result) ~= 'table' then return end
+    if type(result) ~= 'table' then
+        DebugLog('error', 'CLAIM_RESULT_INVALID', ('type reçu=%s'):format(type(result)))
+        return
+    end
+    DebugLog(result.success and 'info' or 'warn', 'CLAIM_RESULT_RECEIVED', tostring(result.message))
     SendNUIMessage({ action = 'claimResult', result = result })
     if result.success then
         uiOpen = false
@@ -67,7 +100,12 @@ RegisterNetEvent('rp_territories:client:claimResult', function(result)
 end)
 
 RegisterNUICallback('claim', function(data, cb)
-    if type(data) ~= 'table' then cb({ ok = false }) return end
+    if type(data) ~= 'table' then
+        DebugLog('error', 'NUI_CLAIM_INVALID', 'Payload NUI non-tableau')
+        cb({ ok = false })
+        return
+    end
+    DebugLog('info', 'NUI_CLAIM_SUBMIT', ('secteur=%s | couleur=%s'):format(tostring(data.sectorId), tostring(data.colorId)))
     TriggerServerEvent('rp_territories:server:claim', data.sectorId, data.colorId)
     cb({ ok = true })
 end)
@@ -86,6 +124,7 @@ end
 
 CreateThread(function()
     Wait(1500)
+    DebugLog('info', 'SYNC_REQUEST_SENT', 'Demande de synchronisation envoyée au serveur')
     TriggerServerEvent('rp_territories:server:requestSync')
     while true do
         Wait(350)
@@ -110,6 +149,7 @@ CreateThread(function()
                     false, false, 2, false, nil, nil, false)
                 DrawHelpText(('Appuie sur ~INPUT_CONTEXT~ pour gérer le secteur ~b~%s~s~'):format(nearestSector.id))
                 if IsControlJustReleased(0, 38) then
+                    DebugLog('info', 'CLAIM_POINT_INTERACT', ('secteur=%s'):format(nearestSector.id))
                     TriggerServerEvent('rp_territories:server:requestOpen', nearestSector.id)
                 end
             end
@@ -119,6 +159,7 @@ end)
 
 AddEventHandler('onResourceStop', function(resourceName)
     if resourceName ~= GetCurrentResourceName() then return end
+    DebugLog('info', 'RESOURCE_STOP', 'Nettoyage des blips et du focus NUI')
     RemoveMapBlips()
     if uiOpen then SetNuiFocus(false, false) end
 end)
