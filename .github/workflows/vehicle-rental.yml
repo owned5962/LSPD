@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
     paths:
-      - 'resources/[FUNCTION]/rp_vehicle_rental/**'
+      - 'resources/**'
       - 'tests/test_vehicle_rental.py'
       - '.github/workflows/vehicle-rental.yml'
   pull_request:
