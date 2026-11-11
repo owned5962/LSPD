@@ -310,3 +310,15 @@ body {
     .music-controller { display: none; }
     .server-branding h1 { font-size: 24px; }
 }
+
+.creator-credit {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: 10px;
+    color: #9fb2ce;
+    font-size: 10px;
+    letter-spacing: 1.2px;
+    font-weight: 700;
+}
+.creator-credit strong { color: #7dd3fc; }
