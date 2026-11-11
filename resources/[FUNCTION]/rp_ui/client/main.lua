@@ -190,6 +190,9 @@ local function ToggleDiagnostics()
     diagnosticsOpen = not diagnosticsOpen
     SetNuiFocus(diagnosticsOpen, diagnosticsOpen)
     SendNUIMessage({ action = diagnosticsOpen and 'showDiagnostics' or 'hideDiagnostics' })
+    if diagnosticsOpen then
+        TriggerServerEvent('rp_ui:server:requestDiagnosticsStats')
+    end
 end
 RegisterCommand('clientdiagnostics', ToggleDiagnostics, false)
 RegisterKeyMapping('clientdiagnostics', 'Afficher les statistiques client', 'keyboard', 'F12')
@@ -199,19 +202,35 @@ RegisterNUICallback('closeDiagnostics', function(_, cb)
     SendNUIMessage({ action = 'hideDiagnostics' })
     cb({ ok = true })
 end)
+RegisterNUICallback('openResourceMonitor', function(_, cb)
+    ExecuteCommand('resmon true')
+    cb({ ok = true })
+end)
+RegisterNetEvent('rp_ui:client:diagnosticsStats', function(stats)
+    if diagnosticsOpen and type(stats) == 'table' then
+        SendNUIMessage({ action = 'updateServerDiagnostics', stats = stats })
+    end
+end)
 CreateThread(function()
+    local nextServerRefresh = 0
     while true do
         if diagnosticsOpen then
-            local fps = math.floor(1.0 / math.max(0.001, GetFrameTime()) + 0.5)
+            local frameTime = GetFrameTime()
+            local fps = math.floor(1.0 / math.max(0.001, frameTime) + 0.5)
             local coords = GetEntityCoords(PlayerPedId())
             SendNUIMessage({
                 action = 'updateDiagnostics',
                 fps = fps,
+                frameMs = math.floor(frameTime * 100000 + 0.5) / 100,
                 ping = GetPlayerPing(GetPlayerServerId(PlayerId())),
                 players = #GetActivePlayers(),
                 maxPlayers = GetConvarInt('sv_maxclients', 0),
                 coords = { x = math.floor(coords.x), y = math.floor(coords.y), z = math.floor(coords.z) }
             })
+            if GetGameTimer() >= nextServerRefresh then
+                TriggerServerEvent('rp_ui:server:requestDiagnosticsStats')
+                nextServerRefresh = GetGameTimer() + 5000
+            end
             Wait(500)
         else
             Wait(1000)
