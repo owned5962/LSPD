@@ -1,19 +1,23 @@
 local EXPECTED_JOB_RESOURCES = 50
 local startedJobs = {}
 
-local function SendLoadscreenStage(stage, status, jobCount)
-    local payload = {
-        eventName = 'lssStage',
-        stage = stage,
-        status = status
-    }
-    if jobCount then payload.jobCount = jobCount end
-
+local function SendLoadscreenMessage(payload)
     local ok, encoded = pcall(json.encode, payload)
     if ok and encoded then
         pcall(SendLoadingScreenMessage, encoded)
     end
 end
+
+local function SendLoadscreenStage(stage, status, jobCount)
+    local payload = { eventName = 'lssStage', stage = stage, status = status }
+    if jobCount then payload.jobCount = jobCount end
+    SendLoadscreenMessage(payload)
+end
+
+RegisterNetEvent('rp_loadscreen:receiveUpdates', function(payload)
+    if type(payload) ~= 'table' then return end
+    SendLoadscreenMessage(payload)
+end)
 
 local function IsMissionResource(resourceName)
     return resourceName == 'rp_missions'
@@ -23,7 +27,17 @@ local function IsMissionResource(resourceName)
 end
 
 AddEventHandler('onClientResourceStart', function(resourceName)
-    if type(resourceName) ~= 'string' or resourceName == GetCurrentResourceName() then return end
+    if type(resourceName) ~= 'string' then return end
+
+    if resourceName == GetCurrentResourceName() then
+        CreateThread(function()
+            Wait(2500)
+            TriggerServerEvent('rp_loadscreen:requestUpdates')
+            Wait(12000)
+            TriggerServerEvent('rp_loadscreen:requestUpdates')
+        end)
+        return
+    end
 
     if resourceName == 'rp_anticheat' then
         SendLoadscreenStage('anticheat', 'Initialisation des protections et de la surveillance...')
@@ -31,10 +45,7 @@ AddEventHandler('onClientResourceStart', function(resourceName)
     end
 
     if resourceName:match('^job_[%w_]+$') then
-        if not startedJobs[resourceName] then
-            startedJobs[resourceName] = true
-        end
-
+        if not startedJobs[resourceName] then startedJobs[resourceName] = true end
         local count = 0
         for _ in pairs(startedJobs) do count = count + 1 end
         SendLoadscreenStage('jobs',
