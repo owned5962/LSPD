@@ -3,6 +3,7 @@ const tabs = ['identity', 'heritage', 'face', 'appearance', 'spawn'];
 let selectedColor = 0;
 let selectedSpawn = 'airport';
 let maxCharacters = 3;
+let selectedCharacterSlot = null;
 const faceLabels = [
     'Largeur du nez','Hauteur du nez','Longueur du nez','Abaissement du nez','Pointe du nez','Décalage du nez',
     'Hauteur des sourcils','Profondeur des sourcils','Hauteur des pommettes','Largeur des pommettes',
@@ -87,12 +88,20 @@ window.addEventListener('message', (event) => {
 function renderCharacters(characters) {
     const list = document.getElementById('character-list'); list.replaceChildren();
     const occupied = new Set();
+    selectedCharacterSlot = null;
+    const enterButton = document.getElementById('enter-city-btn');
+    enterButton.disabled = true;
     characters.forEach((character) => {
         occupied.add(Number(character.char_id));
         const card = document.createElement('button'); card.type = 'button'; card.className = 'character-card';
         const name = document.createElement('strong'); name.textContent = `${character.firstname} ${character.lastname}`;
         const details = document.createElement('span'); details.textContent = `Emplacement ${character.char_id} · ${character.job || 'Sans emploi'}`;
-        card.append(name, details); card.addEventListener('click', () => postNui('selectCharacter', { slot: Number(character.char_id) }));
+        card.append(name, details); card.dataset.slot = String(character.char_id);
+        card.addEventListener('click', () => {
+            selectedCharacterSlot = Number(character.char_id);
+            list.querySelectorAll('.character-card').forEach(item => item.classList.toggle('selected', item === card));
+            enterButton.disabled = false;
+        });
         list.appendChild(card);
     });
     for (let slot = 1; slot <= maxCharacters; slot++) if (!occupied.has(slot)) {
@@ -100,9 +109,12 @@ function renderCharacters(characters) {
     }
     const createButton = document.getElementById('create-character-btn');
     createButton.disabled = characters.length >= maxCharacters;
-    createButton.textContent = characters.length >= maxCharacters ? 'Limite de personnages atteinte' : 'Créer un personnage';
+    createButton.textContent = characters.length >= maxCharacters ? 'Limite de personnages atteinte' : (characters.length ? 'Créer un autre personnage' : 'Créer mon personnage');
 }
 document.getElementById('create-character-btn').addEventListener('click', () => postNui('beginCreation').catch(() => {}));
+document.getElementById('enter-city-btn').addEventListener('click', () => {
+    if (Number.isInteger(selectedCharacterSlot)) postNui('selectCharacter', { slot: selectedCharacterSlot }).catch(() => {});
+});
 function switchTab(index) {
     currentTabIndex = index; const tabName = tabs[index];
     document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === tabName));
