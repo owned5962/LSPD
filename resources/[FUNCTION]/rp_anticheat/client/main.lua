@@ -311,8 +311,9 @@ Citizen.CreateThread(function()
             if Config.Protections['blacklisted_weapons'] and Config.Protections['blacklisted_weapons'].enabled then
                 for _, weaponHash in ipairs(Config.BlacklistedWeapons) do
                     if HasPedGotWeapon(ped, weaponHash, false) then
+                        local weaponName = Config.WeaponHashToName[weaponHash] or 'Arme inconnue'
                         RemoveWeaponFromPed(ped, weaponHash)
-                        TriggerServerEvent('rp_anticheat:flag', 'Arme interdite détectée')
+                        TriggerServerEvent('rp_anticheat:flag', 'Arme interdite détectée : ' .. weaponName)
                         break
                     end
                 end
