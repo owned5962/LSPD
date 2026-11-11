@@ -8,7 +8,11 @@ local function notify(src, message, kind)
 end
 
 local function isAtStation(coords)
-    for _, station in ipairs(FuelConfig.Stations) do
+    local ok, stations = pcall(function()
+        return exports['rp_businesses']:GetLocationsByType('gas_station')
+    end)
+    if not ok or type(stations) ~= 'table' then return false end
+    for _, station in ipairs(stations) do
         if #(coords - vector3(station.x, station.y, station.z)) <= FuelConfig.StationRadius then
             return true
         end
