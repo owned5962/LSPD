@@ -32,6 +32,7 @@ def test_statistics_are_persistent_and_access_controlled():
     assert 'data-tab="configuration"' in html and 'id="pane-configuration"' in html
     assert "anticheat_event_log" in server
     assert "INSERT INTO anticheat_event_log" in server
+    assert "sanction VARCHAR(16)" in server and "alert.sanction" in server
     assert "ORDER BY id DESC LIMIT 250" in server
     assert "detectionCount" in server and "totalDetections" in server
     assert "RegisterNetEvent('rp_anticheat:saveSanctionConfig'" in server
@@ -44,6 +45,7 @@ def test_statistics_are_persistent_and_access_controlled():
     assert "RegisterNetEvent('rp_anticheat:applyPrison'" in client
     assert "function updateSurveillanceTab()" in ui
     assert "function renderSanctionConfig()" in ui
+    assert "Non défini" in ui and "log.sanction" in ui
     assert "function saveSanctionConfig()" in ui
 
 if __name__ == "__main__":
