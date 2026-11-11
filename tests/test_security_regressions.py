@@ -1232,3 +1232,20 @@ def test_contextual_job_tablet_is_registered_on_f4_and_uses_server_validation():
     assert "missionCatalog" in ui
     assert "cb({ ok = true })" in client
 
+
+
+def test_anticheat_statistics_page_is_persistent_and_period_filterable():
+    server = read("resources/[FUNCTION]/rp_anticheat/server/main.lua")
+    client = read("resources/[FUNCTION]/rp_anticheat/client/main.lua")
+    html = read("resources/[FUNCTION]/rp_anticheat/html/index.html")
+    ui = read("resources/[FUNCTION]/rp_anticheat/html/js/app.js")
+    assert "CREATE TABLE IF NOT EXISTS anticheat_detections" in server
+    assert "INSERT INTO anticheat_detections" in server
+    assert "requestStatistics" in server and "updateStatistics" in server
+    assert "DATE_FORMAT(created_at, ?)" in server
+    assert "RegisterNUICallback('requestStatistics'" in client
+    assert 'data-tab="statistics"' in html and 'id="pane-statistics"' in html
+    assert 'id="stats-period"' in html
+    for category in ("godmode", "money", "vehicle_spawn", "weapon_spawn", "speedhack", "gravity", "spam"):
+        assert category in ui
+    assert "severity-critical" in ui or "severity-critical" in read("resources/[FUNCTION]/rp_anticheat/html/css/style.css")
