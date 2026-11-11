@@ -541,6 +541,30 @@ def test_reconnect_waits_for_final_disconnect_save():
     assert "exports['rp_core']:IsCharacterSavePending(char.id)" in characters
     assert "Votre dernière sauvegarde est en cours." in characters
 
+
+def test_job_grade_lookup_never_invents_a_default_salary_for_invalid_grades():
+    server = read("resources/[FUNCTION]/rp_jobs/server/main.lua")
+    client = read("resources/[FUNCTION]/rp_jobs/client/main.lua")
+    assert "local job = JobsMap[jobName]" in server
+    assert "grade % 1 ~= 0 or not job.grades" in server
+    assert "return job.grades[grade]" in server
+    assert 'return { label = "Grade " .. grade, salary = 200 }' not in server
+    assert "local job = JobsMap[jobName]" in client
+    assert 'return { label = "Grade " .. grade, salary = 200 }' not in client
+
+
+def test_job_center_requires_proximity_and_renders_job_data_as_text():
+    client = read("resources/[FUNCTION]/rp_jobs/client/main.lua")
+    ui = read("resources/[FUNCTION]/rp_jobs/html/js/app.js")
+    server = read("resources/[FUNCTION]/rp_jobs/server/main.lua")
+    assert "if #(coords - JobCenterCoords) > 5.0 then" in client
+    assert "Vous devez être au Pôle Emploi" in server
+    assert "title.textContent" in ui
+    assert "description.textContent" in ui
+    assert "container.replaceChildren()" in ui
+    assert "card.innerHTML" not in ui
+
+
 if __name__ == "__main__":
     checks = sorted(
         (name, check)
