@@ -578,7 +578,7 @@ def test_admin_tablet_close_controls_and_keyboard_bindings_do_not_conflict():
     assert "RegisterKeyMapping('openanticheat', 'Ouvrir le menu Anticheat', 'keyboard', 'F11')" in anticheat
     assert "if isTabletOpen then" in admin and "CloseAdminTablet()" in admin
     assert "closeButton.addEventListener('click', closeAdminTablet)" in ui
-    assert "nuiPost('close')" in ui
+    assert "nuiPost('close', { source })" in ui
     assert "event.key !== 'Escape' && event.key !== 'F10'" in ui
     assert "lastAdminToggleAt" in admin
     assert "data.source == 'f10'" in admin
