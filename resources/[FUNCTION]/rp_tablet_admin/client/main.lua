@@ -150,6 +150,16 @@ RegisterNetEvent('rp_tablet_admin:client:weaponPolicySaved', function(policy)
     SendNUIMessage({ action = 'weaponPolicySaved', weaponPolicy = policy or {} })
 end)
 
+RegisterNetEvent('rp_tablet_admin:client:economyResult', function(result)
+    result = type(result) == 'table' and result or {}
+    local message = tostring(result.message or 'Opération économique terminée.')
+    if isTabletOpen then
+        SendNUIMessage({ action = 'economyResult', result = result })
+    else
+        Notify(message, result.success == true and 'success' or 'error')
+    end
+end)
+
 RegisterNetEvent('rp_tablet_admin:client:auditLogs', function(logs)
     SendNUIMessage({ action = 'auditLogs', logs = logs or {} })
 end)
