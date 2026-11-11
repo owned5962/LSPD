@@ -557,16 +557,16 @@ exports('SaveWeaponPolicy', function(src, rawPolicy)
         end)() then return false, 'Arme inconnue dans la configuration.' end
     end
 
-    local ok, err = pcall(function()
-        for _, weapon in ipairs(Config.WeaponCatalog) do
-            MySQL.update.await(
-                'UPDATE anticheat_weapon_rules SET enabled = ? WHERE weapon_name = ?',
-                { clean[weapon.name] and 1 or 0, weapon.name }
-            )
-        end
-    end)
-    if not ok then
-        print('[rp_anticheat] Enregistrement des règles d’armes impossible: ' .. tostring(err))
+    local queries = {}
+    for _, weapon in ipairs(Config.WeaponCatalog) do
+        queries[#queries + 1] = {
+            query = 'UPDATE anticheat_weapon_rules SET enabled = ? WHERE weapon_name = ?',
+            values = { clean[weapon.name] and 1 or 0, weapon.name }
+        }
+    end
+    local ok, committed = pcall(function() return MySQL.transaction.await(queries) end)
+    if not ok or committed ~= true then
+        print('[rp_anticheat] Enregistrement des règles d’armes impossible: ' .. tostring(committed))
         return false, 'Erreur MySQL : configuration non enregistrée.'
     end
     Config.WeaponPolicy = clean
@@ -830,8 +830,8 @@ CreateThread(function()
     loadDetectionHistory()
     local weaponOk, weaponErr = pcall(loadWeaponPolicy)
     if not weaponOk then
-        print('[rp_anticheat] Chargement des règles d’armes impossible: ' .. tostring(weaponErr))
-        return
+        print('[rp_anticheat] Chargement des règles d’armes impossible, utilisation des valeurs par défaut: ' .. tostring(weaponErr))
+        rebuildWeaponLookups()
     end
     TriggerClientEvent('rp_anticheat:syncWeaponPolicy', -1, Config.WeaponPolicy)
     local configOk, configRows = pcall(function()
