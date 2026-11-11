@@ -208,7 +208,7 @@ RegisterNetEvent('rp_tablet_admin:client:stopSpectate', function()
     NetworkSetInSpectatorMode(false, spectateTargetPed or PlayerPedId())
     isAdminSpectating = false
     spectateTargetPed = nil
-    TriggerEvent('rp_core:client:notify', 'success', 'Surveillance arrêtée.')
+    TriggerEvent('rp_core:client:notify', 'Surveillance arrêtée.', 'success')
 end)
 
 RegisterNetEvent('rp_tablet_admin:client:toggleGodmode', function()
