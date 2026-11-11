@@ -3,8 +3,6 @@ local spectateTarget = nil
 local lastCoords = nil
 local lastCheck = 0
 local isAnticheatUIOpen = false
-local spectateWasVisible = true
-local spectateWasInvincible = false
 
 -- In-game Anticheat UI command for Admins
 RegisterKeyMapping('openanticheat', 'Ouvrir le menu Anticheat', 'keyboard', 'F9')
@@ -57,6 +55,7 @@ end)
 
 AddEventHandler('onClientResourceStop', function(resourceName)
     if resourceName ~= GetCurrentResourceName() then return end
+    if isSpectating then StopSpectate() end
     SetNuiFocus(false, false)
 end)
 
@@ -66,9 +65,12 @@ RegisterNUICallback('toggleProtection', function(data, cb)
 end)
 
 RegisterNUICallback('spectatePlayer', function(data, cb)
-    local targetServerId = tonumber(data.targetId)
-    StartSpectate(targetServerId)
+    TriggerServerEvent('rp_anticheat:requestSpectate', tonumber(data.targetId))
     cb('ok')
+end)
+
+RegisterNetEvent('rp_anticheat:startSpectate', function(targetServerId, coords)
+    StartSpectate(targetServerId, coords)
 end)
 
 RegisterNUICallback('stopSpectate', function(data, cb)
@@ -82,52 +84,45 @@ RegisterNUICallback('punishPlayer', function(data, cb)
 end)
 
 -- Live Surveillance Camera (Spectate)
-function StartSpectate(targetServerId)
+function StartSpectate(targetServerId, targetCoords)
     targetServerId = tonumber(targetServerId)
-    local playerIndex = targetServerId and GetPlayerFromServerId(targetServerId) or -1
-    if playerIndex == -1 or not NetworkIsPlayerActive(playerIndex) then
-        TriggerEvent('rp_core:notify', 'error', 'Cible introuvable ou non synchronisée.')
+    if type(targetCoords) ~= 'table' or not tonumber(targetCoords.x) or not tonumber(targetCoords.y) or not tonumber(targetCoords.z) then
+        TriggerEvent('rp_core:notify', 'error', 'Coordonnées de surveillance invalides.')
         return
     end
 
-    local targetPed = GetPlayerPed(playerIndex)
-    if not targetPed or targetPed == 0 or not DoesEntityExist(targetPed) or targetPed == PlayerPedId() then
-        TriggerEvent('rp_core:notify', 'error', 'Caméra spectateur indisponible pour cette cible.')
+    SetFocusPosAndVel(tonumber(targetCoords.x), tonumber(targetCoords.y), tonumber(targetCoords.z), 0.0, 0.0, 0.0)
+    RequestCollisionAtCoord(tonumber(targetCoords.x), tonumber(targetCoords.y), tonumber(targetCoords.z))
+    local deadline = GetGameTimer() + 10000
+    local playerIndex, targetPed = -1, 0
+    repeat
+        playerIndex = GetPlayerFromServerId(targetServerId or -1)
+        if playerIndex ~= -1 and NetworkIsPlayerActive(playerIndex) then
+            targetPed = GetPlayerPed(playerIndex)
+            if targetPed ~= 0 and DoesEntityExist(targetPed) then break end
+        end
+        Wait(100)
+    until GetGameTimer() >= deadline
+
+    if playerIndex == -1 or targetPed == 0 or not DoesEntityExist(targetPed) or targetPed == PlayerPedId() then
+        ClearFocus()
+        TriggerEvent('rp_core:notify', 'error', 'Le joueur n’est pas disponible dans la zone de streaming.')
         return
     end
-
-    local myPed = PlayerPedId()
-    spectateWasVisible = IsEntityVisible(myPed)
-    spectateWasInvincible = GetPlayerInvincible(PlayerId())
-    isAnticheatUIOpen = false
-    TriggerServerEvent('rp_anticheat:closeUI')
-    SetNuiFocus(false, false)
-    SendNUIMessage({ action = 'close' })
 
     isSpectating = true
     spectateTarget = targetPed
-    SetEntityVisible(myPed, false, 0)
-    SetEntityCollision(myPed, false, false)
-    SetEntityInvincible(myPed, true)
     NetworkSetInSpectatorMode(true, targetPed)
-
     SendNUIMessage({ action = 'spectateStarted', targetId = targetServerId })
     TriggerEvent('rp_core:notify', 'info', 'Vue spectateur activée. Appuie sur F9 pour arrêter.')
 end
 
 function StopSpectate()
     if not isSpectating then return end
-    local myPed = PlayerPedId()
-    NetworkSetInSpectatorMode(false, spectateTarget or myPed)
-    SetEntityVisible(myPed, spectateWasVisible ~= false, 0)
-    SetEntityCollision(myPed, true, true)
-    SetEntityInvincible(myPed, spectateWasInvincible == true)
-    SetPlayerInvincible(PlayerId(), spectateWasInvincible == true)
+    NetworkSetInSpectatorMode(false, spectateTarget or PlayerPedId())
+    ClearFocus()
     isSpectating = false
     spectateTarget = nil
-    spectateWasVisible = true
-    spectateWasInvincible = false
-
     SendNUIMessage({ action = 'spectateStopped' })
     TriggerEvent('rp_core:notify', 'info', 'Surveillance arrêtée.')
 end
