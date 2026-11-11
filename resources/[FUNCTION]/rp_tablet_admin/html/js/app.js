@@ -369,42 +369,6 @@ function banSelectedPlayer() {
         .then(() => showToast('Demande de bannissement envoyée.'))
         .catch(() => showToast('Impossible de bannir ce joueur.'));
 }
-function setSelectedJob() {
-    if (!Number.isInteger(selectedPlayerId) || selectedPlayerId < 1) return showToast('Sélectionnez un joueur connecté.');
-    const jobName = document.getElementById('admin-job-name')?.value;
-    const grade = Number(document.getElementById('admin-job-grade')?.value);
-    if (!jobName || !Number.isInteger(grade) || grade < 0 || grade > 20) return showToast('Métier ou grade invalide.');
-    nuiPost('setJob', { playerId: selectedPlayerId, jobName, grade })
-        .then(() => showToast('Métier attribué : ' + jobName + ' (grade ' + grade + ').'))
-        .catch(() => showToast('Impossible de modifier le métier.'));
-}
-
-function renderJobOptions() {
-    const select = document.getElementById('admin-job-name');
-    if (!select) return;
-    const previous = select.value;
-    select.replaceChildren(new Option('Choisir un métier…', ''));
-    availableJobs.forEach(job => {
-        if (!job || typeof job.name !== 'string') return;
-        select.add(new Option(job.label || job.name, job.name));
-    });
-    if (availableJobs.some(job => job.name === previous)) select.value = previous;
-    renderJobGrades();
-}
-
-function renderJobGrades() {
-    const jobName = document.getElementById('admin-job-name')?.value;
-    const gradeSelect = document.getElementById('admin-job-grade');
-    if (!gradeSelect) return;
-    gradeSelect.replaceChildren();
-    const job = availableJobs.find(item => item && item.name === jobName);
-    const grades = job && job.grades && typeof job.grades === 'object' ? Object.entries(job.grades) : [];
-    grades.sort((a, b) => Number(a[0]) - Number(b[0])).forEach(([grade, details]) => {
-        gradeSelect.add(new Option((details && details.label ? details.label : 'Grade ' + grade) + ' · ' + grade, String(grade)));
-    });
-    if (!grades.length) gradeSelect.add(new Option('Grade 0', '0'));
-}
-
 function setupAdminSubViews() {
     document.querySelectorAll('[data-admin-view]').forEach(button => {
         button.addEventListener('click', () => {
