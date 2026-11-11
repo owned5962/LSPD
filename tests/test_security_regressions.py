@@ -622,7 +622,7 @@ def test_admin_tablet_exposes_working_heal_economy_and_job_actions():
     html = read("resources/[FUNCTION]/rp_tablet_admin/html/index.html")
     ui = read("resources/[FUNCTION]/rp_tablet_admin/html/js/app.js")
     assert "AllowExtendedAction(src, 'heal', 500)" in extended
-    assert "rp_tablet_admin:client:heal" in server and "client:heal" in client
+    assert "rp_tablet_admin:client:heal" in extended and "client:heal" in client
     assert "RegisterNUICallback('manageEconomy'" in client
     assert "RegisterNUICallback('setJob'" in client
     assert 'onclick="playerAction(\'heal\')"' in html
@@ -636,7 +636,45 @@ def test_admin_tablet_exposes_working_heal_economy_and_job_actions():
 
 def test_all_security_regressions_are_run_by_the_test_script():
     source = read("tests/test_security_regressions.py")
-    runner_index = source.rindex('if __name__ == "__main__":')
+    runner_index = source.rindex('def test_character_registration_name_is_published_as_player_name():
+    source = read("resources/[CORE]/rp_characters/server/main.lua")
+    assert "local roleplayName =" in source
+    assert "SetPlayerName(src, roleplayName)" in source
+
+
+def test_anticheat_self_is_visible_and_receives_live_telemetry():
+    server = read("resources/[FUNCTION]/rp_anticheat/server/main.lua")
+    client = read("resources/[FUNCTION]/rp_anticheat/client/main.lua")
+    ui = read("resources/[FUNCTION]/rp_anticheat/html/js/app.js")
+    assert "openStaff[src] = true" in server
+    assert "isSelf = id == src" in server
+    assert "rp_anticheat:updatePlayers" in server and "Wait(1000)" in server
+    assert "rp_anticheat:updatePlayers" in client
+    assert "p.isSelf ? ' (VOUS)' : ''" in ui
+    assert "Selecting yourself is supported for live telemetry" in ui
+
+
+def test_creator_tablet_is_separate_and_started():
+    admin_html = read("resources/[FUNCTION]/rp_tablet_admin/html/index.html")
+    creator_manifest = read("resources/[FUNCTION]/rp_tablet_creator/fxmanifest.lua")
+    creator_client = read("resources/[FUNCTION]/rp_tablet_creator/client/main.lua")
+    config = read("server.cfg")
+    assert "view-creator" not in admin_html and "mode-switcher" not in admin_html
+    assert "RegisterCommand('creator'" in creator_client
+    assert "RegisterKeyMapping('creator'" in creator_client
+    assert "ensure rp_tablet_creator" in config
+    assert "server/extended.lua" in read("resources/[FUNCTION]/rp_tablet_admin/fxmanifest.lua")
+
+
+def test_jobcenter_blocks_duplicate_clicks_until_server_result():
+    ui = read("resources/[FUNCTION]/rp_jobs/html/js/app.js")
+    assert "let activeJobRequest = false" in ui
+    assert "if (activeJobRequest) return" in ui
+    assert "activeJobRequest = false" in ui
+    assert "chooseJob(job.name, actionBtn)" in ui
+
+
+if __name__ == "__main__":')
     assert runner_index > source.index("def test_admin_tablet_close_controls_and_keyboard_bindings_do_not_conflict():")
     assert runner_index > source.index("def test_admin_live_map_uses_authorized_server_world_positions():")
     assert runner_index > source.index("def test_admin_advanced_actions_are_server_authorized()")
@@ -811,39 +849,3 @@ if __name__ == "__main__":
     print(f"All {len(checks)} security and persistence regression checks passed.")
 
 
-def test_character_registration_name_is_published_as_player_name():
-    source = read("resources/[CORE]/rp_characters/server/main.lua")
-    assert "local roleplayName =" in source
-    assert "SetPlayerName(src, roleplayName)" in source
-
-
-def test_anticheat_self_is_visible_and_receives_live_telemetry():
-    server = read("resources/[FUNCTION]/rp_anticheat/server/main.lua")
-    client = read("resources/[FUNCTION]/rp_anticheat/client/main.lua")
-    ui = read("resources/[FUNCTION]/rp_anticheat/html/js/app.js")
-    assert "openStaff[src] = true" in server
-    assert "isSelf = id == src" in server
-    assert "rp_anticheat:updatePlayers" in server and "Wait(1000)" in server
-    assert "rp_anticheat:updatePlayers" in client
-    assert "p.isSelf ? ' (VOUS)' : ''" in ui
-    assert "Selecting yourself is supported for live telemetry" in ui
-
-
-def test_creator_tablet_is_separate_and_started():
-    admin_html = read("resources/[FUNCTION]/rp_tablet_admin/html/index.html")
-    creator_manifest = read("resources/[FUNCTION]/rp_tablet_creator/fxmanifest.lua")
-    creator_client = read("resources/[FUNCTION]/rp_tablet_creator/client/main.lua")
-    config = read("server.cfg")
-    assert "view-creator" not in admin_html and "mode-switcher" not in admin_html
-    assert "RegisterCommand('creator'" in creator_client
-    assert "RegisterKeyMapping('creator'" in creator_client
-    assert "ensure rp_tablet_creator" in config
-    assert "server/extended.lua" in read("resources/[FUNCTION]/rp_tablet_admin/fxmanifest.lua")
-
-
-def test_jobcenter_blocks_duplicate_clicks_until_server_result():
-    ui = read("resources/[FUNCTION]/rp_jobs/html/js/app.js")
-    assert "let activeJobRequest = false" in ui
-    assert "if (activeJobRequest) return" in ui
-    assert "activeJobRequest = false" in ui
-    assert "chooseJob(job.name, actionBtn)" in ui
