@@ -388,3 +388,12 @@ RegisterNetEvent('rp_tablet_admin:server:banPlayer', function(targetId, rawReaso
     DropPlayer(targetId, '[ADMINISTRATION - BAN PERMANENT] ' .. reason)
     NotifyAdmin(src, 'Joueur ' .. targetId .. ' banni durablement.', 'success')
 end)
+
+RegisterNetEvent('rp_tablet_admin:server:healPlayer', function(targetId)
+    local src = source
+    if not IsPlayerAdmin(src) then return end
+    targetId = GetOnlineTargetId(targetId)
+    if not targetId then NotifyAdmin(src, 'Joueur cible introuvable.'); return end
+    TriggerClientEvent('rp_tablet_admin:client:heal', targetId)
+    NotifyAdmin(src, 'Joueur ' .. targetId .. ' soigné.', 'success')
+end)
