@@ -8,7 +8,8 @@ Config.Protections = {
     ['thermal_night_vision'] = { label = 'Vision Thermique / Nocturne Illégale', enabled = true },
     ['spectate_monitoring'] = { label = 'Surveillance Staff en Direct', enabled = true },
     ['explosion_spam'] = { label = 'Protection anti-spam d’explosions (serveur)', enabled = true },
-    ['weapon_damage'] = { label = 'Blocage serveur des armes interdites', enabled = true }
+    ['weapon_damage'] = { label = 'Blocage serveur des armes interdites', enabled = true },
+    ['entity_spam'] = { label = 'Protection anti-spam d’entités (serveur)', enabled = true }
 }
 
 Config.BlacklistedWeapons = {
@@ -25,3 +26,6 @@ Config.AlertStaffChat = true
 
 Config.MaxExplosionsPerWindow = 5
 Config.ExplosionWindowSeconds = 5
+
+Config.MaxEntitiesPerWindow = 20
+Config.EntityWindowSeconds = 10
