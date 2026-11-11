@@ -1,8 +1,10 @@
 local isInventoryOpen = false
+local isInventoryPending = false
 
 AddEventHandler('onClientResourceStart', function(resourceName)
     if resourceName ~= GetCurrentResourceName() then return end
     isInventoryOpen = false
+    isInventoryPending = false
     SetNuiFocus(false, false)
     SendNUIMessage({ action = 'close' })
 end)
@@ -15,26 +17,42 @@ end)
 RegisterKeyMapping('openinventory', 'Ouvrir l\'inventaire', 'keyboard', 'F2')
 
 RegisterCommand('openinventory', function()
-    if not isInventoryOpen then
-        OpenInventory()
-    else
+    if isInventoryOpen or isInventoryPending then
         CloseInventory()
+    else
+        OpenInventory()
     end
 end, false)
 
 function OpenInventory()
-    isInventoryOpen = true
-    SetNuiFocus(true, true)
+    if isInventoryPending then return end
+    isInventoryPending = true
     TriggerServerEvent('rp_inventory:requestData')
+    SetTimeout(5000, function()
+        if isInventoryPending and not isInventoryOpen then
+            isInventoryPending = false
+            SetNuiFocus(false, false)
+            TriggerEvent('rp_core:client:notify', 'error', 'L’inventaire ne répond pas. Vérifiez que votre personnage est bien chargé, puis réessayez.')
+        end
+    end)
 end
 
 function CloseInventory()
+    isInventoryPending = false
     isInventoryOpen = false
     SetNuiFocus(false, false)
     SendNUIMessage({ action = 'close' })
 end
 
 RegisterNetEvent('rp_inventory:receiveData', function(data)
+    if type(data) ~= 'table' then
+        isInventoryPending = false
+        SetNuiFocus(false, false)
+        return
+    end
+    isInventoryPending = false
+    isInventoryOpen = true
+    SetNuiFocus(true, true)
     SendNUIMessage({
         action = 'open',
         inventory = data.inventory or {},
@@ -43,6 +61,13 @@ RegisterNetEvent('rp_inventory:receiveData', function(data)
         cash = data.cash or 0,
         bank = data.bank or 0
     })
+end)
+
+RegisterNetEvent('rp_inventory:requestFailed', function(message)
+    isInventoryPending = false
+    isInventoryOpen = false
+    SetNuiFocus(false, false)
+    TriggerEvent('rp_core:client:notify', 'error', message or 'Impossible d’ouvrir votre inventaire.')
 end)
 
 RegisterNUICallback('close', function(data, cb)
