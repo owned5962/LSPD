@@ -7,6 +7,7 @@ description 'Modern Roleplay Loading Screen with interactive music, server rules
 version '1.0.0'
 
 loadscreen 'html/index.html'
+loadscreen_manual_shutdown 'yes'
 
 files {
     'html/index.html',
