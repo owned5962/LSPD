@@ -101,6 +101,17 @@ $('fingerprint-btn').addEventListener('click', async () => {
     setAuthStatus('Analyse de votre empreinte biométrique…', 'scanning');
     $('fingerprint-btn').classList.add('scanning-button');
     const result = await post('authenticate');
+    if (result && result.ok !== false) {
+        setTimeout(() => {
+            if (busy.has('authenticate') && !authenticated) {
+                busy.delete('authenticate');
+                button.disabled = false;
+                button.classList.remove('scanning-button');
+                button.innerHTML = '<span class="finger-btn-icon">◎</span> Réessayer';
+                setAuthStatus('Aucune réponse du lecteur. Réessayez.', 'error');
+            }
+        }, 10000);
+    }
     if (!result || result.ok === false) {
         busy.delete('authenticate');
         button.disabled = false;
