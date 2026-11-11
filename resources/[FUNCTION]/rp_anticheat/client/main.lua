@@ -56,8 +56,24 @@ RegisterNetEvent('rp_anticheat:syncProtections', function(protections)
     end
 end)
 
-RegisterNetEvent('rp_anticheat:openUI', function(protections, playersList, logsList, detectionCount)
+local function applyWeaponPolicy(policy)
+    if type(policy) ~= 'table' then return end
+    Config.WeaponPolicy = policy
+    Config.BlacklistedWeapons = {}
+    for _, weapon in ipairs(Config.WeaponCatalog or {}) do
+        if policy[weapon.name] ~= true then
+            Config.BlacklistedWeapons[#Config.BlacklistedWeapons + 1] = GetHashKey(weapon.name)
+        end
+    end
+end
+
+RegisterNetEvent('rp_anticheat:syncWeaponPolicy', function(policy)
+    applyWeaponPolicy(policy)
+end)
+
+RegisterNetEvent('rp_anticheat:openUI', function(protections, playersList, logsList, detectionCount, weaponPolicy)
     isAnticheatUIOpen = true
+    applyWeaponPolicy(weaponPolicy)
     SetNuiFocus(true, true)
     SendNUIMessage({
         action = 'open',
@@ -74,6 +90,11 @@ RegisterNUICallback('close', function(data, cb)
     SetNuiFocus(false, false)
     SendNUIMessage({ action = 'close' })
     cb('ok')
+end)
+
+CreateThread(function()
+    Wait(1500)
+    TriggerServerEvent('rp_anticheat:requestWeaponPolicy')
 end)
 
 AddEventHandler('onClientResourceStart', function(resourceName)
