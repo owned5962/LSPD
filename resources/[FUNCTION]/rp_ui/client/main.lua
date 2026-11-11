@@ -61,3 +61,58 @@ exports('ProgressBar', ProgressBar)
 RegisterNetEvent('rp_ui:startProgress', function(duration, label)
     ProgressBar({ duration = duration, label = label })
 end)
+
+
+-- Custom roleplay HUD. Character selection/creation hides it; it appears after
+-- the character spawn event and updates only while a character is active.
+local hudEnabled = false
+
+local function SetHudVisible(visible)
+    hudEnabled = visible == true
+    SendNUIMessage({ action = 'setHudVisible', visible = hudEnabled })
+end
+
+RegisterNetEvent('rp_ui:setHudVisible', SetHudVisible)
+
+RegisterNetEvent('rp_characters:client:openMenu', function()
+    SetHudVisible(false)
+end)
+
+RegisterNetEvent('rp_characters:client:openCharacterSelection', function()
+    SetHudVisible(false)
+end)
+
+RegisterNetEvent('rp_characters:client:spawnPlayer', function()
+    SetHudVisible(true)
+end)
+
+CreateThread(function()
+    while true do
+        if not hudEnabled then
+            Wait(1000)
+        else
+            local ped = PlayerPedId()
+            if not DoesEntityExist(ped) then
+                Wait(500)
+            else
+                local maxHealth = GetEntityMaxHealth(ped)
+                local currentHealth = GetEntityHealth(ped)
+                local healthRange = math.max(1, maxHealth - 100)
+                local health = currentHealth <= 100 and 0 or ((currentHealth - 100) / healthRange) * 100
+                local armour = GetPedArmour(ped)
+                local vehicle = GetVehiclePedIsIn(ped, false)
+                local inVehicle = vehicle ~= 0 and DoesEntityExist(vehicle)
+
+                SendNUIMessage({
+                    action = 'updateHud',
+                    health = math.max(0, math.min(100, health)),
+                    armour = math.max(0, math.min(100, armour)),
+                    inVehicle = inVehicle,
+                    speed = inVehicle and (GetEntitySpeed(vehicle) * 3.6) or 0,
+                    fuel = inVehicle and GetVehicleFuelLevel(vehicle) or 0
+                })
+                Wait(150)
+            end
+        end
+    end
+end)
