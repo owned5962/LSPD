@@ -43,6 +43,7 @@ local function drawTimer(seconds)
     local minutes = math.floor(math.max(0, seconds) / 60)
     local remaining = math.max(0, seconds) % 60
     local text = ('LOCATION  %02d:%02d'):format(minutes, remaining)
+    DrawRect(0.91, 0.955, 0.14, 0.035, 8, 13, 22, 185)
     SetTextFont(4)
     SetTextScale(0.34, 0.34)
     SetTextColour(255, 255, 255, 245)
@@ -51,7 +52,6 @@ local function drawTimer(seconds)
     BeginTextCommandDisplayText('STRING')
     AddTextComponentSubstringPlayerName(text)
     EndTextCommandDisplayText(0.975, 0.94)
-    DrawRect(0.91, 0.955, 0.14, 0.035, 8, 13, 22, 185)
 end
 
 local function openTablet(isRenewal, vehicles, price, maxHours, label, locationKey)
