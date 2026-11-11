@@ -203,29 +203,46 @@ RegisterNetEvent('rp_tablet_admin:client:playerPositions', function(players)
     SendNUIMessage({ action = 'playerPositions', players = players or {} })
 end)
 
-RegisterNetEvent('rp_tablet_admin:client:startSpectate', function(targetId)
+RegisterNetEvent('rp_tablet_admin:client:startSpectate', function(targetId, targetCoords)
     if isTabletOpen then
         isTabletOpen = false
         SetNuiFocus(false, false)
         SendNUIMessage({ action = 'closeTablet' })
         StopTabletAnimation()
     end
-    local playerIndex = GetPlayerFromServerId(tonumber(targetId) or -1)
-    if playerIndex == -1 or not NetworkIsPlayerActive(playerIndex) then
-        TriggerEvent('rp_core:client:notify', 'Joueur introuvable pour la surveillance.', 'error')
+    if type(targetCoords) ~= 'table' or not tonumber(targetCoords.x) or not tonumber(targetCoords.y) or not tonumber(targetCoords.z) then
+        TriggerEvent('rp_core:client:notify', 'Coordonnées de surveillance invalides.', 'error')
         return
     end
-    local targetPed = GetPlayerPed(playerIndex)
-    if not targetPed or targetPed == 0 or not DoesEntityExist(targetPed) then return end
+
+    SetFocusPosAndVel(tonumber(targetCoords.x), tonumber(targetCoords.y), tonumber(targetCoords.z), 0.0, 0.0, 0.0)
+    RequestCollisionAtCoord(tonumber(targetCoords.x), tonumber(targetCoords.y), tonumber(targetCoords.z))
+    local deadline = GetGameTimer() + 10000
+    local playerIndex, targetPed = -1, 0
+    repeat
+        playerIndex = GetPlayerFromServerId(tonumber(targetId) or -1)
+        if playerIndex ~= -1 and NetworkIsPlayerActive(playerIndex) then
+            targetPed = GetPlayerPed(playerIndex)
+            if targetPed ~= 0 and DoesEntityExist(targetPed) then break end
+        end
+        Wait(100)
+    until GetGameTimer() >= deadline
+
+    if playerIndex == -1 or targetPed == 0 or not DoesEntityExist(targetPed) then
+        ClearFocus()
+        TriggerEvent('rp_core:client:notify', 'Joueur non disponible dans la zone de streaming.', 'error')
+        return
+    end
     spectateTargetPed = targetPed
     isAdminSpectating = true
     NetworkSetInSpectatorMode(true, targetPed)
-    TriggerEvent('rp_core:client:notify', 'Surveillance activée.', 'info')
+    TriggerEvent('rp_core:client:notify', 'Surveillance activée. Appuyez sur F10 pour arrêter.', 'info')
 end)
 
 RegisterNetEvent('rp_tablet_admin:client:stopSpectate', function()
     if not isAdminSpectating then return end
     NetworkSetInSpectatorMode(false, spectateTargetPed or PlayerPedId())
+    ClearFocus()
     isAdminSpectating = false
     spectateTargetPed = nil
     TriggerEvent('rp_core:client:notify', 'Surveillance arrêtée.', 'success')
@@ -337,7 +354,7 @@ end)
 AddEventHandler('onClientResourceStop', function(resourceName)
     if resourceName ~= GetCurrentResourceName() then return end
     isAdminNoclip = false
-    if isAdminSpectating then NetworkSetInSpectatorMode(false, spectateTargetPed or PlayerPedId()) end
+    if isAdminSpectating then NetworkSetInSpectatorMode(false, spectateTargetPed or PlayerPedId()); ClearFocus() end
     isAdminSpectating = false
     spectateTargetPed = nil
     local ped = PlayerPedId()
