@@ -675,7 +675,7 @@ def test_admin_tablet_exposes_working_heal_economy_and_job_actions():
 
 def test_all_security_regressions_are_run_by_the_test_script():
     source = read("tests/test_security_regressions.py")
-    runner_index = source.rindex('\\nif __name__ == "__main__":')
+    runner_index = source.rindex('\nif __name__ == "__main__":')
     assert runner_index > source.index("def test_admin_tablet_close_controls_and_keyboard_bindings_do_not_conflict():")
     assert runner_index > source.index("def test_admin_live_map_uses_authorized_server_world_positions():")
     assert runner_index > source.index("def test_admin_advanced_actions_are_server_authorized()")
