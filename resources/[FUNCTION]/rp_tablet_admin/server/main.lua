@@ -42,7 +42,25 @@ local function LogAdminAction(src, action, targetId, details)
     end
 
     local adminName = admin and ((admin.firstname or '') .. ' ' .. (admin.lastname or '')) or (GetPlayerName(src) or 'Administrateur')
-    adminName = adminName:gsub('^%s*(.-)%s*, function()
+    adminName = adminName:gsub('^%s*(.-)%s*$', '%1')
+    if adminName == '' then adminName = GetPlayerName(src) or 'Administrateur' end
+
+    local ok, err = pcall(MySQL.insert.await,
+        'INSERT INTO admin_logs (admin_identifier, admin_name, action, target_identifier, details) VALUES (?, ?, ?, ?, ?)',
+        {
+            adminIdentifier or ('server:' .. tostring(src)),
+            adminName:sub(1, 64),
+            tostring(action):sub(1, 64),
+            target and target.identifier or nil,
+            tostring(details or ''):gsub('[%c]', ' '):sub(1, 500)
+        }
+    )
+    if not ok then
+        print('[rp_tablet_admin] Audit log failed: ' .. tostring(err))
+    end
+end
+
+RegisterNetEvent('rp_tablet_admin:server:requestOpen', function()
     local src = source
     if not IsPlayerAdmin(src) or not exports['rp_core']:CanPerformAction(src, 'admin:open', 1000) then
         NotifyAdmin(src, "Accès refusé : permissions administrateur requises.")
@@ -88,15 +106,6 @@ local function LogAdminAction(src, action, targetId, details)
         onlinePlayers[#onlinePlayers + 1] = { id = src, name = GetPlayerName(src), rawName = GetPlayerName(src), isSelf = true }
     end
     table.sort(onlinePlayers, function(a, b) return a.id < b.id end)
-
-    local jobs = exports['rp_jobs']:GetAllJobs()
-    local frozenPlayers = {}
-    for targetId, isFrozen in pairs(FrozenPlayers) do
-        if isFrozen and GetPlayerName(targetId) then frozenPlayers[#frozenPlayers + 1] = targetId end
-    end
-    TriggerClientEvent('rp_tablet_admin:client:openAuthorized', src, adminData, onlinePlayers, jobs, frozenPlayers)
-end)
-
 RegisterNetEvent('rp_tablet_admin:server:kickPlayer', function(targetId, reason)
     local src = source
     if not AllowAdminAction(src, 'kick', 500) then return end
@@ -322,24 +331,6 @@ RegisterNetEvent('rp_tablet_admin:server:broadcastAnnouncement', function(messag
     })
     TriggerClientEvent('rp_core:client:notify', -1, 'ANNONCE : ' .. message, 'warning')
 end)
-, '%1')
-    if adminName == '' then adminName = GetPlayerName(src) or 'Administrateur' end
-
-    local ok, err = pcall(MySQL.insert.await,
-        'INSERT INTO admin_logs (admin_identifier, admin_name, action, target_identifier, details) VALUES (?, ?, ?, ?, ?)',
-        {
-            adminIdentifier or ('server:' .. tostring(src)),
-            adminName:sub(1, 64),
-            tostring(action):sub(1, 64),
-            target and target.identifier or nil,
-            tostring(details or ''):gsub('[%c]', ' '):sub(1, 500)
-        }
-    )
-    if not ok then
-        print('[rp_tablet_admin] Audit log failed: ' .. tostring(err))
-    end
-end
-
 RegisterNetEvent('rp_tablet_admin:server:requestAuditLogs', function()
     local src = source
     if not AllowAdminAction(src, 'audit_logs', 2000) then
@@ -356,61 +347,6 @@ RegisterNetEvent('rp_tablet_admin:server:requestAuditLogs', function()
     end
 
     TriggerClientEvent('rp_tablet_admin:client:auditLogs', src, logs or {})
-end)
-
-RegisterNetEvent('rp_tablet_admin:server:requestOpen', function()
-    local src = source
-    if not IsPlayerAdmin(src) or not exports['rp_core']:CanPerformAction(src, 'admin:open', 1000) then
-        NotifyAdmin(src, "Accès refusé : permissions administrateur requises.")
-        return
-    end
-
-    local adminPlayer = exports['rp_core']:GetPlayerFromId(src)
-    local adminData = {
-        name = adminPlayer and ((adminPlayer.firstname or '') .. ' ' .. (adminPlayer.lastname or '')) or (GetPlayerName(src) or 'Administrateur'),
-        role = adminPlayer and adminPlayer.group or "Administrateur",
-        id = src
-    }
-
-    local onlinePlayers, seen = {}, {}
-    for _, rawId in pairs(GetPlayers()) do
-        local pid = tonumber(rawId)
-        if pid and not seen[pid] then
-            local player = exports['rp_core']:GetPlayerFromId(pid)
-            local rawName = GetPlayerName(pid) or ('Joueur ' .. pid)
-            local first = player and tostring(player.firstname or '') or ''
-            local last = player and tostring(player.lastname or '') or ''
-            local name = first .. ' ' .. last
-            if name == ' ' then name = rawName end
-            local jobName = player and player.job or 'unemployed'
-            local job = exports['rp_jobs']:GetJob(jobName)
-            local ped = GetPlayerPed(pid)
-            local position
-            if ped and ped ~= 0 and DoesEntityExist(ped) then
-                local coords = GetEntityCoords(ped)
-                position = { x = coords.x, y = coords.y, z = coords.z }
-            end
-            onlinePlayers[#onlinePlayers + 1] = {
-                id = pid, name = name, rawName = rawName, isSelf = pid == src, position = position,
-                job = jobName, jobLabel = job and job.label or jobName,
-                grade = player and player.jobGrade or 0, cash = player and player.cash or 0,
-                bank = player and player.bank or 0, group = player and player.group or 'user',
-                ping = GetPlayerPing(pid)
-            }
-            seen[pid] = true
-        end
-    end
-    if not seen[src] and GetPlayerName(src) then
-        onlinePlayers[#onlinePlayers + 1] = { id = src, name = GetPlayerName(src), rawName = GetPlayerName(src), isSelf = true }
-    end
-    table.sort(onlinePlayers, function(a, b) return a.id < b.id end)
-
-    local jobs = exports['rp_jobs']:GetAllJobs()
-    local frozenPlayers = {}
-    for targetId, isFrozen in pairs(FrozenPlayers) do
-        if isFrozen and GetPlayerName(targetId) then frozenPlayers[#frozenPlayers + 1] = targetId end
-    end
-    TriggerClientEvent('rp_tablet_admin:client:openAuthorized', src, adminData, onlinePlayers, jobs, frozenPlayers)
 end)
 
 RegisterNetEvent('rp_tablet_admin:server:kickPlayer', function(targetId, reason)
