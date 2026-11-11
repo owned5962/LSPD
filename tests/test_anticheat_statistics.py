@@ -27,6 +27,24 @@ def test_statistics_are_persistent_and_access_controlled():
     for severity in ("low", "medium", "high", "critical"):
         assert "severity-" + severity in css
     assert "Une détection est un signal" in html
+    assert 'id="nav-surveillance"' in html and 'disabled aria-disabled="true"' in html
+    assert 'id="nav-surveillance-count"' in html
+    assert 'data-tab="configuration"' in html and 'id="pane-configuration"' in html
+    assert "anticheat_event_log" in server
+    assert "INSERT INTO anticheat_event_log" in server
+    assert "ORDER BY id DESC LIMIT 250" in server
+    assert "detectionCount" in server and "totalDetections" in server
+    assert "RegisterNetEvent('rp_anticheat:saveSanctionConfig'" in server
+    assert "applyConfiguredSanction(src, alert)" in server
+    assert "warn = true" in server and "kick = true" in server and "ban = true" in server and "prison = true" in server
+    assert "CREATE TABLE IF NOT EXISTS anticheat_jails" in server
+    assert "RegisterNetEvent('rp_anticheat:prisonExpired'" in server
+    assert "Config.Sanctions" in read("resources/[FUNCTION]/rp_anticheat/shared/config.lua")
+    assert "RegisterNUICallback('saveSanctionConfig'" in client
+    assert "RegisterNetEvent('rp_anticheat:applyPrison'" in client
+    assert "function updateSurveillanceTab()" in ui
+    assert "function renderSanctionConfig()" in ui
+    assert "function saveSanctionConfig()" in ui
 
 if __name__ == "__main__":
     test_statistics_are_persistent_and_access_controlled()
