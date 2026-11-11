@@ -122,8 +122,7 @@ Config.WeaponCatalog = {
     { name = 'WEAPON_SWEEPERSHOTGUN', label = "Fusil à pompe balayeur", category = "Fusils à pompe", enabled = true },
     { name = 'WEAPON_COMBATSHOTGUN', label = "Fusil à pompe de combat", category = "Fusils à pompe", enabled = true },
     { name = 'WEAPON_STUNGUN_MP', label = "Taser MP", category = "Armes de poing", enabled = true },
-    { name = 'WEAPON_RAILGUNXM3', label = "Railgun XM3", category = "Armes lourdes", enabled = false },
-    { name = 'WEAPON_RAYPISTOL', label = "Pistolet alien", category = "Armes lourdes", enabled = false }
+    { name = 'WEAPON_RAILGUNXM3', label = "Railgun XM3", category = "Armes lourdes", enabled = false }
 }
 Config.WeaponPolicy = {}
 Config.WeaponHashToName = {}
