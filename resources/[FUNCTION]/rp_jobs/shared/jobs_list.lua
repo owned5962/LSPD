@@ -12,7 +12,7 @@ JobsList = {
             [1] = { label = "Officier", salary = 400 },
             [2] = { label = "Sergent", salary = 600 },
             [3] = { label = "Lieutenant", salary = 850 },
-            [4] = { label = "Capitaine", salary = 1100 }
+            [4] = { label = "Capitaine", salary = 1100 },
         }
     },
     -- 2. EMS / Secouriste
@@ -27,8 +27,8 @@ JobsList = {
             [0] = { label = "Ambulancier stagiaire", salary = 250 },
             [1] = { label = "Secouriste qualifié", salary = 400 },
             [2] = { label = "Médecin urgentiste", salary = 650 },
-            [3] = { label = "Chirurgien en chef", salary = 950 }
-            [4] = { label = "Directeur de service", salary = 1250 }
+            [3] = { label = "Chirurgien en chef", salary = 950 },
+            [4] = { label = "Directeur de service", salary = 1250 },
         }
     },
     -- 3. Sapeur-Pompier
@@ -43,8 +43,8 @@ JobsList = {
             [0] = { label = "Sapeur 2e classe", salary = 260 },
             [1] = { label = "Caporal", salary = 380 },
             [2] = { label = "Sergent", salary = 550 },
-            [3] = { label = "Adjudant-Chef", salary = 800 }
-            [4] = { label = "Directeur de service", salary = 1100 }
+            [3] = { label = "Adjudant-Chef", salary = 800 },
+            [4] = { label = "Directeur de service", salary = 1100 },
         }
     },
     -- 4. Avocat
@@ -58,9 +58,9 @@ JobsList = {
         grades = {
             [0] = { label = "Stagiaire au Barreau", salary = 220 },
             [1] = { label = "Avocat Associé", salary = 500 },
-            [2] = { label = "Bâtonnier", salary = 900 }
-            [3] = { label = "Responsable de service", salary = 1050 }
-            [4] = { label = "Directeur de service", salary = 1200 }
+            [2] = { label = "Bâtonnier", salary = 900 },
+            [3] = { label = "Responsable de service", salary = 1050 },
+            [4] = { label = "Directeur de service", salary = 1200 },
         }
     },
     -- 5. Juge
@@ -74,9 +74,9 @@ JobsList = {
         grades = {
             [0] = { label = "Juge Assesseur", salary = 600 },
             [1] = { label = "Juge d'Instruction", salary = 850 },
-            [2] = { label = "Président du Tribunal", salary = 1200 }
-            [3] = { label = "Responsable de service", salary = 1350 }
-            [4] = { label = "Directeur de service", salary = 1500 }
+            [2] = { label = "Président du Tribunal", salary = 1200 },
+            [3] = { label = "Responsable de service", salary = 1350 },
+            [4] = { label = "Directeur de service", salary = 1500 },
         }
     },
     -- 6. Mécanicien
@@ -90,9 +90,9 @@ JobsList = {
         grades = {
             [0] = { label = "Apprenti Garage", salary = 220 },
             [1] = { label = "Mécanicien Certifié", salary = 420 },
-            [2] = { label = "Chef d'Atelier", salary = 700 }
-            [3] = { label = "Responsable de service", salary = 850 }
-            [4] = { label = "Directeur de service", salary = 1000 }
+            [2] = { label = "Chef d'Atelier", salary = 700 },
+            [3] = { label = "Responsable de service", salary = 850 },
+            [4] = { label = "Directeur de service", salary = 1000 },
         }
     },
     -- 7. Chauffeur de Taxi
@@ -106,9 +106,9 @@ JobsList = {
         grades = {
             [0] = { label = "Chauffeur Débutant", salary = 200 },
             [1] = { label = "Chauffeur Expérimenté", salary = 360 },
-            [2] = { label = "Responsable de Flotte", salary = 550 }
-            [3] = { label = "Responsable de service", salary = 700 }
-            [4] = { label = "Directeur de service", salary = 850 }
+            [2] = { label = "Responsable de Flotte", salary = 550 },
+            [3] = { label = "Responsable de service", salary = 700 },
+            [4] = { label = "Directeur de service", salary = 850 },
         }
     },
     -- 8. Agent Immobilier
@@ -122,9 +122,9 @@ JobsList = {
         grades = {
             [0] = { label = "Négociateur Junior", salary = 220 },
             [1] = { label = "Agent Senior", salary = 450 },
-            [2] = { label = "Directeur d'Agence", salary = 800 }
-            [3] = { label = "Responsable de service", salary = 950 }
-            [4] = { label = "Directeur de service", salary = 1100 }
+            [2] = { label = "Directeur d'Agence", salary = 800 },
+            [3] = { label = "Responsable de service", salary = 950 },
+            [4] = { label = "Directeur de service", salary = 1100 },
         }
     },
     -- 9. Journaliste / Reporter
@@ -138,9 +138,9 @@ JobsList = {
         grades = {
             [0] = { label = "Pigiste", salary = 200 },
             [1] = { label = "Grand Reporter", salary = 380 },
-            [2] = { label = "Rédacteur en Chef", salary = 680 }
-            [3] = { label = "Responsable de service", salary = 830 }
-            [4] = { label = "Directeur de service", salary = 980 }
+            [2] = { label = "Rédacteur en Chef", salary = 680 },
+            [3] = { label = "Responsable de service", salary = 830 },
+            [4] = { label = "Directeur de service", salary = 980 },
         }
     },
     -- 10. Mineur
@@ -154,9 +154,9 @@ JobsList = {
         grades = {
             [0] = { label = "Mineur Débutant", salary = 210 },
             [1] = { label = "Foreur Qualifié", salary = 350 },
-            [2] = { label = "Contremaître Mine", salary = 520 }
-            [3] = { label = "Responsable de service", salary = 670 }
-            [4] = { label = "Directeur de service", salary = 820 }
+            [2] = { label = "Contremaître Mine", salary = 520 },
+            [3] = { label = "Responsable de service", salary = 670 },
+            [4] = { label = "Directeur de service", salary = 820 },
         }
     },
     -- 11. Bûcheron
@@ -170,9 +170,9 @@ JobsList = {
         grades = {
             [0] = { label = "Bûcheron Élaguer", salary = 210 },
             [1] = { label = "Scieur Industriel", salary = 360 },
-            [2] = { label = "Chef d'Exploitation", salary = 540 }
-            [3] = { label = "Responsable de service", salary = 690 }
-            [4] = { label = "Directeur de service", salary = 840 }
+            [2] = { label = "Chef d'Exploitation", salary = 540 },
+            [3] = { label = "Responsable de service", salary = 690 },
+            [4] = { label = "Directeur de service", salary = 840 },
         }
     },
     -- 12. Livreur Express
@@ -186,9 +186,9 @@ JobsList = {
         grades = {
             [0] = { label = "Coursier Urbain", salary = 200 },
             [1] = { label = "Livreur Longue Distance", salary = 340 },
-            [2] = { label = "Dispatcheur Logistique", salary = 500 }
-            [3] = { label = "Responsable de service", salary = 650 }
-            [4] = { label = "Directeur de service", salary = 800 }
+            [2] = { label = "Dispatcheur Logistique", salary = 500 },
+            [3] = { label = "Responsable de service", salary = 650 },
+            [4] = { label = "Directeur de service", salary = 800 },
         }
     },
     -- 13. Banquier / Gestionnaire Financier
@@ -202,9 +202,9 @@ JobsList = {
         grades = {
             [0] = { label = "Conseiller Clientèle", salary = 300 },
             [1] = { label = "Chargé d'Affaires Pro", salary = 550 },
-            [2] = { label = "Directeur d'Agence", salary = 950 }
-            [3] = { label = "Responsable de service", salary = 1100 }
-            [4] = { label = "Directeur de service", salary = 1250 }
+            [2] = { label = "Directeur d'Agence", salary = 950 },
+            [3] = { label = "Responsable de service", salary = 1100 },
+            [4] = { label = "Directeur de service", salary = 1250 },
         }
     },
     -- 14. Éboueur
@@ -218,9 +218,9 @@ JobsList = {
         grades = {
             [0] = { label = "Ripeur Débutant", salary = 220 },
             [1] = { label = "Conducteur de Benne", salary = 350 },
-            [2] = { label = "Responsable de Secteur", salary = 500 }
-            [3] = { label = "Responsable de service", salary = 650 }
-            [4] = { label = "Directeur de service", salary = 800 }
+            [2] = { label = "Responsable de Secteur", salary = 500 },
+            [3] = { label = "Responsable de service", salary = 650 },
+            [4] = { label = "Directeur de service", salary = 800 },
         }
     },
     -- 15. Pêcheur en Mer
@@ -234,9 +234,9 @@ JobsList = {
         grades = {
             [0] = { label = "Matelot de Pêche", salary = 210 },
             [1] = { label = "Pêcheur Hauturier", salary = 360 },
-            [2] = { label = "Patron Pêcheur", salary = 550 }
-            [3] = { label = "Responsable de service", salary = 700 }
-            [4] = { label = "Directeur de service", salary = 850 }
+            [2] = { label = "Patron Pêcheur", salary = 550 },
+            [3] = { label = "Responsable de service", salary = 700 },
+            [4] = { label = "Directeur de service", salary = 850 },
         }
     },
     -- 16. Agriculteur / Fermier
@@ -250,9 +250,9 @@ JobsList = {
         grades = {
             [0] = { label = "Ouvrier Agricole", salary = 210 },
             [1] = { label = "Exploitant Agricole", salary = 380 },
-            [2] = { label = "Propriétaire de Ranch", salary = 600 }
-            [3] = { label = "Responsable de service", salary = 750 }
-            [4] = { label = "Directeur de service", salary = 900 }
+            [2] = { label = "Propriétaire de Ranch", salary = 600 },
+            [3] = { label = "Responsable de service", salary = 750 },
+            [4] = { label = "Directeur de service", salary = 900 },
         }
     },
     -- 17. Boucher
@@ -266,9 +266,9 @@ JobsList = {
         grades = {
             [0] = { label = "Apprenti Découpe", salary = 200 },
             [1] = { label = "Boucher Traiteur", salary = 360 },
-            [2] = { label = "Maître Artisan", salary = 540 }
-            [3] = { label = "Responsable de service", salary = 690 }
-            [4] = { label = "Directeur de service", salary = 840 }
+            [2] = { label = "Maître Artisan", salary = 540 },
+            [3] = { label = "Responsable de service", salary = 690 },
+            [4] = { label = "Directeur de service", salary = 840 },
         }
     },
     -- 18. Brasseur Artisanal
@@ -282,9 +282,9 @@ JobsList = {
         grades = {
             [0] = { label = "Aide Cuve", salary = 200 },
             [1] = { label = "Maître Brasseur", salary = 370 },
-            [2] = { label = "Directeur de Brasserie", salary = 560 }
-            [3] = { label = "Responsable de service", salary = 710 }
-            [4] = { label = "Directeur de service", salary = 860 }
+            [2] = { label = "Directeur de Brasserie", salary = 560 },
+            [3] = { label = "Responsable de service", salary = 710 },
+            [4] = { label = "Directeur de service", salary = 860 },
         }
     },
     -- 19. Agent de Sécurité Privée
@@ -298,9 +298,9 @@ JobsList = {
         grades = {
             [0] = { label = "Vigile Rondier", salary = 230 },
             [1] = { label = "Convoyeur de Fonds", salary = 400 },
-            [2] = { label = "Chef de Poste", salary = 620 }
-            [3] = { label = "Responsable de service", salary = 770 }
-            [4] = { label = "Directeur de service", salary = 920 }
+            [2] = { label = "Chef de Poste", salary = 620 },
+            [3] = { label = "Responsable de service", salary = 770 },
+            [4] = { label = "Directeur de service", salary = 920 },
         }
     },
     -- 20. Pilote de Ligne Commercial
@@ -314,9 +314,9 @@ JobsList = {
         grades = {
             [0] = { label = "Copilote", salary = 350 },
             [1] = { label = "Commandant de Bord", salary = 650 },
-            [2] = { label = "Instructeur Aéronautique", salary = 1000 }
-            [3] = { label = "Responsable de service", salary = 1150 }
-            [4] = { label = "Directeur de service", salary = 1300 }
+            [2] = { label = "Instructeur Aéronautique", salary = 1000 },
+            [3] = { label = "Responsable de service", salary = 1150 },
+            [4] = { label = "Directeur de service", salary = 1300 },
         }
     },
     -- 21. Conducteur de Train / Métro
@@ -330,9 +330,9 @@ JobsList = {
         grades = {
             [0] = { label = "Aspirant Conducteur", salary = 220 },
             [1] = { label = "Conducteur Titulaire", salary = 380 },
-            [2] = { label = "Régulateur de Ligne", salary = 580 }
-            [3] = { label = "Responsable de service", salary = 730 }
-            [4] = { label = "Directeur de service", salary = 880 }
+            [2] = { label = "Régulateur de Ligne", salary = 580 },
+            [3] = { label = "Responsable de service", salary = 730 },
+            [4] = { label = "Directeur de service", salary = 880 },
         }
     },
     -- 22. Chef Cuisinier / Restaurateur
@@ -346,9 +346,9 @@ JobsList = {
         grades = {
             [0] = { label = "Commis de Cuisine", salary = 210 },
             [1] = { label = "Chef de Partie", salary = 380 },
-            [2] = { label = "Chef Étoilé", salary = 650 }
-            [3] = { label = "Responsable de service", salary = 800 }
-            [4] = { label = "Directeur de service", salary = 950 }
+            [2] = { label = "Chef Étoilé", salary = 650 },
+            [3] = { label = "Responsable de service", salary = 800 },
+            [4] = { label = "Directeur de service", salary = 950 },
         }
     },
     -- 23. Barman / Mixologue
@@ -362,9 +362,9 @@ JobsList = {
         grades = {
             [0] = { label = "Barman Débutant", salary = 200 },
             [1] = { label = "Mixologue Confirmé", salary = 350 },
-            [2] = { label = "Gérant de Bar", salary = 550 }
-            [3] = { label = "Responsable de service", salary = 700 }
-            [4] = { label = "Directeur de service", salary = 850 }
+            [2] = { label = "Gérant de Bar", salary = 550 },
+            [3] = { label = "Responsable de service", salary = 700 },
+            [4] = { label = "Directeur de service", salary = 850 },
         }
     },
     -- 24. Dépanneur / Remorqueur
@@ -378,9 +378,9 @@ JobsList = {
         grades = {
             [0] = { label = "Opérateur Plateau", salary = 220 },
             [1] = { label = "Dépanneur Treuil", salary = 370 },
-            [2] = { label = "Superviseur Fourrière", salary = 560 }
-            [3] = { label = "Responsable de service", salary = 710 }
-            [4] = { label = "Directeur de service", salary = 860 }
+            [2] = { label = "Superviseur Fourrière", salary = 560 },
+            [3] = { label = "Responsable de service", salary = 710 },
+            [4] = { label = "Directeur de service", salary = 860 },
         }
     },
     -- 25. Concessionnaire Automobile
@@ -394,9 +394,9 @@ JobsList = {
         grades = {
             [0] = { label = "Commercial Junior", salary = 220 },
             [1] = { label = "Conseiller Vente Élite", salary = 420 },
-            [2] = { label = "Directeur de Concession", salary = 750 }
-            [3] = { label = "Responsable de service", salary = 900 }
-            [4] = { label = "Directeur de service", salary = 1050 }
+            [2] = { label = "Directeur de Concession", salary = 750 },
+            [3] = { label = "Responsable de service", salary = 900 },
+            [4] = { label = "Directeur de service", salary = 1050 },
         }
     },
     -- 26. Électricien de Réseau
@@ -410,9 +410,9 @@ JobsList = {
         grades = {
             [0] = { label = "Monteur Électricien", salary = 220 },
             [1] = { label = "Technicien Réseau", salary = 380 },
-            [2] = { label = "Expert Réseau Haute Tension", salary = 580 }
-            [3] = { label = "Responsable de service", salary = 730 }
-            [4] = { label = "Directeur de service", salary = 880 }
+            [2] = { label = "Expert Réseau Haute Tension", salary = 580 },
+            [3] = { label = "Responsable de service", salary = 730 },
+            [4] = { label = "Directeur de service", salary = 880 },
         }
     },
     -- 27. Plombier / Chauffagiste
@@ -426,9 +426,9 @@ JobsList = {
         grades = {
             [0] = { label = "Aide Plombier", salary = 210 },
             [1] = { label = "Plombier Sanitaire", salary = 360 },
-            [2] = { label = "Chef de Chantier Fluides", salary = 540 }
-            [3] = { label = "Responsable de service", salary = 690 }
-            [4] = { label = "Directeur de service", salary = 840 }
+            [2] = { label = "Chef de Chantier Fluides", salary = 540 },
+            [3] = { label = "Responsable de service", salary = 690 },
+            [4] = { label = "Directeur de service", salary = 840 },
         }
     },
     -- 28. Technicien Informatique & Cybersécurité
@@ -442,9 +442,9 @@ JobsList = {
         grades = {
             [0] = { label = "Support Helpdesk", salary = 230 },
             [1] = { label = "Administrateur Système", salary = 420 },
-            [2] = { label = "Ingénieur Sécurité IT", salary = 720 }
-            [3] = { label = "Responsable de service", salary = 870 }
-            [4] = { label = "Directeur de service", salary = 1020 }
+            [2] = { label = "Ingénieur Sécurité IT", salary = 720 },
+            [3] = { label = "Responsable de service", salary = 870 },
+            [4] = { label = "Directeur de service", salary = 1020 },
         }
     },
     -- 29. Armurier Agréé
@@ -458,9 +458,9 @@ JobsList = {
         grades = {
             [0] = { label = "Vendeur Stand de Tir", salary = 240 },
             [1] = { label = "Armurier Certifié", salary = 450 },
-            [2] = { label = "Maître Canonnier", salary = 780 }
-            [3] = { label = "Responsable de service", salary = 930 }
-            [4] = { label = "Directeur de service", salary = 1080 }
+            [2] = { label = "Maître Canonnier", salary = 780 },
+            [3] = { label = "Responsable de service", salary = 930 },
+            [4] = { label = "Directeur de service", salary = 1080 },
         }
     },
     -- 30. Couturier / Designer de Mode
@@ -474,9 +474,9 @@ JobsList = {
         grades = {
             [0] = { label = "Apprenti Couturier", salary = 200 },
             [1] = { label = "Tailleur Styliste", salary = 360 },
-            [2] = { label = "Créateur de Mode", salary = 580 }
-            [3] = { label = "Responsable de service", salary = 730 }
-            [4] = { label = "Directeur de service", salary = 880 }
+            [2] = { label = "Créateur de Mode", salary = 580 },
+            [3] = { label = "Responsable de service", salary = 730 },
+            [4] = { label = "Directeur de service", salary = 880 },
         }
     },
     -- 31. Pharmacien
@@ -490,9 +490,9 @@ JobsList = {
         grades = {
             [0] = { label = "Préparateur en Pharmacie", salary = 220 },
             [1] = { label = "Docteur en Pharmacie", salary = 440 },
-            [2] = { label = "Titulaire d'Officine", salary = 700 }
-            [3] = { label = "Responsable de service", salary = 850 }
-            [4] = { label = "Directeur de service", salary = 1000 }
+            [2] = { label = "Titulaire d'Officine", salary = 700 },
+            [3] = { label = "Responsable de service", salary = 850 },
+            [4] = { label = "Directeur de service", salary = 1000 },
         }
     },
     -- 32. Architecte & Urbaniste
@@ -506,9 +506,9 @@ JobsList = {
         grades = {
             [0] = { label = "Dessinateur Projeteur", salary = 230 },
             [1] = { label = "Architecte DPLG", salary = 460 },
-            [2] = { label = "Directeur de Projet", salary = 780 }
-            [3] = { label = "Responsable de service", salary = 930 }
-            [4] = { label = "Directeur de service", salary = 1080 }
+            [2] = { label = "Directeur de Projet", salary = 780 },
+            [3] = { label = "Responsable de service", salary = 930 },
+            [4] = { label = "Directeur de service", salary = 1080 },
         }
     },
     -- 33. Vétérinaire
@@ -522,9 +522,9 @@ JobsList = {
         grades = {
             [0] = { label = "Assistant Vétérinaire", salary = 210 },
             [1] = { label = "Praticien Vétérinaire", salary = 400 },
-            [2] = { label = "Directeur Clinique Vétérinaire", salary = 680 }
-            [3] = { label = "Responsable de service", salary = 830 }
-            [4] = { label = "Directeur de service", salary = 980 }
+            [2] = { label = "Directeur Clinique Vétérinaire", salary = 680 },
+            [3] = { label = "Responsable de service", salary = 830 },
+            [4] = { label = "Directeur de service", salary = 980 },
         }
     },
     -- 34. Organisateur d'Événements
@@ -538,9 +538,9 @@ JobsList = {
         grades = {
             [0] = { label = "Assistant Logistique Événements", salary = 210 },
             [1] = { label = "Coordinateur Fêtes & Galas", salary = 390 },
-            [2] = { label = "Producteur Événementiel", salary = 650 }
-            [3] = { label = "Responsable de service", salary = 800 }
-            [4] = { label = "Directeur de service", salary = 950 }
+            [2] = { label = "Producteur Événementiel", salary = 650 },
+            [3] = { label = "Responsable de service", salary = 800 },
+            [4] = { label = "Directeur de service", salary = 950 },
         }
     },
     -- 35. Photographe de Presse
@@ -554,9 +554,9 @@ JobsList = {
         grades = {
             [0] = { label = "Photographe Indépendant", salary = 200 },
             [1] = { label = "Photographe Senior", salary = 360 },
-            [2] = { label = "Directeur de l'Image", salary = 540 }
-            [3] = { label = "Responsable de service", salary = 690 }
-            [4] = { label = "Directeur de service", salary = 840 }
+            [2] = { label = "Directeur de l'Image", salary = 540 },
+            [3] = { label = "Responsable de service", salary = 690 },
+            [4] = { label = "Directeur de service", salary = 840 },
         }
     },
     -- 36. Agent d'Entretien & Propreté
@@ -570,9 +570,9 @@ JobsList = {
         grades = {
             [0] = { label = "Agent de Nettoyage", salary = 200 },
             [1] = { label = "Technicien de Surface", salary = 320 },
-            [2] = { label = "Chef d'Équipe Propreté", salary = 480 }
-            [3] = { label = "Responsable de service", salary = 630 }
-            [4] = { label = "Directeur de service", salary = 780 }
+            [2] = { label = "Chef d'Équipe Propreté", salary = 480 },
+            [3] = { label = "Responsable de service", salary = 630 },
+            [4] = { label = "Directeur de service", salary = 780 },
         }
     },
     -- 37. Facteur / Agent Postal
@@ -586,9 +586,9 @@ JobsList = {
         grades = {
             [0] = { label = "Facteur Remplaçant", salary = 200 },
             [1] = { label = "Facteur Titulaire", salary = 340 },
-            [2] = { label = "Chef de Centre Postal", salary = 510 }
-            [3] = { label = "Responsable de service", salary = 660 }
-            [4] = { label = "Directeur de service", salary = 810 }
+            [2] = { label = "Chef de Centre Postal", salary = 510 },
+            [3] = { label = "Responsable de service", salary = 660 },
+            [4] = { label = "Directeur de service", salary = 810 },
         }
     },
     -- 38. Plongeur Sous-Marin / Récupérateur
@@ -602,9 +602,9 @@ JobsList = {
         grades = {
             [0] = { label = "Plongeur Niveau 1", salary = 220 },
             [1] = { label = "Scaphandrier Travaux", salary = 400 },
-            [2] = { label = "Chef d'Expédition Sous-Marine", salary = 640 }
-            [3] = { label = "Responsable de service", salary = 790 }
-            [4] = { label = "Directeur de service", salary = 940 }
+            [2] = { label = "Chef d'Expédition Sous-Marine", salary = 640 },
+            [3] = { label = "Responsable de service", salary = 790 },
+            [4] = { label = "Directeur de service", salary = 940 },
         }
     },
     -- 39. Chauffeur de Bus Urbain
@@ -618,9 +618,9 @@ JobsList = {
         grades = {
             [0] = { label = "Conducteur Ligne Standard", salary = 210 },
             [1] = { label = "Conducteur Ligne Express", salary = 350 },
-            [2] = { label = "Régulateur de Réseau LST", salary = 530 }
-            [3] = { label = "Responsable de service", salary = 680 }
-            [4] = { label = "Directeur de service", salary = 830 }
+            [2] = { label = "Régulateur de Réseau LST", salary = 530 },
+            [3] = { label = "Responsable de service", salary = 680 },
+            [4] = { label = "Directeur de service", salary = 830 },
         }
     },
     -- 40. Vigneron / Sommelier
@@ -634,9 +634,9 @@ JobsList = {
         grades = {
             [0] = { label = "Vendangeur Ouvrier", salary = 200 },
             [1] = { label = "Maître de Chai", salary = 370 },
-            [2] = { label = "Propriétaire Récoltant", salary = 600 }
-            [3] = { label = "Responsable de service", salary = 750 }
-            [4] = { label = "Directeur de service", salary = 900 }
+            [2] = { label = "Propriétaire Récoltant", salary = 600 },
+            [3] = { label = "Responsable de service", salary = 750 },
+            [4] = { label = "Directeur de service", salary = 900 },
         }
     },
     -- 41. Coursier à Vélo
@@ -650,9 +650,9 @@ JobsList = {
         grades = {
             [0] = { label = "Coursier Vélo", salary = 190 },
             [1] = { label = "Sprinter Urbain", salary = 320 },
-            [2] = { label = "Responsable Dispatch Vélo", salary = 470 }
-            [3] = { label = "Responsable de service", salary = 620 }
-            [4] = { label = "Directeur de service", salary = 770 }
+            [2] = { label = "Responsable Dispatch Vélo", salary = 470 },
+            [3] = { label = "Responsable de service", salary = 620 },
+            [4] = { label = "Directeur de service", salary = 770 },
         }
     },
     -- 42. Soudeur Industriel
@@ -666,9 +666,9 @@ JobsList = {
         grades = {
             [0] = { label = "Apprenti Soudeur", salary = 220 },
             [1] = { label = "Soudeur TIG / MIG", salary = 390 },
-            [2] = { label = "Inspecteur Soudage Qualité", salary = 600 }
-            [3] = { label = "Responsable de service", salary = 750 }
-            [4] = { label = "Directeur de service", salary = 900 }
+            [2] = { label = "Inspecteur Soudage Qualité", salary = 600 },
+            [3] = { label = "Responsable de service", salary = 750 },
+            [4] = { label = "Directeur de service", salary = 900 },
         }
     },
     -- 43. Capitaine de Bateau de Plaisance
@@ -682,9 +682,9 @@ JobsList = {
         grades = {
             [0] = { label = "Skipper Côtier", salary = 230 },
             [1] = { label = "Capitaine 200 Voile/Moteur", salary = 420 },
-            [2] = { label = "Commandant Yacht de Luxe", salary = 720 }
-            [3] = { label = "Responsable de service", salary = 870 }
-            [4] = { label = "Directeur de service", salary = 1020 }
+            [2] = { label = "Commandant Yacht de Luxe", salary = 720 },
+            [3] = { label = "Responsable de service", salary = 870 },
+            [4] = { label = "Directeur de service", salary = 1020 },
         }
     },
     -- 44. Docker Portuaire
@@ -698,9 +698,9 @@ JobsList = {
         grades = {
             [0] = { label = "Manutentionnaire Docker", salary = 220 },
             [1] = { label = "Opérateur Portique Grue", salary = 380 },
-            [2] = { label = "Chef de Quai Portuaire", salary = 570 }
-            [3] = { label = "Responsable de service", salary = 720 }
-            [4] = { label = "Directeur de service", salary = 870 }
+            [2] = { label = "Chef de Quai Portuaire", salary = 570 },
+            [3] = { label = "Responsable de service", salary = 720 },
+            [4] = { label = "Directeur de service", salary = 870 },
         }
     },
     -- 45. Croupier de Casino
@@ -714,9 +714,9 @@ JobsList = {
         grades = {
             [0] = { label = "Croupier Apprenti", salary = 220 },
             [1] = { label = "Croupier Hautes Mises", salary = 410 },
-            [2] = { label = "Chef de Table / Pit Boss", salary = 680 }
-            [3] = { label = "Responsable de service", salary = 830 }
-            [4] = { label = "Directeur de service", salary = 980 }
+            [2] = { label = "Chef de Table / Pit Boss", salary = 680 },
+            [3] = { label = "Responsable de service", salary = 830 },
+            [4] = { label = "Directeur de service", salary = 980 },
         }
     },
     -- 46. Coach Sportif
@@ -730,9 +730,9 @@ JobsList = {
         grades = {
             [0] = { label = "Moniteur de Gym", salary = 200 },
             [1] = { label = "Coach Personnel Diplômé", salary = 360 },
-            [2] = { label = "Directeur de Complexe Fitness", salary = 560 }
-            [3] = { label = "Responsable de service", salary = 710 }
-            [4] = { label = "Directeur de service", salary = 860 }
+            [2] = { label = "Directeur de Complexe Fitness", salary = 560 },
+            [3] = { label = "Responsable de service", salary = 710 },
+            [4] = { label = "Directeur de service", salary = 860 },
         }
     },
     -- 47. Projectionniste de Cinéma
@@ -746,9 +746,9 @@ JobsList = {
         grades = {
             [0] = { label = "Opérateur Cabine", salary = 200 },
             [1] = { label = "Technicien Son & Projection", salary = 340 },
-            [2] = { label = "Directeur du Cinéma Tivoli", salary = 520 }
-            [3] = { label = "Responsable de service", salary = 670 }
-            [4] = { label = "Directeur de service", salary = 820 }
+            [2] = { label = "Directeur du Cinéma Tivoli", salary = 520 },
+            [3] = { label = "Responsable de service", salary = 670 },
+            [4] = { label = "Directeur de service", salary = 820 },
         }
     },
     -- 48. Fleuriste
@@ -762,9 +762,9 @@ JobsList = {
         grades = {
             [0] = { label = "Aide Fleuriste", salary = 200 },
             [1] = { label = "Fleuriste Bouquetier", salary = 340 },
-            [2] = { label = "Maître Artisan Paysagiste", salary = 530 }
-            [3] = { label = "Responsable de service", salary = 680 }
-            [4] = { label = "Directeur de service", salary = 830 }
+            [2] = { label = "Maître Artisan Paysagiste", salary = 530 },
+            [3] = { label = "Responsable de service", salary = 680 },
+            [4] = { label = "Directeur de service", salary = 830 },
         }
     },
     -- 49. Garde-Chasse / Ranger
@@ -778,9 +778,9 @@ JobsList = {
         grades = {
             [0] = { label = "Ranger Stagiaire", salary = 230 },
             [1] = { label = "Ranger Titulaire", salary = 390 },
-            [2] = { label = "Chef Ranger de Réserve", salary = 610 }
-            [3] = { label = "Responsable de service", salary = 760 }
-            [4] = { label = "Directeur de service", salary = 910 }
+            [2] = { label = "Chef Ranger de Réserve", salary = 610 },
+            [3] = { label = "Responsable de service", salary = 760 },
+            [4] = { label = "Directeur de service", salary = 910 },
         }
     },
     -- 50. Contrebandier / Marché Noir
@@ -794,9 +794,9 @@ JobsList = {
         grades = {
             [0] = { label = "Guetteur des Ruelles", salary = 180 },
             [1] = { label = "Passeur Clandestin", salary = 350 },
-            [2] = { label = "Parrain des Quais", salary = 600 }
-            [3] = { label = "Responsable de service", salary = 750 }
-            [4] = { label = "Directeur de service", salary = 900 }
+            [2] = { label = "Parrain des Quais", salary = 600 },
+            [3] = { label = "Responsable de service", salary = 750 },
+            [4] = { label = "Directeur de service", salary = 900 },
         }
     }
 }
@@ -808,6 +808,6 @@ DefaultJob = {
     category = "civilian",
     whitelisted = false,
     grades = {
-        [0] = { label = "Demandeur d'Emploi", salary = 150 }
+        [0] = { label = "Demandeur d'Emploi", salary = 150 },
     }
 }
