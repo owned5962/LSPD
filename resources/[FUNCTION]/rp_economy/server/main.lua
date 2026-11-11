@@ -47,6 +47,7 @@ end
 
 local function notify(src, message, kind)
     TriggerClientEvent('rp_core:client:notify', src, message, kind or 'info')
+    TriggerClientEvent('rp_economy:client:bankNotice', src, message, kind or 'info')
 end
 
 local function requireAuthenticatedSession(src, operation, allowATM)
