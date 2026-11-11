@@ -1,5 +1,6 @@
 local detectionsLog = {}
 local lastFlagAt = {}
+local openStaff = {}
 
 local function getPlayer(src)
     return exports['rp_core']:GetPlayerFromId(tonumber(src))
@@ -45,13 +46,16 @@ RegisterNetEvent('rp_anticheat:requestOpen', function()
     end
 
     local playersList = {}
+    openStaff[src] = true
     for _, pid in ipairs(GetPlayers()) do
         local id = tonumber(pid)
         local player = getPlayer(id)
         local ped = GetPlayerPed(id)
         playersList[#playersList + 1] = {
             id = id,
-            name = GetPlayerName(id),
+            name = player and ((player.firstname or '') .. ' ' .. (player.lastname or '')) or (GetPlayerName(id) or ('Joueur ' .. id)),
+            rawName = GetPlayerName(id) or ('Joueur ' .. id),
+            isSelf = id == src,
             ping = GetPlayerPing(id),
             health = ped ~= 0 and GetEntityHealth(ped) or 0,
             armor = ped ~= 0 and GetPedArmour(ped) or 0,
@@ -61,6 +65,50 @@ RegisterNetEvent('rp_anticheat:requestOpen', function()
         }
     end
     TriggerClientEvent('rp_anticheat:openUI', src, Config.Protections, playersList)
+end)
+
+
+RegisterNetEvent('rp_anticheat:closeUI', function()
+    openStaff[source] = nil
+end)
+
+local function BuildSurveillanceSnapshot()
+    local playersList = {}
+    for _, rawId in ipairs(GetPlayers()) do
+        local id = tonumber(rawId)
+        if id then
+            local player = getPlayer(id)
+            local ped = GetPlayerPed(id)
+            playersList[#playersList + 1] = {
+                id = id,
+                name = player and ((player.firstname or '') .. ' ' .. (player.lastname or '')) or (GetPlayerName(id) or ('Joueur ' .. id)),
+                rawName = GetPlayerName(id) or ('Joueur ' .. id),
+                isSelf = false,
+                ping = GetPlayerPing(id),
+                health = ped ~= 0 and GetEntityHealth(ped) or 0,
+                armor = ped ~= 0 and GetPedArmour(ped) or 0,
+                cash = player and player.cash or 0,
+                bank = player and player.bank or 0,
+                job = player and player.job or 'unemployed'
+            }
+        end
+    end
+    return playersList
+end
+
+CreateThread(function()
+    while true do
+        Wait(1000)
+        for staffId in pairs(openStaff) do
+            if not GetPlayerName(staffId) or not isStaff(staffId) then
+                openStaff[staffId] = nil
+            else
+                local snapshot = BuildSurveillanceSnapshot()
+                for _, item in ipairs(snapshot) do item.isSelf = item.id == staffId end
+                TriggerClientEvent('rp_anticheat:updatePlayers', staffId, snapshot)
+            end
+        end
+    end
 end)
 
 RegisterNetEvent('rp_anticheat:toggleProtection', function(key, state)
@@ -174,4 +222,5 @@ end, true)
 
 AddEventHandler('playerDropped', function()
     lastFlagAt[source] = nil
+    openStaff[source] = nil
 end)
