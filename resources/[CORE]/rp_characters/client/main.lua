@@ -393,6 +393,21 @@ RegisterNetEvent('rp_characters:client:openCharacterSelection', function(charact
     SendNUIMessage({ action = 'openCharacterSelection', characters = characters, maxCharacters = maxCharacters or 3 })
 end)
 
+RegisterNetEvent('rp_characters:client:resumeLoadedCharacter', function()
+    characterSessionReady = true
+    SetPlayerControl(PlayerId(), true, 0)
+    local ped = PlayerPedId()
+    if ped and ped ~= 0 and DoesEntityExist(ped) then
+        FreezeEntityPosition(ped, false)
+        SetEntityVisible(ped, true, false)
+        ResetEntityAlpha(ped)
+        SetEntityCollision(ped, true, true)
+    end
+    ShutdownLoadingScreen()
+    ShutdownLoadingScreenNui()
+    DoScreenFadeIn(250)
+end)
+
 RegisterNetEvent('rp_characters:client:bootError', function(message)
     if not characterBootPending then return end
     ShowCharacterBootError(message)
