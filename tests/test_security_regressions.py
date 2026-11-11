@@ -676,7 +676,40 @@ def test_admin_tablet_exposes_working_heal_economy_and_job_actions():
 
 def test_all_security_regressions_are_run_by_the_test_script():
     source = read("tests/test_security_regressions.py")
-    runner_index = source.rindex('if __name__ == "__main__":')
+    runner_index = source.rindex('def test_anticheat_tablet_has_live_dashboard_player_tools_logs_and_ban_management():
+    root = "resources/[FUNCTION]/rp_anticheat/"
+    html = read(root + "html/index.html")
+    ui = read(root + "html/js/app.js")
+    client = read(root + "client/main.lua")
+    server = read(root + "server/main.lua")
+    config = read(root + "shared/config.lua")
+    css = read(root + "html/css/style.css")
+
+    for tab in ("dashboard", "protections", "players", "surveillance", "logs", "bans"):
+        assert f'data-tab="{tab}"' in html
+        assert f'id="pane-{tab}"' in html
+    assert "requestLogs" in client and "requestBans" in client and "unban" in client
+    assert "RegisterNetEvent('rp_anticheat:requestLogs'" in server
+    assert "RegisterNetEvent('rp_anticheat:requestBans'" in server
+    assert "RegisterNetEvent('rp_anticheat:unban'" in server
+    assert "CanUseAnticheatTablet(src)" in server
+    assert "entity_spam" in config and "AddEventHandler('entityCreating'" in server
+    assert "MaxEntitiesPerWindow" in config and "CancelEvent()" in server
+    assert "textContent" in ui
+    assert "spectateStarted" in ui and "spectateStopped" in ui
+    assert ".ac-shell" in css and ".metric-grid" in css
+
+
+def test_anticheat_detection_log_and_staff_actions_are_bounded():
+    server = read("resources/[FUNCTION]/rp_anticheat/server/main.lua")
+    assert "if #detectionsLog > 250 then table.remove(detectionsLog) end" in server
+    assert "allowStaffAction(src, 'toggle_protection', 1)" in server
+    assert "allowStaffAction(src, 'punish', 2)" in server
+    assert "allowStaffAction(src, 'unban', 2)" in server
+    assert "ORDER BY created_at DESC LIMIT 100" in server
+
+
+if __name__ == "__main__":')
 
 def test_loadscreen_has_offline_visual_banners_and_correct_keybinds():
     manifest = read("resources/[FUNCTION]/rp_loadscreen/fxmanifest.lua")
