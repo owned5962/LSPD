@@ -1,4 +1,5 @@
 local isTabletOpen = false
+local lastAdminToggleAt = 0
 local tabletEntity = nil
 local tabletDict = "amb@code_human_in_bus_passenger_idles@female@tablet@base"
 local tabletAnim = "base"
@@ -18,10 +19,11 @@ end
 
 function CloseAdminTablet()
     -- Idempotent: always release NUI focus, even if Lua and NUI state drift.
+    local wasOpen = isTabletOpen
     isTabletOpen = false
     SetNuiFocus(false, false)
     SendNUIMessage({ action = "closeTablet" })
-    StopTabletAnimation()
+    if wasOpen then StopTabletAnimation() end
 end
 
 function StartTabletAnimation()
@@ -60,6 +62,11 @@ RegisterNetEvent('rp_tablet_admin:client:openAuthorized', function(adminData, pl
 end)
 
 RegisterCommand('admin', function()
+    local now = GetGameTimer()
+    -- Prevent a simultaneous NUI F10 key event and key mapping from reopening it.
+    if lastAdminToggleAt > 0 and now - lastAdminToggleAt < 500 then return end
+    lastAdminToggleAt = now
+
     if isTabletOpen then
         CloseAdminTablet()
     else
@@ -70,6 +77,9 @@ end, false)
 RegisterKeyMapping('admin', 'Ouvrir la Tablette Admin', 'keyboard', 'F10')
 
 RegisterNUICallback('close', function(data, cb)
+    if type(data) == 'table' and data.source == 'f10' then
+        lastAdminToggleAt = GetGameTimer()
+    end
     CloseAdminTablet()
     cb('ok')
 end)
