@@ -28,6 +28,34 @@
         </div>
     </div>
 
+    <!-- Custom HUD: vital indicators sit beside the minimap, never below it. -->
+    <section id="player-hud" class="hidden" aria-label="Informations du joueur">
+        <div class="hud-vital">
+            <span class="hud-vital-icon">♥</span>
+            <div class="hud-vital-track"><div id="hud-health-fill" class="hud-vital-fill health"></div></div>
+            <span id="hud-health-value" class="hud-vital-value">100</span>
+        </div>
+        <div class="hud-vital">
+            <span class="hud-vital-icon">◆</span>
+            <div class="hud-vital-track"><div id="hud-armour-fill" class="hud-vital-fill armour"></div></div>
+            <span id="hud-armour-value" class="hud-vital-value">0</span>
+        </div>
+    </section>
+
+    <!-- Digital speedometer, visible only while inside a vehicle. -->
+    <section id="vehicle-speedometer" class="hidden" aria-label="Compteur du véhicule">
+        <div class="speedometer-main">
+            <span id="vehicle-speed">0</span>
+            <span class="speedometer-unit">KM/H</span>
+        </div>
+        <div class="speedometer-divider"></div>
+        <div class="fuel-row">
+            <span class="fuel-icon">⛽</span>
+            <div class="fuel-track"><div id="vehicle-fuel-fill" class="fuel-fill"></div></div>
+            <span id="vehicle-fuel-value">0%</span>
+        </div>
+    </section>
+
     <script src="js/app.js"></script>
 </body>
 </html>
