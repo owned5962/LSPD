@@ -34,6 +34,8 @@ def test_statistics_are_persistent_and_access_controlled():
     assert "INSERT INTO anticheat_event_log" in server
     assert "sanction VARCHAR(16)" in server and "alert.sanction" in server
     assert "ORDER BY id DESC LIMIT 250" in server
+    logs_query = server[server.index("RegisterNetEvent('rp_anticheat:requestLogs'"):server.index("RegisterNetEvent('rp_anticheat:requestSanctionConfig'")]
+    assert "severity, sanction" in logs_query
     assert "detectionCount" in server and "totalDetections" in server
     assert "RegisterNetEvent('rp_anticheat:saveSanctionConfig'" in server
     assert "applyConfiguredSanction(src, alert)" in server
