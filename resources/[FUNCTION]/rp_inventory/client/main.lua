@@ -64,7 +64,7 @@ CreateThread(function()
         Wait(0)
         if not IsPauseMenuActive()
             and not IsControlPressed(0, 200)
-            and IsControlJustReleased(0, Config.OpenKey or 289) then
+            and IsControlJustPressed(0, Config.OpenKey or 289) then
             ToggleInventory()
         end
     end
