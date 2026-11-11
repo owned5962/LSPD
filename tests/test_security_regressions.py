@@ -1285,3 +1285,18 @@ def test_admin_item_give_uses_inventory_catalog_and_server_side_authorization():
     assert "exports['rp_inventory']:GetItemCatalog()" in main
     assert "'rp_inventory'" in manifest
     assert "function giveAdminItem()" in ui
+
+
+
+def test_vehicle_hud_displays_vehicle_category_and_model():
+    client = read("resources/[FUNCTION]/rp_ui/client/main.lua")
+    html = read("resources/[FUNCTION]/rp_ui/html/index.html")
+    ui = read("resources/[FUNCTION]/rp_ui/html/js/app.js")
+    css = read("resources/[FUNCTION]/rp_ui/html/css/style.css")
+    assert "local VehicleClassLabels = {" in client
+    assert "[8] = 'Moto'" in client and "[14] = 'Bateau'" in client and "[15] = 'Hélicoptère'" in client
+    assert "GetVehicleHUDIdentity(vehicle)" in client
+    assert "vehicleType = lastVehicleType, vehicleName = lastVehicleName" in client
+    assert 'id="vehicle-type"' in html and 'id="vehicle-model"' in html
+    assert "data.vehicleType" in ui and "data.vehicleName" in ui
+    assert ".vehicle-identity" in css
