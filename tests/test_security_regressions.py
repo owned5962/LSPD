@@ -1050,6 +1050,7 @@ def test_character_boot_resumes_only_when_core_already_has_a_loaded_player():
 def test_fivem_server_icon_is_registered():
     config = read("server.cfg")
     assert "load_server_icon server-icon.png" in config
+    assert (ROOT / "server-icon.png").is_file()
 
 
 def test_creator_console_server_and_player_management_is_server_authorized():
