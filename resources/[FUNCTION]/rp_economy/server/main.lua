@@ -5,25 +5,36 @@ local BANK_POSITIONS = {
     vector3(-2962.6, 482.1, 15.7), vector3(1175.0, 2706.8, 38.0),
     vector3(236.4, 217.4, 106.2)
 }
-local ATM_MODELS = {
-    [GetHashKey('prop_atm_01')] = true, [GetHashKey('prop_atm_02')] = true,
-    [GetHashKey('prop_atm_03')] = true, [GetHashKey('prop_fleeca_atm')] = true
+-- GTA map ATMs are usually static map entities, not networked entities.
+-- GetAllObjects() on the server therefore cannot reliably enumerate them.
+-- Validate against the same fixed ATM locations used by the map blips instead.
+local ATM_POSITIONS = {
+    vector3(89.6, 2.2, 68.3), vector3(1167.0, -456.1, 66.8),
+    vector3(-386.7, 6045.9, 31.5), vector3(-821.6, -1081.9, 11.1),
+    vector3(-56.9, -1752.1, 29.4), vector3(155.9, 6642.9, 31.6),
+    vector3(174.2, 6637.9, 31.6), vector3(296.4, -894.1, 29.2),
+    vector3(-203.8, -861.4, 30.3), vector3(-254.4, -692.5, 33.6),
+    vector3(-1570.1, -546.7, 34.9), vector3(-1415.9, -211.8, 46.5),
+    vector3(-1205.0, -324.8, 37.9), vector3(-717.6, -915.7, 19.2),
+    vector3(-526.6, -1222.9, 18.5), vector3(-1315.4, -834.4, 16.9),
+    vector3(112.5, -819.4, 31.3), vector3(285.4, 143.4, 104.2),
+    vector3(-256.2, -716.0, 33.5), vector3(-660.7, -854.1, 24.5),
+    vector3(-1109.8, -1690.8, 4.4), vector3(1686.8, 4815.8, 42.0),
+    vector3(1703.0, 4933.6, 42.1), vector3(1968.1, 3743.6, 32.3),
+    vector3(540.3, 2671.1, 42.2), vector3(2564.5, 2584.8, 38.1),
+    vector3(2683.0, 3286.5, 55.2)
 }
+
 local function IsNearBankOrATM(src, allowATM)
     local ped = GetPlayerPed(src)
     if not ped or ped == 0 or not DoesEntityExist(ped) then return false end
     local coords = GetEntityCoords(ped)
     for _, bankCoords in ipairs(BANK_POSITIONS) do
-        if #(coords - bankCoords) <= 3.5 then return true end
+        if #(coords - bankCoords) <= 6.0 then return true end
     end
     if allowATM then
-        local ok, objects = pcall(GetAllObjects)
-        if ok and type(objects) == 'table' then
-            for _, object in ipairs(objects) do
-                if DoesEntityExist(object) and ATM_MODELS[GetEntityModel(object)] and #(coords - GetEntityCoords(object)) <= 2.5 then
-                    return true
-                end
-            end
+        for _, atmCoords in ipairs(ATM_POSITIONS) do
+            if #(coords - atmCoords) <= 4.0 then return true end
         end
     end
     return false
@@ -90,12 +101,22 @@ RegisterNetEvent('rp_economy:server:deposit', function(rawAmount)
         'UPDATE characters SET cash = cash - ?, bank = bank + ? WHERE id = ? AND identifier = ? AND cash >= ?',
         { amount, amount, player.charId, player.identifier, amount }
     )
+    -- Keep the core save lock until the in-memory balances match SQL. Otherwise
+    -- an autosave can run in the gap and overwrite the successful transaction
+    -- with the old cash/bank values.
+    if ok and tonumber(affected) == 1 then
+        player.cash, player.bank = player.cash - amount, player.bank + amount
+    end
     exports['rp_core']:ReleaseCharacterLock(lockedIds)
-    if not ok or tonumber(affected) ~= 1 then
-        notify(src, 'Dépôt impossible : solde insuffisant ou base indisponible.', 'error')
+    if not ok then
+        print(('[rp_economy] Deposit SQL error for character %s: %s'):format(player.charId, tostring(affected)))
+        notify(src, 'Dépôt impossible : erreur de base de données.', 'error')
         return
     end
-    player.cash, player.bank = player.cash - amount, player.bank + amount
+    if tonumber(affected) ~= 1 then
+        notify(src, 'Dépôt impossible : espèces insuffisantes ou compte introuvable.', 'error')
+        return
+    end
     TriggerEvent('rp_economy:server:logTransaction', player.charId, 'deposit', amount, 'Système', 'Dépôt bancaire')
     TriggerClientEvent('rp_core:client:updateCash', src, player.cash)
     TriggerClientEvent('rp_core:client:updateBank', src, player.bank)
@@ -120,12 +141,21 @@ RegisterNetEvent('rp_economy:server:withdraw', function(rawAmount)
         'UPDATE characters SET bank = bank - ?, cash = cash + ? WHERE id = ? AND identifier = ? AND bank >= ?',
         { amount, amount, player.charId, player.identifier, amount }
     )
+    -- Update the live character before releasing its lock so rp_core cannot
+    -- persist stale balances over the withdrawal.
+    if ok and tonumber(affected) == 1 then
+        player.bank, player.cash = player.bank - amount, player.cash + amount
+    end
     exports['rp_core']:ReleaseCharacterLock(lockedIds)
-    if not ok or tonumber(affected) ~= 1 then
-        notify(src, 'Retrait impossible : solde insuffisant ou base indisponible.', 'error')
+    if not ok then
+        print(('[rp_economy] Withdrawal SQL error for character %s: %s'):format(player.charId, tostring(affected)))
+        notify(src, 'Retrait impossible : erreur de base de données.', 'error')
         return
     end
-    player.bank, player.cash = player.bank - amount, player.cash + amount
+    if tonumber(affected) ~= 1 then
+        notify(src, 'Retrait impossible : solde bancaire insuffisant ou compte introuvable.', 'error')
+        return
+    end
     TriggerEvent('rp_economy:server:logTransaction', player.charId, 'withdraw', amount, 'Système', 'Retrait DAB / Guichet')
     TriggerClientEvent('rp_core:client:updateCash', src, player.cash)
     TriggerClientEvent('rp_core:client:updateBank', src, player.bank)
