@@ -4,6 +4,7 @@ local adminActionAt = {}
 local openStaff = {}
 local adminInvulnerability = {}
 local explosionWindows = {}
+local entityWindows = {}
 local spectateRequestAt = {}
 
 local function getPlayer(src)
@@ -42,7 +43,8 @@ local function safeReason(reason)
         'SpeedHack à pied',
         'Arme interdite détectée',
         'Vision thermique/nocturne non autorisée',
-        'Explosion spam détecté'
+        'Explosion spam détecté',
+        'Entity spam détecté'
     }
     for _, prefix in ipairs(allowed) do
         if reason:sub(1, #prefix) == prefix then return reason end
@@ -97,6 +99,26 @@ AddEventHandler('weaponDamageEvent', function(sender, data)
             recordDetection(src, 'Arme interdite détectée')
             return
         end
+    end
+end)
+
+AddEventHandler('entityCreating', function(entity)
+    if not Config.Protections.entity_spam or not Config.Protections.entity_spam.enabled then return end
+    if not entity or entity == 0 or not DoesEntityExist(entity) then return end
+
+    local owner = tonumber(NetworkGetEntityOwner(entity))
+    if not owner or owner < 1 or not GetPlayerName(owner) or isStaff(owner) then return end
+
+    local now = os.time()
+    local window = entityWindows[owner]
+    if not window or now - window.startedAt >= (Config.EntityWindowSeconds or 10) then
+        window = { startedAt = now, count = 0 }
+        entityWindows[owner] = window
+    end
+    window.count = window.count + 1
+    if window.count > (Config.MaxEntitiesPerWindow or 20) then
+        CancelEvent()
+        recordDetection(owner, 'Entity spam détecté')
     end
 end)
 
@@ -208,9 +230,17 @@ RegisterNetEvent('rp_anticheat:unban', function(rawIdentifier)
     end
     notify(src, affected and affected > 0 and 'success' or 'info',
         affected and affected > 0 and 'Bannissement levé.' or 'Aucun bannissement trouvé.')
-    TriggerClientEvent('rp_anticheat:updateBans', src, MySQL.query.await(
-        'SELECT identifier, reason, banned_by, created_at FROM player_bans ORDER BY created_at DESC LIMIT 100'
-    ) or {})
+    local refreshOk, refreshedBans = pcall(function()
+        return MySQL.query.await(
+            'SELECT identifier, reason, banned_by, created_at FROM player_bans ORDER BY created_at DESC LIMIT 100'
+        )
+    end)
+    if refreshOk then
+        TriggerClientEvent('rp_anticheat:updateBans', src, refreshedBans or {})
+    else
+        print('[rp_anticheat] Ban list refresh failed: ' .. tostring(refreshedBans))
+        notify(src, 'error', 'Bannissement levé, mais actualisation de la liste impossible.')
+    end
 end)
 
 local function BuildSurveillanceSnapshot()
@@ -230,7 +260,8 @@ local function BuildSurveillanceSnapshot()
                 armor = ped ~= 0 and GetPedArmour(ped) or 0,
                 cash = player and player.cash or 0,
                 bank = player and player.bank or 0,
-                job = player and player.job or 'unemployed'
+                job = player and player.job or 'unemployed',
+                routingBucket = GetPlayerRoutingBucket(id)
             }
         end
     end
@@ -386,5 +417,6 @@ AddEventHandler('playerDropped', function()
     adminInvulnerability[source] = nil
     explosionWindows[source] = nil
     spectateRequestAt[source] = nil
+    entityWindows[source] = nil
     adminActionAt[source] = nil
 end)
