@@ -194,3 +194,41 @@ body {
 @keyframes rpToastIn { from { opacity:0; transform:translateX(24px); } to { opacity:1; transform:translateX(0); } }
 @media (max-width: 900px) { #player-hud { left:17.5vw; width:205px; padding:8px; } #rp-notifications { width:44vw; } }
 @media (max-width: 600px) { #player-hud { left:17vw; width:175px; padding:7px; } .hud-money { flex-direction:column; gap:4px; } #vehicle-hud { min-width:190px; bottom:4vh; } .speedometer-ring strong { font-size:44px; } }
+
+
+/* HUD aligned beside the minimap; keep the vehicle readout centered. */
+#player-hud {
+    left: clamp(250px, 18vw, 360px);
+    width: min(250px, 24vw);
+    max-width: calc(100vw - 270px);
+}
+#vehicle-hud {
+    left: 50%;
+    bottom: 4vh;
+    transform: translateX(-50%);
+}
+#vehicle-hud.hidden,
+#player-hud.hidden {
+    display: none !important;
+}
+@media (max-width: 900px) {
+    #player-hud {
+        left: 245px;
+        width: 205px;
+        max-width: calc(100vw - 260px);
+    }
+}
+@media (max-width: 600px) {
+    /* Compact screens: stack the status card above the minimap rather than
+       covering the map or its controls. */
+    #player-hud {
+        left: 12px;
+        bottom: 20vh;
+        width: min(190px, calc(100vw - 24px));
+        max-width: none;
+    }
+    #vehicle-hud {
+        min-width: 180px;
+        bottom: 3vh;
+    }
+}
