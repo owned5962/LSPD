@@ -264,3 +264,7 @@ body {
     color: #94a3b8;
     cursor: not-allowed;
 }
+
+
+.job-status { min-height: 18px; margin: -8px 0 8px; color: #93c5fd; font-size: 12px; font-weight: 600; }
+.select-job-btn:disabled:not(.disabled) { opacity: .65; cursor: wait; }
