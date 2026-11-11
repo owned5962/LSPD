@@ -1,0 +1,43 @@
+name: Staff access validation
+
+on:
+  push:
+    paths:
+      - "resources/[FUNCTION]/rp_tablet_creator/**"
+      - "resources/[FUNCTION]/rp_ui/**"
+      - "tests/test_staff_access.py"
+      - ".github/workflows/staff-access.yml"
+  pull_request:
+    paths:
+      - "resources/[FUNCTION]/rp_tablet_creator/**"
+      - "resources/[FUNCTION]/rp_ui/**"
+      - "tests/test_staff_access.py"
+      - ".github/workflows/staff-access.yml"
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Run staff access regression checks
+        run: python tests/test_staff_access.py
+      - name: Check staff NUI JavaScript
+        run: |
+          node --check "resources/[FUNCTION]/rp_tablet_creator/html/app.js"
+          node --check "resources/[FUNCTION]/rp_ui/html/js/app.js"
+      - name: Install Lua 5.4
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y lua5.4
+      - name: Compile staff access Lua scripts
+        run: |
+          luac5.4 -p "resources/[FUNCTION]/rp_tablet_creator/client/main.lua"
+          luac5.4 -p "resources/[FUNCTION]/rp_tablet_creator/server/main.lua"
+          luac5.4 -p "resources/[FUNCTION]/rp_ui/client/main.lua"
+          luac5.4 -p "resources/[FUNCTION]/rp_ui/server/main.lua"
