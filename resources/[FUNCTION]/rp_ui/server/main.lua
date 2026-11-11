@@ -17,14 +17,14 @@ RegisterNetEvent('rp_ui:server:requestDiagnosticsStats', function()
         end
     end
 
-    local okCount, registeredCount = pcall(MySQL.scalar.await, 'SELECT COUNT(*) FROM characters')
+    local okCount, registeredCount = pcall(MySQL.scalar.await, 'SELECT COUNT(*) FROM users')
     if not okCount then
-        print('[rp_ui] Diagnostics character count query failed: ' .. tostring(registeredCount))
+        print('[rp_ui] Diagnostics account count query failed: ' .. tostring(registeredCount))
         registeredCount = nil
     end
 
     local okHistory, history = pcall(MySQL.query.await,
-        'SELECT DATE_FORMAT(created_at, "%Y-%m-%d") AS day, COUNT(*) AS total FROM characters GROUP BY DATE(created_at) ORDER BY DATE(created_at) DESC LIMIT 14')
+        'SELECT DATE_FORMAT(created_at, "%Y-%m-%d") AS day, COUNT(*) AS total FROM users GROUP BY DATE(created_at) ORDER BY DATE(created_at) DESC LIMIT 14')
     if not okHistory then
         print('[rp_ui] Diagnostics registration history query failed: ' .. tostring(history))
         history = {}
