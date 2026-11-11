@@ -93,7 +93,10 @@
                                     <h4>Sanctions & Expulsions</h4>
                                     <div class="btn-group">
                                         <button class="btn-red alert" data-perm="kick" onclick="playerAction('kick')"><i class="fas fa-user-times"></i> Expulser (Kick)</button>
-                                        <button class="btn-red alert" data-perm="ban" disabled title="Fonction non implémentée côté serveur"><i class="fas fa-ban"></i> Bannir Joueur</button>
+                                        <button class="btn-red alert" data-perm="ban" onclick="banSelectedPlayer()"><i class="fas fa-ban"></i> Bannir définitivement</button>
+                                    </div>
+                                    <div class="admin-inline-form">
+                                        <input id="admin-ban-reason" type="text" maxlength="180" placeholder="Motif obligatoire du bannissement">
                                     </div>
                                 </div>
                                 <div class="actions-category">
