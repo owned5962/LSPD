@@ -1,22 +1,27 @@
 local CURRENT_VERSION = '1.3.0'
 local PREVIOUS_VERSION = '1.2.0'
-local GITHUB_COMMITS_URL = 'https://api.github.com/repos/owned5962/LSPD/commits?per_page=4'
+local UPDATES_URL = 'https://raw.githubusercontent.com/owned5962/LSPD/main/nouveaut%C3%A9s.txt'
+local FUTURE_URL = 'https://raw.githubusercontent.com/owned5962/LSPD/main/futur.txt'
 local CACHE_DURATION_MS = 300000
 local REQUEST_COOLDOWN_MS = 10000
 
-local cachedUpdates = nil
+local cachedPayload = nil
 local lastFetchAt = 0
 local lastRequestByPlayer = {}
 
-local function BuildPayload(updates, source)
-    return {
-        eventName = 'lssUpdates',
-        currentVersion = CURRENT_VERSION,
-        previousVersion = PREVIOUS_VERSION,
-        updates = updates or {},
-        source = source or 'unavailable',
-        fetchedAt = os.date('%d/%m/%Y %H:%M:%S')
-    }
+local function ParseLines(content, limit)
+    local entries = {}
+    if type(content) ~= 'string' then return entries end
+
+    for line in content:gmatch('[^\r\n]+') do
+        local value = line:gsub('^%s+', ''):gsub('%s+$', '')
+        if value ~= '' and value:sub(1, 1) ~= '#' then
+            entries[#entries + 1] = value:sub(1, 140)
+            if #entries >= limit then break end
+        end
+    end
+
+    return entries
 end
 
 local function SendUpdates(playerId, payload)
@@ -25,49 +30,58 @@ local function SendUpdates(playerId, payload)
     end
 end
 
-local function FetchLatestUpdates(callback)
+local function FetchText(url, callback)
+    PerformHttpRequest(url, function(statusCode, body)
+        if statusCode == 200 and type(body) == 'string' then
+            callback(body)
+        else
+            print(('[rp_loadscreen] Impossible de lire %s (HTTP %s)'):format(url, tostring(statusCode)))
+            callback(nil)
+        end
+    end, 'GET', '', {
+        ['Accept'] = 'text/plain',
+        ['User-Agent'] = 'LSPD-FiveM-Loadscreen'
+    })
+end
+
+local function FetchLoadscreenData(callback)
     local now = GetGameTimer()
-    if cachedUpdates and (now - lastFetchAt) < CACHE_DURATION_MS then
-        callback(cachedUpdates)
+    if cachedPayload and (now - lastFetchAt) < CACHE_DURATION_MS then
+        callback(cachedPayload)
         return
     end
 
-    PerformHttpRequest(GITHUB_COMMITS_URL, function(statusCode, responseBody)
-        local updates = {}
-        local source = 'unavailable'
+    local pending = 2
+    local updatesText, futureText
 
-        if statusCode == 200 and type(responseBody) == 'string' then
-            local ok, commits = pcall(json.decode, responseBody)
-            if ok and type(commits) == 'table' then
-                for index = 1, math.min(#commits, 4) do
-                    local item = commits[index]
-                    local commit = type(item) == 'table' and item.commit or nil
-                    local message = type(commit) == 'table' and commit.message or nil
-                    local author = type(commit) == 'table' and commit.author or nil
-                    local date = type(author) == 'table' and author.date or nil
+    local function finishOne()
+        pending = pending - 1
+        if pending > 0 then return end
 
-                    if type(message) == 'string' then
-                        updates[#updates + 1] = {
-                            title = message:gsub('[\r\n].*', ''):sub(1, 100),
-                            date = type(date) == 'string' and date:sub(1, 16):gsub('T', ' ') or 'Date indisponible',
-                            sha = type(item.sha) == 'string' and item.sha:sub(1, 7) or ''
-                        }
-                    end
-                end
-                source = 'github'
-            end
-        else
-            print(('[rp_loadscreen] GitHub updates unavailable (HTTP %s)'):format(tostring(statusCode)))
-        end
+        local payload = {
+            eventName = 'lssUpdates',
+            currentVersion = CURRENT_VERSION,
+            previousVersion = PREVIOUS_VERSION,
+            updates = ParseLines(updatesText, 6),
+            future = ParseLines(futureText, 10),
+            source = updatesText and futureText and 'files' or 'unavailable',
+            fetchedAt = os.date('%d/%m/%Y %H:%M:%S')
+        }
 
-        local payload = BuildPayload(updates, source)
-        cachedUpdates = payload
+        cachedPayload = payload
         lastFetchAt = GetGameTimer()
         callback(payload)
-    end, 'GET', '', {
-        ['Accept'] = 'application/vnd.github+json',
-        ['User-Agent'] = 'LSPD-FiveM-Loadscreen'
-    })
+    end
+
+    FetchText(UPDATES_URL, function(body)
+        updatesText = body
+        finishOne()
+    end)
+
+    FetchText(FUTURE_URL, function(body)
+        futureText = body
+        finishOne()
+    end)
 end
 
 RegisterNetEvent('rp_loadscreen:requestUpdates', function()
@@ -77,7 +91,7 @@ RegisterNetEvent('rp_loadscreen:requestUpdates', function()
     if lastRequest and (now - lastRequest) < REQUEST_COOLDOWN_MS then return end
     lastRequestByPlayer[playerId] = now
 
-    FetchLatestUpdates(function(payload)
+    FetchLoadscreenData(function(payload)
         SendUpdates(playerId, payload)
     end)
 end)
