@@ -1098,6 +1098,23 @@ def test_creator_console_server_and_player_management_is_server_authorized():
     assert "creatorAdminData" in ui
 
 
+
+def test_founder_ace_has_unrestricted_access_to_all_three_staff_tablets():
+    creator = read("resources/[FUNCTION]/rp_tablet_creator/server/main.lua")
+    admin_client = read("resources/[FUNCTION]/rp_tablet_admin/client/main.lua")
+    anticheat_client = read("resources/[FUNCTION]/rp_anticheat/client/main.lua")
+    creator_client = read("resources/[FUNCTION]/rp_tablet_creator/client/main.lua")
+    config = read("server.cfg")
+
+    assert "IsPlayerAceAllowed(src, 'rp_founder')" in creator
+    assert "if isFounder(src) then return true end" in creator
+    assert "add_principal identifier.fivem:12219878 group.fondateur" in config
+    assert "add_ace group.fondateur rp_admin allow" in config
+    assert "add_ace group.fondateur rp_founder allow" in config
+    assert "RegisterKeyMapping('openanticheat', 'Ouvrir le menu Anticheat', 'keyboard', 'F9')" in anticheat_client
+    assert "RegisterKeyMapping('rp_admin_tablet_toggle', 'Ouvrir la Tablette Admin', 'keyboard', 'F10')" in admin_client
+    assert "RegisterKeyMapping('creator', 'Ouvrir la tablette Créateur', 'keyboard', 'F11')" in creator_client
+
 def test_creator_player_inventory_api_validates_items_and_weight():
     inventory = read("resources/[FUNCTION]/rp_inventory/server/main.lua")
     assert "local function AdminSetItem" in inventory
