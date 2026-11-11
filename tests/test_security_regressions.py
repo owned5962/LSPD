@@ -926,8 +926,8 @@ def test_anticheat_self_is_visible_and_receives_live_telemetry():
     assert "isSelf = id == src" in server
     assert "rp_anticheat:updatePlayers" in server and "Wait(1000)" in server
     assert "rp_anticheat:updatePlayers" in client
-    assert "p.isSelf ? ' (VOUS)' : ''" in ui
-    assert "Selecting yourself is supported for live telemetry" in ui
+    assert "target?.isSelf" in ui
+    assert "Tu ne peux pas te surveiller toi-même." in ui
 
 
 def test_creator_tablet_is_separate_and_started():
