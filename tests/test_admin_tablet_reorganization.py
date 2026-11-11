@@ -23,11 +23,12 @@ def test_admin_tabs_and_page_controls_are_separated():
     for tab in ("players", "gives", "weapons", "sanctions", "functions", "jobs", "weather", "map", "audit"):
         assert f'data-admin-view="{tab}"' in html
         assert f'id="admin-{tab}-view"' in html
-    for prefix in ("give", "sanction", "function", "job"):
+    for prefix in ("give", "economy", "sanction", "function", "job"):
         assert f'id="{prefix}-player-search"' in html
         assert f'id="{prefix}-player-target"' in html
-    for control in ("admin-vehicle-model", "admin-give-cash-amount", "admin-give-bank-amount",
-                    "admin-weapon-name", "admin-item-name", "admin-item-count",
+    for control in ("admin-vehicle-model", "admin-economy-account", "admin-economy-operation",
+                    "admin-economy-amount", "economy-player-search", "economy-player-target",
+                    "economy-player-selected", "admin-weapon-name", "admin-item-name", "admin-item-count",
                     "admin-kick-reason", "admin-ban-reason", "admin-job-name",
                     "admin-job-grade", "admin-weather", "admin-world-hours",
                     "admin-world-minutes", "admin-audit-table-body", "player-map"):
@@ -38,7 +39,10 @@ def test_admin_ui_routes_each_tab_and_player_search_to_its_own_target():
     assert "const panelTargets = { give: null, sanction: null, function: null, job: null }" in ui
     assert "function renderPlayerPicker(prefix)" in ui
     assert "function getPanelTarget(prefix)" in ui
-    assert "function giveAdminMoney(type)" in ui
+    assert "function manageAdminMoney()" in ui
+    assert "getPanelTarget('economy')" in ui
+    assert "operation: 'give'" not in ui
+    assert "operation, amount" in ui
     assert "function giveAdminVehicle()" in ui
     assert "function giveAdminWeapon()" in ui
     assert "function renderWeaponPolicy()" in ui
@@ -149,3 +153,38 @@ if __name__ == "__main__":
         if name.startswith("test_") and callable(check):
             check()
     print("All focused admin tablet reorganization checks passed.")
+
+
+
+def test_admin_economy_requires_target_account_operation_and_persists_before_success():
+    html = read("resources/[FUNCTION]/rp_tablet_admin/html/index.html")
+    ui = read("resources/[FUNCTION]/rp_tablet_admin/html/js/app.js")
+    client = read("resources/[FUNCTION]/rp_tablet_admin/client/main.lua")
+    server = read("resources/[FUNCTION]/rp_tablet_admin/server/main.lua")
+    core = read("resources/[CORE]/rp_core/server/player.lua")
+
+    assert 'id="economy-player-target"' in html
+    assert 'id="admin-economy-account"' in html
+    assert 'value="cash"' in html and 'value="bank"' in html
+    assert 'value="give"' in html and 'value="remove"' in html
+    assert "function manageAdminMoney()" in ui
+    assert "getPanelTarget('economy')" in ui
+    assert "nuiPost('manageEconomy', { playerId: targetId, type, amount, operation })" in ui
+    assert "RegisterServerCallback('manageEconomy'" in client
+    assert "rp_tablet_admin:client:economyResult" in client
+    assert "target.addCash(amount)" in server
+    assert "target.removeCash(amount)" in server
+    assert "target.addBank(amount" in server
+    assert "target.removeBank(amount" in server
+    assert "succeeded ~= true" in server
+    assert "characters SET cash = ?, bank = ?" in core
+    assert "if not self.save() then" in core
+    assert "LogAdminAction(src, 'economy'" in server
+
+
+def test_admin_economy_result_updates_nui_and_reports_only_server_confirmation():
+    ui = read("resources/[FUNCTION]/rp_tablet_admin/html/js/app.js")
+    client = read("resources/[FUNCTION]/rp_tablet_admin/client/main.lua")
+    assert "data.action === 'economyResult'" in ui
+    assert "result.cash" in ui and "result.bank" in ui
+    assert "SendNUIMessage({ action = 'economyResult', result = result })" in client
