@@ -11,6 +11,11 @@ RegisterCommand('openanticheat', function()
     TriggerServerEvent('rp_anticheat:requestOpen')
 end, false)
 
+RegisterNetEvent('rp_anticheat:updatePlayers', function(playersList)
+    if not isAnticheatUIOpen or type(playersList) ~= 'table' then return end
+    SendNUIMessage({ action = 'updatePlayers', players = playersList })
+end)
+
 RegisterNetEvent('rp_anticheat:syncProtections', function(protections)
     if type(protections) == 'table' then Config.Protections = protections end
 end)
@@ -27,6 +32,7 @@ end)
 
 RegisterNUICallback('close', function(data, cb)
     isAnticheatUIOpen = false
+    TriggerServerEvent('rp_anticheat:closeUI')
     SetNuiFocus(false, false)
     SendNUIMessage({ action = 'close' })
     cb('ok')
@@ -35,6 +41,7 @@ end)
 AddEventHandler('onClientResourceStart', function(resourceName)
     if resourceName ~= GetCurrentResourceName() then return end
     isAnticheatUIOpen = false
+    TriggerServerEvent('rp_anticheat:closeUI')
     SetNuiFocus(false, false)
     SendNUIMessage({ action = 'close' })
 end)
