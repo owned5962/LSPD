@@ -6,6 +6,10 @@ local function isCreator(src)
     return player ~= nil and (player.group == 'superadmin' or player.group == 'fondateur')
 end
 
+local function creatorAccessAllowed(src)
+    return isCreator(src) and type(CanUseTablet) == 'function' and CanUseTablet(src, 'creator') == true
+end
+
 local function reply(src, message, success)
     TriggerClientEvent('rp_tablet_creator:client:result', src, message, success == true)
 end
@@ -16,7 +20,7 @@ RegisterNetEvent('rp_tablet_creator:server:requestOpen', function()
         reply(src, 'Accès réservé aux créateurs et fondateurs.', false)
         return
     end
-    if CanUseTablet and not CanUseTablet(src, 'creator') then
+    if not creatorAccessAllowed(src) then
         reply(src, 'Votre accès à la tablette créateur est désactivé.', false)
         return
     end
@@ -27,7 +31,7 @@ end)
 
 RegisterNetEvent('rp_tablet_creator:server:setWorld', function(weather, rawHours, rawMinutes)
     local src = source
-    if not isCreator(src) then return end
+    if not creatorAccessAllowed(src) then return end
 
     local allowedWeather = {
         EXTRASUNNY = true, CLEAR = true, CLOUDS = true, SMOG = true, FOGGY = true,
@@ -192,7 +196,7 @@ end)
 
 RegisterNetEvent('rp_tablet_creator:server:spawnProp', function(rawModel)
     local src = source
-    if not isCreator(src) or not exports['rp_core']:CanPerformAction(src, 'creator:spawn_prop', 700) then return end
+    if not creatorAccessAllowed(src) or not exports['rp_core']:CanPerformAction(src, 'creator:spawn_prop', 700) then return end
     if type(rawModel) ~= 'string' or not PROP_CATALOG[rawModel] then
         reply(src, 'Objet non autorisé. Choisissez un modèle du catalogue.', false); return
     end
@@ -408,7 +412,7 @@ local function GetCreatorSettings()
     return settings
 end
 
-local function ApplyStoredCreatorSettings()
+function ApplyStoredCreatorSettings()
     local ok, rows = pcall(MySQL.query.await, 'SELECT setting_key, setting_value FROM rp_creator_settings')
     if ok then
         for _, row in ipairs(rows or {}) do
@@ -560,7 +564,7 @@ RegisterNetEvent('rp_tablet_creator:server:updatePlayerIdentity', function(data)
         values = { firstname, lastname, dateofbirth, gender, json.encode(skin), target.charId, target.identifier }
     }}
     if newGroup ~= target.group then
-        queries[#queries + 1] = { query = 'UPDATE users SET \`group\` = ? WHERE identifier = ?', values = { newGroup, target.identifier } }
+        queries[#queries + 1] = { query = "UPDATE users SET `group` = ? WHERE identifier = ?", values = { newGroup, target.identifier } }
     end
     local ok, result = pcall(MySQL.transaction.await, queries)
     if not ok or result ~= true then reply(src, 'Erreur SQL : identité non sauvegardée.', false); return end
