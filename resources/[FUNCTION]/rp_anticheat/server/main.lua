@@ -56,6 +56,10 @@ local function ensureDetectionStatsTable()
             INDEX idx_anticheat_event_player (player_identifier)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
     ]])
+    local sanctionColumn = MySQL.query.await("SHOW COLUMNS FROM anticheat_event_log LIKE 'sanction'")
+    if not sanctionColumn or #sanctionColumn == 0 then
+        MySQL.query.await("ALTER TABLE anticheat_event_log ADD COLUMN sanction VARCHAR(16) NOT NULL DEFAULT 'warn'")
+    end
     MySQL.query.await([[
         CREATE TABLE IF NOT EXISTS anticheat_sanction_config (
             category VARCHAR(40) NOT NULL,
