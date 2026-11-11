@@ -317,13 +317,28 @@ RegisterNetEvent('rp_characters:client:closeMenu', function()
 end)
 
 RegisterNetEvent('rp_characters:client:spawnPlayer', function(coords, gender, skin)
+    coords = type(coords) == 'table' and coords or { x = -1037.7, y = -2737.8, z = 20.1, heading = 330.0 }
+
     DoScreenFadeOut(500)
-    while not IsScreenFadedOut() do Wait(10) end
+    -- Never leave the client thread blocked forever if the fade native fails.
+    local fadeDeadline = GetGameTimer() + 5000
+    while not IsScreenFadedOut() and GetGameTimer() < fadeDeadline do
+        Wait(10)
+    end
+    if not IsScreenFadedOut() then
+        print('[rp_characters] Screen fade-out timed out; continuing character spawn.')
+    end
+
     ApplyCharacterAppearance(gender, skin)
     local ped = PlayerPedId()
-    SetEntityCoords(ped, coords.x, coords.y, coords.z, false, false, false, true)
-    SetEntityHeading(ped, coords.heading or 0.0)
+    SetEntityCoords(ped, tonumber(coords.x) or -1037.7, tonumber(coords.y) or -2737.8,
+        tonumber(coords.z) or 20.1, false, false, false, true)
+    SetEntityHeading(ped, tonumber(coords.heading) or 330.0)
     FreezeEntityPosition(ped, false)
+
+    -- Close both loading-screen layers after the character has been placed.
+    ShutdownLoadingScreen()
+    ShutdownLoadingScreenNui()
     Wait(500)
     DoScreenFadeIn(1000)
     Wait(1500)
