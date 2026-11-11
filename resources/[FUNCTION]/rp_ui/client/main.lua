@@ -187,12 +187,14 @@ end)
 -- utilization to Lua; show only metrics the game client can actually measure.
 local diagnosticsOpen = false
 local function ToggleDiagnostics()
-    diagnosticsOpen = not diagnosticsOpen
-    SetNuiFocus(diagnosticsOpen, diagnosticsOpen)
-    SendNUIMessage({ action = diagnosticsOpen and 'showDiagnostics' or 'hideDiagnostics' })
     if diagnosticsOpen then
-        TriggerServerEvent('rp_ui:server:requestDiagnosticsStats')
+        diagnosticsOpen = false
+        SetNuiFocus(false, false)
+        SendNUIMessage({ action = 'hideDiagnostics' })
+        return
     end
+    -- The server decides whether this account has founder access.
+    TriggerServerEvent('rp_ui:server:requestDiagnosticsAccess')
 end
 RegisterCommand('clientdiagnostics', ToggleDiagnostics, false)
 RegisterKeyMapping('clientdiagnostics', 'Afficher les statistiques client', 'keyboard', 'F12')
@@ -205,6 +207,18 @@ end)
 RegisterNUICallback('openResourceMonitor', function(_, cb)
     ExecuteCommand('resmon true')
     cb({ ok = true })
+end)
+RegisterNetEvent('rp_ui:client:openFounderDiagnostics', function()
+    diagnosticsOpen = true
+    SetNuiFocus(true, true)
+    SendNUIMessage({ action = 'showDiagnostics' })
+    TriggerServerEvent('rp_ui:server:requestDiagnosticsStats')
+end)
+RegisterNetEvent('rp_ui:client:denyFounderDiagnostics', function()
+    diagnosticsOpen = false
+    SetNuiFocus(false, false)
+    SendNUIMessage({ action = 'hideDiagnostics' })
+    TriggerEvent('rp_ui:notify', 'Accès réservé au fondateur du serveur.', 'error')
 end)
 RegisterNetEvent('rp_ui:client:diagnosticsStats', function(stats)
     if diagnosticsOpen and type(stats) == 'table' then
