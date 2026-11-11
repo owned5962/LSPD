@@ -8,6 +8,11 @@ AddEventHandler('onClientResourceStart', function(resourceName)
     SendNUIMessage({ action = 'close' })
 end)
 
+AddEventHandler('onClientResourceStop', function(resourceName)
+    if resourceName ~= GetCurrentResourceName() then return end
+    SetNuiFocus(false, false)
+end)
+
 RegisterKeyMapping('openjobmenu', 'Ouvrir le menu métier (F6)', 'keyboard', 'F6')
 
 RegisterCommand('openjobmenu', function()
