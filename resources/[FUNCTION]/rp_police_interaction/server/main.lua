@@ -29,6 +29,8 @@ local function broadcastAlert(alert)
                 return exports['job_police']:IsOnDuty(officer)
             end)
             if ok and onDuty == true then
+                TriggerClientEvent('rp_core:client:notify', officer,
+                    ('Dispatch LSPD : %s - Suspect %s'):format(alert.title, alert.suspect), 'warning')
                 TriggerClientEvent('rp_tablet_job:client:policeAlert', officer, alert)
             end
         end
