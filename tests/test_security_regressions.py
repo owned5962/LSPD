@@ -988,3 +988,12 @@ def test_spectate_is_server_authorized_and_streams_target_coordinates():
     assert "SetFocusPosAndVel" in anticheat_client and "RequestCollisionAtCoord" in anticheat_client
     assert "SetFocusPosAndVel" in admin_client and "RequestCollisionAtCoord" in admin_client
     assert "GetPlayerRoutingBucket(src) ~= GetPlayerRoutingBucket(targetId)" in admin_server
+
+
+def test_character_boot_resumes_only_when_core_already_has_a_loaded_player():
+    client = read("resources/[CORE]/rp_characters/client/main.lua")
+    server = read("resources/[CORE]/rp_characters/server/main.lua")
+    assert "rp_characters:client:resumeLoadedCharacter" in client
+    assert "FinishCharacterBoot()" in client[client.index("RegisterNetEvent('rp_characters:client:resumeLoadedCharacter'"):client.index("RegisterNetEvent('rp_characters:client:bootError'")]
+    assert "if exports['rp_core']:GetPlayerFromId(src) then" in server
+    assert "TriggerClientEvent('rp_characters:client:resumeLoadedCharacter', src)" in server
