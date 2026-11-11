@@ -49,3 +49,108 @@ AddEventHandler('onClientResourceStop', function(resourceName)
         if DoesBlipExist(blip) then RemoveBlip(blip) end
     end
 end)
+
+
+-- Ammu-Nation: ouverture de la tablette d'achat au clavier E.
+local ammunationLocations = {}
+local ammunationPromptVisible = false
+local ammunationTabletOpen = false
+
+local function closeAmmunationTablet()
+    if not ammunationTabletOpen then return end
+    ammunationTabletOpen = false
+    SetNuiFocus(false, false)
+    SendNUIMessage({ action = 'closeAmmunation' })
+end
+
+RegisterNetEvent('rp_businesses:client:locations', function(locations)
+    if type(locations) ~= 'table' then return end
+    ammunationLocations = {}
+    for _, location in ipairs(locations) do
+        if location.location_type == 'shop' and location.shop_style == 'ammunation' then
+            ammunationLocations[#ammunationLocations + 1] = vector3(
+                tonumber(location.x) or 0.0,
+                tonumber(location.y) or 0.0,
+                tonumber(location.z) or 0.0
+            )
+        end
+    end
+end)
+
+RegisterNetEvent('rp_businesses:client:openAmmunation', function(cash)
+    ammunationTabletOpen = true
+    SetNuiFocus(true, true)
+    SendNUIMessage({
+        action = 'openAmmunation',
+        cash = tonumber(cash) or 0,
+        price = 500
+    })
+end)
+
+RegisterNetEvent('rp_businesses:client:purchaseResult', function(result)
+    if type(result) ~= 'table' then return end
+    SendNUIMessage({
+        action = 'purchaseResult',
+        success = result.success == true,
+        message = tostring(result.message or ''),
+        cash = tonumber(result.cash) or 0
+    })
+end)
+
+RegisterNetEvent('rp_businesses:client:weaponPurchased', function()
+    local ped = PlayerPedId()
+    local weaponHash = joaat('WEAPON_PISTOL')
+    GiveWeaponToPed(ped, weaponHash, 60, false, true)
+    SetPedAmmo(ped, weaponHash, math.max(GetAmmoInPedWeapon(ped, weaponHash), 60))
+end)
+
+RegisterNUICallback('closeAmmunation', function(_, cb)
+    closeAmmunationTablet()
+    cb({ ok = true })
+end)
+
+RegisterNUICallback('buyAmmunationPistol', function(_, cb)
+    TriggerServerEvent('rp_businesses:server:buyPistol')
+    cb({ ok = true })
+end)
+
+CreateThread(function()
+    while true do
+        local sleep = 650
+        if ammunationTabletOpen then
+            sleep = 250
+        elseif #ammunationLocations > 0 and not IsPauseMenuActive() then
+            local coords = GetEntityCoords(PlayerPedId())
+            local nearestDistance = 999.0
+            for _, shopCoords in ipairs(ammunationLocations) do
+                local distance = #(coords - shopCoords)
+                if distance < nearestDistance then nearestDistance = distance end
+            end
+
+            if nearestDistance <= 1.8 then
+                sleep = 0
+                if not ammunationPromptVisible then
+                    exports['rp_ui']:ShowTextUI('[E] Ouvrir la tablette Ammu-Nation')
+                    ammunationPromptVisible = true
+                end
+                if IsControlJustReleased(0, 38) then
+                    TriggerServerEvent('rp_businesses:server:requestAmmunation')
+                    Wait(350)
+                end
+            elseif ammunationPromptVisible then
+                exports['rp_ui']:HideTextUI()
+                ammunationPromptVisible = false
+            end
+        elseif ammunationPromptVisible then
+            exports['rp_ui']:HideTextUI()
+            ammunationPromptVisible = false
+        end
+        Wait(sleep)
+    end
+end)
+
+AddEventHandler('onClientResourceStop', function(resourceName)
+    if resourceName ~= GetCurrentResourceName() then return end
+    closeAmmunationTablet()
+    if ammunationPromptVisible then exports['rp_ui']:HideTextUI() end
+end)
