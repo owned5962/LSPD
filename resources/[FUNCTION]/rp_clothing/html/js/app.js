@@ -1,7 +1,7 @@
 window.addEventListener('message', function(event) {
     if (event.data.action === 'open') {
         document.getElementById('clothing-wrapper').classList.remove('hidden');
-        fetch(`https://${GetParentResourceName()}/requestOutfits`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }).catch(() => {});
+        fetch(`https://${rp_clothing}/requestOutfits`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }).catch(() => {});
     } else if (event.data.action === 'close') {
         document.getElementById('clothing-wrapper').classList.add('hidden');
     } else if (event.data.action === 'outfits') {
@@ -26,7 +26,7 @@ function renderSavedOutfits(outfits) {
         button.type = 'button';
         button.textContent = outfit.name;
         button.addEventListener('click', () => {
-            fetch(`https://${GetParentResourceName()}/applySavedOutfit`, {
+            fetch(`https://${rp_clothing}/applySavedOutfit`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ id: Number(outfit.id) })
@@ -40,7 +40,7 @@ document.querySelectorAll('.preset-btn').forEach(btn => {
     btn.addEventListener('click', () => {
         const outfit = btn.dataset.outfit;
         document.getElementById('outfit-name').value = btn.innerText.trim();
-        fetch(`https://${GetParentResourceName()}/applyPreset`, {
+        fetch(`https://${rp_clothing}/applyPreset`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ outfit })
@@ -50,7 +50,7 @@ document.querySelectorAll('.preset-btn').forEach(btn => {
 
 document.getElementById('btn-save').addEventListener('click', () => {
     const name = document.getElementById('outfit-name').value || 'Nouvelle tenue';
-    fetch(`https://${GetParentResourceName()}/saveOutfit`, {
+    fetch(`https://${rp_clothing}/saveOutfit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: name })
@@ -60,7 +60,7 @@ document.getElementById('btn-save').addEventListener('click', () => {
 
 document.getElementById('close-btn').addEventListener('click', () => {
     document.getElementById('clothing-wrapper').classList.add('hidden');
-    fetch(`https://${GetParentResourceName()}/close`, { method: 'POST', body: '{}' });
+    fetch(`https://${rp_clothing}/close`, { method: 'POST', body: '{}' });
 });
 
 
@@ -68,5 +68,5 @@ document.addEventListener('keydown', (event) => {
     if (event.key !== 'Escape') return;
     event.preventDefault();
     document.getElementById('clothing-wrapper')?.classList.add('hidden');
-    fetch(`https://${GetParentResourceName()}/close`, { method: 'POST', body: '{}' }).catch(() => {});
+    fetch(`https://${rp_clothing}/close`, { method: 'POST', body: '{}' }).catch(() => {});
 });
