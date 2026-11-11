@@ -22,7 +22,7 @@ CreateThread(function()
 
     for _, point in ipairs(ATMBlipLocations or {}) do
         local blip = AddBlipForCoord(point[1], point[2], point[3])
-        SetBlipSprite(blip,  ATM_BLIP_SPRITE)
+        SetBlipSprite(blip,  277)
         SetBlipDisplay(blip, 4)
         SetBlipScale(blip, 0.55)
         SetBlipColour(blip, 2)
