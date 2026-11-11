@@ -47,6 +47,8 @@ def test_statistics_are_persistent_and_access_controlled():
     assert "type(GetPedWeapons) == 'function'" in server
     assert "Never trust a client-reported loadout" in server
     assert "snapshot.items" in server and "snapshot.weapons" in server
+    assert "alert.snapshotAvailable = alert.snapshot ~= nil" in server
+    assert "alert.jobGradeLabel = snapshot.jobGradeLabel" in server
     assert "items_snapshot AS itemsSnapshot" in server
     assert "buildSnapshotDetails(log)" in ui
     assert "OBJETS" in ui and "ARMES" in ui and "BANQUE" in ui
