@@ -17,6 +17,22 @@ if [ -z "$FXSERVER_PATH" ]; then
     FXSERVER_PATH="/opt/cfx-server"
 fi
 
+# Fail early with an actionable message when standard CFX resources are absent.
+RESOURCE_ROOT="${FXSERVER_RESOURCES_DIR:-$SERVER_DIR/resources}"
+missing=()
+for resource in spawnmanager sessionmanager hardcap baseevents; do
+    found=false
+    for manifest in "$RESOURCE_ROOT"/*/"$resource"/fxmanifest.lua "$RESOURCE_ROOT"/"$resource"/fxmanifest.lua; do
+        if [ -f "$manifest" ]; then found=true; break; fi
+    done
+    if [ "$found" = false ]; then missing+=("$resource"); fi
+done
+if [ "${#missing[@]}" -gt 0 ]; then
+    echo "ERREUR: ressources CFX standard manquantes: ${missing[*]}"
+    echo "Installez-les avec: FXSERVER_RESOURCES_DIR=\"$RESOURCE_ROOT\" bash install-cfx-defaults.sh"
+    exit 1
+fi
+
 if [ -f "$FXSERVER_PATH/run.sh" ]; then
     echo "Lancement avec FXServer: $FXSERVER_PATH/run.sh"
     exec "$FXSERVER_PATH/run.sh" +exec server.cfg
