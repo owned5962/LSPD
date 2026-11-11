@@ -39,13 +39,20 @@ def test_giving_items_checks_distance_weight_and_commits_both_inventories():
 def test_ground_drop_and_pickup_are_server_validated_and_persisted():
     server = read("resources/[FUNCTION]/rp_inventory/server/main.lua")
     client = read("resources/[FUNCTION]/rp_inventory/client/main.lua")
+    schema = read("database.sql")
+    migration = read("migrations/003_inventory_ground_drops.sql")
     drop = server[server.index("RegisterNetEvent('rp_inventory:dropItem'"):server.index("RegisterNetEvent('rp_inventory:server:pickupDrop'")]
     pickup = server[server.index("RegisterNetEvent('rp_inventory:server:pickupDrop'"):server.index("AddEventHandler('playerDropped'")]
     assert "CreateObjectNoOffset(DROP_MODEL" in drop
-    assert "AcquireCharacterLock" in drop and "ON DUPLICATE KEY UPDATE" in drop
+    assert "AcquireCharacterLock" in drop and "MySQL.transaction.await" in drop
+    assert "INSERT INTO player_inventory_drops" in drop
     assert "dropLocks[dropId]" in pickup
     assert "GetEntityCoords(drop.entity)" in pickup
+    assert "DELETE FROM player_inventory_drops WHERE id = ?" in pickup
     assert "getInventoryWeight(updated) + definition.weight * drop.count > Config.MaxWeight" in pickup
+    assert "CREATE TABLE IF NOT EXISTS `player_inventory_drops`" in schema
+    assert "CREATE TABLE IF NOT EXISTS `player_inventory_drops`" in migration
+    assert "SELECT id, item_name, count, x, y, z, heading, routing_bucket FROM player_inventory_drops" in server
     assert "TriggerServerEvent('rp_inventory:server:pickupDrop'" in client
     assert "IsControlJustReleased(0, 38)" in client
 
