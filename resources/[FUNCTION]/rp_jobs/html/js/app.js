@@ -1,7 +1,7 @@
 let allJobs = [];
 let currentCategory = 'all';
 let currentSearch = '';
-const NUI_RESOURCE = typeof window.GetParentResourceName === 'function' ? window.GetParentResourceName() : 'rp_jobs';
+const NUI_RESOURCE = 'rp_jobs';
 
 window.addEventListener('message', (event) => {
     const data = event.data;
@@ -11,6 +11,7 @@ window.addEventListener('message', (event) => {
         document.getElementById('jobcenter-app').classList.remove('hidden');
         renderJobs();
     } else if (data.action === 'jobSelectionResult') {
+        clearTimeout(pendingJobTimeout);
         const status = document.getElementById('job-status');
         if (status) status.textContent = data.message || (data.success ? 'Embauche confirmée.' : 'Candidature refusée.');
         document.querySelectorAll('.select-job-btn:not(.disabled)').forEach(button => {
@@ -70,6 +71,7 @@ function renderJobs() {
         `;
 
         const actionBtn = card.querySelector('.select-job-btn');
+        if (isWhitelisted) actionBtn.disabled = true;
         if (!isWhitelisted) {
             actionBtn.addEventListener('click', () => {
                 chooseJob(job.name);
@@ -80,6 +82,8 @@ function renderJobs() {
     });
 }
 
+let pendingJobTimeout = null;
+
 function chooseJob(jobName) {
     const button = Array.from(document.querySelectorAll('.select-job-btn')).find(item => item.dataset.name === jobName);
     if (!button || button.disabled) return;
@@ -88,6 +92,14 @@ function chooseJob(jobName) {
     button.textContent = 'Envoi en cours…';
     const status = document.getElementById('job-status');
     if (status) status.textContent = 'Transmission de votre demande au serveur…';
+    clearTimeout(pendingJobTimeout);
+    pendingJobTimeout = setTimeout(() => {
+        if (button.disabled) {
+            button.disabled = false;
+            button.textContent = button.dataset.originalLabel || 'Postuler Immédiatement';
+            if (status) status.textContent = 'Le serveur ne répond pas. Vérifiez la console serveur et réessayez.';
+        }
+    }, 10000);
     fetch(`https://${NUI_RESOURCE}/selectJob`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ jobName })
