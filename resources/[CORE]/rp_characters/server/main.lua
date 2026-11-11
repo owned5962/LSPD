@@ -9,6 +9,12 @@ local function GetLicenseIdentifier(src)
     return nil
 end
 
+local function GetEffectiveUserGroup(src, databaseGroup)
+    -- ACE is the source of truth for the founder role; never trust client data.
+    if IsPlayerAceAllowed(src, 'rp_founder') then return 'fondateur' end
+    return databaseGroup or 'user'
+end
+
 local function Trim(value)
     if type(value) ~= 'string' then return '' end
     return value:match('^%s*(.-)%s*$') or ''
@@ -112,7 +118,7 @@ local function LoadCharacter(src, identifier, userGroup, char)
 
     char.position = DecodeJson(char.position, DefaultSpawn)
     char.skin = DecodeJson(char.skin, {})
-    char.group = userGroup or 'user'
+    char.group = GetEffectiveUserGroup(src, userGroup)
 
     -- Keep export/runtime errors visible in the server console instead of silently
     -- leaving the client waiting after character selection.
@@ -257,7 +263,7 @@ RegisterNetEvent('rp_characters:server:selectCharacter', function(slot)
         return
     end
 
-    LoadCharacter(src, identifier, user.group, char)
+    LoadCharacter(src, identifier, GetEffectiveUserGroup(src, user.group), char)
 end)
 
 RegisterNetEvent('rp_characters:server:createCharacter', function(data)
