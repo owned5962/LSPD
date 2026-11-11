@@ -159,18 +159,21 @@ AddEventHandler('gameEventTriggered', function(name, args)
     local victim, attacker = args[1], args[2]
     local playerPed = PlayerPedId()
     if attacker ~= playerPed or victim == playerPed or not DoesEntityExist(victim) then return end
+    if IsEntityAVehicle(attacker) and GetPedInVehicleSeat(attacker, -1) == playerPed
+        and IsEntityAPed(victim) and not IsPedAPlayer(victim) then
+        report('pedestrian_collision')
+        return
+    end
     if IsEntityAPed(victim) then
         local isPlayer = IsPedAPlayer(victim)
         local offence = isPlayer and 'assault_player' or 'assault_npc'
         CreateThread(function()
-            Wait(0)
-            if IsEntityDead(victim) then
+            Wait(250)
+            if DoesEntityExist(victim) and IsEntityDead(victim) then
                 offence = isPlayer and 'murder_player' or 'murder_npc'
             end
             report(offence)
         end)
-    elseif IsEntityAVehicle(victim) and GetPedInVehicleSeat(PlayerPedId(), -1) == playerPed then
-        report('pedestrian_collision')
     end
 end)
 
@@ -189,26 +192,17 @@ CreateThread(function()
     end
 end)
 
--- Détecte l'entrée conducteur dans un véhicule civil non marqué comme véhicule joueur.
+-- Le vol est signalé uniquement pendant une animation de car-jacking,
+-- et non à chaque entrée dans son propre véhicule.
 CreateThread(function()
     while true do
         local ped = PlayerPedId()
-        local vehicle = GetVehiclePedIsIn(ped, false)
-        if vehicle ~= 0 and GetPedInVehicleSeat(vehicle, -1) == ped then
-            if lastVehicle ~= vehicle then
-                lastVehicle = vehicle
-                local model = GetEntityModel(vehicle)
-                if not IsThisModelAHeli(model) and not IsThisModelAPlane(model)
-                    and not IsThisModelABoat(model) and not IsThisModelABike(model)
-                    and not IsThisModelACar(model) == false then
-                    -- Le contrôle est volontairement limité aux véhicules routiers.
-                    if GetVehicleClass(vehicle) ~= 18 then report('vehicle_theft') end
-                end
-            end
-        elseif vehicle == 0 then
-            lastVehicle = 0
+        if not inCustody and IsPedJacking(ped) then
+            report('vehicle_theft')
+            Wait(1500)
+        else
+            Wait(250)
         end
-        Wait(500)
     end
 end)
 
