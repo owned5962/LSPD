@@ -31,3 +31,5 @@ jobs:
           luac5.4 -p "resources/[FUNCTION]/rp_economy/server/main.lua"
           luac5.4 -p "resources/[FUNCTION]/rp_economy/client/main.lua"
           luac5.4 -p "resources/[CORE]/rp_core/server/player.lua"
+      - name: Check banking NUI JavaScript
+        run: node --check "resources/[FUNCTION]/rp_economy/html/js/app.js"
