@@ -117,3 +117,72 @@ body {
     from { opacity: 0; transform: translateX(-50%) scale(0.9); }
     to { opacity: 1; transform: translateX(-50%) scale(1); }
 }
+
+
+/* Player vitals are positioned to the right of the minimap, not underneath it. */
+#player-hud {
+    position: absolute;
+    left: 18.5vw;
+    bottom: 3.2vh;
+    width: clamp(170px, 14vw, 245px);
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+    padding: 12px 14px;
+    border: 1px solid rgba(148, 163, 184, .22);
+    border-radius: 12px;
+    background: rgba(9, 15, 25, .78);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, .28);
+    backdrop-filter: blur(10px);
+    color: #f8fafc;
+}
+.hud-vital { display: flex; align-items: center; gap: 9px; }
+.hud-vital-icon { width: 14px; text-align: center; color: #f87171; font-size: 14px; }
+.hud-vital:nth-child(2) .hud-vital-icon { color: #60a5fa; }
+.hud-vital-track, .fuel-track {
+    height: 7px;
+    flex: 1;
+    overflow: hidden;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .13);
+}
+.hud-vital-fill, .fuel-fill { height: 100%; width: 0%; border-radius: inherit; transition: width .18s linear; }
+.hud-vital-fill.health { background: linear-gradient(90deg, #dc4444, #fb7185); }
+.hud-vital-fill.armour { background: linear-gradient(90deg, #2563eb, #60a5fa); }
+.hud-vital-value { min-width: 24px; color: #cbd5e1; font-size: 11px; text-align: right; font-variant-numeric: tabular-nums; }
+
+/* Clean digital speedometer centered along the lower edge of the screen. */
+#vehicle-speedometer {
+    position: absolute;
+    left: 50%;
+    bottom: 4.2vh;
+    transform: translateX(-50%);
+    min-width: 210px;
+    padding: 12px 22px 11px;
+    border: 1px solid rgba(125, 211, 252, .28);
+    border-radius: 14px;
+    background: rgba(7, 13, 23, .86);
+    box-shadow: 0 10px 35px rgba(0, 0, 0, .42), 0 0 22px rgba(14, 165, 233, .12);
+    color: #f8fafc;
+    text-align: center;
+    backdrop-filter: blur(14px);
+}
+.speedometer-main { display: flex; align-items: baseline; justify-content: center; gap: 8px; }
+#vehicle-speed { font-size: 42px; line-height: 1; font-weight: 800; letter-spacing: -2px; font-variant-numeric: tabular-nums; }
+.speedometer-unit { color: #7dd3fc; font-size: 10px; font-weight: 700; letter-spacing: 1.5px; }
+.speedometer-divider { height: 1px; margin: 10px 0 8px; background: rgba(148, 163, 184, .2); }
+.fuel-row { display: flex; align-items: center; gap: 9px; color: #cbd5e1; font-size: 11px; }
+.fuel-icon { color: #fbbf24; font-size: 13px; }
+.fuel-track { height: 5px; }
+.fuel-fill { background: linear-gradient(90deg, #f59e0b, #fde68a); }
+#vehicle-fuel-value { min-width: 30px; text-align: right; font-variant-numeric: tabular-nums; }
+
+@media (max-width: 1100px) {
+    #player-hud { left: 20vw; bottom: 3vh; width: 180px; }
+    #vehicle-speedometer { bottom: 3vh; }
+}
+@media (max-width: 700px) {
+    #player-hud { left: 2vw; bottom: 19vh; width: 155px; padding: 9px; }
+    #vehicle-speedometer { bottom: 3vh; min-width: 175px; }
+    #vehicle-speed { font-size: 34px; }
+}
