@@ -16,6 +16,8 @@ window.addEventListener('message', function(event) {
     if (data.action === 'updateVehicleHUD') {
         const hud = document.getElementById('vehicle-hud');
         hud?.classList.toggle('hidden', data.visible !== true);
+        const vehicleType = document.getElementById('vehicle-type'); if (vehicleType) vehicleType.textContent = String(data.vehicleType || 'VÉHICULE');
+        const vehicleModel = document.getElementById('vehicle-model'); if (vehicleModel) vehicleModel.textContent = String(data.vehicleName || '--');
         const speed = document.getElementById('vehicle-speed'); if (speed) speed.textContent = String(Math.max(0, Number(data.speed) || 0));
         const fuel = Math.max(0, Math.min(100, Number(data.fuel) || 0));
         const fuelText = document.getElementById('vehicle-fuel'); if (fuelText) fuelText.textContent = Math.round(fuel) + '%';
