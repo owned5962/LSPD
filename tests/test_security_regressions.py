@@ -829,7 +829,7 @@ def test_admin_advanced_actions_are_server_authorized():
     ui = read("resources/[FUNCTION]/rp_tablet_admin/html/js/app.js")
     for action in ("spectate", "noclip", "godmode", "spawn_vehicle"):
         assert "AllowExtendedAction(src, '" + action + "'" in server
-    assert "RegisterNUICallback('spectatePlayer'" in client
+    assert "RegisterServerCallback('spectatePlayer'" in client
     assert "RegisterNUICallback('toggleNoclip'" in client
     assert "RegisterNUICallback('toggleGodmode'" in client
     assert "RegisterNUICallback('spawnVehicle'" in client
