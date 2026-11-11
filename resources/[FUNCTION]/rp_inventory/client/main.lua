@@ -14,15 +14,20 @@ AddEventHandler('onClientResourceStop', function(resourceName)
     SetNuiFocus(false, false)
 end)
 
-RegisterKeyMapping('openinventory', 'Ouvrir l\'inventaire', 'keyboard', 'F2')
-
-RegisterCommand('openinventory', function()
+local function ToggleInventory()
     if isInventoryOpen or isInventoryPending then
         CloseInventory()
     else
         OpenInventory()
     end
-end, false)
+end
+
+-- Commande locale dédiée au raccourci clavier ; la commande chat /openinventory
+-- est routée côté serveur pour garantir son exécution depuis le chat FiveM.
+RegisterCommand('rp_inventory_toggle', ToggleInventory, false)
+RegisterKeyMapping('rp_inventory_toggle', 'Ouvrir l\'inventaire', 'keyboard', 'F2')
+
+RegisterNetEvent('rp_inventory:client:toggle', ToggleInventory)
 
 function OpenInventory()
     if isInventoryPending then return end
