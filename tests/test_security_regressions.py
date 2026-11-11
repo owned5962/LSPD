@@ -641,6 +641,77 @@ def test_admin_permanent_ban_requires_staff_reason_and_persists_license():
     assert "window.confirm(" in ui
 
 
+
+
+def test_admin_tablet_javascript_has_valid_player_position_string():
+    ui = read("resources/[FUNCTION]/rp_tablet_admin/html/js/app.js")
+    assert "Number(player.ping || 0).toFixed(0)" not in ui
+    assert "Number(player.ping || 0) + ' ms'" in ui
+    assert "function closeAdminTablet(source = 'button')" in ui
+    assert "classList.remove('is-open')" in ui
+
+
+def test_jobcenter_resource_name_and_application_feedback_are_not_recursive_or_silent():
+    ui = read("resources/[FUNCTION]/rp_jobs/html/js/app.js")
+    client = read("resources/[FUNCTION]/rp_jobs/client/main.lua")
+    server = read("resources/[FUNCTION]/rp_jobs/server/main.lua")
+    assert "function GetParentResourceName()" not in ui
+    assert "const NUI_RESOURCE" in ui
+    assert "jobSelectionResult" in ui
+    assert "RegisterNetEvent('rp_jobs:client:jobSelectionResult'" in client
+    assert "RespondToJobSelection(src, true, message)" in server
+    assert "local function IsAtJobCenter" not in server
+
+
+def test_bank_requires_physical_proximity_and_e_interaction():
+    client = read("resources/[FUNCTION]/rp_economy/client/main.lua")
+    server = read("resources/[FUNCTION]/rp_economy/server/main.lua")
+    ui = read("resources/[FUNCTION]/rp_economy/html/js/app.js")
+    assert "RegisterCommand('bank'" in client and "GetNearbyBank(3.0)" in client
+    assert "RegisterCommand('atm'" in client and "GetNearbyATM(2.0)" in client
+    assert "IsControlJustReleased(0, 38)" in client
+    assert "function GetParentResourceName()" not in ui
+    assert "IsNearBankOrATM(src, true)" in server
+    assert "IsNearBankOrATM(src, false)" in server
+
+
+def test_player_hud_is_updated_from_loaded_character_data():
+    client = read("resources/[FUNCTION]/rp_ui/client/main.lua")
+    html = read("resources/[FUNCTION]/rp_ui/html/index.html")
+    ui = read("resources/[FUNCTION]/rp_ui/html/js/app.js")
+    manifest = read("resources/[FUNCTION]/rp_ui/fxmanifest.lua")
+    assert "exports['rp_core']:GetPlayerData()" in client
+    assert "action = 'updateHUD'" in client
+    assert 'id="player-hud"' in html
+    assert "function updatePlayerHUD(data)" in ui
+    assert "dependency 'rp_core'" in manifest
+
+
+def test_other_nui_menus_reset_focus_and_support_close_paths():
+    inventory = read("resources/[FUNCTION]/rp_inventory/client/main.lua")
+    clothing = read("resources/[FUNCTION]/rp_clothing/client/main.lua")
+    interactions = read("resources/[FUNCTION]/rp_interactions/client/main.lua")
+    anticheat = read("resources/[FUNCTION]/rp_anticheat/client/main.lua")
+    assert "onClientResourceStart" in inventory and "RegisterNUICallback('close'" in inventory
+    assert "onClientResourceStart" in clothing and "RegisterNUICallback('close'" in clothing
+    assert "onClientResourceStart" in interactions and "RegisterNUICallback('close'" in interactions
+    assert "onClientResourceStart" in anticheat and "RegisterNUICallback('close'" in anticheat
+
+
+def test_admin_advanced_actions_are_server_authorized():
+    server = read("resources/[FUNCTION]/rp_tablet_admin/server/main.lua")
+    client = read("resources/[FUNCTION]/rp_tablet_admin/client/main.lua")
+    html = read("resources/[FUNCTION]/rp_tablet_admin/html/index.html")
+    ui = read("resources/[FUNCTION]/rp_tablet_admin/html/js/app.js")
+    for action in ("spectate", "noclip", "godmode", "spawn_vehicle"):
+        assert "AllowAdminAction(src, '" + action + "'" in server
+    assert "RegisterNUICallback('spectatePlayer'" in client
+    assert "RegisterNUICallback('toggleNoclip'" in client
+    assert "RegisterNUICallback('toggleGodmode'" in client
+    assert "RegisterNUICallback('spawnVehicle'" in client
+    assert "onclick=\"toggleAdminMode('noclip')\"" in html
+    assert "function spawnAdminVehicle()" in ui
+
 if __name__ == "__main__":')
     assert runner_index > source.index("def test_admin_tablet_close_controls_and_keyboard_bindings_do_not_conflict():")
     assert runner_index > source.index("def test_admin_live_map_uses_authorized_server_world_positions():")
