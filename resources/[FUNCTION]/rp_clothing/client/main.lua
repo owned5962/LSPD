@@ -1,4 +1,11 @@
 local isShopOpen = false
+
+AddEventHandler('onClientResourceStart', function(resourceName)
+    if resourceName ~= GetCurrentResourceName() then return end
+    isShopOpen = false
+    SetNuiFocus(false, false)
+    SendNUIMessage({ action = 'close' })
+end)
 local clothingShops = {
     vector3(72.3, -1399.1, 29.4),
     vector3(-703.8, -152.3, 37.4),
