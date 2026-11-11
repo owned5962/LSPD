@@ -1,0 +1,42 @@
+name: Admin tablet reorganization verification
+
+on:
+  push:
+    branches: [main, "fix/**"]
+    paths:
+      - "resources/[FUNCTION]/rp_tablet_admin/**"
+      - "resources/[FUNCTION]/rp_inventory/server/main.lua"
+      - "tests/test_admin_tablet_reorganization.py"
+      - ".github/workflows/admin-tablet-reorganization.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "resources/[FUNCTION]/rp_tablet_admin/**"
+      - "resources/[FUNCTION]/rp_inventory/server/main.lua"
+      - "tests/test_admin_tablet_reorganization.py"
+      - ".github/workflows/admin-tablet-reorganization.yml"
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install Lua
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y lua5.4
+      - name: Run focused admin tablet regression checks
+        run: python tests/test_admin_tablet_reorganization.py
+      - name: Validate admin Lua syntax
+        run: |
+          luac -p "resources/[FUNCTION]/rp_tablet_admin/client/main.lua"
+          luac -p "resources/[FUNCTION]/rp_tablet_admin/server/main.lua"
+          luac -p "resources/[FUNCTION]/rp_tablet_admin/server/extended.lua"
+      - name: Validate admin NUI JavaScript syntax
+        run: node --check "resources/[FUNCTION]/rp_tablet_admin/html/js/app.js"
