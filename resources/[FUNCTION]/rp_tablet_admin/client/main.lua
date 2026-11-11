@@ -66,9 +66,8 @@ RegisterNetEvent('rp_tablet_admin:client:openAuthorized', function(adminData, pl
     })
 end)
 
-RegisterCommand('admin', function()
+local function ToggleAdminTablet()
     local now = GetGameTimer()
-    -- Prevent a simultaneous NUI F10 key event and key mapping from reopening it.
     if lastAdminToggleAt > 0 and now - lastAdminToggleAt < 500 then return end
     lastAdminToggleAt = now
 
@@ -76,14 +75,22 @@ RegisterCommand('admin', function()
         TriggerServerEvent('rp_tablet_admin:server:stopSpectate')
         return
     end
+
     if isTabletOpen then
         CloseAdminTablet()
     else
         OpenAdminTablet()
     end
-end, false)
+end
 
-RegisterKeyMapping('admin', 'Ouvrir la Tablette Admin', 'keyboard', 'F10')
+-- Commande dédiée au raccourci : nom unique pour éviter les conflits avec
+-- une autre ressource qui pourrait également enregistrer /admin.
+RegisterCommand('rp_admin_tablet_toggle', ToggleAdminTablet, false)
+RegisterKeyMapping('rp_admin_tablet_toggle', 'Ouvrir la Tablette Admin', 'keyboard', 'F10')
+
+-- Commandes de secours utilisables depuis le chat.
+RegisterCommand('admin', ToggleAdminTablet, false)
+RegisterCommand('adminmenu', ToggleAdminTablet, false)
 
 RegisterNUICallback('close', function(data, cb)
     if type(data) == 'table' and data.source == 'f10' then
