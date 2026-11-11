@@ -3,13 +3,13 @@ name: Territory claims verification
 on:
   push:
     paths:
-      - "resources/[FUNCTION]/rp_territories/**"
+      - "resources/**"
       - "tests/test_territory_claims.py"
       - ".github/workflows/territory-claims.yml"
       - "server.cfg"
   pull_request:
     paths:
-      - "resources/[FUNCTION]/rp_territories/**"
+      - "resources/**"
       - "tests/test_territory_claims.py"
       - ".github/workflows/territory-claims.yml"
       - "server.cfg"
