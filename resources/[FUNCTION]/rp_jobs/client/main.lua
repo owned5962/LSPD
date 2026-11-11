@@ -56,7 +56,17 @@ AddEventHandler('onClientResourceStop', function(resourceName)
     SetNuiFocus(false, false)
 end)
 
+local function IsPlayerAtJobCenter()
+    local coords = GetEntityCoords(PlayerPedId())
+    local dx, dy, dz = coords.x - JobCenterCoords.x, coords.y - JobCenterCoords.y, coords.z - JobCenterCoords.z
+    return (dx * dx + dy * dy + dz * dz) <= (5.0 * 5.0)
+end
+
 function OpenJobCenter()
+    if not IsPlayerAtJobCenter() then
+        TriggerEvent('rp_core:client:notify', 'Rendez-vous au Pôle Emploi pour consulter les offres.', 'error')
+        return
+    end
     isJobCenterOpen = true
     SetNuiFocus(true, true)
     SendNUIMessage({
@@ -72,7 +82,7 @@ function CloseJobCenter()
 end
 
 RegisterCommand('jobcenter', function()
-    OpenJobCenter()
+    if isJobCenterOpen then CloseJobCenter() else OpenJobCenter() end
 end, false)
 RegisterKeyMapping('jobcenter', 'Ouvrir le menu des métiers', 'keyboard', 'F5')
 
