@@ -43,6 +43,15 @@ local function buildData(src)
     }
 end
 
+RegisterNetEvent('rp_tablet_job:server:setDutyState', function(status)
+    local src = source
+    if type(status) ~= 'boolean' then return end
+    local player = getPlayer(src)
+    if not player or not player.job or player.job == 'unemployed' then return end
+    -- Display-only status reported after the job module sends its validated update.
+    dutyStates[src] = status
+end)
+
 RegisterNetEvent('rp_tablet_job:server:requestData', function()
     local src = source
     if not exports['rp_core']:CanPerformAction(src, 'rp_tablet_job:requestData', 800) then return end
