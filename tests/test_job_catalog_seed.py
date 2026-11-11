@@ -40,3 +40,9 @@ def test_job_database_migration_seeds_every_job_and_five_grades_without_overwrit
         assert grades == [0, 1, 2, 3, 4], job_name
         assert all(salary > 0 for _, salary in by_job[job_name])
     assert by_job["unemployed"] == [(0, 150)]
+
+
+if __name__ == "__main__":
+    test_all_declared_jobs_have_five_runtime_grades()
+    test_job_database_migration_seeds_every_job_and_five_grades_without_overwriting()
+    print("Job catalog and database seed checks passed.")
