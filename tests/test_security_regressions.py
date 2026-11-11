@@ -942,7 +942,9 @@ def test_creator_tablet_is_separate_and_started():
     jobs = read("resources/[FUNCTION]/rp_jobs/client/main.lua")
     inventory = read("resources/[FUNCTION]/rp_inventory/client/main.lua")
     assert "RegisterKeyMapping('jobcenter', 'Ouvrir le menu des métiers', 'keyboard', 'F5')" in jobs
-    assert "RegisterKeyMapping('rp_inventory_toggle'" in inventory and "'F2'" in inventory
+    assert "local INVENTORY_KEY_COMMAND = 'rp_inventory_tablet_toggle_f2'" in inventory
+    assert "RegisterCommand(INVENTORY_KEY_COMMAND, ToggleInventory, false)" in inventory
+    assert "RegisterKeyMapping(INVENTORY_KEY_COMMAND, 'Ouvrir / fermer l’inventaire', 'keyboard', 'F2')" in inventory
     assert "IsControlJustPressed(0, Config.OpenKey or 289)" in inventory
     assert "ensure rp_tablet_creator" in config
     assert "server/extended.lua" in read("resources/[FUNCTION]/rp_tablet_admin/fxmanifest.lua")
