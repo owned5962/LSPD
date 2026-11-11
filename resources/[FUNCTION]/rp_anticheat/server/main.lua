@@ -133,12 +133,13 @@ end
 local function savePersistentBan(targetId, reason, adminId)
     local identifier = getLicense(targetId)
     if not identifier then return false, 'Identifiant license introuvable.' end
+    local adminIdentifier = tonumber(adminId) and tonumber(adminId) > 0 and getLicense(tonumber(adminId)) or nil
     local ok, err = pcall(function()
         MySQL.insert.await([[
             INSERT INTO player_bans (identifier, reason, banned_by)
             VALUES (?, ?, ?)
             ON DUPLICATE KEY UPDATE reason = VALUES(reason), banned_by = VALUES(banned_by), created_at = CURRENT_TIMESTAMP
-        ]], { identifier, reason, getLicense(adminId) or ('server:' .. tostring(adminId or 0)) })
+        ]], { identifier, reason, adminIdentifier or ('server:' .. tostring(adminId or 0)) })
     end)
     if not ok then
         print('[rp_anticheat] Persistent ban failed: ' .. tostring(err))
@@ -151,13 +152,14 @@ local function applyPrison(targetId, reason, adminId, minutes)
     local identifier = getLicense(targetId)
     if not identifier then return false, 'Identifiant license introuvable : prison annulée.' end
     minutes = math.max(1, math.min(1440, math.floor(tonumber(minutes) or Config.PrisonMinutes or 30)))
+    local adminIdentifier = tonumber(adminId) and tonumber(adminId) > 0 and getLicense(tonumber(adminId)) or nil
     local endsAt = os.time() + minutes * 60
     local ok, err = pcall(function()
         MySQL.insert.await([[
             INSERT INTO anticheat_jails (identifier, reason, ends_at, jailed_by)
             VALUES (?, ?, ?, ?)
             ON DUPLICATE KEY UPDATE reason = VALUES(reason), ends_at = VALUES(ends_at), jailed_by = VALUES(jailed_by)
-        ]], { identifier, reason, endsAt, getLicense(adminId) or ('server:' .. tostring(adminId or 0)) })
+        ]], { identifier, reason, endsAt, adminIdentifier or ('server:' .. tostring(adminId or 0)) })
     end)
     if not ok then
         print('[rp_anticheat] Prison persistence failed: ' .. tostring(err))
