@@ -21,7 +21,7 @@ local clothingShops = {
     vector3(1693.5, 4823.1, 42.1),
     vector3(618.2, 2759.3, 42.1),
     vector3(4.3, 6512.8, 31.9),
-    vector3(1695.3, 3757.7, 34.7)
+    vector3(123.6, -219.5, 54.6)
 }
 
 local presets = {
