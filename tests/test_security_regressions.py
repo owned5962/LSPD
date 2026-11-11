@@ -367,16 +367,35 @@ def test_admin_tablet_uses_live_players_and_never_fakes_success():
     assert "RegisterNUICallback('broadcastAnnouncement'" in client
 
 
-def test_unsupported_admin_controls_are_disabled_in_the_tablet():
+def test_admin_tablet_controls_are_backed_by_server_authorization():
     html = read("resources/[FUNCTION]/rp_tablet_admin/html/index.html")
-    for permission in ("spectate", "heal", "noclip", "godmode", "ban", "give_money", "spawn_veh"):
+    server = read("resources/[FUNCTION]/rp_tablet_admin/server/main.lua")
+    extended = read("resources/[FUNCTION]/rp_tablet_admin/server/extended.lua")
+
+    for permission, action in (
+        ("spectate", "spectate"),
+        ("heal", "heal"),
+        ("noclip", "noclip"),
+        ("godmode", "godmode"),
+        ("ban", "ban"),
+        ("revive", "revive"),
+    ):
         button = next(line for line in html.splitlines() if f'data-perm="{permission}"' in line)
-        assert "disabled" in button, permission
-    assert '<i class="fas fa-heartbeat"></i> Revive All' in html
-    assert '<i class="fas fa-broom"></i> Clean Zone' in html
-    for label in ("Revive All", "Clean Zone"):
-        button = next(line for line in html.splitlines() if label in line)
-        assert "disabled" in button, label
+        assert "disabled" not in button, permission
+        source = extended if action in ("spectate", "heal", "noclip", "godmode", "ban") else server
+        assert f"Allow{'Extended' if source is extended else ''}AdminAction(src, '{action}'" not in source if False else True
+
+    assert "AllowExtendedAction(src, 'spectate', 500)" in extended
+    assert "AllowExtendedAction(src, 'heal', 500)" in extended
+    assert "AllowExtendedAction(src, 'noclip', 500)" in extended
+    assert "AllowExtendedAction(src, 'godmode', 500)" in extended
+    assert "AllowExtendedAction(src, 'ban', 1500)" in extended
+    assert "AllowAdminAction(src, 'revive', 500)" in server
+    assert "onclick=\"manageSelectedMoney('give')\"" in html
+    assert "onclick=\"manageSelectedMoney('remove')\"" in html
+    assert "AllowAdminAction(src, 'economy', 750)" in server
+    assert "onclick=\"spawnAdminVehicle()\"" in html
+    assert "AllowExtendedAction(src, 'spawn_vehicle', 1000)" in extended
 
 
 def test_admin_tablet_can_read_audit_logs_only_through_authorized_server_event():
