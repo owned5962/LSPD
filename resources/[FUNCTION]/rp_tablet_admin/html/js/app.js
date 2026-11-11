@@ -352,6 +352,15 @@ function manageSelectedMoney(operation) {
         .catch(() => showToast('Impossible de modifier le compte du joueur.'));
 }
 
+function banSelectedPlayer() {
+    if (!Number.isInteger(selectedPlayerId) || selectedPlayerId < 1) return showToast('Sélectionnez un joueur connecté.');
+    const reason = document.getElementById('admin-ban-reason')?.value.trim();
+    if (!reason) return showToast('Saisissez un motif de bannissement.');
+    if (!window.confirm('Confirmer le bannissement permanent du joueur ID ' + selectedPlayerId + ' ?')) return;
+    nuiPost('banPlayer', { playerId: selectedPlayerId, reason: reason })
+        .then(() => showToast('Demande de bannissement envoyée.'))
+        .catch(() => showToast('Impossible de bannir ce joueur.'));
+}
 function setSelectedJob() {
     if (!Number.isInteger(selectedPlayerId) || selectedPlayerId < 1) return showToast('Sélectionnez un joueur connecté.');
     const jobName = document.getElementById('admin-job-name')?.value.trim();
