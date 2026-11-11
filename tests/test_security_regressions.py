@@ -555,6 +555,17 @@ def test_admin_tablet_stays_hidden_until_authorized_open_message():
     assert "RegisterKeyMapping('admin'" in client
 
 
+def test_character_spawn_cannot_wait_forever_on_screen_fade():
+    client = read("resources/[CORE]/rp_characters/client/main.lua")
+    server = read("resources/[CORE]/rp_characters/server/main.lua")
+    assert "local fadeDeadline = GetGameTimer() + 5000" in client
+    assert "GetGameTimer() < fadeDeadline" in client
+    assert "ShutdownLoadingScreen()" in client
+    assert "ShutdownLoadingScreenNui()" in client
+    assert "Failed to initialize character" in server
+    assert "sending spawn event" in server
+
+
 if __name__ == "__main__":
     checks = sorted(
         (name, check)
