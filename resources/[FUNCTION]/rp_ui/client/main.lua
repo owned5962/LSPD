@@ -106,16 +106,47 @@ AddEventHandler('onClientResourceStop', function(resourceName)
 end)
 
 -- Vehicle dashboard: speed is displayed in km/h and fuel comes from the vehicle native.
+local VehicleClassLabels = {
+    [0] = 'Compacte', [1] = 'Berline', [2] = 'SUV', [3] = 'Coupé',
+    [4] = 'Muscle', [5] = 'Sport classique', [6] = 'Sportive',
+    [7] = 'Super sportive', [8] = 'Moto', [9] = 'Tout-terrain',
+    [10] = 'Industriel', [11] = 'Utilitaire', [12] = 'Van',
+    [13] = 'Vélo', [14] = 'Bateau', [15] = 'Hélicoptère',
+    [16] = 'Avion', [17] = 'Service', [18] = 'Urgence',
+    [19] = 'Militaire', [20] = 'Commercial', [21] = 'Train'
+}
+
+local function GetVehicleHUDIdentity(vehicle)
+    local vehicleType = VehicleClassLabels[GetVehicleClass(vehicle)] or 'Véhicule'
+    local displayName = GetDisplayNameFromVehicleModel(GetEntityModel(vehicle))
+    local vehicleName = displayName and displayName ~= '' and displayName ~= 'CARNOTFOUND' and displayName ~= 'NULL'
+        and GetLabelText(displayName) or vehicleType
+
+    if not vehicleName or vehicleName == '' or vehicleName == 'NULL' then
+        vehicleName = displayName and displayName ~= '' and displayName ~= 'CARNOTFOUND' and displayName or vehicleType
+    end
+
+    return vehicleType, vehicleName
+end
+
 CreateThread(function()
     local lastVehicle = 0
+    local lastVehicleType, lastVehicleName = 'Véhicule', ''
     while true do
         local ped = PlayerPedId()
         local vehicle = GetVehiclePedIsIn(ped, false)
         if isCharacterLoaded and vehicle ~= 0 and GetPedInVehicleSeat(vehicle, -1) == ped then
+            if vehicle ~= lastVehicle then
+                lastVehicleType, lastVehicleName = GetVehicleHUDIdentity(vehicle)
+            end
             local speed = math.floor(GetEntitySpeed(vehicle) * 3.6 + 0.5)
             local fuel = math.max(0, math.min(100, GetVehicleFuelLevel(vehicle)))
             local gear = GetVehicleCurrentGear(vehicle)
-            SendNUIMessage({ action = 'updateVehicleHUD', visible = true, speed = speed, fuel = fuel, gear = gear })
+            SendNUIMessage({
+                action = 'updateVehicleHUD', visible = true,
+                speed = speed, fuel = fuel, gear = gear,
+                vehicleType = lastVehicleType, vehicleName = lastVehicleName
+            })
             lastVehicle = vehicle
             Wait(100)
         else
