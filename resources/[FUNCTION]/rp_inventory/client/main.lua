@@ -28,7 +28,7 @@ local function ToggleInventory()
     -- RegisterKeyMapping and the native-control fallback can fire on the same
     -- frame. Debounce them so one F2 press can never open and close instantly.
     local now = GetGameTimer()
-    if now - lastToggleAt < 300 then return end
+    if lastToggleAt > 0 and now - lastToggleAt < 300 then return end
     lastToggleAt = now
 
     if isInventoryOpen or isInventoryPending then
@@ -52,9 +52,11 @@ AddEventHandler('onClientResourceStop', function(resourceName)
     SetNuiFocus(false, false)
 end)
 
--- Dedicated local command used by FiveM's key mapping.
-RegisterCommand('rp_inventory_toggle', ToggleInventory, false)
-RegisterKeyMapping('rp_inventory_toggle', 'Ouvrir / fermer l’inventaire', 'keyboard', 'F2')
+-- Use a fresh command name so stale FiveM player keybinds from previous
+-- inventory versions cannot override the current F2 mapping.
+local INVENTORY_KEY_COMMAND = 'rp_inventory_tablet_toggle_f2'
+RegisterCommand(INVENTORY_KEY_COMMAND, ToggleInventory, false)
+RegisterKeyMapping(INVENTORY_KEY_COMMAND, 'Ouvrir / fermer l’inventaire', 'keyboard', 'F2')
 RegisterNetEvent('rp_inventory:client:toggle', ToggleInventory)
 
 -- Fallback for clients where the F2 key mapping is not registered/applied.
