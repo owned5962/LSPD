@@ -37,6 +37,16 @@ RegisterNUICallback('refresh', function(_, cb)
     cb({ ok = true })
 end)
 
+RegisterNUICallback('startMission', function(data, cb)
+    TriggerServerEvent('rp_tablet_job:server:startMission', data.title, data.description)
+    cb({ ok = true })
+end)
+
+RegisterNUICallback('finishMission', function(_, cb)
+    TriggerServerEvent('rp_tablet_job:server:finishMission')
+    cb({ ok = true })
+end)
+
 RegisterNUICallback('toggleDuty', function(_, cb)
     local ok, player = pcall(function() return exports['rp_core']:GetPlayerData() end)
     local job = ok and player and player.job
@@ -65,6 +75,7 @@ end)
 for _, job in ipairs(JobsList or {}) do
     RegisterNetEvent('job_' .. job.name .. ':dutyUpdated', function(status)
         currentDuty = status == true
+        TriggerServerEvent('rp_tablet_job:server:setDutyState', currentDuty)
         if isOpen then TriggerServerEvent('rp_tablet_job:server:requestData') end
     end)
 end
