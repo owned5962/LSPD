@@ -109,7 +109,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!wrapper || !wrapper.classList.contains('is-open')) return;
         event.preventDefault();
         event.stopPropagation();
-        closeAdminTablet();
+        closeAdminTablet(event.key === 'F10' ? 'f10' : 'escape');
     });
 
     window.addEventListener('message', handleTabletMessage);
@@ -203,8 +203,8 @@ function saveCurrentPermissions() {
 }
 
 // Close the Lua/NUI tablet through the registered NUI callback.
-function closeAdminTablet() {
-    nuiPost('close').catch(() => {});
+function closeAdminTablet(source = 'button') {
+    nuiPost('close', { source }).catch(() => {});
 }
 
 // Actions du Menu Admin
