@@ -161,17 +161,32 @@ local function capturePlayerSnapshot(src)
     end
 
     local ped = GetPlayerPed(src)
-    if ped and ped ~= 0 then
-        local weaponOk, weaponHash = pcall(function() return GetSelectedPedWeapon(ped) end)
-        weaponHash = weaponOk and tonumber(weaponHash) or nil
-        if weaponHash and weaponHash ~= 0 then
-            weapons[#weapons + 1] = {
-                name = ('hash:%s'):format(weaponHash),
-                label = 'Arme actuellement équipée',
-                hash = weaponHash,
-                equipped = true,
-                source = 'ped'
-            }
+    -- Use the server-side weapon inventory native when the running FXServer
+    -- artifact exposes it. Never trust a client-reported loadout for evidence.
+    if ped and ped ~= 0 and type(GetPedWeapons) == 'function' then
+        local weaponOk, weaponList, ammoByWeapon = pcall(function() return GetPedWeapons(ped) end)
+        if weaponOk and type(weaponList) == 'table' then
+            for key, rawWeapon in pairs(weaponList) do
+                local weaponHash, ammo
+                if type(rawWeapon) == 'table' then
+                    weaponHash = tonumber(rawWeapon.hash or rawWeapon.weapon or rawWeapon.weaponHash)
+                    ammo = tonumber(rawWeapon.ammo)
+                else
+                    weaponHash = tonumber(rawWeapon)
+                end
+                if weaponHash and weaponHash ~= 0 then
+                    if ammo == nil and type(ammoByWeapon) == 'table' then
+                        ammo = tonumber(ammoByWeapon[weaponHash] or ammoByWeapon[tostring(weaponHash)])
+                    end
+                    weapons[#weapons + 1] = {
+                        name = ('hash:%s'):format(weaponHash),
+                        label = 'Arme du personnage',
+                        hash = weaponHash,
+                        ammo = ammo,
+                        source = 'ped'
+                    }
+                end
+            end
         end
     end
 
