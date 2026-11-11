@@ -11,7 +11,7 @@ local function requestOpen()
 end
 
 RegisterCommand('creator', requestOpen, false)
-RegisterKeyMapping('creator', 'Ouvrir la tablette Créateur', 'keyboard', 'F9')
+RegisterKeyMapping('creator', 'Ouvrir la tablette Créateur', 'keyboard', 'F11')
 
 RegisterNetEvent('rp_tablet_creator:client:open', function(role)
     isOpen = true
