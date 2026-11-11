@@ -716,6 +716,77 @@ def test_admin_advanced_actions_are_server_authorized():
     assert "function spawnAdminVehicle()" in ui
 
 
+
+
+def test_nui_endpoints_are_fixed_and_do_not_recurse_through_parent_lookup():
+    resources = {
+        "rp_jobs": "resources/[FUNCTION]/rp_jobs/html/js/app.js",
+        "rp_economy": "resources/[FUNCTION]/rp_economy/html/js/app.js",
+        "rp_tablet_admin": "resources/[FUNCTION]/rp_tablet_admin/html/js/app.js",
+        "rp_inventory": "resources/[FUNCTION]/rp_inventory/html/js/app.js",
+        "rp_clothing": "resources/[FUNCTION]/rp_clothing/html/js/app.js",
+        "rp_interactions": "resources/[FUNCTION]/rp_interactions/html/js/app.js",
+        "rp_anticheat": "resources/[FUNCTION]/rp_anticheat/html/js/app.js",
+    }
+    for resource, path in resources.items():
+        ui = read(path)
+        assert "GetParentResourceName" not in ui
+        assert f"https://{resource}/" in ui or resource == "rp_jobs"
+
+
+def test_jobcenter_application_returns_server_result_and_closes_focus_on_success():
+    ui = read("resources/[FUNCTION]/rp_jobs/html/js/app.js")
+    client = read("resources/[FUNCTION]/rp_jobs/client/main.lua")
+    server = read("resources/[FUNCTION]/rp_jobs/server/main.lua")
+    assert "const NUI_RESOURCE = 'rp_jobs'" in ui
+    assert "pendingJobTimeout = setTimeout" in ui
+    assert "if (data.success) closeJobCenter()" in ui
+    assert "RegisterNUICallback('selectJob'" in client
+    assert "RegisterNetEvent('rp_jobs:client:jobSelectionResult'" in client
+    assert "pcall(player.setJob, jobName, 0)" in server
+    assert "Embauche confirmée" in ui
+
+
+def test_bank_ui_is_only_opened_at_real_bank_or_atm_and_server_checks_distance():
+    client = read("resources/[FUNCTION]/rp_economy/client/main.lua")
+    server = read("resources/[FUNCTION]/rp_economy/server/main.lua")
+    ui = read("resources/[FUNCTION]/rp_economy/html/js/app.js")
+    assert "RegisterCommand('bank'" in client and "OpenBankUI(false)" in client
+    assert "RegisterCommand('atm'" in client and "OpenBankUI(true)" in client
+    assert "IsControlJustReleased(0, 38)" in client
+    assert "if not GetNearbyBank(3.0)" in client
+    assert "IsNearBankOrATM(src, true)" in server
+    assert "IsNearBankOrATM(src, false)" in server
+    assert "https://rp_economy/close" in ui
+
+
+def test_hud_is_refreshed_from_character_and_balance_events():
+    client = read("resources/[FUNCTION]/rp_ui/client/main.lua")
+    html = read("resources/[FUNCTION]/rp_ui/html/index.html")
+    ui = read("resources/[FUNCTION]/rp_ui/html/js/app.js")
+    css = read("resources/[FUNCTION]/rp_ui/html/css/style.css")
+    assert "function UpdatePlayerHUD()" in client
+    assert "RegisterNetEvent('rp_core:client:setPlayerData'" in client
+    assert "RegisterNetEvent('rp_core:client:updateCash'" in client
+    assert "RegisterNetEvent('rp_core:client:updateBank'" in client
+    assert 'id="player-hud"' in html
+    assert "function updatePlayerHUD(data)" in ui
+    assert "#player-hud" in css and "z-index: 1000" in css
+
+
+def test_cfx_default_resources_are_documented_and_start_order_is_valid():
+    config = read("server.cfg")
+    readme = read("README.md")
+    assert "ensure oxmysql" in config
+    assert config.index("ensure rp_jobs") < config.index("ensure rp_economy")
+    assert "ensure spawnmanager" in config
+    assert "ensure sessionmanager" in config
+    assert "ensure hardcap" in config
+    assert "ensure baseevents" in config
+    assert "cfx-server-data" in readme
+    assert "spawnmanager" in readme and "baseevents" in readme
+
+
 if __name__ == "__main__":
     checks = sorted(
         (name, check)
