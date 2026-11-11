@@ -51,9 +51,53 @@ RegisterNUICallback('saveJobBlip', function(data, cb)
     cb({ ok = true })
 end)
 
-RegisterNetEvent('rp_tablet_creator:client:toolsData', function(jobs, blips, mapping, catalog)
+RegisterNUICallback('refreshTools', function(_, cb)
+    TriggerServerEvent('rp_tablet_creator:server:requestTools')
+    cb({ ok = true })
+end)
+
+RegisterNUICallback('setServerSettings', function(data, cb)
+    TriggerServerEvent('rp_tablet_creator:server:setServerSettings', data)
+    cb({ ok = true })
+end)
+
+RegisterNUICallback('setModuleState', function(data, cb)
+    TriggerServerEvent('rp_tablet_creator:server:setModuleState', data.name, data.enabled)
+    cb({ ok = true })
+end)
+
+RegisterNUICallback('updatePlayerIdentity', function(data, cb)
+    TriggerServerEvent('rp_tablet_creator:server:updatePlayerIdentity', data)
+    cb({ ok = true })
+end)
+
+RegisterNUICallback('updatePlayerBalances', function(data, cb)
+    TriggerServerEvent('rp_tablet_creator:server:updatePlayerBalances', data)
+    cb({ ok = true })
+end)
+
+RegisterNUICallback('updatePlayerJob', function(data, cb)
+    TriggerServerEvent('rp_tablet_creator:server:updatePlayerJob', data)
+    cb({ ok = true })
+end)
+
+RegisterNUICallback('updatePlayerInventory', function(data, cb)
+    TriggerServerEvent('rp_tablet_creator:server:updatePlayerInventory', data)
+    cb({ ok = true })
+end)
+
+RegisterNUICallback('updatePlayerAccess', function(data, cb)
+    TriggerServerEvent('rp_tablet_creator:server:updatePlayerAccess', data)
+    cb({ ok = true })
+end)
+
+RegisterNetEvent('rp_tablet_creator:client:toolsData', function(jobs, blips, mapping, catalog, players, items, settings, modules)
     local coords = GetEntityCoords(PlayerPedId())
-    SendNUIMessage({ action = 'toolsData', jobs = jobs or {}, blips = blips or {}, mapping = mapping or {}, catalog = catalog or {}, position = { x = coords.x, y = coords.y, z = coords.z } })
+    SendNUIMessage({
+        action = 'toolsData', jobs = jobs or {}, blips = blips or {}, mapping = mapping or {},
+        catalog = catalog or {}, position = { x = coords.x, y = coords.y, z = coords.z },
+        players = players or {}, items = items or {}, settings = settings or {}, modules = modules or {}
+    })
 end)
 
 RegisterNetEvent('rp_tablet_creator:client:mappingAdded', function(item)
