@@ -68,3 +68,25 @@ def test_statistics_are_persistent_and_access_controlled():
 if __name__ == "__main__":
     test_statistics_are_persistent_and_access_controlled()
     print("Anticheat statistics checks passed.")
+
+
+def test_weapon_policy_is_persistent_and_drives_client_and_server_anticheat():
+    config = read("resources/[FUNCTION]/rp_anticheat/shared/config.lua")
+    server = read("resources/[FUNCTION]/rp_anticheat/server/main.lua")
+    client = read("resources/[FUNCTION]/rp_anticheat/client/main.lua")
+    assert "Config.WeaponCatalog" in config and "Config.WeaponPolicy" in config
+    assert "CREATE TABLE IF NOT EXISTS anticheat_weapon_rules" in server
+    assert "INSERT IGNORE INTO anticheat_weapon_rules" in server
+    assert "exports('GetWeaponPolicy'" in server
+    assert "exports('IsWeaponAllowed'" in server
+    assert "exports('SaveWeaponPolicy'" in server
+    assert "MySQL.transaction.await(queries)" in server
+    assert "TriggerClientEvent('rp_anticheat:syncWeaponPolicy', -1" in server
+    assert "Config.WeaponHashToName[weaponType]" in server
+    assert "Config.WeaponPolicy[weaponName] ~= true" in server
+    assert "RegisterNetEvent('rp_anticheat:requestWeaponPolicy'" in server
+    assert "RegisterNetEvent('rp_anticheat:syncWeaponPolicy'" in client
+    assert "Config.WeaponPolicy = policy" in client
+    assert "Config.BlacklistedWeapons" in client
+    assert "RemoveWeaponFromPed(ped, weaponHash)" in client
+    assert "weaponHash == nil" not in server
