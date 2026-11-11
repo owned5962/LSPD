@@ -1,4 +1,5 @@
 local isProgressActive = false
+local isCharacterLoaded = false
 
 -- Exports & Events for TextUI
 function ShowTextUI(message, position)
@@ -67,9 +68,12 @@ end)
 local function UpdatePlayerHUD()
     local ok, data = pcall(function() return exports['rp_core']:GetPlayerData() end)
     if not ok or type(data) ~= 'table' or not tonumber(data.charId) then
+        isCharacterLoaded = false
         SendNUIMessage({ action = 'hideHUD' })
+        SendNUIMessage({ action = 'hideVehicleHUD' })
         return false
     end
+    isCharacterLoaded = true
     local ped = PlayerPedId()
     local maxHealth = math.max(1, GetEntityMaxHealth(ped) - 100)
     local health = math.max(0, math.min(100, ((GetEntityHealth(ped) - 100) / maxHealth) * 100))
@@ -109,7 +113,7 @@ CreateThread(function()
     while true do
         local ped = PlayerPedId()
         local vehicle = GetVehiclePedIsIn(ped, false)
-        if vehicle ~= 0 and GetPedInVehicleSeat(vehicle, -1) == ped then
+        if isCharacterLoaded and vehicle ~= 0 and GetPedInVehicleSeat(vehicle, -1) == ped then
             local speed = math.floor(GetEntitySpeed(vehicle) * 3.6 + 0.5)
             local fuel = math.max(0, math.min(100, GetVehicleFuelLevel(vehicle)))
             local gear = GetVehicleCurrentGear(vehicle)
