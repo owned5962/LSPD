@@ -674,9 +674,7 @@ def test_admin_tablet_exposes_working_heal_economy_and_job_actions():
 
 
 
-def test_all_security_regressions_are_run_by_the_test_script():
-    source = read("tests/test_security_regressions.py")
-    runner_index = source.rindex('def test_anticheat_tablet_has_live_dashboard_player_tools_logs_and_ban_management():
+def test_anticheat_tablet_has_live_dashboard_player_tools_logs_and_ban_management():
     root = "resources/[FUNCTION]/rp_anticheat/"
     html = read(root + "html/index.html")
     ui = read(root + "html/js/app.js")
@@ -684,8 +682,7 @@ def test_all_security_regressions_are_run_by_the_test_script():
     server = read(root + "server/main.lua")
     config = read(root + "shared/config.lua")
     css = read(root + "html/css/style.css")
-
-    for tab in ("dashboard", "protections", "players", "surveillance", "logs", "bans"):
+    for tab in ("dashboard", "protections", "players", "surveillance", "logs", "bans", "statistics"):
         assert f'data-tab="{tab}"' in html
         assert f'id="pane-{tab}"' in html
     assert "requestLogs" in client and "requestBans" in client and "unban" in client
@@ -711,8 +708,6 @@ def test_anticheat_detection_log_and_staff_actions_are_bounded():
     assert "openRequestAt[src] and now - openRequestAt[src] < 1" in server
     assert "ORDER BY created_at DESC LIMIT 100" in server
 
-
-if __name__ == "__main__":')
 
 def test_loadscreen_has_offline_visual_banners_and_correct_keybinds():
     manifest = read("resources/[FUNCTION]/rp_loadscreen/fxmanifest.lua")
@@ -1249,3 +1244,11 @@ def test_anticheat_statistics_page_is_persistent_and_period_filterable():
     for category in ("godmode", "money", "vehicle_spawn", "weapon_spawn", "speedhack", "gravity", "spam"):
         assert category in ui
     assert "severity-critical" in ui or "severity-critical" in read("resources/[FUNCTION]/rp_anticheat/html/css/style.css")
+
+
+if __name__ == "__main__":
+    checks = sorted((name, check) for name, check in globals().items()
+                    if name.startswith("test_") and callable(check))
+    for name, check in checks:
+        check()
+    print(f"All {len(checks)} security and persistence regression checks passed.")
