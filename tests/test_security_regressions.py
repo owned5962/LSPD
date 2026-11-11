@@ -587,14 +587,14 @@ def test_admin_tablet_close_controls_and_keyboard_bindings_do_not_conflict():
 
 def test_admin_live_map_uses_authorized_server_world_positions():
     server = read("resources/[FUNCTION]/rp_tablet_admin/server/main.lua")
+    extended = read("resources/[FUNCTION]/rp_tablet_admin/server/extended.lua")
     client = read("resources/[FUNCTION]/rp_tablet_admin/client/main.lua")
     ui = read("resources/[FUNCTION]/rp_tablet_admin/html/js/app.js")
     html = read("resources/[FUNCTION]/rp_tablet_admin/html/index.html")
-    assert "local function BuildOnlinePlayers()" in server
-    assert "GetEntityCoords(ped)" in server
+    assert "GetEntityCoords(ped)" in server and "isSelf = pid == src" in server
     assert "position = { x = coords.x, y = coords.y, z = coords.z }" in server
-    assert "AllowAdminAction(src, 'positions', 1800)" in server
-    assert "RegisterNetEvent('rp_tablet_admin:server:requestPlayerPositions'" in server
+    assert "AllowExtendedAction(src, 'positions', 1800)" in extended
+    assert "RegisterNetEvent('rp_tablet_admin:server:requestPlayerPositions'" in extended
     assert "RegisterNUICallback('requestPlayerPositions'" in client
     assert "RegisterNetEvent('rp_tablet_admin:client:playerPositions'" in client
     assert "RegisterNUICallback('healPlayer'" in client
@@ -608,20 +608,20 @@ def test_admin_live_map_uses_authorized_server_world_positions():
 def test_admin_player_snapshot_always_includes_requesting_admin():
     server = read("resources/[FUNCTION]/rp_tablet_admin/server/main.lua")
     ui = read("resources/[FUNCTION]/rp_tablet_admin/html/js/app.js")
-    assert "local function BuildOnlinePlayers(requestingAdminId)" in server
     assert "for _, rawId in pairs(GetPlayers()) do" in server
-    assert "AddOnlinePlayer(requestingAdminId)" in server
-    assert "isSelf = playerId == tonumber(requestingAdminId)" in server
-    assert "BuildOnlinePlayers(src)" in server
+    assert "isSelf = pid == src" in server
+    assert "if not seen[src] and GetPlayerName(src) then" in server
+    assert "table.sort(onlinePlayers" in server
     assert "player.isSelf ? ' (VOUS)' : ''" in ui
 
 
 def test_admin_tablet_exposes_working_heal_economy_and_job_actions():
     server = read("resources/[FUNCTION]/rp_tablet_admin/server/main.lua")
+    extended = read("resources/[FUNCTION]/rp_tablet_admin/server/extended.lua")
     client = read("resources/[FUNCTION]/rp_tablet_admin/client/main.lua")
     html = read("resources/[FUNCTION]/rp_tablet_admin/html/index.html")
     ui = read("resources/[FUNCTION]/rp_tablet_admin/html/js/app.js")
-    assert "AllowAdminAction(src, 'heal', 500)" in server
+    assert "AllowExtendedAction(src, 'heal', 500)" in extended
     assert "rp_tablet_admin:client:heal" in server and "client:heal" in client
     assert "RegisterNUICallback('manageEconomy'" in client
     assert "RegisterNUICallback('setJob'" in client
@@ -643,11 +643,11 @@ def test_all_security_regressions_are_run_by_the_test_script():
 
 
 def test_admin_permanent_ban_requires_staff_reason_and_persists_license():
-    server = read("resources/[FUNCTION]/rp_tablet_admin/server/main.lua")
+    server = read("resources/[FUNCTION]/rp_tablet_admin/server/extended.lua")
     client = read("resources/[FUNCTION]/rp_tablet_admin/client/main.lua")
     html = read("resources/[FUNCTION]/rp_tablet_admin/html/index.html")
     ui = read("resources/[FUNCTION]/rp_tablet_admin/html/js/app.js")
-    assert "AllowAdminAction(src, 'ban', 1500)" in server
+    assert "AllowExtendedAction(src, 'ban', 1500)" in server
     assert "Un motif de bannissement est obligatoire." in server
     assert "INSERT INTO player_bans (identifier, reason, banned_by)" in server
     assert "DropPlayer(targetId, '[ADMINISTRATION - BAN PERMANENT] '" in server
@@ -714,12 +714,12 @@ def test_other_nui_menus_reset_focus_and_support_close_paths():
 
 
 def test_admin_advanced_actions_are_server_authorized():
-    server = read("resources/[FUNCTION]/rp_tablet_admin/server/main.lua")
+    server = read("resources/[FUNCTION]/rp_tablet_admin/server/extended.lua")
     client = read("resources/[FUNCTION]/rp_tablet_admin/client/main.lua")
     html = read("resources/[FUNCTION]/rp_tablet_admin/html/index.html")
     ui = read("resources/[FUNCTION]/rp_tablet_admin/html/js/app.js")
     for action in ("spectate", "noclip", "godmode", "spawn_vehicle"):
-        assert "AllowAdminAction(src, '" + action + "'" in server
+        assert "AllowExtendedAction(src, '" + action + "'" in server
     assert "RegisterNUICallback('spectatePlayer'" in client
     assert "RegisterNUICallback('toggleNoclip'" in client
     assert "RegisterNUICallback('toggleGodmode'" in client
@@ -809,3 +809,41 @@ if __name__ == "__main__":
     for name, check in checks:
         check()
     print(f"All {len(checks)} security and persistence regression checks passed.")
+
+
+def test_character_registration_name_is_published_as_player_name():
+    source = read("resources/[CORE]/rp_characters/server/main.lua")
+    assert "local roleplayName =" in source
+    assert "SetPlayerName(src, roleplayName)" in source
+
+
+def test_anticheat_self_is_visible_and_receives_live_telemetry():
+    server = read("resources/[FUNCTION]/rp_anticheat/server/main.lua")
+    client = read("resources/[FUNCTION]/rp_anticheat/client/main.lua")
+    ui = read("resources/[FUNCTION]/rp_anticheat/html/js/app.js")
+    assert "openStaff[src] = true" in server
+    assert "isSelf = id == src" in server
+    assert "rp_anticheat:updatePlayers" in server and "Wait(1000)" in server
+    assert "rp_anticheat:updatePlayers" in client
+    assert "p.isSelf ? ' (VOUS)' : ''" in ui
+    assert "Selecting yourself is supported for live telemetry" in ui
+
+
+def test_creator_tablet_is_separate_and_started():
+    admin_html = read("resources/[FUNCTION]/rp_tablet_admin/html/index.html")
+    creator_manifest = read("resources/[FUNCTION]/rp_tablet_creator/fxmanifest.lua")
+    creator_client = read("resources/[FUNCTION]/rp_tablet_creator/client/main.lua")
+    config = read("server.cfg")
+    assert "view-creator" not in admin_html and "mode-switcher" not in admin_html
+    assert "RegisterCommand('creator'" in creator_client
+    assert "RegisterKeyMapping('creator'" in creator_client
+    assert "ensure rp_tablet_creator" in config
+    assert "server/extended.lua" in read("resources/[FUNCTION]/rp_tablet_admin/fxmanifest.lua")
+
+
+def test_jobcenter_blocks_duplicate_clicks_until_server_result():
+    ui = read("resources/[FUNCTION]/rp_jobs/html/js/app.js")
+    assert "let activeJobRequest = false" in ui
+    assert "if (activeJobRequest) return" in ui
+    assert "activeJobRequest = false" in ui
+    assert "chooseJob(job.name, actionBtn)" in ui
