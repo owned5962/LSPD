@@ -40,8 +40,13 @@ class LoadscreenFeatureTests(unittest.TestCase):
         self.assertIn("rp_loadscreen:requestUpdates", client)
         self.assertIn("rp_loadscreen:receiveUpdates", client)
         self.assertIn("PerformHttpRequest", server)
-        self.assertIn("commits?per_page=4", server)
+        self.assertIn("nouveaut%C3%A9s.txt", server)
+        self.assertIn("futur.txt", server)
+        self.assertIn("ParseLines(updatesText, 6)", server)
+        self.assertIn("ParseLines(futureText, 10)", server)
         self.assertIn("data.eventName === 'lssUpdates'", app)
+        self.assertIn("data.future", app)
+        self.assertIn("future-list", self.read("html/index.html"))
         self.assertIn("title.textContent", app)
 
     def test_server_feed_has_cache_and_per_player_cooldown(self):
