@@ -113,7 +113,7 @@ body {
 
 .content-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 24px;
     margin: 22px 0;
 }
@@ -304,7 +304,10 @@ body {
 }
 @media (max-width: 900px) {
     .loadscreen-container { padding: 22px; }
-    .content-grid { grid-template-columns: 1fr; gap: 12px; margin: 14px 0; }
+    .content-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 14px 0; }
+    .info-card { padding: 16px; }
+    .info-card h2 { font-size: 14px; }
+    .rules-card li, .update-item p, .key-item { font-size: 11px; }
     .hero-banner { align-items: flex-start; flex-direction: column; padding: 18px; gap: 14px; }
     .hero-stats { flex-wrap: wrap; }
     .music-controller { display: none; }
