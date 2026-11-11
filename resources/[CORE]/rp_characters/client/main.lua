@@ -26,7 +26,7 @@ local tutorialPages = {
         title = 'TON ARGENT',
         lines = {
             'Tu commences avec 2 500 $ en poche et 10 000 $ en banque.',
-            'Utilise /bank pour accéder à ton compte bancaire.',
+            'Appuie sur E devant un guichet bancaire ou un distributeur pour accéder à ton compte.',
             'Les principales banques sont indiquées sur ta carte.'
         }
     },
