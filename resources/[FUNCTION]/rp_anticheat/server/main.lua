@@ -1,5 +1,6 @@
 local detectionsLog = {}
 local lastFlagAt = {}
+local adminActionAt = {}
 local openStaff = {}
 local adminInvulnerability = {}
 local explosionWindows = {}
@@ -60,10 +61,12 @@ local function recordDetection(src, reason)
         playerId = src,
         playerName = GetPlayerName(src) or 'Inconnu',
         reason = safe,
-        time = os.date('%H:%M:%S')
+        time = os.date('%H:%M:%S'),
+        timestamp = now,
+        severity = 'high'
     }
     table.insert(detectionsLog, 1, alert)
-    if #detectionsLog > 100 then table.remove(detectionsLog) end
+    if #detectionsLog > 250 then table.remove(detectionsLog) end
 
     for _, pid in ipairs(GetPlayers()) do
         local staffId = tonumber(pid)
@@ -149,12 +152,65 @@ RegisterNetEvent('rp_anticheat:requestOpen', function()
             job = player and player.job or 'civilian'
         }
     end
-    TriggerClientEvent('rp_anticheat:openUI', src, Config.Protections, playersList)
+    TriggerClientEvent('rp_anticheat:openUI', src, Config.Protections, playersList, detectionsLog)
 end)
 
 
 RegisterNetEvent('rp_anticheat:closeUI', function()
     openStaff[source] = nil
+end)
+
+local function allowStaffAction(src, action, cooldownSeconds)
+    local now = os.time()
+    adminActionAt[src] = adminActionAt[src] or {}
+    local previous = adminActionAt[src][action] or 0
+    if now - previous < (cooldownSeconds or 1) then return false end
+    adminActionAt[src][action] = now
+    return true
+end
+
+RegisterNetEvent('rp_anticheat:requestLogs', function()
+    local src = source
+    if not isStaff(src) or not canUseAnticheatTablet(src) then return end
+    TriggerClientEvent('rp_anticheat:updateLogs', src, detectionsLog)
+end)
+
+RegisterNetEvent('rp_anticheat:requestBans', function()
+    local src = source
+    if not isStaff(src) or not canUseAnticheatTablet(src) then return end
+    local ok, bans = pcall(function()
+        return MySQL.query.await(
+            'SELECT identifier, reason, banned_by, created_at FROM player_bans ORDER BY created_at DESC LIMIT 100'
+        )
+    end)
+    if not ok then
+        print('[rp_anticheat] Ban list lookup failed: ' .. tostring(bans))
+        notify(src, 'error', 'Impossible de charger la liste des bannissements.')
+        return
+    end
+    TriggerClientEvent('rp_anticheat:updateBans', src, bans or {})
+end)
+
+RegisterNetEvent('rp_anticheat:unban', function(rawIdentifier)
+    local src = source
+    if not isStaff(src) or not canUseAnticheatTablet(src) or not allowStaffAction(src, 'unban', 2) then return end
+    if type(rawIdentifier) ~= 'string' or #rawIdentifier > 64 or rawIdentifier:sub(1, 8) ~= 'license:' then
+        notify(src, 'error', 'Identifiant de bannissement invalide.')
+        return
+    end
+    local ok, affected = pcall(function()
+        return MySQL.update.await('DELETE FROM player_bans WHERE identifier = ?', { rawIdentifier })
+    end)
+    if not ok then
+        print('[rp_anticheat] Unban failed: ' .. tostring(affected))
+        notify(src, 'error', 'Erreur SQL : bannissement non modifié.')
+        return
+    end
+    notify(src, affected and affected > 0 and 'success' or 'info',
+        affected and affected > 0 and 'Bannissement levé.' or 'Aucun bannissement trouvé.')
+    TriggerClientEvent('rp_anticheat:updateBans', src, MySQL.query.await(
+        'SELECT identifier, reason, banned_by, created_at FROM player_bans ORDER BY created_at DESC LIMIT 100'
+    ) or {})
 end)
 
 local function BuildSurveillanceSnapshot()
@@ -205,7 +261,7 @@ end)
 
 RegisterNetEvent('rp_anticheat:toggleProtection', function(key, state)
     local src = source
-    if not isStaff(src) or not canUseAnticheatTablet(src) then return end
+    if not isStaff(src) or not canUseAnticheatTablet(src) or not allowStaffAction(src, 'toggle_protection', 1) then return end
     if type(key) ~= 'string' or type(state) ~= 'boolean' or not Config.Protections[key] then return end
 
     Config.Protections[key].enabled = state
@@ -251,7 +307,7 @@ end)
 
 RegisterNetEvent('rp_anticheat:punish', function(rawTargetId, punishType, rawReason)
     local src = source
-    if not isStaff(src) or not canUseAnticheatTablet(src) then return end
+    if not isStaff(src) or not canUseAnticheatTablet(src) or not allowStaffAction(src, 'punish', 2) then return end
     local targetId = tonumber(rawTargetId)
     if not targetId or targetId == src or not GetPlayerName(targetId) then
         notify(src, 'error', 'Joueur cible introuvable.')
@@ -330,4 +386,5 @@ AddEventHandler('playerDropped', function()
     adminInvulnerability[source] = nil
     explosionWindows[source] = nil
     spectateRequestAt[source] = nil
+    adminActionAt[source] = nil
 end)
