@@ -43,5 +43,5 @@ end)
 RegisterNetEvent('rp_vehicle_loot:client:success', function(netId, wheel, message)
     local vehicle = NetworkGetEntityFromNetworkId(tonumber(netId) or 0)
     if vehicle ~= 0 and DoesEntityExist(vehicle) then SetVehicleTyreBurst(vehicle, tonumber(wheel) or 0, true, 1000.0) end
-    TriggerEvent('rp_core:client:notify', message or 'Pneu démonté.', 'success')
+    -- The server notifies only the player who completed the theft.
 end)
