@@ -8,9 +8,16 @@ local isAnticheatUIOpen = false
 local function ToggleAnticheatTablet()
     if isSpectating then
         StopSpectate()
-    else
-        TriggerServerEvent('rp_anticheat:requestOpen')
+        return
     end
+    if isAnticheatUIOpen then
+        isAnticheatUIOpen = false
+        TriggerServerEvent('rp_anticheat:closeUI')
+        SetNuiFocus(false, false)
+        SendNUIMessage({ action = 'close' })
+        return
+    end
+    TriggerServerEvent('rp_anticheat:requestOpen')
 end
 
 -- Déclarer la commande avant de lui associer F9.
