@@ -50,6 +50,12 @@ AddEventHandler('onClientResourceStart', function(resourceName)
     SendNUIMessage({ action = 'closeJobCenter' })
 end)
 
+AddEventHandler('onClientResourceStop', function(resourceName)
+    if resourceName ~= GetCurrentResourceName() then return end
+    isJobCenterOpen = false
+    SetNuiFocus(false, false)
+end)
+
 function OpenJobCenter()
     isJobCenterOpen = true
     SetNuiFocus(true, true)
