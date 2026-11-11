@@ -576,6 +576,22 @@ def test_admin_tablet_stays_hidden_until_authorized_open_message():
     assert "RegisterKeyMapping('admin'" in client
 
 
+
+def test_character_loading_screen_closes_before_creator_or_selection_and_times_out():
+    client = read("resources/[CORE]/rp_characters/client/main.lua")
+    server = read("resources/[CORE]/rp_characters/server/main.lua")
+
+    assert "local function FinishCharacterBoot()" in client
+    open_menu = client[client.index("RegisterNetEvent('rp_characters:client:openMenu'"):client.index("RegisterNetEvent('rp_characters:client:closeMenu'")]
+    assert "FinishCharacterBoot()" in open_menu
+    assert "openCharacterSelection" in open_menu
+    assert "Wait(20000)" in client
+    assert "characterBootPending" in client
+    assert "NetworkIsSessionStarted()" in client
+    assert "RegisterNetEvent('rp_characters:client:bootError'" in client
+    assert "TriggerClientEvent('rp_characters:client:bootError'" in server
+    assert "Vérifiez oxmysql" in server
+
 def test_character_spawn_cannot_wait_forever_on_screen_fade():
     client = read("resources/[CORE]/rp_characters/client/main.lua")
     server = read("resources/[CORE]/rp_characters/server/main.lua")
