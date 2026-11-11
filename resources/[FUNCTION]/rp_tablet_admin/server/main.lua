@@ -21,7 +21,7 @@ end
 
 RegisterNetEvent('rp_tablet_admin:server:requestOpen', function()
     local src = source
-    if not IsPlayerAdmin(src) then
+    if not IsPlayerAdmin(src) or not exports['rp_core']:CanPerformAction(src, 'admin:open', 1000) then
         NotifyAdmin(src, "Accès refusé : permissions administrateur requises.")
         return
     end
