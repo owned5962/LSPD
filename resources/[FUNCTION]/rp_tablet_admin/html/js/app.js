@@ -102,7 +102,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (tabletWrapper) tabletWrapper.classList.remove('is-open');
     setupTabSwitching();
     setupAdminSubViews();
-    setupPlayerMap();
     setupPlayerPickers();
     document.getElementById('admin-job-name')?.addEventListener('change', renderJobGrades);
     renderPermissionsMatrix();
@@ -396,7 +395,7 @@ function setupAdminSubViews() {
             const target = button.dataset.adminView;
             document.querySelectorAll('[data-admin-view]').forEach(item => item.classList.toggle('active',item===button));
             document.querySelectorAll('.admin-subview').forEach(view => view.classList.toggle('active',view.id==='admin-'+target+'-view'));
-            if (target==='map') { setTimeout(()=>{mapInstance?.invalidateSize();renderPlayerMap();},50); refreshPlayerMap(); }
+            if (target==='map') { if (!mapInstance) setupPlayerMap(); setTimeout(()=>{mapInstance?.invalidateSize();mapInstance?.fitBounds([[0,0],[8192,8192]]);renderPlayerMap();},100); refreshPlayerMap(); }
             else if (target==='audit') requestAuditLogs();
         });
     });
@@ -422,7 +421,8 @@ function updateOnlinePlayerPositions(players) {
 function setupPlayerMap() {
     const container = document.getElementById('player-map'); if (!container) return;
     if (typeof L === 'undefined') { container.textContent = 'Carte GTA V indisponible : Leaflet ne s’est pas chargé.'; return; }
-    mapInstance = L.map(container, { crs:L.CRS.Simple, minZoom:0, maxZoom:5, zoomSnap:0.25, attributionControl:false, zoomControl:false });
+    const GTA_CRS = L.extend({}, L.CRS.Simple, { transformation: new L.Transformation(1/32, 0, 1/32, 0) });
+    mapInstance = L.map(container, { crs:GTA_CRS, minZoom:0, maxZoom:5, zoomSnap:0.25, attributionControl:false, zoomControl:false });
     const bounds = L.latLngBounds([[0,0],[8192,8192]]);
     L.tileLayer('https://viruxe.github.io/gtav-map-tiles/atlas/{z}/{x}-{y}.webp', { minZoom:0, maxZoom:5, noWrap:true, bounds, tileSize:256, attribution:'GTA V map tiles · viruxe/gtav-map-tiles' }).addTo(mapInstance);
     mapInstance.fitBounds(bounds); mapInstance.setMaxBounds(bounds.pad(0.03));
