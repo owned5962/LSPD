@@ -195,6 +195,7 @@ AddEventHandler('onClientResourceStop', function(resourceName)
     if resourceName ~= GetCurrentResourceName() then return end
     isBankOpen = false
     isAuthenticated = false
+    TriggerServerEvent('rp_economy:server:logout')
     SetNuiFocus(false, false)
     SetNuiFocusKeepInput(false)
     exports['rp_ui']:HideTextUI()
