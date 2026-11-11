@@ -62,6 +62,8 @@ function getSkin() {
         eyeColor: Number(document.getElementById('eye-color').value),
         headBlend: { shapeFirst: father, shapeSecond: mother, shapeThird: 0, skinFirst: father, skinSecond: mother, skinThird: 0, shapeMix, skinMix, thirdMix: 0.0 },
         faceFeatures,
+        components: Object.fromEntries([3,4,5,6,9,11].map(component => [String(component), { drawable: Number(document.getElementById('component-' + component).value), texture: 0 }])),
+        props: Object.fromEntries([0,1,6,7].map(prop => [String(prop), { drawable: Number(document.getElementById('prop-' + prop).value), texture: 0 }])),
         overlays: {
             '1': { index: Number(document.getElementById('beard-style').value), opacity: Number(document.getElementById('beard-opacity').value) / 100, color: selectedColor },
             '2': { index: Number(document.getElementById('brow-style').value), opacity: Number(document.getElementById('brow-opacity').value) / 100, color: selectedColor }
