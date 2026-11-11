@@ -1159,3 +1159,21 @@ def test_inventory_and_admin_hotkeys_do_not_close_their_own_newly_opened_nui():
     assert "event.key !== 'Escape' && event.key !== 'F10'" not in admin
     assert "if (event.key !== 'Escape') return;" in admin
 
+
+def test_contextual_job_tablet_is_registered_on_f4_and_uses_server_validation():
+    manifest = read("resources/[FUNCTION]/rp_tablet_job/fxmanifest.lua")
+    client = read("resources/[FUNCTION]/rp_tablet_job/client/main.lua")
+    server = read("resources/[FUNCTION]/rp_tablet_job/server/main.lua")
+    html = read("resources/[FUNCTION]/rp_tablet_job/html/index.html")
+    ui = read("resources/[FUNCTION]/rp_tablet_job/html/app.js")
+    cfg = read("server.cfg")
+    assert "RegisterKeyMapping('jobtablet'" in client and "'F4'" in client
+    assert "ensure rp_tablet_job" in cfg
+    assert "dependencies" in manifest and "'rp_core'" in manifest and "'rp_jobs'" in manifest
+    assert "GetPlayerFromId(src)" in server and "GetAllPlayers()" in server
+    assert "rp_tablet_job:server:startMission" in server
+    assert "rp_tablet_job:server:finishMission" in server
+    assert 'data-tab="team"' in html and 'data-tab="missions"' in html
+    assert "missionCatalog" in ui
+    assert "cb({ ok = true })" in client
+
