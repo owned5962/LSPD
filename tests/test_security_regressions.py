@@ -675,7 +675,45 @@ def test_admin_tablet_exposes_working_heal_economy_and_job_actions():
 
 def test_all_security_regressions_are_run_by_the_test_script():
     source = read("tests/test_security_regressions.py")
-    runner_index = source.rindex('if __name__ == "__main__":')
+    runner_index = source.rindex('
+def test_loadscreen_has_offline_visual_banners_and_correct_keybinds():
+    manifest = read("resources/[FUNCTION]/rp_loadscreen/fxmanifest.lua")
+    html = read("resources/[FUNCTION]/rp_loadscreen/html/index.html")
+    css = read("resources/[FUNCTION]/rp_loadscreen/html/css/style.css")
+    for asset in ("los_santos_ems.svg", "los_santos_jobs.svg", "los_santos_coast.svg"):
+        assert asset in manifest
+        assert asset in html
+        assert os.path.isfile(os.path.join(ROOT, "resources/[FUNCTION]/rp_loadscreen/html/images", asset))
+    assert "https://cdnjs.cloudflare.com" not in html
+    assert "fonts.googleapis.com" not in html
+    assert 'kbd>F2</kbd><span>Inventaire joueur' in html
+    assert 'kbd>F5</kbd><span>Menu des métiers' in html
+    assert 'kbd>F9</kbd><span>Tablette anticheat' in html
+    assert 'kbd>F10</kbd><span>Tablette administrateur' in html
+    assert 'kbd>F11</kbd><span>Créateur de personnage' in html
+    assert "data-stage" in css and "--stage-color" in css
+
+
+def test_loadscreen_phase_progress_uses_fivem_events_and_real_resource_starts():
+    manifest = read("resources/[FUNCTION]/rp_loadscreen/fxmanifest.lua")
+    client = read("resources/[FUNCTION]/rp_loadscreen/client/main.lua")
+    ui = read("resources/[FUNCTION]/rp_loadscreen/html/js/app.js")
+    character = read("resources/[CORE]/rp_characters/client/main.lua")
+    assert "'client/main.lua'" in manifest
+    assert "onClientResourceStart" in client
+    assert "resourceName == 'rp_anticheat'" in client
+    assert "resourceName:match('^job_[%w_]+$')" in client
+    assert "mission_" in client and "rp_missions" in client
+    assert "SendLoadingScreenMessage" in client
+    assert "eventName === 'loadProgress'" in ui
+    assert "eventName === 'lssStage'" in ui
+    assert "performMapLoadFunction" in ui
+    assert "Chargement du joueur" in ui
+    assert "eventName = 'lssStage'" in character
+    assert "Chargement des missions" in ui
+
+
+if __name__ == "__main__":')
     assert runner_index > source.index("def test_admin_tablet_close_controls_and_keyboard_bindings_do_not_conflict():")
     assert runner_index > source.index("def test_admin_live_map_uses_authorized_server_world_positions():")
     assert runner_index > source.index("def test_admin_advanced_actions_are_server_authorized()")
