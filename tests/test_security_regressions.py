@@ -706,6 +706,9 @@ def test_anticheat_detection_log_and_staff_actions_are_bounded():
     assert "allowStaffAction(src, 'toggle_protection', 1)" in server
     assert "allowStaffAction(src, 'punish', 2)" in server
     assert "allowStaffAction(src, 'unban', 2)" in server
+    assert "allowStaffAction(src, 'request_logs', 1)" in server
+    assert "allowStaffAction(src, 'request_bans', 2)" in server
+    assert "openRequestAt[src] and now - openRequestAt[src] < 1" in server
     assert "ORDER BY created_at DESC LIMIT 100" in server
 
 
