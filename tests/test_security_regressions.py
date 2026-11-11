@@ -691,7 +691,7 @@ def test_loadscreen_has_offline_visual_banners_and_correct_keybinds():
     assert 'kbd>F9</kbd><span>Tablette anticheat' in html
     assert 'kbd>F10</kbd><span>Tablette administrateur' in html
     assert 'kbd>F11</kbd><span>Créateur de personnage' in html
-    assert "data-stage" in css and "--stage-color" in css
+    assert "data-stage" in html and "--stage-color" in css
 
 
 def test_loadscreen_phase_progress_uses_fivem_events_and_real_resource_starts():
