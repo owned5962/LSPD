@@ -36,7 +36,7 @@ def test_admin_tabs_and_page_controls_are_separated():
 
 def test_admin_ui_routes_each_tab_and_player_search_to_its_own_target():
     ui = read("resources/[FUNCTION]/rp_tablet_admin/html/js/app.js")
-    assert "const panelTargets = { give: null, sanction: null, function: null, job: null }" in ui
+    assert "const panelTargets = { give: null, economy: null, sanction: null, function: null, job: null }" in ui
     assert "function renderPlayerPicker(prefix)" in ui
     assert "function getPanelTarget(prefix)" in ui
     assert "function manageAdminMoney()" in ui
@@ -148,13 +148,6 @@ def test_admin_tablet_has_no_conflicting_handlers_and_all_tabs_switch():
     assert "height: min(740px, 94vh)" in css
 
 
-if __name__ == "__main__":
-    for name, check in sorted(globals().items()):
-        if name.startswith("test_") and callable(check):
-            check()
-    print("All focused admin tablet reorganization checks passed.")
-
-
 
 def test_admin_economy_requires_target_account_operation_and_persists_before_success():
     html = read("resources/[FUNCTION]/rp_tablet_admin/html/index.html")
@@ -188,3 +181,12 @@ def test_admin_economy_result_updates_nui_and_reports_only_server_confirmation()
     assert "data.action === 'economyResult'" in ui
     assert "result.cash" in ui and "result.bank" in ui
     assert "SendNUIMessage({ action = 'economyResult', result = result })" in client
+
+
+if __name__ == "__main__":
+    for name, check in sorted(globals().items()):
+        if name.startswith("test_") and callable(check):
+            check()
+    print("All focused admin tablet reorganization checks passed.")
+
+
