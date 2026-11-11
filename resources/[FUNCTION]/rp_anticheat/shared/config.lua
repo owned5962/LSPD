@@ -29,3 +29,23 @@ Config.ExplosionWindowSeconds = 5
 
 Config.MaxEntitiesPerWindow = 35
 Config.EntityWindowSeconds = 10
+
+
+-- Automatic sanctions are deliberately set to warning by default.
+-- Administrators can configure each detection category from the AEGIS tablet.
+Config.Sanctions = {
+    godmode = 'warn',
+    money = 'warn',
+    vehicle_spawn = 'warn',
+    weapon_spawn = 'warn',
+    weapon_blacklist = 'warn',
+    speedhack = 'warn',
+    gravity = 'warn',
+    spam = 'warn',
+    vision = 'warn',
+    other = 'warn'
+}
+Config.PrisonMinutes = 30
+Config.PrisonJailCoords = { x = 1690.5, y = 2565.8, z = 45.6 }
+Config.PrisonReleaseCoords = { x = 1848.5, y = 2586.0, z = 45.7 }
+Config.PrisonRadius = 90.0
