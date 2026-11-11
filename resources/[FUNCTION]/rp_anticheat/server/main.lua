@@ -7,6 +7,8 @@ local adminInvulnerability = {}
 local explosionWindows = {}
 local entityWindows = {}
 local spectateRequestAt = {}
+local totalDetections = 0
+local activeJails = {}
 
 local function detectionCategory(reason)
     if reason:find('GodMode', 1, true) then return 'godmode', 'critical' end
@@ -36,6 +38,38 @@ local function ensureDetectionStatsTable()
             PRIMARY KEY (id),
             INDEX idx_anticheat_created (created_at),
             INDEX idx_anticheat_type_created (detection_type, created_at)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    ]])
+    MySQL.query.await([[
+        CREATE TABLE IF NOT EXISTS anticheat_event_log (
+            id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+            player_id INT NOT NULL,
+            player_identifier VARCHAR(80) NULL,
+            player_name VARCHAR(100) NOT NULL,
+            detection_type VARCHAR(40) NOT NULL,
+            reason VARCHAR(180) NOT NULL,
+            severity VARCHAR(16) NOT NULL,
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (id),
+            INDEX idx_anticheat_event_created (created_at),
+            INDEX idx_anticheat_event_player (player_identifier)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    ]])
+    MySQL.query.await([[
+        CREATE TABLE IF NOT EXISTS anticheat_sanction_config (
+            category VARCHAR(40) NOT NULL,
+            sanction VARCHAR(16) NOT NULL DEFAULT 'warn',
+            PRIMARY KEY (category)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    ]])
+    MySQL.query.await([[
+        CREATE TABLE IF NOT EXISTS anticheat_jails (
+            identifier VARCHAR(80) NOT NULL,
+            reason VARCHAR(180) NOT NULL,
+            ends_at BIGINT UNSIGNED NOT NULL,
+            jailed_by VARCHAR(80) NULL,
+            PRIMARY KEY (identifier),
+            INDEX idx_anticheat_jail_end (ends_at)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
     ]])
 end
@@ -96,6 +130,106 @@ local function safeReason(reason, trustedServerEvent)
     return nil
 end
 
+local function savePersistentBan(targetId, reason, adminId)
+    local identifier = getLicense(targetId)
+    if not identifier then return false, 'Identifiant license introuvable.' end
+    local ok, err = pcall(function()
+        MySQL.insert.await([[
+            INSERT INTO player_bans (identifier, reason, banned_by)
+            VALUES (?, ?, ?)
+            ON DUPLICATE KEY UPDATE reason = VALUES(reason), banned_by = VALUES(banned_by), created_at = CURRENT_TIMESTAMP
+        ]], { identifier, reason, getLicense(adminId) or ('server:' .. tostring(adminId or 0)) })
+    end)
+    if not ok then
+        print('[rp_anticheat] Persistent ban failed: ' .. tostring(err))
+        return false, 'Erreur SQL : le bannissement n’a pas été appliqué.'
+    end
+    return true
+end
+
+local function applyPrison(targetId, reason, adminId, minutes)
+    local identifier = getLicense(targetId)
+    if not identifier then return false, 'Identifiant license introuvable : prison annulée.' end
+    minutes = math.max(1, math.min(1440, math.floor(tonumber(minutes) or Config.PrisonMinutes or 30)))
+    local endsAt = os.time() + minutes * 60
+    local ok, err = pcall(function()
+        MySQL.insert.await([[
+            INSERT INTO anticheat_jails (identifier, reason, ends_at, jailed_by)
+            VALUES (?, ?, ?, ?)
+            ON DUPLICATE KEY UPDATE reason = VALUES(reason), ends_at = VALUES(ends_at), jailed_by = VALUES(jailed_by)
+        ]], { identifier, reason, endsAt, getLicense(adminId) or ('server:' .. tostring(adminId or 0)) })
+    end)
+    if not ok then
+        print('[rp_anticheat] Prison persistence failed: ' .. tostring(err))
+        return false, 'Erreur SQL : la mise en prison a échoué.'
+    end
+    local payload = { endsAt = endsAt, jail = Config.PrisonJailCoords, release = Config.PrisonReleaseCoords }
+    activeJails[targetId] = { identifier = identifier, endsAt = endsAt, payload = payload }
+    TriggerClientEvent('rp_anticheat:applyPrison', targetId, payload)
+    return true
+end
+
+local function applyConfiguredSanction(targetId, alert)
+    local sanction = (Config.Sanctions and Config.Sanctions[alert.category]) or 'warn'
+    local reason = 'AEGIS · ' .. tostring(alert.reason or 'Détection anticheat')
+    if sanction == 'warn' then
+        notify(targetId, 'warning', '[ANTICHEAT] Avertissement : ' .. reason)
+    elseif sanction == 'kick' then
+        DropPlayer(targetId, '[AEGIS - KICK] ' .. reason)
+    elseif sanction == 'ban' then
+        local ok, err = savePersistentBan(targetId, reason, 0)
+        if ok then DropPlayer(targetId, '[AEGIS - BAN PERMANENT] ' .. reason)
+        else print('[rp_anticheat] Auto-ban refusé: ' .. tostring(err)) end
+    elseif sanction == 'prison' then
+        local ok, err = applyPrison(targetId, reason, 0, Config.PrisonMinutes)
+        if not ok then print('[rp_anticheat] Auto-prison refusée: ' .. tostring(err)) end
+    end
+end
+
+local function loadDetectionHistory()
+    local ok, rows = pcall(function()
+        return MySQL.query.await([[
+            SELECT id, player_id AS playerId, player_name AS playerName,
+                   detection_type AS category, reason, severity,
+                   UNIX_TIMESTAMP(created_at) AS timestamp,
+                   DATE_FORMAT(created_at, '%H:%i:%s') AS time
+            FROM anticheat_event_log ORDER BY id DESC LIMIT 250
+        ]])
+    end)
+    if not ok then
+        print('[rp_anticheat] Chargement du registre impossible: ' .. tostring(rows))
+        return
+    end
+    detectionsLog = rows or {}
+    local countOk, count = pcall(function()
+        return MySQL.scalar.await('SELECT COUNT(*) FROM anticheat_event_log')
+    end)
+    if countOk then totalDetections = tonumber(count) or #detectionsLog end
+end
+
+local function restorePlayerPrison(targetId)
+    if not GetPlayerName(targetId) then return end
+    local identifier = getLicense(targetId)
+    if not identifier then return end
+    local ok, row = pcall(function()
+        return MySQL.single.await('SELECT reason, ends_at FROM anticheat_jails WHERE identifier = ?', { identifier })
+    end)
+    if not ok then
+        print('[rp_anticheat] Jail restore lookup failed: ' .. tostring(row))
+        return
+    end
+    if not row then activeJails[targetId] = nil return end
+    local endsAt = tonumber(row.ends_at) or 0
+    if endsAt <= os.time() then
+        MySQL.update('DELETE FROM anticheat_jails WHERE identifier = ?', { identifier })
+        activeJails[targetId] = nil
+        return
+    end
+    local payload = { endsAt = endsAt, jail = Config.PrisonJailCoords, release = Config.PrisonReleaseCoords }
+    activeJails[targetId] = { identifier = identifier, endsAt = endsAt, payload = payload }
+    TriggerClientEvent('rp_anticheat:applyPrison', targetId, payload)
+end
+
 local function recordDetection(src, reason, trustedServerEvent)
     local now = os.time()
     if not GetPlayerName(src) or (lastFlagAt[src] and now - lastFlagAt[src] < 5) then return false end
@@ -115,9 +249,16 @@ local function recordDetection(src, reason, trustedServerEvent)
     local persisted, persistError = pcall(function()
         MySQL.insert.await('INSERT INTO anticheat_detections (player_name, detection_type, reason, severity) VALUES (?, ?, ?, ?)',
             { alert.playerName, alert.category, alert.reason, alert.severity })
+        alert.id = MySQL.insert.await([[
+            INSERT INTO anticheat_event_log
+                (player_id, player_identifier, player_name, detection_type, reason, severity)
+            VALUES (?, ?, ?, ?, ?, ?)
+        ]], { src, getLicense(src), alert.playerName, alert.category, alert.reason, alert.severity })
     end)
     if not persisted then
-        print('[rp_anticheat][stats] Échec enregistrement statistique: ' .. tostring(persistError))
+        print('[rp_anticheat][logs] Échec enregistrement du registre: ' .. tostring(persistError))
+    else
+        totalDetections = totalDetections + 1
     end
     table.insert(detectionsLog, 1, alert)
     if #detectionsLog > 250 then table.remove(detectionsLog) end
@@ -125,9 +266,10 @@ local function recordDetection(src, reason, trustedServerEvent)
     for _, pid in ipairs(GetPlayers()) do
         local staffId = tonumber(pid)
         if staffId and isStaff(staffId) then
-            TriggerClientEvent('rp_anticheat:notifyStaff', staffId, alert)
+            TriggerClientEvent('rp_anticheat:notifyStaff', staffId, alert, totalDetections)
         end
     end
+    applyConfiguredSanction(src, alert)
     return true
 end
 
@@ -237,7 +379,7 @@ RegisterNetEvent('rp_anticheat:requestOpen', function()
             routingBucket = GetPlayerRoutingBucket(id)
         }
     end
-    TriggerClientEvent('rp_anticheat:openUI', src, Config.Protections, playersList, detectionsLog)
+    TriggerClientEvent('rp_anticheat:openUI', src, Config.Protections, playersList, detectionsLog, totalDetections)
 end)
 
 
@@ -285,7 +427,67 @@ end)
 RegisterNetEvent('rp_anticheat:requestLogs', function()
     local src = source
     if not isStaff(src) or not canUseAnticheatTablet(src) or not allowStaffAction(src, 'request_logs', 1) then return end
-    TriggerClientEvent('rp_anticheat:updateLogs', src, detectionsLog)
+    local ok, rows = pcall(function()
+        return MySQL.query.await([[
+            SELECT id, player_id AS playerId, player_name AS playerName,
+                   detection_type AS category, reason, severity,
+                   UNIX_TIMESTAMP(created_at) AS timestamp,
+                   DATE_FORMAT(created_at, '%H:%i:%s') AS time
+            FROM anticheat_event_log ORDER BY id DESC LIMIT 250
+        ]])
+    end)
+    if ok then detectionsLog = rows or {} end
+    local countOk, count = pcall(function() return MySQL.scalar.await('SELECT COUNT(*) FROM anticheat_event_log') end)
+    if countOk then totalDetections = tonumber(count) or totalDetections end
+    TriggerClientEvent('rp_anticheat:updateLogs', src, { logs = detectionsLog, detectionCount = totalDetections })
+end)
+
+RegisterNetEvent('rp_anticheat:requestSanctionConfig', function()
+    local src = source
+    if not isStaff(src) or not canUseAnticheatTablet(src) or not allowStaffAction(src, 'request_sanction_config', 1) then return end
+    TriggerClientEvent('rp_anticheat:updateSanctionConfig', src, {
+        sanctions = Config.Sanctions or {},
+        prisonMinutes = Config.PrisonMinutes or 30
+    })
+end)
+
+RegisterNetEvent('rp_anticheat:saveSanctionConfig', function(rawSanctions, rawPrisonMinutes)
+    local src = source
+    if not isStaff(src) or not canUseAnticheatTablet(src) or not allowStaffAction(src, 'save_sanction_config', 2) then return end
+    if type(rawSanctions) ~= 'table' then notify(src, 'error', 'Configuration de sanctions invalide.') return end
+    local categories = { 'godmode', 'money', 'vehicle_spawn', 'weapon_spawn', 'weapon_blacklist', 'speedhack', 'gravity', 'spam', 'vision', 'other' }
+    local allowed = { warn = true, kick = true, ban = true, prison = true }
+    local clean = {}
+    for _, category in ipairs(categories) do
+        local action = rawSanctions[category]
+        if not allowed[action] then
+            notify(src, 'error', 'Sanction invalide pour la catégorie ' .. category .. '.')
+            return
+        end
+        clean[category] = action
+    end
+    local minutes = tonumber(rawPrisonMinutes)
+    if not minutes or minutes % 1 ~= 0 or minutes < 1 or minutes > 1440 then
+        notify(src, 'error', 'La durée de prison doit être comprise entre 1 et 1440 minutes.')
+        return
+    end
+    local ok, err = pcall(function()
+        for _, category in ipairs(categories) do
+            MySQL.insert.await([[
+                INSERT INTO anticheat_sanction_config (category, sanction) VALUES (?, ?)
+                ON DUPLICATE KEY UPDATE sanction = VALUES(sanction)
+            ]], { category, clean[category] })
+        end
+    end)
+    if not ok then
+        print('[rp_anticheat] Sauvegarde des sanctions impossible: ' .. tostring(err))
+        notify(src, 'error', 'Erreur SQL : configuration non enregistrée.')
+        return
+    end
+    Config.Sanctions = clean
+    Config.PrisonMinutes = minutes
+    TriggerClientEvent('rp_anticheat:updateSanctionConfig', src, { sanctions = clean, prisonMinutes = minutes })
+    notify(src, 'success', 'Configuration des sanctions enregistrée.')
 end)
 
 RegisterNetEvent('rp_anticheat:requestBans', function()
@@ -362,7 +564,39 @@ end
 CreateThread(function()
     Wait(1000)
     local ok, err = pcall(ensureDetectionStatsTable)
-    if not ok then print('[rp_anticheat][stats] Création table impossible: ' .. tostring(err)) end
+    if not ok then
+        print('[rp_anticheat] Initialisation SQL impossible: ' .. tostring(err))
+        return
+    end
+    loadDetectionHistory()
+    local configOk, configRows = pcall(function()
+        return MySQL.query.await('SELECT category, sanction FROM anticheat_sanction_config')
+    end)
+    if configOk then
+        for _, row in ipairs(configRows or {}) do
+            if Config.Sanctions[row.category] and (row.sanction == 'warn' or row.sanction == 'kick' or row.sanction == 'ban' or row.sanction == 'prison') then
+                Config.Sanctions[row.category] = row.sanction
+            end
+        end
+    else
+        print('[rp_anticheat] Chargement configuration sanctions impossible: ' .. tostring(configRows))
+    end
+    for _, rawId in ipairs(GetPlayers()) do
+        local id = tonumber(rawId)
+        if id then restorePlayerPrison(id) end
+    end
+    while true do
+        Wait(5000)
+        for playerId, jail in pairs(activeJails) do
+            if not GetPlayerName(playerId) then
+                activeJails[playerId] = nil
+            elseif jail.endsAt <= os.time() then
+                activeJails[playerId] = nil
+                MySQL.update('DELETE FROM anticheat_jails WHERE identifier = ?', { jail.identifier })
+                TriggerClientEvent('rp_anticheat:releasePrison', playerId)
+            end
+        end
+    end
 end)
 
 CreateThread(function()
@@ -441,34 +675,40 @@ RegisterNetEvent('rp_anticheat:punish', function(rawTargetId, punishType, rawRea
         notify(src, 'error', 'Joueur cible introuvable.')
         return
     end
-    if punishType ~= 'kick' and punishType ~= 'ban' then return end
-
+    if punishType ~= 'warn' and punishType ~= 'kick' and punishType ~= 'ban' and punishType ~= 'prison' then return end
     local reason = type(rawReason) == 'string' and rawReason:gsub('[%c]', ' '):sub(1, 180) or 'Décision de modération.'
-    if punishType == 'ban' then
-        local identifier = getLicense(targetId)
-        if not identifier then
-            notify(src, 'error', 'Identifiant license introuvable : bannissement annulé.')
-            return
-        end
-        local ok, err = pcall(function()
-            MySQL.insert.await([[
-                INSERT INTO player_bans (identifier, reason, banned_by)
-                VALUES (?, ?, ?)
-                ON DUPLICATE KEY UPDATE reason = VALUES(reason), banned_by = VALUES(banned_by), created_at = CURRENT_TIMESTAMP
-            ]], { identifier, reason, getLicense(src) or ('server:' .. src) })
-        end)
-        if not ok then
-            print('[rp_anticheat] Persistent ban failed: ' .. tostring(err))
-            notify(src, 'error', 'Erreur SQL : le bannissement n’a pas été appliqué.')
-            return
-        end
+    if punishType == 'warn' then
+        notify(targetId, 'warning', '[ANTICHEAT] Avertissement : ' .. reason)
+        notify(src, 'success', 'Avertissement envoyé au joueur ID ' .. targetId .. '.')
+    elseif punishType == 'prison' then
+        local ok, err = applyPrison(targetId, reason, src, Config.PrisonMinutes)
+        if not ok then notify(src, 'error', err) return end
+        notify(src, 'success', 'Joueur ID ' .. targetId .. ' placé en prison pour ' .. Config.PrisonMinutes .. ' minutes.')
+    elseif punishType == 'ban' then
+        local ok, err = savePersistentBan(targetId, reason, src)
+        if not ok then notify(src, 'error', err) return end
         DropPlayer(targetId, '[ANTICHEAT - BAN PERMANENT] ' .. reason)
         notify(src, 'success', 'Joueur ID ' .. targetId .. ' banni durablement.')
-        return
+    else
+        DropPlayer(targetId, '[ANTICHEAT] ' .. reason)
+        notify(src, 'success', 'Joueur ID ' .. targetId .. ' expulsé.')
     end
+end)
 
-    DropPlayer(targetId, '[ANTICHEAT] ' .. reason)
-    notify(src, 'success', 'Joueur ID ' .. targetId .. ' expulsé.')
+RegisterNetEvent('rp_anticheat:prisonExpired', function()
+    local src = source
+    local jail = activeJails[src]
+    if not jail or jail.endsAt > os.time() then return end
+    activeJails[src] = nil
+    MySQL.update('DELETE FROM anticheat_jails WHERE identifier = ?', { jail.identifier })
+    TriggerClientEvent('rp_anticheat:releasePrison', src)
+end)
+
+AddEventHandler('playerJoining', function()
+    local src = source
+    SetTimeout(5000, function()
+        if GetPlayerName(src) then restorePlayerPrison(src) end
+    end)
 end)
 
 AddEventHandler('playerConnecting', function(playerName, setKickReason, deferrals)
@@ -517,4 +757,5 @@ AddEventHandler('playerDropped', function()
     entityWindows[source] = nil
     adminActionAt[source] = nil
     openRequestAt[source] = nil
+    activeJails[source] = nil
 end)
