@@ -17,7 +17,7 @@ function OpenAdminTablet()
 end
 
 function CloseAdminTablet()
-    if not isTabletOpen then return end
+    -- Idempotent: always release NUI focus, even if Lua and NUI state drift.
     isTabletOpen = false
     SetNuiFocus(false, false)
     SendNUIMessage({ action = "closeTablet" })
@@ -60,7 +60,11 @@ RegisterNetEvent('rp_tablet_admin:client:openAuthorized', function(adminData, pl
 end)
 
 RegisterCommand('admin', function()
-    OpenAdminTablet()
+    if isTabletOpen then
+        CloseAdminTablet()
+    else
+        OpenAdminTablet()
+    end
 end, false)
 
 RegisterKeyMapping('admin', 'Ouvrir la Tablette Admin', 'keyboard', 'F10')
