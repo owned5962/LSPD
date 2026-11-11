@@ -2,6 +2,7 @@ local isSpectating = false
 local spectateTarget = nil
 local lastCoords = nil
 local lastCheck = 0
+local isAnticheatUIOpen = false
 
 -- In-game Anticheat UI command for Admins
 RegisterKeyMapping('openanticheat', 'Ouvrir le menu Anticheat', 'keyboard', 'F11')
@@ -15,6 +16,7 @@ RegisterNetEvent('rp_anticheat:syncProtections', function(protections)
 end)
 
 RegisterNetEvent('rp_anticheat:openUI', function(protections, playersList)
+    isAnticheatUIOpen = true
     SetNuiFocus(true, true)
     SendNUIMessage({
         action = 'open',
@@ -24,8 +26,17 @@ RegisterNetEvent('rp_anticheat:openUI', function(protections, playersList)
 end)
 
 RegisterNUICallback('close', function(data, cb)
+    isAnticheatUIOpen = false
     SetNuiFocus(false, false)
+    SendNUIMessage({ action = 'close' })
     cb('ok')
+end)
+
+AddEventHandler('onClientResourceStart', function(resourceName)
+    if resourceName ~= GetCurrentResourceName() then return end
+    isAnticheatUIOpen = false
+    SetNuiFocus(false, false)
+    SendNUIMessage({ action = 'close' })
 end)
 
 RegisterNUICallback('toggleProtection', function(data, cb)
