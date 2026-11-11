@@ -31,6 +31,18 @@ exports('IsValidJob', IsValidJob)
 exports('GetJobGrade', GetJobGrade)
 exports('GetAllJobs', GetAllJobs)
 
+
+-- Job applications are accepted only while the player is physically at the
+-- employment center. Never trust the client-side marker or NUI state.
+local JobCenterCoords = vector3(-268.3, -956.8, 31.2)
+
+local function IsAtJobCenter(src)
+    local ped = GetPlayerPed(src)
+    if not ped or ped == 0 or not DoesEntityExist(ped) then return false end
+    local distance = #(GetEntityCoords(ped) - JobCenterCoords)
+    return distance <= 5.0
+end
+
 local function RespondToJobSelection(src, success, message)
     TriggerClientEvent('rp_jobs:client:jobSelectionResult', src, success == true, message)
 end
@@ -39,6 +51,10 @@ RegisterNetEvent('rp_jobs:server:chooseJob', function(jobName)
     local src = source
     if not exports['rp_core']:CanPerformAction(src, 'job_center_hire', 5000) then
         RespondToJobSelection(src, false, 'Patientez quelques secondes avant une nouvelle candidature.')
+        return
+    end
+    if not IsAtJobCenter(src) then
+        RespondToJobSelection(src, false, 'Vous devez être au Pôle Emploi pour postuler à ce métier.')
         return
     end
     if type(jobName) ~= 'string' or #jobName > 50 then
