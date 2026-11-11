@@ -30,6 +30,17 @@ window.addEventListener('message', function(event) {
     } else if (data.action === 'hideHUD') {
         document.getElementById('player-hud')?.classList.add('hidden');
         document.getElementById('hud-job-panel')?.classList.add('hidden');
+    } else if (data.action === 'showDiagnostics') {
+        document.getElementById('client-diagnostics')?.classList.remove('hidden');
+    } else if (data.action === 'hideDiagnostics') {
+        document.getElementById('client-diagnostics')?.classList.add('hidden');
+    } else if (data.action === 'updateDiagnostics') {
+        const setDiag = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = String(value); };
+        setDiag('diag-fps', Math.max(0, Number(data.fps) || 0));
+        setDiag('diag-ping', Math.max(0, Number(data.ping) || 0) + ' ms');
+        setDiag('diag-players', (Number(data.players) || 0) + ' / ' + (Number(data.maxPlayers) || 0));
+        const c = data.coords || {};
+        setDiag('diag-coords', [c.x, c.y, c.z].join(' / '));
     } else if (data.action === 'showTextUI') {
         const textElement = document.getElementById('textui-text');
         if (textElement) textElement.textContent = String(data.text ?? '');
@@ -119,3 +130,9 @@ function showRPNotification(message, kind, duration) {
     setTimeout(() => { toast.classList.add('leaving'); setTimeout(() => toast.remove(), 250); }, Math.max(1500, Math.min(10000, Number(duration) || 4000)));
     while (host.children.length > 5) host.firstElementChild.remove();
 }
+
+document.getElementById('close-diagnostics')?.addEventListener('click', () => {
+    fetch('https://' + (window.GetParentResourceName ? GetParentResourceName() : 'rp_ui') + '/closeDiagnostics', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}'
+    }).catch(() => {});
+});
