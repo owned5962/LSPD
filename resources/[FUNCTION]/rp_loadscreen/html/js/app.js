@@ -16,7 +16,7 @@ const STAGES = {
 
 let lastProgress = 0;
 let activeStage = 'map';
-let activeJobCount = 0;
+let missionStageSeen = false;
 
 function updateProgress(value) {
     if (!Number.isFinite(value)) return;
@@ -31,6 +31,7 @@ function setStage(stage, detail, jobCount) {
     if (!meta) return;
 
     activeStage = stage;
+    if (stage === 'missions') missionStageSeen = true;
     document.documentElement.style.setProperty('--stage-color', meta.color);
     document.documentElement.style.setProperty('--stage-glow', meta.glow);
     if (progressTrack) progressTrack.dataset.stage = stage;
@@ -48,12 +49,9 @@ function setStage(stage, detail, jobCount) {
     phaseSteps.forEach((step) => {
         const index = stageOrder.indexOf(step.dataset.phase);
         step.classList.toggle('is-current', step.dataset.phase === stage);
-        step.classList.toggle('is-done', index !== -1 && index < activeIndex);
-        if (step.dataset.phase === 'missions' && stage !== 'missions') {
-            step.classList.add('is-planned');
-        } else {
-            step.classList.remove('is-planned');
-        }
+        const missionPending = step.dataset.phase === 'missions' && !missionStageSeen;
+        step.classList.toggle('is-done', index !== -1 && index < activeIndex && !missionPending);
+        step.classList.toggle('is-planned', missionPending);
     });
 }
 
