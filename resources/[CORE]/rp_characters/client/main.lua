@@ -144,16 +144,50 @@ RegisterNetEvent('rp_characters:client:startTutorial', function()
 end)
 
 local function LoadFreemodeModel(gender)
-    local model = joaat(gender == 'f' and 'mp_f_freemode_01' or 'mp_m_freemode_01')
-    if not IsModelInCdimage(model) or not IsModelValid(model) then return false end
-    if GetEntityModel(PlayerPedId()) == model then return true end
-    RequestModel(model)
-    local timeout = GetGameTimer() + 10000
-    while not HasModelLoaded(model) and GetGameTimer() < timeout do Wait(0) end
-    if not HasModelLoaded(model) then return false end
-    SetPlayerModel(PlayerId(), model)
-    SetModelAsNoLongerNeeded(model)
-    SetPedDefaultComponentVariation(PlayerPedId())
+    local requestedModel = joaat(gender == 'f' and 'mp_f_freemode_01' or 'mp_m_freemode_01')
+    local fallbackModel = joaat('mp_m_freemode_01')
+    local model = requestedModel
+
+    if not IsModelInCdimage(model) or not IsModelValid(model) then
+        print('[rp_characters] Requested freemode model is invalid; using the male fallback model.')
+        model = fallbackModel
+    end
+    if not IsModelInCdimage(model) or not IsModelValid(model) then
+        print('[rp_characters] No valid freemode model is available; character appearance cannot be applied.')
+        return false
+    end
+
+    if GetEntityModel(PlayerPedId()) ~= model then
+        RequestModel(model)
+        local timeout = GetGameTimer() + 10000
+        while not HasModelLoaded(model) and GetGameTimer() < timeout do Wait(0) end
+        if not HasModelLoaded(model) then
+            print('[rp_characters] Freemode model loading timed out.')
+            return false
+        end
+
+        SetPlayerModel(PlayerId(), model)
+        SetModelAsNoLongerNeeded(model)
+
+        local pedDeadline = GetGameTimer() + 5000
+        while GetEntityModel(PlayerPedId()) ~= model and GetGameTimer() < pedDeadline do
+            Wait(0)
+        end
+        if GetEntityModel(PlayerPedId()) ~= model then
+            print('[rp_characters] Player model swap did not complete; using the current player model.')
+            return false
+        end
+    end
+
+    local ped = PlayerPedId()
+    if not ped or ped == 0 or not DoesEntityExist(ped) then return false end
+
+    -- Reset to GTA's complete freemode base outfit before applying saved data.
+    -- This prevents empty or partially-corrupted skin records from leaving a naked ped.
+    SetPedDefaultComponentVariation(ped)
+    SetEntityVisible(ped, true, false)
+    ResetEntityAlpha(ped)
+    SetEntityCollision(ped, true, true)
     return true
 end
 
@@ -168,7 +202,18 @@ end
 
 local function ApplyCharacterAppearance(gender, skin)
     skin = type(skin) == 'table' and skin or {}
-    LoadFreemodeModel(gender)
+    if not LoadFreemodeModel(gender) then
+        -- Last-resort visual recovery: keep the current ped visible and restore
+        -- its default components rather than applying clothing natives to an invalid model.
+        local currentPed = PlayerPedId()
+        if currentPed and currentPed ~= 0 and DoesEntityExist(currentPed) then
+            SetPedDefaultComponentVariation(currentPed)
+            SetEntityVisible(currentPed, true, false)
+            ResetEntityAlpha(currentPed)
+            SetEntityCollision(currentPed, true, true)
+        end
+        return false
+    end
     local ped = PlayerPedId()
 
     -- GTA freemode genetic inheritance and facial morphs.
@@ -264,6 +309,12 @@ local function ApplyCharacterAppearance(gender, skin)
             end
         end
     end
+
+    -- A malformed or missing skin must never leave the player invisible.
+    SetEntityVisible(ped, true, false)
+    ResetEntityAlpha(ped)
+    SetEntityCollision(ped, true, true)
+    return true
 end
 
 local function OpenCreator(maxCharacters)
@@ -357,11 +408,21 @@ RegisterNetEvent('rp_characters:client:spawnPlayer', function(coords, gender, sk
         print('[rp_characters] Screen fade-out timed out; continuing character spawn.')
     end
 
-    ApplyCharacterAppearance(gender, skin)
+    local appearanceApplied = ApplyCharacterAppearance(gender, skin)
     local ped = PlayerPedId()
+    if not appearanceApplied then
+        print('[rp_characters] Appearance fallback was required; applying GTA default components.')
+        SetPedDefaultComponentVariation(ped)
+        SetEntityVisible(ped, true, false)
+        ResetEntityAlpha(ped)
+        SetEntityCollision(ped, true, true)
+    end
     SetEntityCoords(ped, tonumber(coords.x) or -1037.7, tonumber(coords.y) or -2737.8,
         tonumber(coords.z) or 20.1, false, false, false, true)
     SetEntityHeading(ped, tonumber(coords.heading) or 330.0)
+    SetEntityVisible(ped, true, false)
+    ResetEntityAlpha(ped)
+    SetEntityCollision(ped, true, true)
     FreezeEntityPosition(ped, false)
 
     -- Close both loading-screen layers after the character has been placed.
