@@ -23,6 +23,7 @@ end
 
 function CloseAdminTablet()
     -- Idempotent: always release NUI focus, even if Lua and NUI state drift.
+    if isAdminSpectating then TriggerServerEvent('rp_tablet_admin:server:stopSpectate') end
     local wasOpen = isTabletOpen
     isTabletOpen = false
     SetNuiFocus(false, false)
