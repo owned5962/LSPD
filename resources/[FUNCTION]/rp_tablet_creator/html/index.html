@@ -19,7 +19,9 @@
     <article class="panel">
       <h2><i class="fa-solid fa-cubes"></i> Mapping en direct</h2>
       <p class="panel-help">Sélectionnez un objet du catalogue FiveM puis placez-le devant votre personnage. Les objets sont synchronisés et sauvegardés.</p>
-      <label for="mapping-prop">Catalogue d'objets</label>
+      <label for="mapping-search">Rechercher dans le catalogue de props</label>
+      <input id="mapping-search" type="search" maxlength="64" placeholder="Ex. prop_atm, barrière, bureau...">
+      <label for="mapping-prop">Modèle à placer</label>
       <select id="mapping-prop"></select>
       <button id="place-prop" class="primary"><i class="fa-solid fa-plus"></i> Placer l'objet devant moi</button>
       <div class="mapping-list" id="mapping-list"><small>Chargement des objets sauvegardés…</small></div>
