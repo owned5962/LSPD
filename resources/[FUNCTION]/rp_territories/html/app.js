@@ -68,6 +68,7 @@ window.addEventListener('message', event => {
         claimButton.disabled = currentInfo?.occupied && !currentInfo?.isOwner;
         feedback.textContent = data.result?.message || 'Résultat inconnu.';
         feedback.className = data.result?.success ? 'success' : '';
+        if (data.result?.success) panel.classList.add('hidden');
     }
 });
 
