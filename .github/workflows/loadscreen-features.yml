@@ -3,12 +3,12 @@ name: Loadscreen live updates and layout validation
 on:
   push:
     paths:
-      - "resources/[FUNCTION]/rp_loadscreen/**"
+      - "resources/**/rp_loadscreen/**"
       - "tests/test_loadscreen_features.py"
       - ".github/workflows/loadscreen-features.yml"
   pull_request:
     paths:
-      - "resources/[FUNCTION]/rp_loadscreen/**"
+      - "resources/**/rp_loadscreen/**"
       - "tests/test_loadscreen_features.py"
       - ".github/workflows/loadscreen-features.yml"
 
