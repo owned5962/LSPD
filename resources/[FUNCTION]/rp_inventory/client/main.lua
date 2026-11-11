@@ -72,24 +72,32 @@ CreateThread(function()
     end
 end)
 
-RegisterNetEvent('rp_inventory:receiveData', function(data)
-    if type(data) ~= 'table' then
-        isInventoryPending = false
-        SetNuiFocus(false, false)
-        return
-    end
-
-    isInventoryPending = false
-    isInventoryOpen = true
-    SetNuiFocus(true, true)
+local function SendInventoryToNui(data, action)
     SendNUIMessage({
-        action = 'open',
+        action = action,
         inventory = data.inventory or {},
         maxWeight = Config.MaxWeight or 30.0,
         currentWeight = data.currentWeight or 0.0,
         cash = data.cash or 0,
         bank = data.bank or 0
     })
+end
+
+RegisterNetEvent('rp_inventory:receiveData', function(data)
+    if type(data) ~= 'table' then
+        isInventoryPending = false
+        SetNuiFocus(false, false)
+        return
+    end
+    isInventoryPending = false
+    isInventoryOpen = true
+    SetNuiFocus(true, true)
+    SendInventoryToNui(data, 'open')
+end)
+
+RegisterNetEvent('rp_inventory:updateData', function(data)
+    if type(data) ~= 'table' or not isInventoryOpen then return end
+    SendInventoryToNui(data, 'update')
 end)
 
 RegisterNetEvent('rp_inventory:requestFailed', function(message)
