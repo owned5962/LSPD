@@ -15,6 +15,7 @@
       <button class="nav active" data-tab="overview"><i class="fa-solid fa-gauge-high"></i> Tableau de bord</button>
       <button class="nav" data-tab="team"><i class="fa-solid fa-users"></i> Équipe</button>
       <button class="nav" data-tab="missions"><i class="fa-solid fa-list-check"></i> Missions</button>
+      <button class="nav hidden" id="police-nav" data-tab="police"><i class="fa-solid fa-tower-broadcast"></i> Alertes police <span id="police-alert-count">0</span></button>
     </nav>
     <div class="sidebar-bottom"><span class="online-dot"></span> Réseau professionnel actif</div>
   </aside>
@@ -34,6 +35,10 @@
       <div class="section-title"><div><h2>Missions de service</h2><p>Les missions proposées dépendent du métier actif.</p></div></div>
       <div id="active-mission"></div><div id="mission-list" class="mission-list"></div>
       <p class="note">Cette première version gère l’acceptation et la clôture des missions dans la session. Les objectifs sur la carte, récompenses et preuves de réalisation seront raccordés aux scripts métier concernés.</p>
+    </section>
+    <section class="page" id="police">
+      <div class="section-title"><div><h2>Centre de dispatch LSPD</h2><p>Alertes émises après un refus d’interpellation par un suspect.</p></div><button class="secondary" id="refresh-police">Actualiser</button></div>
+      <div id="police-alerts" class="police-alerts"></div>
     </section>
     <footer><span>LOS SANTOS STORIES</span><span>F4 · ÉCHAP POUR FERMER</span></footer>
   </section>
