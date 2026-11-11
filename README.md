@@ -17,19 +17,20 @@ Serveur RP modulaire comprenant un système de personnages, une économie, 50 m�
 - `resources/[JOB]` : les 50 ressources métiers (`job_*`).
 - `resources/[FUNCTION]` : économie, inventaire, interactions, vêtements, interface, tablette admin, anticheat et autres systèmes transversaux.
 
-Les noms des ressources FiveM (`rp_core`, `job_police`, etc.) restent inchangés ; seuls leurs dossiers de regroupement ont changé. Le `server.cfg` est conservé tel quel.
+Les noms des ressources FiveM (`rp_core`, `job_police`, etc.) restent inchangés ; seuls leurs dossiers de regroupement ont changé. Le `server.cfg` doit être adapté au dossier `resources` réel de l'installation.
 
 ## Installation neuve
 1. Installez les artifacts FXServer.
-2. Installez la ressource [oxmysql](https://github.com/overextended/oxmysql) dans votre dossier resources.
-3. Créez la base MySQL/MariaDB et importez `database.sql`.
-4. Modifiez `mysql_connection_string` dans `server.cfg` avec un compte SQL dédié disposant des droits nécessaires sur la base (évitez root).
-5. Remplacez les clés FiveM/Steam d'exemple.
-6. Ajoutez les administrateurs via ACE, par exemple :
+2. Installez les ressources standard depuis le dépôt officiel [cfx-server-data](https://github.com/citizenfx/cfx-server-data) dans le dossier `resources` du serveur. Vérifiez au minimum la présence de `mapmanager`, `spawnmanager`, `sessionmanager`, `hardcap` et `baseevents` (généralement dans `resources/[cfx-default]`). Le `server.cfg` les démarre explicitement : ne laissez pas ces ressources absentes.
+3. Installez la ressource [oxmysql](https://github.com/overextended/oxmysql) dans votre dossier resources.
+4. Créez la base MySQL/MariaDB et importez `database.sql`.
+5. Modifiez `mysql_connection_string` dans `server.cfg` avec un compte SQL dédié disposant des droits nécessaires sur la base (évitez root).
+6. Remplacez les clés FiveM/Steam d'exemple.
+7. Ajoutez les administrateurs via ACE, par exemple :
    ```cfg
    add_principal identifier.license:VOTRE_LICENSE group.admin
    ```
-7. Vérifiez que `ensure oxmysql` apparaît avant `ensure rp_core`, puis démarrez le serveur.
+8. Vérifiez l'ordre de démarrage : ressources CFX standard, `oxmysql`, `rp_core`, `rp_jobs`, `rp_economy`, puis les autres ressources. `rp_jobs` doit être disponible avant les systèmes qui utilisent ses exports.
 
 ## Mise à jour d'une base existante
 1. Faites une sauvegarde complète de la base.
@@ -50,7 +51,7 @@ La migration adapte le champ de date de naissance. Elle ne supprime aucun person
 
 ## Vérifications à effectuer avec FXServer
 
-Les contrôles statiques et compilations sont automatisés dans GitHub Actions. Le démarrage FXServer reste nécessaire pour confirmer la découverte des ressources dans les dossiers de catégorie, les dépendances réelles, la connexion oxmysql, l'exécution des migrations, OneSync, les entités réseau, les NUI et les interactions entre plusieurs joueurs.
+Les contrôles statiques et compilations sont automatisés dans GitHub Actions. Les métadonnées de la liste publique (nom, description, tags, langue et bannières) doivent désormais être configurées dans le portail Cfx.re. Le démarrage FXServer reste nécessaire pour confirmer la découverte des ressources dans les dossiers de catégorie, les dépendances réelles, la connexion oxmysql, l'exécution des migrations, OneSync, les entités réseau, les NUI et les interactions entre plusieurs joueurs.
 
 ## Persistance et limites
 - Le compte est associé à l'identifiant FiveM `license:`.
