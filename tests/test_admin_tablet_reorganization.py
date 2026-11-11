@@ -42,7 +42,7 @@ def test_admin_ui_routes_each_tab_and_player_search_to_its_own_target():
     assert "function manageAdminMoney()" in ui
     assert "getPanelTarget('economy')" in ui
     assert "operation: 'give'" not in ui
-    assert "operation, amount" in ui
+    assert "{ playerId: targetId, type, amount, operation }" in ui
     assert "function giveAdminVehicle()" in ui
     assert "function giveAdminWeapon()" in ui
     assert "function renderWeaponPolicy()" in ui
