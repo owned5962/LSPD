@@ -6,13 +6,43 @@ let currentInfo = null;
 let selectedColor = null;
 let pending = false;
 
-const post = (name, data = {}) => fetch(`https://rp_territories/${name}`, {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json; charset=UTF-8'},
-    body: JSON.stringify(data)
+// Browser console stacks include the exact app.js line for each diagnostic.
+function diag(level, event, details) {
+    const prefix = '[rp_territories][NUI][' + event + ']';
+    const stack = new Error().stack;
+    const logger = console[level] || console.log;
+    logger.call(console, prefix, details || '', stack);
+}
+
+window.addEventListener('error', event => {
+    diag('error', 'UNCAUGHT_JS_ERROR', (event.message || 'Erreur inconnue') +
+        ' | ' + (event.filename || 'fichier inconnu') + ':' +
+        (event.lineno || 0) + ':' + (event.colno || 0));
 });
+window.addEventListener('unhandledrejection', event => {
+    diag('error', 'UNHANDLED_PROMISE', String(event.reason || 'Promesse rejetée'));
+});
+diag('info', 'BOOT', 'Interface NUI initialisée');
+
+const post = async (name, data = {}) => {
+    try {
+        const response = await fetch(`https://rp_territories/${name}`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json; charset=UTF-8'},
+            body: JSON.stringify(data)
+        });
+        if (!response.ok) diag('error', 'NUI_CALLBACK_HTTP_ERROR', name + ' | HTTP ' + response.status);
+        else diag('debug', 'NUI_CALLBACK_OK', name);
+        return response;
+    } catch (error) {
+        diag('error', 'NUI_CALLBACK_FAILED', name + ' | ' + String(error));
+        throw error;
+    }
+};
 
 function renderColors(colors) {
+    if (!Array.isArray(colors)) diag('error', 'COLOR_DATA_INVALID', 'La liste des couleurs reçue n’est pas un tableau');
+    else diag('debug', 'COLOR_LIST_RENDER', colors.length + ' couleur(s)');
     colorsEl.replaceChildren();
     (Array.isArray(colors) ? colors : []).forEach(color => {
         const button = document.createElement('button');
@@ -33,6 +63,7 @@ function renderColors(colors) {
 }
 
 function openPanel(info) {
+    diag('info', 'PANEL_OPEN', 'Secteur=' + String(info?.sectorId || 'inconnu'));
     currentInfo = info;
     selectedColor = Number(info.color) || Number(info.colors?.[0]?.id) || 1;
     pending = false;
@@ -62,6 +93,7 @@ function openPanel(info) {
 
 window.addEventListener('message', event => {
     const data = event.data || {};
+    diag('debug', 'NUI_MESSAGE', 'Action=' + String(data.action || 'inconnue'));
     if (data.action === 'open') openPanel(data.info || {});
     if (data.action === 'claimResult') {
         pending = false;
@@ -74,20 +106,24 @@ window.addEventListener('message', event => {
 
 claimButton.addEventListener('click', async () => {
     if (!currentInfo || pending || claimButton.disabled || !selectedColor) return;
+    diag('info', 'CLAIM_CLICK', 'Secteur=' + currentInfo.sectorId + ' | couleur=' + selectedColor);
     pending = true;
     claimButton.disabled = true;
     feedback.textContent = 'Traitement du paiement…';
     try {
         await post('claim', {sectorId: currentInfo.sectorId, colorId: selectedColor});
-    } catch (_) {
+        diag('info', 'CLAIM_CALLBACK_SENT', 'La demande NUI a été transmise au client Lua');
+    } catch (error) {
+        diag('error', 'CLAIM_SUBMIT_FAILED', String(error));
         feedback.textContent = 'Impossible de contacter le serveur.';
         pending = false;
         claimButton.disabled = false;
     }
 });
 function closePanel() {
+    diag('info', 'PANEL_CLOSE', 'Fermeture demandée');
     panel.classList.add('hidden');
-    post('close');
+    post('close').catch(error => diag('error', 'PANEL_CLOSE_FAILED', String(error)));
 }
 document.getElementById('close').addEventListener('click', closePanel);
 document.addEventListener('keydown', event => {
