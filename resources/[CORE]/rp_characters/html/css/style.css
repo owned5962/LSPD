@@ -317,3 +317,51 @@ input[type="range"] {
     line-height:1.5;
 }
 .character-card.selected strong { color:#7dd3fc; }
+
+
+/* Final desktop/mobile layout for the character selector and creator. */
+#character-selection {
+    display: grid;
+    place-items: center;
+}
+#character-selection .creator-wrapper {
+    width: min(680px, calc(100vw - 32px));
+    margin: auto;
+}
+.selection-actions .btn {
+    min-width: 0;
+    min-height: 48px;
+}
+#enter-city-btn:disabled,
+#create-character-btn:disabled {
+    opacity: .42;
+    cursor: not-allowed;
+    filter: saturate(.55);
+}
+#enter-city-btn:not(:disabled) {
+    box-shadow: 0 6px 20px rgba(37, 99, 235, .25);
+}
+.character-card[aria-pressed="true"] {
+    outline: 2px solid rgba(56, 189, 248, .55);
+    outline-offset: 1px;
+}
+@media (max-width: 720px) {
+    #character-selection {
+        padding: 12px;
+    }
+    #character-selection .creator-wrapper {
+        width: calc(100vw - 24px);
+        max-height: calc(100vh - 24px);
+        padding: 20px;
+    }
+    .selection-actions {
+        flex-direction: column;
+    }
+    #registration-app {
+        width: calc(100vw - 24px);
+        max-height: calc(100vh - 24px);
+    }
+    #registration-app .creator-wrapper {
+        padding: 18px;
+    }
+}
