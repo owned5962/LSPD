@@ -167,6 +167,15 @@ window.addEventListener('message', event => {
         $('fingerprint-btn').classList.remove('scanning-button');
         $('fingerprint-btn').innerHTML = '<span class="finger-btn-icon">◎</span> Réessayer';
         setAuthStatus(data.message || 'Empreinte non reconnue.', 'error');
+    } else if (data.action === 'authenticationExpired') {
+        authenticated = false;
+        busy.clear();
+        $('screen-account').classList.add('hidden');
+        $('screen-auth').classList.remove('hidden');
+        $('fingerprint-btn').disabled = false;
+        $('fingerprint-btn').classList.remove('scanning-button');
+        $('fingerprint-btn').innerHTML = '<span class="finger-btn-icon">◎</span> Scanner à nouveau';
+        setAuthStatus('Votre session a expiré. Veuillez vous identifier.', 'error');
     } else if (data.action === 'updateBalances') {
         $('display-cash').textContent = formatMoney(data.cash);
         $('display-bank').textContent = formatMoney(data.bank);
