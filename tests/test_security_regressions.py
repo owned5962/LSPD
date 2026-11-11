@@ -621,9 +621,14 @@ def test_admin_tablet_exposes_working_heal_economy_and_job_actions():
     assert "function setSelectedJob()" in ui
 
 
+
 def test_all_security_regressions_are_run_by_the_test_script():
     source = read("tests/test_security_regressions.py")
-    runner_index = source.index('
+    runner_index = source.rindex('if __name__ == "__main__":')
+    assert runner_index > source.index("def test_admin_tablet_close_controls_and_keyboard_bindings_do_not_conflict():")
+    assert runner_index > source.index("def test_admin_live_map_uses_authorized_server_world_positions():")
+    assert runner_index > source.index("def test_admin_advanced_actions_are_server_authorized()")
+
 
 def test_admin_permanent_ban_requires_staff_reason_and_persists_license():
     server = read("resources/[FUNCTION]/rp_tablet_admin/server/main.lua")
@@ -639,8 +644,6 @@ def test_admin_permanent_ban_requires_staff_reason_and_persists_license():
     assert 'id="admin-ban-reason"' in html
     assert "function banSelectedPlayer()" in ui
     assert "window.confirm(" in ui
-
-
 
 
 def test_admin_tablet_javascript_has_valid_player_position_string():
@@ -709,13 +712,8 @@ def test_admin_advanced_actions_are_server_authorized():
     assert "RegisterNUICallback('toggleNoclip'" in client
     assert "RegisterNUICallback('toggleGodmode'" in client
     assert "RegisterNUICallback('spawnVehicle'" in client
-    assert "onclick=\"toggleAdminMode('noclip')\"" in html
+    assert 'onclick="toggleAdminMode(\'noclip\')"' in html
     assert "function spawnAdminVehicle()" in ui
-
-if __name__ == "__main__":')
-    assert runner_index > source.index("def test_admin_tablet_close_controls_and_keyboard_bindings_do_not_conflict():")
-    assert runner_index > source.index("def test_admin_live_map_uses_authorized_server_world_positions():")
-
 
 
 if __name__ == "__main__":
