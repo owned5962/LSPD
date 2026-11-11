@@ -232,3 +232,38 @@ body {
         bottom: 3vh;
     }
 }
+
+
+/* Requested layout: needs below the minimap; job title separately at upper-left. */
+#player-hud {
+    left: 1.5vw;
+    bottom: 1.5vh;
+    width: 220px;
+    max-width: 220px;
+    padding: 8px 10px;
+    border-radius: 10px;
+}
+#hud-job-panel {
+    position: absolute;
+    top: 2.2vh;
+    left: 1.5vw;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    min-width: 180px;
+    max-width: 280px;
+    padding: 9px 12px;
+    border: 1px solid rgba(148,163,184,.22);
+    border-radius: 10px;
+    color: #f8fafc;
+    background: rgba(9,15,25,.82);
+    box-shadow: 0 8px 24px rgba(0,0,0,.28);
+    backdrop-filter: blur(10px);
+    pointer-events: none;
+    z-index: 1000;
+}
+#hud-job-panel strong, #hud-job-panel small { display:block; }
+#hud-job-panel strong { font-size:12px; font-weight:800; }
+#hud-job-panel small { margin-top:2px; color:#94a3b8; font-size:10px; }
+#player-hud .hud-vitals { display:grid; grid-template-columns:1fr 1fr; gap:7px 10px; }
+#player-hud .hud-vital { grid-template-columns:14px 1fr 30px; }
