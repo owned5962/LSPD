@@ -488,11 +488,10 @@ function renderLogs() {
         badge.textContent = log.severity || 'ALERTE';
         severity.appendChild(badge);
         const action = document.createElement('td');
-        const kick = document.createElement('button');
-        kick.className = 'small-action';
-        kick.textContent = 'Sanction';
-        kick.addEventListener('click', () => punish(log.playerId, 'kick'));
-        action.appendChild(kick);
+        const sanction = document.createElement('span');
+        sanction.className = 'severity severity-' + (log.sanction === 'ban' || log.sanction === 'kick' ? 'critical' : log.sanction === 'prison' ? 'high' : 'low');
+        sanction.textContent = ({ warn: 'Avertissement', kick: 'Kick', ban: 'Ban', prison: 'Prison' })[log.sanction] || 'Non défini';
+        action.appendChild(sanction);
         row.append(time, player, reason, severity, action);
         body.appendChild(row);
     });
