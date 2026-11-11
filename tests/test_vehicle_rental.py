@@ -37,3 +37,10 @@ def test_rental_expiry_and_vehicle_return_flow():
     assert "TaskLeaveVehicle" in client
     assert "SetVehicleDoorsLockedForAllPlayers" in client
     assert "drawTimer" in client
+
+
+if __name__ == "__main__":
+    test_rental_resource_is_registered_and_has_all_spawn_locations()
+    test_rental_price_and_server_side_validation()
+    test_rental_expiry_and_vehicle_return_flow()
+    print("Vehicle rental regression checks passed.")
