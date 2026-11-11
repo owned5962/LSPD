@@ -1,5 +1,5 @@
 local function isCreator(src)
-    if IsPlayerAceAllowed(src, 'rp_creator') or IsPlayerAceAllowed(src, 'rp_admin') then return true end
+    if IsPlayerAceAllowed(src, 'rp_creator') then return true end
     local player = exports['rp_core']:GetPlayerFromId(src)
     return player ~= nil and (player.group == 'superadmin' or player.group == 'fondateur')
 end
