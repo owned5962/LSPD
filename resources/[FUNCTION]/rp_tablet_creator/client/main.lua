@@ -18,6 +18,7 @@ RegisterNetEvent('rp_tablet_creator:client:open', function(role)
     SetNuiFocus(true, true)
     SendNUIMessage({ action = 'open', role = role or 'Créateur' })
     TriggerServerEvent('rp_tablet_creator:server:requestTools')
+    TriggerServerEvent('rp_tablet_creator:server:requestAdminTools')
 end)
 
 RegisterNUICallback('close', function(_, cb)
@@ -53,6 +54,7 @@ end)
 
 RegisterNUICallback('refreshTools', function(_, cb)
     TriggerServerEvent('rp_tablet_creator:server:requestTools')
+    TriggerServerEvent('rp_tablet_creator:server:requestAdminTools')
     cb({ ok = true })
 end)
 
@@ -102,6 +104,14 @@ RegisterNetEvent('rp_tablet_creator:client:toolsData', function(jobs, blips, map
         catalog = catalog or {}, position = { x = coords.x, y = coords.y, z = coords.z },
         players = players or {}, items = items or {}, settings = settings or {}, modules = modules or {}
     })
+end)
+
+RegisterNetEvent('rp_tablet_creator:client:adminToolsData', function(data)
+    SendNUIMessage({ action = 'creatorAdminData', data = data or {} })
+end)
+
+RegisterNetEvent('rp_tablet_creator:client:refreshAdminTools', function()
+    if isOpen then TriggerServerEvent('rp_tablet_creator:server:requestAdminTools') end
 end)
 
 RegisterNetEvent('rp_tablet_creator:client:mappingAdded', function(item)
