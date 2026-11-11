@@ -186,3 +186,8 @@ body {
     #vehicle-speedometer { bottom: 3vh; min-width: 175px; }
     #vehicle-speed { font-size: 34px; }
 }
+
+#player-hud.hidden,
+#vehicle-speedometer.hidden {
+    display: none !important;
+}
