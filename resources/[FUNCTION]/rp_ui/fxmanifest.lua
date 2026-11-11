@@ -5,7 +5,9 @@ author 'FiveM RP Framework'
 description 'Modern TextUI & Animated Progress Bar'
 version '1.1.0'
 
-dependencies { 'rp_core', 'rp_jobs', 'oxmysql' }
+dependency 'rp_core'
+dependency 'rp_jobs'
+dependency 'oxmysql'
 
 ui_page 'html/index.html'
 
