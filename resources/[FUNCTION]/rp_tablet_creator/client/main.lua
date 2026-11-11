@@ -52,7 +52,8 @@ RegisterNUICallback('saveJobBlip', function(data, cb)
 end)
 
 RegisterNetEvent('rp_tablet_creator:client:toolsData', function(jobs, blips, mapping, catalog)
-    SendNUIMessage({ action = 'toolsData', jobs = jobs or {}, blips = blips or {}, mapping = mapping or {}, catalog = catalog or {} })
+    local coords = GetEntityCoords(PlayerPedId())
+    SendNUIMessage({ action = 'toolsData', jobs = jobs or {}, blips = blips or {}, mapping = mapping or {}, catalog = catalog or {}, position = { x = coords.x, y = coords.y, z = coords.z } })
 end)
 
 RegisterNetEvent('rp_tablet_creator:client:mappingAdded', function(item)
