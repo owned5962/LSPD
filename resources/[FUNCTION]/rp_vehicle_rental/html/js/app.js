@@ -1,7 +1,7 @@
 const tablet=document.getElementById('tablet');
 const vehicleList=document.getElementById('vehicles');
 const priceLabel=document.getElementById('price');
-const hoursLabel=document.getElementById('hours');
+const durationLabel=document.getElementById('duration-value');
 const confirmButton=document.getElementById('confirm');
 const declineButton=document.getElementById('decline');
 const renewalNote=document.getElementById('renewal-note');
@@ -9,7 +9,18 @@ const vehicleSection=document.getElementById('vehicle-section');
 let resource='rp_vehicle_rental',selectedModel=null,minutes=60,pricePerTen=100,maxHours=12,isRenewal=false,graceTimer=null,locationKey=null;
 
 function post(name,data={}){return fetch(`https://${resource}/${name}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});}
-function updatePrice(){hoursLabel.textContent=String(minutes/60);priceLabel.textContent=`${Math.ceil(minutes/10)*pricePerTen} $`;}
+function updatePrice(){const hours=Math.floor(minutes/60),rest=minutes%60;durationLabel.textContent=hours?(rest?`${hours} h ${rest} min`:`${hours} h`):`${rest} min`;priceLabel.textContent=`${Math.ceil(minutes/10)*pricePerTen} const tablet=document.getElementById('tablet');
+const vehicleList=document.getElementById('vehicles');
+const priceLabel=document.getElementById('price');
+const durationLabel=document.getElementById('duration-value');
+const confirmButton=document.getElementById('confirm');
+const declineButton=document.getElementById('decline');
+const renewalNote=document.getElementById('renewal-note');
+const vehicleSection=document.getElementById('vehicle-section');
+let resource='rp_vehicle_rental',selectedModel=null,minutes=60,pricePerTen=100,maxHours=12,isRenewal=false,graceTimer=null,locationKey=null;
+
+function post(name,data={}){return fetch(`https://${resource}/${name}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});}
+;}
 function renderVehicles(vehicles){
  vehicleList.innerHTML='';
  (vehicles||[]).forEach((vehicle,index)=>{
