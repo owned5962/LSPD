@@ -4,15 +4,15 @@ on:
   push:
     branches: [main, "fix/**"]
     paths:
-      - "resources/[FUNCTION]/rp_tablet_admin/**"
-      - "resources/[FUNCTION]/rp_inventory/server/main.lua"
+      - "resources/**"
+      - "resources/**"
       - "tests/test_admin_tablet_reorganization.py"
       - ".github/workflows/admin-tablet-reorganization.yml"
   pull_request:
     branches: [main]
     paths:
-      - "resources/[FUNCTION]/rp_tablet_admin/**"
-      - "resources/[FUNCTION]/rp_inventory/server/main.lua"
+      - "resources/**"
+      - "resources/**"
       - "tests/test_admin_tablet_reorganization.py"
       - ".github/workflows/admin-tablet-reorganization.yml"
 
