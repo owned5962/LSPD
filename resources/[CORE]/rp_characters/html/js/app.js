@@ -89,6 +89,8 @@ function renderCharacters(characters) {
     const list = document.getElementById('character-list'); list.replaceChildren();
     const occupied = new Set();
     selectedCharacterSlot = null;
+    const countLabel = document.getElementById('character-count');
+    if (countLabel) countLabel.textContent = `${characters.length} personnage(s) créé(s) sur ${maxCharacters} · Sélectionnez une identité pour entrer en ville.`;
     const enterButton = document.getElementById('enter-city-btn');
     enterButton.disabled = true;
     characters.forEach((character) => {
