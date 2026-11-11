@@ -132,7 +132,7 @@ RegisterNetEvent('rp_tablet_creator:server:requestTools', function()
     if not isCreator(src) then return end
     local jobs = exports['rp_jobs']:GetAllJobs() or {}
     local jobList = {}
-    for name, job in pairs(jobs) do jobList[#jobList + 1] = { name = name, label = job.label or name } end
+    for key, job in pairs(jobs) do local name = job.name or key; jobList[#jobList + 1] = { name = name, label = job.label or name } end
     table.sort(jobList, function(a, b) return a.label < b.label end)
     local blips = MySQL.query.await('SELECT job, label, x, y, z, sprite, color, scale, enabled FROM rp_creator_job_blips') or {}
     local mapping = MySQL.query.await('SELECT id, model, x, y, z, heading FROM rp_creator_mapping ORDER BY id DESC LIMIT 100') or {}
