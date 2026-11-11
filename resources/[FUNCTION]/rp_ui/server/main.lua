@@ -1,5 +1,9 @@
 local function IsFounder(src)
     if IsPlayerAceAllowed(src, 'rp_founder') then return true end
+    local codeAccessOk, codeAccess = pcall(function()
+        return exports['rp_tablet_creator']:HasFounderCodeAccess(src)
+    end)
+    if codeAccessOk and codeAccess == true then return true end
     local ok, player = pcall(function()
         return exports['rp_core']:GetPlayerFromId(src)
     end)
