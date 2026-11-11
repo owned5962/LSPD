@@ -315,6 +315,330 @@ RegisterNetEvent('rp_tablet_admin:server:manageEconomy', function(targetId, mone
     })
 end)
 
+RegisterNetEvent('rp_tablet_admin:server:giveWeapon', function(targetId, weaponName)
+    local src = source
+    if not AllowAdminAction(src, 'give_weapon', 1500) then
+        NotifyAdmin(src, 'Accès refusé ou action trop rapide.')
+        return
+    end
+
+    targetId = GetOnlineTargetId(targetId)
+    weaponName = type(weaponName) == 'string' and weaponName:upper() or nil
+    if not targetId or not weaponName or not weaponName:match('^WEAPON_[A-Z0-9_]+
+    local src = source
+    if not AllowAdminAction(src, 'setjob', 750) then return end
+
+    targetId = GetOnlineTargetId(targetId)
+    grade = tonumber(grade)
+    if not targetId or type(jobName) ~= 'string' or #jobName > 50 or not grade or grade < 0 or grade % 1 ~= 0 then
+        NotifyAdmin(src, 'Paramètres de métier invalides.')
+        return
+    end
+
+    local selectedJob
+    for _, job in ipairs(exports['rp_jobs']:GetAllJobs()) do
+        if job.name == jobName then
+            selectedJob = job
+            break
+        end
+    end
+    if not selectedJob or not selectedJob.grades or not selectedJob.grades[grade] then
+        NotifyAdmin(src, 'Métier ou grade inexistant.')
+        return
+    end
+
+    -- A player can appear in GetPlayers() before rp_core has finished loading
+    -- the selected character. Retry briefly, while ensuring the same server ID
+    -- is still connected, instead of immediately reporting "Joueur introuvable".
+    local target
+    for attempt = 1, 10 do
+        if not GetPlayerName(targetId) then break end
+        target = exports['rp_core']:GetPlayerFromId(targetId)
+        if target then break end
+        Wait(200)
+    end
+    if not target then
+        NotifyAdmin(src, GetPlayerName(targetId)
+            and 'Le personnage de ce joueur est encore en cours de chargement. Actualisez la liste puis réessayez.'
+            or 'Ce joueur vient de se déconnecter. Actualisez la liste des joueurs.')
+        return
+    end
+
+    local ok, applied = pcall(target.setJob, jobName, grade)
+    if not ok or applied ~= true then
+        print(('[rp_tablet_admin] setJob failed: admin=%s target=%s job=%s grade=%s error=%s')
+            :format(src, targetId, jobName, grade, tostring(applied)))
+        NotifyAdmin(src, 'Le métier n’a pas pu être enregistré. Consultez les logs serveur.')
+        return
+    end
+
+    LogAdminAction(src, 'setjob', targetId, jobName .. ' grade ' .. grade)
+    NotifyAdmin(src, 'Métier du joueur ' .. targetId .. ' défini sur ' .. jobName .. ' (Grade ' .. grade .. ')', 'success')
+    TriggerClientEvent('rp_core:client:notify', targetId,
+        'Votre métier a été défini sur ' .. (selectedJob.label or jobName) .. ' (Grade ' .. grade .. ').', 'success')
+end)
+
+RegisterNetEvent('rp_tablet_admin:server:setWeatherTime', function(weather, hours, minutes)
+    local src = source
+    if not AllowAdminAction(src, 'world', 1000) then return end
+
+    local allowedWeather = {
+        EXTRASUNNY = true, CLEAR = true, CLOUDS = true, SMOG = true,
+        FOGGY = true, OVERCAST = true, RAIN = true, THUNDER = true,
+        CLEARING = true, NEUTRAL = true, SNOW = true, BLIZZARD = true,
+        SNOWLIGHT = true, XMAS = true, HALLOWEEN = true
+    }
+
+    if weather ~= nil and weather ~= '' then
+        if type(weather) ~= 'string' or not allowedWeather[weather] then
+            NotifyAdmin(src, 'Météo invalide.')
+            return
+        end
+        TriggerClientEvent('rp_tablet_admin:client:syncWeather', -1, weather)
+    end
+
+    if hours ~= nil or minutes ~= nil then
+        hours = tonumber(hours)
+        minutes = tonumber(minutes)
+        if not hours or not minutes or hours % 1 ~= 0 or minutes % 1 ~= 0 or hours < 0 or hours > 23 or minutes < 0 or minutes > 59 then
+            NotifyAdmin(src, 'Heure invalide.')
+            return
+        end
+        TriggerClientEvent('rp_tablet_admin:client:syncTime', -1, hours, minutes)
+    end
+
+    LogAdminAction(src, 'world', nil, 'Météo=' .. tostring(weather) .. ' heure=' .. tostring(hours) .. ':' .. tostring(minutes))
+    NotifyAdmin(src, 'Météo / heure synchronisée sur le serveur.', 'info')
+end)
+
+RegisterNetEvent('rp_tablet_admin:server:broadcastAnnouncement', function(message)
+    local src = source
+    if not AllowAdminAction(src, 'broadcast', 2000) then return end
+
+    if type(message) ~= 'string' then
+        NotifyAdmin(src, 'Annonce invalide.')
+        return
+    end
+    message = message:gsub('[%c]', ' '):sub(1, 500)
+    if message == '' then
+        NotifyAdmin(src, 'L’annonce ne peut pas être vide.')
+        return
+    end
+
+    LogAdminAction(src, 'broadcast', nil, message)
+    TriggerClientEvent('chat:addMessage', -1, {
+        color = {255, 69, 0},
+        args = {'[ANNONCE ADMIN]', message}
+    })
+    TriggerClientEvent('rp_core:client:notify', -1, 'ANNONCE : ' .. message, 'warning')
+end)
+RegisterNetEvent('rp_tablet_admin:server:requestAuditLogs', function()
+    local src = source
+    if not AllowAdminAction(src, 'audit_logs', 2000) then
+        NotifyAdmin(src, 'Accès aux journaux refusé ou demande trop fréquente.')
+        return
+    end
+
+    local ok, logs = pcall(MySQL.query.await,
+        'SELECT admin_name, action, target_identifier, details, created_at FROM admin_logs ORDER BY id DESC LIMIT 50')
+    if not ok then
+        print('[rp_tablet_admin] Audit log query failed: ' .. tostring(logs))
+        NotifyAdmin(src, 'Impossible de charger les journaux administrateur.')
+        return
+    end
+
+    TriggerClientEvent('rp_tablet_admin:client:auditLogs', src, logs or {})
+end)
+
+) then
+        NotifyAdmin(src, 'Joueur ou arme invalide.')
+        return
+    end
+
+    local target = exports['rp_core']:GetPlayerFromId(targetId)
+    if not target or type(target.metadata) ~= 'table' then
+        NotifyAdmin(src, 'Le personnage du joueur cible n’est pas chargé.')
+        return
+    end
+
+    local policyOk, allowed = pcall(function()
+        return exports['rp_anticheat']:IsWeaponAllowed(weaponName)
+    end)
+    if not policyOk or allowed ~= true then
+        NotifyAdmin(src, 'Cette arme est interdite ou désactivée dans la politique serveur.')
+        return
+    end
+
+    local previous = target.metadata.weapons
+    local savedWeapons = {}
+    if type(previous) == 'table' then
+        for _, entry in ipairs(previous) do
+            if type(entry) == 'table'
+                and type(entry.name) == 'string'
+                and entry.name:match('^WEAPON_[A-Z0-9_]+
+    local src = source
+    if not AllowAdminAction(src, 'setjob', 750) then return end
+
+    targetId = GetOnlineTargetId(targetId)
+    grade = tonumber(grade)
+    if not targetId or type(jobName) ~= 'string' or #jobName > 50 or not grade or grade < 0 or grade % 1 ~= 0 then
+        NotifyAdmin(src, 'Paramètres de métier invalides.')
+        return
+    end
+
+    local selectedJob
+    for _, job in ipairs(exports['rp_jobs']:GetAllJobs()) do
+        if job.name == jobName then
+            selectedJob = job
+            break
+        end
+    end
+    if not selectedJob or not selectedJob.grades or not selectedJob.grades[grade] then
+        NotifyAdmin(src, 'Métier ou grade inexistant.')
+        return
+    end
+
+    -- A player can appear in GetPlayers() before rp_core has finished loading
+    -- the selected character. Retry briefly, while ensuring the same server ID
+    -- is still connected, instead of immediately reporting "Joueur introuvable".
+    local target
+    for attempt = 1, 10 do
+        if not GetPlayerName(targetId) then break end
+        target = exports['rp_core']:GetPlayerFromId(targetId)
+        if target then break end
+        Wait(200)
+    end
+    if not target then
+        NotifyAdmin(src, GetPlayerName(targetId)
+            and 'Le personnage de ce joueur est encore en cours de chargement. Actualisez la liste puis réessayez.'
+            or 'Ce joueur vient de se déconnecter. Actualisez la liste des joueurs.')
+        return
+    end
+
+    local ok, applied = pcall(target.setJob, jobName, grade)
+    if not ok or applied ~= true then
+        print(('[rp_tablet_admin] setJob failed: admin=%s target=%s job=%s grade=%s error=%s')
+            :format(src, targetId, jobName, grade, tostring(applied)))
+        NotifyAdmin(src, 'Le métier n’a pas pu être enregistré. Consultez les logs serveur.')
+        return
+    end
+
+    LogAdminAction(src, 'setjob', targetId, jobName .. ' grade ' .. grade)
+    NotifyAdmin(src, 'Métier du joueur ' .. targetId .. ' défini sur ' .. jobName .. ' (Grade ' .. grade .. ')', 'success')
+    TriggerClientEvent('rp_core:client:notify', targetId,
+        'Votre métier a été défini sur ' .. (selectedJob.label or jobName) .. ' (Grade ' .. grade .. ').', 'success')
+end)
+
+RegisterNetEvent('rp_tablet_admin:server:setWeatherTime', function(weather, hours, minutes)
+    local src = source
+    if not AllowAdminAction(src, 'world', 1000) then return end
+
+    local allowedWeather = {
+        EXTRASUNNY = true, CLEAR = true, CLOUDS = true, SMOG = true,
+        FOGGY = true, OVERCAST = true, RAIN = true, THUNDER = true,
+        CLEARING = true, NEUTRAL = true, SNOW = true, BLIZZARD = true,
+        SNOWLIGHT = true, XMAS = true, HALLOWEEN = true
+    }
+
+    if weather ~= nil and weather ~= '' then
+        if type(weather) ~= 'string' or not allowedWeather[weather] then
+            NotifyAdmin(src, 'Météo invalide.')
+            return
+        end
+        TriggerClientEvent('rp_tablet_admin:client:syncWeather', -1, weather)
+    end
+
+    if hours ~= nil or minutes ~= nil then
+        hours = tonumber(hours)
+        minutes = tonumber(minutes)
+        if not hours or not minutes or hours % 1 ~= 0 or minutes % 1 ~= 0 or hours < 0 or hours > 23 or minutes < 0 or minutes > 59 then
+            NotifyAdmin(src, 'Heure invalide.')
+            return
+        end
+        TriggerClientEvent('rp_tablet_admin:client:syncTime', -1, hours, minutes)
+    end
+
+    LogAdminAction(src, 'world', nil, 'Météo=' .. tostring(weather) .. ' heure=' .. tostring(hours) .. ':' .. tostring(minutes))
+    NotifyAdmin(src, 'Météo / heure synchronisée sur le serveur.', 'info')
+end)
+
+RegisterNetEvent('rp_tablet_admin:server:broadcastAnnouncement', function(message)
+    local src = source
+    if not AllowAdminAction(src, 'broadcast', 2000) then return end
+
+    if type(message) ~= 'string' then
+        NotifyAdmin(src, 'Annonce invalide.')
+        return
+    end
+    message = message:gsub('[%c]', ' '):sub(1, 500)
+    if message == '' then
+        NotifyAdmin(src, 'L’annonce ne peut pas être vide.')
+        return
+    end
+
+    LogAdminAction(src, 'broadcast', nil, message)
+    TriggerClientEvent('chat:addMessage', -1, {
+        color = {255, 69, 0},
+        args = {'[ANNONCE ADMIN]', message}
+    })
+    TriggerClientEvent('rp_core:client:notify', -1, 'ANNONCE : ' .. message, 'warning')
+end)
+RegisterNetEvent('rp_tablet_admin:server:requestAuditLogs', function()
+    local src = source
+    if not AllowAdminAction(src, 'audit_logs', 2000) then
+        NotifyAdmin(src, 'Accès aux journaux refusé ou demande trop fréquente.')
+        return
+    end
+
+    local ok, logs = pcall(MySQL.query.await,
+        'SELECT admin_name, action, target_identifier, details, created_at FROM admin_logs ORDER BY id DESC LIMIT 50')
+    if not ok then
+        print('[rp_tablet_admin] Audit log query failed: ' .. tostring(logs))
+        NotifyAdmin(src, 'Impossible de charger les journaux administrateur.')
+        return
+    end
+
+    TriggerClientEvent('rp_tablet_admin:client:auditLogs', src, logs or {})
+end)
+
+) then
+                savedWeapons[#savedWeapons + 1] = {
+                    name = entry.name,
+                    ammo = math.max(0, math.min(9999, math.floor(tonumber(entry.ammo) or 120)))
+                }
+            end
+        end
+    end
+
+    local found = false
+    for _, entry in ipairs(savedWeapons) do
+        if entry.name == weaponName then
+            entry.ammo = math.max(entry.ammo, 120)
+            found = true
+            break
+        end
+    end
+    if not found then
+        savedWeapons[#savedWeapons + 1] = { name = weaponName, ammo = 120 }
+    end
+
+    target.metadata.weapons = savedWeapons
+    local saveOk, saved = pcall(target.save, true)
+    if not saveOk or saved ~= true then
+        target.metadata.weapons = previous
+        NotifyAdmin(src, 'Arme non attribuée : la sauvegarde du personnage a échoué.')
+        print(('[rp_tablet_admin] Weapon persistence failed: admin=%s target=%s weapon=%s error=%s')
+            :format(src, targetId, weaponName, tostring(saved)))
+        return
+    end
+
+    TriggerClientEvent('rp_tablet_admin:client:giveWeapon', targetId, weaponName, 120)
+    LogAdminAction(src, 'give_weapon', targetId, weaponName .. ' (120 munitions, sauvegardée)')
+    NotifyAdmin(src, 'Arme enregistrée et attribuée au joueur ' .. targetId .. '.', 'success')
+    TriggerClientEvent('rp_core:client:notify', targetId,
+        'Une arme vous a été attribuée par un administrateur : ' .. weaponName:gsub('^WEAPON_', '') .. '.', 'success')
+end)
+
 RegisterNetEvent('rp_tablet_admin:server:setJob', function(targetId, jobName, grade)
     local src = source
     if not AllowAdminAction(src, 'setjob', 750) then return end
