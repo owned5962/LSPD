@@ -23,8 +23,8 @@ def test_job_database_migration_seeds_every_job_and_five_grades_without_overwrit
     catalog = source.split("-- Sans-emploi", 1)[0]
     job_names = re.findall(r'name = "([^"]+)"', catalog)
 
-    assert migration.count("INSERT IGNORE INTO \`jobs\`") == 1
-    assert migration.count("INSERT IGNORE INTO \`job_grades\`") == 1
+    assert migration.count("INSERT IGNORE INTO " + chr(96) + "jobs" + chr(96)) == 1
+    assert migration.count("INSERT IGNORE INTO " + chr(96) + "job_grades" + chr(96)) == 1
     assert "START TRANSACTION;" in migration and "COMMIT;" in migration
     grade_rows = re.findall(
         r"\('((?:''|[^'])*)',\s*(\d+),\s*'grade_\d+',\s*'((?:''|[^'])*)',\s*(\d+)\)",
