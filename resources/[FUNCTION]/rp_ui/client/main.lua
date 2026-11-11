@@ -155,6 +155,17 @@ CreateThread(function()
         return
     end
 
+    -- Use the round radar mask when the standard circlemap texture is available.
+    RequestStreamedTextureDict('circlemap', false)
+    local textureDeadline = GetGameTimer() + 5000
+    while not HasStreamedTextureDictLoaded('circlemap') and GetGameTimer() < textureDeadline do Wait(50) end
+    if HasStreamedTextureDictLoaded('circlemap') then
+        AddReplaceTexture('platform:/textures/graphics', 'radarmasksm', 'circlemap', 'radarmasksm')
+        SetMinimapClipType(1)
+    else
+        print('[rp_ui] circlemap texture unavailable; standard minimap retained.')
+    end
+
     -- Rebuild the minimap once so the custom layout is applied immediately.
     SetBigmapActive(true, false)
     Wait(0)
@@ -189,23 +200,17 @@ RegisterNUICallback('closeDiagnostics', function(_, cb)
     cb({ ok = true })
 end)
 CreateThread(function()
-    local lastTick = GetGameTimer()
     while true do
-        local now = GetGameTimer()
-        local delta = math.max(1, now - lastTick)
-        lastTick = now
         if diagnosticsOpen then
-            local fps = math.floor(1000 / delta + 0.5)
+            local fps = math.floor(1.0 / math.max(0.001, GetFrameTime()) + 0.5)
+            local coords = GetEntityCoords(PlayerPedId())
             SendNUIMessage({
                 action = 'updateDiagnostics',
                 fps = fps,
                 ping = GetPlayerPing(PlayerId()),
                 players = #GetActivePlayers(),
                 maxPlayers = GetConvarInt('sv_maxclients', 0),
-                coords = (function()
-                    local c = GetEntityCoords(PlayerPedId())
-                    return { x = math.floor(c.x), y = math.floor(c.y), z = math.floor(c.z) }
-                end)()
+                coords = { x = math.floor(coords.x), y = math.floor(coords.y), z = math.floor(coords.z) }
             })
             Wait(500)
         else
