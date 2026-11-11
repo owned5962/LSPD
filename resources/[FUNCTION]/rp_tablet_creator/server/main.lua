@@ -20,6 +20,34 @@ local function reply(src, message, success)
     TriggerClientEvent('rp_tablet_creator:client:result', src, message, success == true)
 end
 
+RegisterNetEvent('rp_tablet_creator:server:requestAccessStatus', function()
+    local src = source
+    local player = exports['rp_core']:GetPlayerFromId(src)
+    local aceFounder = IsPlayerAceAllowed(src, 'rp_founder') == true
+    local aceCreator = IsPlayerAceAllowed(src, 'rp_creator') == true
+    local coreGroup = player and tostring(player.group or 'user') or 'personnage_non_charge'
+    local tabletAllowed = false
+    if type(CanUseTablet) == 'function' then
+        local ok, allowed = pcall(CanUseTablet, src, 'creator')
+        tabletAllowed = ok and allowed == true
+    end
+
+    local identifiers = GetPlayerIdentifiers(src) or {}
+    local fivemId, licenseId
+    for _, identifier in ipairs(identifiers) do
+        if identifier:sub(1, 7) == 'fivem:' then fivemId = identifier end
+        if identifier:sub(1, 8) == 'license:' then licenseId = identifier end
+    end
+
+    print(('[rp_access] name=%s source=%d group=%s ace_rp_founder=%s ace_rp_creator=%s creator_tablet=%s fivem=%s license=%s'):format(
+        GetPlayerName(src) or 'unknown', src, coreGroup, tostring(aceFounder),
+        tostring(aceCreator), tostring(tabletAllowed), fivemId or 'absent', licenseId or 'absent'
+    ))
+    reply(src, ('Diagnostic accès : groupe=%s · ACE fondateur=%s · ACE créateur=%s · tablette créateur=%s. Consulte la console serveur pour vérifier les identifiants.'):format(
+        coreGroup, tostring(aceFounder), tostring(aceCreator), tostring(tabletAllowed)
+    ), aceFounder or coreGroup == 'fondateur' or aceCreator)
+end)
+
 RegisterNetEvent('rp_tablet_creator:server:requestOpen', function()
     local src = source
     if not creatorAccessAllowed(src) then
