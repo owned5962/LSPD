@@ -80,10 +80,8 @@ local function UpdatePlayerHUD()
     SendNUIMessage({
         action = 'updateHUD', visible = true,
         health = math.floor(health + 0.5),
-        armor = math.floor(math.max(0, math.min(100, GetPedArmour(ped))) + 0.5),
         hunger = math.floor(math.max(0, math.min(100, tonumber(data.hunger) or 100)) + 0.5),
         thirst = math.floor(math.max(0, math.min(100, tonumber(data.thirst) or 100)) + 0.5),
-        cash = tonumber(data.cash) or 0, bank = tonumber(data.bank) or 0,
         job = tostring(data.jobLabel or data.job or 'Sans-emploi'),
         grade = tostring(data.jobGradeLabel or '')
     })
@@ -173,3 +171,46 @@ CreateThread(function()
         Wait(750)
     end
 end)
+
+-- F12 client diagnostics. FiveM does not expose reliable CPU/GPU temperature or
+-- utilization to Lua; show only metrics the game client can actually measure.
+local diagnosticsOpen = false
+local function ToggleDiagnostics()
+    diagnosticsOpen = not diagnosticsOpen
+    SetNuiFocus(diagnosticsOpen, diagnosticsOpen)
+    SendNUIMessage({ action = diagnosticsOpen and 'showDiagnostics' or 'hideDiagnostics' })
+end
+RegisterCommand('clientdiagnostics', ToggleDiagnostics, false)
+RegisterKeyMapping('clientdiagnostics', 'Afficher les statistiques client', 'keyboard', 'F12')
+RegisterNUICallback('closeDiagnostics', function(_, cb)
+    diagnosticsOpen = false
+    SetNuiFocus(false, false)
+    SendNUIMessage({ action = 'hideDiagnostics' })
+    cb({ ok = true })
+end)
+CreateThread(function()
+    local lastTick = GetGameTimer()
+    while true do
+        local now = GetGameTimer()
+        local delta = math.max(1, now - lastTick)
+        lastTick = now
+        if diagnosticsOpen then
+            local fps = math.floor(1000 / delta + 0.5)
+            SendNUIMessage({
+                action = 'updateDiagnostics',
+                fps = fps,
+                ping = GetPlayerPing(PlayerId()),
+                players = #GetActivePlayers(),
+                maxPlayers = GetConvarInt('sv_maxclients', 0),
+                coords = (function()
+                    local c = GetEntityCoords(PlayerPedId())
+                    return { x = math.floor(c.x), y = math.floor(c.y), z = math.floor(c.z) }
+                end)()
+            })
+            Wait(500)
+        else
+            Wait(1000)
+        end
+    end
+end)
+
