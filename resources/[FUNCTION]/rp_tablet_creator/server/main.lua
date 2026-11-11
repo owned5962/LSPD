@@ -20,10 +20,6 @@ RegisterNetEvent('rp_tablet_creator:server:requestOpen', function()
         reply(src, 'Accès réservé aux créateurs et fondateurs.', false)
         return
     end
-    if not creatorAccessAllowed(src) then
-        reply(src, 'Votre accès à la tablette créateur est désactivé.', false)
-        return
-    end
     local player = exports['rp_core']:GetPlayerFromId(src)
     local role = player and player.group or 'Créateur'
     TriggerClientEvent('rp_tablet_creator:client:open', src, role)
@@ -113,7 +109,7 @@ local PROP_CATALOG = {
 local spawnedMapping = {}
 
 local function ensureCreatorTables()
-    pcall(function()
+    local ok, err = pcall(function()
         MySQL.query.await([[CREATE TABLE IF NOT EXISTS rp_creator_mapping (
             id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
             model VARCHAR(64) NOT NULL,
@@ -153,6 +149,8 @@ local function ensureCreatorTables()
             updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4]])
     end)
+    if not ok then print('[rp_tablet_creator] Table initialization failed: ' .. tostring(err)) end
+    return ok
 end
 
 local function spawnSavedMapping()
