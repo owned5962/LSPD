@@ -1,0 +1,30 @@
+name: Police interaction verification
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  police-interaction:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run police interaction regression checks
+        run: python tests/test_police_interaction.py
+      - name: Install Lua 5.4
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y lua5.4
+      - name: Compile new police Lua scripts
+        run: |
+          luac5.4 -p "resources/[FUNCTION]/rp_police_interaction/config.lua"
+          luac5.4 -p "resources/[FUNCTION]/rp_police_interaction/client/main.lua"
+          luac5.4 -p "resources/[FUNCTION]/rp_police_interaction/server/main.lua"
+      - name: Check police NUI JavaScript
+        run: node --check "resources/[FUNCTION]/rp_police_interaction/html/app.js"
