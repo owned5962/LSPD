@@ -8,11 +8,11 @@ ROOT = Path(__file__).resolve().parents[1]
 def test_all_declared_jobs_have_five_runtime_grades():
     source = (ROOT / "resources/[FUNCTION]/rp_jobs/shared/jobs_list.lua").read_text(encoding="utf-8")
     catalog = source.split("-- Sans-emploi", 1)[0]
-    jobs = re.findall(r'name = "([^"]+)"[\\s\\S]*?grades = \\{([\\s\\S]*?)\\n        \\}', catalog)
+    jobs = re.findall(r'name = "([^"]+)"[\s\S]*?grades = \{([\s\S]*?)\n        \}', catalog)
 
     assert len(jobs) == 50
     for job_name, grade_block in jobs:
-        grades = re.findall(r'\\[(\\d+)\\] = \\{ label = "([^"]+)", salary = (\\d+) \\}', grade_block)
+        grades = re.findall(r'\[(\d+)\] = \{ label = "([^"]+)", salary = (\d+) \}', grade_block)
         assert [int(grade) for grade, _, _ in grades] == [0, 1, 2, 3, 4], job_name
         assert all(int(salary) > 0 for _, _, salary in grades), job_name
 
@@ -23,11 +23,11 @@ def test_job_database_migration_seeds_every_job_and_five_grades_without_overwrit
     catalog = source.split("-- Sans-emploi", 1)[0]
     job_names = re.findall(r'name = "([^"]+)"', catalog)
 
-    assert migration.count("INSERT IGNORE INTO `jobs`") == 1
-    assert migration.count("INSERT IGNORE INTO `job_grades`") == 1
+    assert migration.count("INSERT IGNORE INTO \`jobs\`") == 1
+    assert migration.count("INSERT IGNORE INTO \`job_grades\`") == 1
     assert "START TRANSACTION;" in migration and "COMMIT;" in migration
     grade_rows = re.findall(
-        r"\\('((?:''|[^'])*)',\\s*(\\d+),\\s*'grade_\\d+',\\s*'((?:''|[^'])*)',\\s*(\\d+)\\)",
+        r"\('((?:''|[^'])*)',\s*(\d+),\s*'grade_\d+',\s*'((?:''|[^'])*)',\s*(\d+)\)",
         migration,
     )
     by_job = {}
