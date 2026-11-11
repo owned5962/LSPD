@@ -63,7 +63,7 @@ function OpenAdminTablet()
 end
 
 
-RegisterNetEvent('rp_tablet_admin:client:openAuthorized', function(adminData, playersList, jobsList, frozenPlayers)
+RegisterNetEvent('rp_tablet_admin:client:openAuthorized', function(adminData, playersList, jobsList, frozenPlayers, itemCatalog)
     isTabletOpen = true
     StartTabletAnimation()
     SetNuiFocus(true, true)
