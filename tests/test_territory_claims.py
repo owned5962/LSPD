@@ -48,3 +48,18 @@ def test_territory_ui_exposes_color_choice_and_renewal():
     assert "renderColors" in js
     assert "Renouveler 7 jours" in js
     assert "Revendiquer le secteur" in js
+
+
+def test_diagnostics_include_source_line_and_error_context():
+    server = read("resources/[FUNCTION]/rp_territories/server/main.lua")
+    client = read("resources/[FUNCTION]/rp_territories/client/main.lua")
+    app = read("resources/[FUNCTION]/rp_territories/html/app.js")
+    assert "[rp_territories][SERVER][%s:%d]" in server
+    assert "[rp_territories][CLIENT][%s:%d]" in client
+    assert "debug.getinfo(2, 'Sl')" in server
+    assert "debug.getinfo(2, 'Sl')" in client
+    assert "MAP_BUILD_CRASH" in client
+    assert "CLAIM_SQL_WRITE_FAILED" in server
+    assert "UNCAUGHT_JS_ERROR" in app
+    assert "UNHANDLED_PROMISE" in app
+    assert "new Error().stack" in app
