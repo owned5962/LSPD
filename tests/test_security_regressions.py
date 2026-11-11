@@ -12,8 +12,8 @@ def read(path):
 def test_admin_tablet_freeze_control_toggles_both_states():
     app = read("resources/[FUNCTION]/rp_tablet_admin/html/js/app.js")
     assert "const frozenPlayers = new Set()" in app
-    assert "payload.freeze = !frozenPlayers.has(selectedPlayerId)" in app
-    assert "frozenPlayers.delete(selectedPlayerId)" in app
+    assert "payload.freeze = !frozenPlayers.has(targetId)" in app
+    assert "frozenPlayers.delete(targetId)" in app
 
 
 def test_admin_tablet_vehicle_spawn_is_server_authorized_and_has_no_delete_callback():
