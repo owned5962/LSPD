@@ -73,6 +73,7 @@ function OpenJobCenter()
         action = "openJobCenter",
         jobs = JobsList
     })
+    TriggerServerEvent('rp_jobs:server:requestJobStats')
 end
 
 function CloseJobCenter()
@@ -102,4 +103,13 @@ end)
 
 RegisterNetEvent('rp_jobs:client:jobSelectionResult', function(success, message)
     SendNUIMessage({ action = 'jobSelectionResult', success = success == true, message = tostring(message or '') })
+end)
+
+RegisterNetEvent('rp_jobs:client:jobStats', function(stats)
+    SendNUIMessage({ action = 'jobStats', stats = type(stats) == 'table' and stats or {} })
+end)
+
+RegisterNUICallback('requestStats', function(_, cb)
+    TriggerServerEvent('rp_jobs:server:requestJobStats')
+    cb({ status = 'requested' })
 end)
