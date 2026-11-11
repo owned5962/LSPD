@@ -62,3 +62,11 @@ document.getElementById('close-btn').addEventListener('click', () => {
     document.getElementById('clothing-wrapper').classList.add('hidden');
     fetch(`https://${GetParentResourceName()}/close`, { method: 'POST', body: '{}' });
 });
+
+
+document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape') return;
+    event.preventDefault();
+    document.getElementById('clothing-wrapper')?.classList.add('hidden');
+    fetch(`https://${GetParentResourceName()}/close`, { method: 'POST', body: '{}' }).catch(() => {});
+});
