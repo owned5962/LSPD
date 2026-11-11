@@ -4,6 +4,12 @@ let selectedColor = 0;
 let selectedSpawn = 'airport';
 let maxCharacters = 3;
 let selectedCharacterSlot = null;
+let characterSelectionPending = false;
+
+function normalizeCharacterLimit(value) {
+    const limit = Number(value);
+    return Number.isInteger(limit) ? Math.max(1, Math.min(10, limit)) : 3;
+}
 const faceLabels = [
     'Largeur du nez','Hauteur du nez','Longueur du nez','Abaissement du nez','Pointe du nez','Décalage du nez',
     'Hauteur des sourcils','Profondeur des sourcils','Hauteur des pommettes','Largeur des pommettes',
@@ -71,14 +77,14 @@ function sendAppearancePreview() {
 window.addEventListener('message', (event) => {
     const data = event.data || {};
     if (data.action === 'openRegistration') {
-        maxCharacters = data.maxCharacters || 3;
+        maxCharacters = normalizeCharacterLimit(data.maxCharacters);
         document.getElementById('character-selection').classList.add('hidden');
         document.getElementById('registration-app').classList.remove('hidden');
         switchTab(0); sendAppearancePreview();
     } else if (data.action === 'closeRegistration') {
         document.getElementById('registration-app').classList.add('hidden');
     } else if (data.action === 'openCharacterSelection') {
-        maxCharacters = data.maxCharacters || 3; renderCharacters(data.characters || []);
+        maxCharacters = normalizeCharacterLimit(data.maxCharacters); renderCharacters(data.characters);
         document.getElementById('registration-app').classList.add('hidden');
         document.getElementById('character-selection').classList.remove('hidden');
     } else if (data.action === 'closeCharacterSelection') {
@@ -89,6 +95,7 @@ function renderCharacters(characters) {
     const list = document.getElementById('character-list');
     list.replaceChildren();
     selectedCharacterSlot = null;
+    characterSelectionPending = false;
 
     const slots = new Map();
     const safeCharacters = Array.isArray(characters) ? characters : [];
@@ -105,6 +112,7 @@ function renderCharacters(characters) {
 
     const enterButton = document.getElementById('enter-city-btn');
     enterButton.disabled = true;
+    enterButton.textContent = 'Entrer en ville';
 
     slots.forEach((character, slot) => {
         const card = document.createElement('button');
@@ -113,9 +121,12 @@ function renderCharacters(characters) {
         card.setAttribute('aria-pressed', 'false');
 
         const name = document.createElement('strong');
-        name.textContent = `${character.firstname || 'Prénom'} ${character.lastname || 'inconnu'}`;
+        const firstname = typeof character.firstname === 'string' ? character.firstname : 'Prénom';
+        const lastname = typeof character.lastname === 'string' ? character.lastname : 'inconnu';
+        name.textContent = `${firstname} ${lastname}`;
         const details = document.createElement('span');
-        details.textContent = `Emplacement ${slot} · ${character.job || 'Sans emploi'}`;
+        const job = typeof character.job === 'string' ? character.job : 'Sans emploi';
+        details.textContent = `Emplacement ${slot} · ${job}`;
         card.append(name, details);
 
         card.addEventListener('click', () => {
@@ -148,7 +159,29 @@ function renderCharacters(characters) {
 }
 document.getElementById('create-character-btn').addEventListener('click', () => postNui('beginCreation').catch(() => {}));
 document.getElementById('enter-city-btn').addEventListener('click', () => {
-    if (Number.isInteger(selectedCharacterSlot)) postNui('selectCharacter', { slot: selectedCharacterSlot }).catch(() => {});
+    if (!Number.isInteger(selectedCharacterSlot) || characterSelectionPending) return;
+
+    characterSelectionPending = true;
+    const button = document.getElementById('enter-city-btn');
+    button.disabled = true;
+    button.textContent = 'Chargement du personnage…';
+
+    postNui('selectCharacter', { slot: selectedCharacterSlot }).catch(() => {
+        characterSelectionPending = false;
+        button.disabled = false;
+        button.textContent = 'Entrer en ville';
+    });
+
+    // The server performs the database lookup asynchronously. Avoid duplicate
+    // requests while still allowing a retry if the server rejects the selection.
+    window.setTimeout(() => {
+        if (characterSelectionPending && document.getElementById('character-selection') &&
+            !document.getElementById('character-selection').classList.contains('hidden')) {
+            characterSelectionPending = false;
+            button.disabled = selectedCharacterSlot === null;
+            button.textContent = 'Entrer en ville';
+        }
+    }, 5000);
 });
 function switchTab(index) {
     currentTabIndex = index; const tabName = tabs[index];
