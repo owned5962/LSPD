@@ -7,6 +7,7 @@ local isAnticheatPrisoner = false
 local prisonEndsAt = 0
 local prisonCenter = nil
 local prisonRelease = nil
+local prisonExpiryRequested = false
 
 -- Commande locale d'ouverture du menu Anticheat.
 local function ToggleAnticheatTablet()
@@ -213,6 +214,7 @@ RegisterNetEvent('rp_anticheat:applyPrison', function(payload)
     if not tonumber(jail.x) or not tonumber(jail.y) or not tonumber(jail.z)
         or not tonumber(release.x) or not tonumber(release.y) or not tonumber(release.z) then return end
     isAnticheatPrisoner = true
+    prisonExpiryRequested = false
     prisonEndsAt = tonumber(payload.endsAt) or (os.time() + 1800)
     prisonCenter = vector3(tonumber(jail.x), tonumber(jail.y), tonumber(jail.z))
     prisonRelease = vector3(tonumber(release.x), tonumber(release.y), tonumber(release.z))
@@ -226,6 +228,7 @@ RegisterNetEvent('rp_anticheat:releasePrison', function()
     local ped = PlayerPedId()
     if prisonRelease then SetEntityCoords(ped, prisonRelease.x, prisonRelease.y, prisonRelease.z, false, false, false, false) end
     prisonCenter, prisonRelease, prisonEndsAt = nil, nil, 0
+    prisonExpiryRequested = false
     TriggerEvent('rp_core:client:notify', 'success', 'Ta peine de prison est terminée.')
 end)
 
@@ -236,7 +239,10 @@ CreateThread(function()
         else
             Wait(1000)
             if os.time() >= prisonEndsAt then
-                TriggerServerEvent('rp_anticheat:prisonExpired')
+                if not prisonExpiryRequested then
+                    prisonExpiryRequested = true
+                    TriggerServerEvent('rp_anticheat:prisonExpired')
+                end
             else
                 local ped = PlayerPedId()
                 local coords = GetEntityCoords(ped)
