@@ -2,7 +2,7 @@ local createdBlips = {}
 local locationsLoaded = false
 
 local function addLocationBlip(location)
-    if not location.blip_enabled then return end
+    if location.blip_enabled == false or tonumber(location.blip_enabled) == 0 then return end
     local blip = AddBlipForCoord(location.x, location.y, location.z)
     SetBlipSprite(blip, tonumber(location.blip_sprite) or 1)
     SetBlipDisplay(blip, tonumber(location.blip_display) or 4)
