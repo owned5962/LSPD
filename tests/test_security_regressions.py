@@ -635,7 +635,7 @@ def test_admin_live_map_uses_authorized_server_world_positions():
     assert "position = { x = coords.x, y = coords.y, z = coords.z }" in server
     assert "AllowExtendedAction(src, 'positions', 1800)" in extended
     assert "RegisterNetEvent('rp_tablet_admin:server:requestPlayerPositions'" in extended
-    assert "RegisterNUICallback('requestPlayerPositions'" in client
+    assert "RegisterServerCallback('requestPlayerPositions'" in client
     assert "RegisterNetEvent('rp_tablet_admin:client:playerPositions'" in client
     assert "RegisterNUICallback('healPlayer'" in client
     assert 'id="player-map"' in html and 'id="admin-map-view"' in html
