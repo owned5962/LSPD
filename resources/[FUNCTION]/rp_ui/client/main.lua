@@ -207,7 +207,7 @@ CreateThread(function()
             SendNUIMessage({
                 action = 'updateDiagnostics',
                 fps = fps,
-                ping = GetPlayerPing(PlayerId()),
+                ping = GetPlayerPing(GetPlayerServerId(PlayerId())),
                 players = #GetActivePlayers(),
                 maxPlayers = GetConvarInt('sv_maxclients', 0),
                 coords = { x = math.floor(coords.x), y = math.floor(coords.y), z = math.floor(coords.z) }
