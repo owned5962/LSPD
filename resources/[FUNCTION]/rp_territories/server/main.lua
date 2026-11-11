@@ -23,14 +23,12 @@ end
 
 local function GetActiveTerritories()
     local rows = MySQL.query.await(
-        'SELECT sector_id, owner_identifier, owner_character_id, owner_name, color, expires_at FROM rp_territories WHERE expires_at > ?',
+        'SELECT sector_id, owner_name, color, expires_at FROM rp_territories WHERE expires_at > ?'
         { os.time() }
     )
     local result = {}
     for _, row in ipairs(rows or {}) do
         result[row.sector_id] = {
-            ownerIdentifier = row.owner_identifier,
-            ownerCharacterId = tonumber(row.owner_character_id),
             ownerName = row.owner_name,
             color = tonumber(row.color),
             expiresAt = tonumber(row.expires_at)
