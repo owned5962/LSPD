@@ -10,12 +10,12 @@ function GetJob(name)
 end
 
 function GetJobGrade(jobName, grade)
-    local job = GetJob(jobName)
-    grade = tonumber(grade) or 0
-    if job and job.grades and job.grades[grade] then
-        return job.grades[grade]
+    local job = JobsMap[jobName]
+    grade = tonumber(grade)
+    if not job or not grade or grade % 1 ~= 0 or not job.grades then
+        return nil
     end
-    return { label = "Grade " .. grade, salary = 200 }
+    return job.grades[grade]
 end
 
 function GetAllJobs()
@@ -28,8 +28,7 @@ exports('GetAllJobs', GetAllJobs)
 
 -- Client events & NUI
 local isJobCenterOpen = false
-
-local JobCenterCoords = { x = -268.3, y = -956.8, z = 31.2 }
+local JobCenterCoords = vector3(-268.3, -956.8, 31.2)
 
 CreateThread(function()
     local blip = AddBlipForCoord(JobCenterCoords.x, JobCenterCoords.y, JobCenterCoords.z)
@@ -41,9 +40,36 @@ CreateThread(function()
     BeginTextCommandSetBlipName("STRING")
     AddTextComponentSubstringPlayerName("Pôle Emploi - 50 Métiers")
     EndTextCommandSetBlipName(blip)
+
+    while true do
+        local sleep = 1250
+        local ped = PlayerPedId()
+        local coords = GetEntityCoords(ped)
+        local distance = #(coords - JobCenterCoords)
+
+        if distance < 12.0 then
+            sleep = 0
+            DrawMarker(1, JobCenterCoords.x, JobCenterCoords.y, JobCenterCoords.z - 1.0,
+                0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.1, 1.1, 0.45,
+                70, 180, 230, 130, false, true, 2, false, nil, nil, false)
+            if distance < 1.8 and not isJobCenterOpen then
+                exports['rp_ui']:ShowTextUI('[E] Consulter les offres d’emploi')
+                if IsControlJustPressed(0, 38) then
+                    OpenJobCenter()
+                end
+            end
+        end
+        Wait(sleep)
+    end
 end)
 
 function OpenJobCenter()
+    if isJobCenterOpen then return end
+    local coords = GetEntityCoords(PlayerPedId())
+    if #(coords - JobCenterCoords) > 5.0 then
+        TriggerEvent('rp_core:notify', 'error', 'Rendez-vous au Pôle Emploi pour consulter les offres.')
+        return
+    end
     isJobCenterOpen = true
     SetNuiFocus(true, true)
     SendNUIMessage({
@@ -53,6 +79,7 @@ function OpenJobCenter()
 end
 
 function CloseJobCenter()
+    if not isJobCenterOpen then return end
     isJobCenterOpen = false
     SetNuiFocus(false, false)
     SendNUIMessage({ action = "closeJobCenter" })
@@ -68,6 +95,10 @@ RegisterNUICallback('close', function(data, cb)
 end)
 
 RegisterNUICallback('selectJob', function(data, cb)
+    if type(data) ~= 'table' or type(data.jobName) ~= 'string' then
+        cb('invalid')
+        return
+    end
     TriggerServerEvent('rp_jobs:server:chooseJob', data.jobName)
     CloseJobCenter()
     cb('ok')
