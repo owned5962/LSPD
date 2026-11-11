@@ -13,6 +13,11 @@ window.addEventListener('message', function(event) {
         renderProtections(currentProtections);
         renderSurveillancePlayers(currentPlayers);
         document.getElementById('anticheat-window').classList.remove('hidden');
+    } else if (data.action === 'updatePlayers') {
+        currentPlayers = Array.isArray(data.players) ? data.players : [];
+        document.getElementById('stat-players').innerText = currentPlayers.length;
+        renderSurveillancePlayers(currentPlayers);
+        if (selectedSpectateId !== null) updateSelectedTelemetry();
     } else if (data.action === 'close') {
         document.getElementById('anticheat-window').classList.add('hidden');
     } else if (data.action === 'newDetection') {
@@ -65,32 +70,54 @@ function renderProtections(protections) {
 
 function renderSurveillancePlayers(players) {
     const list = document.getElementById('surveillance-players');
-    list.innerHTML = '';
-
+    if (!list) return;
+    list.replaceChildren();
     players.forEach(p => {
-        const row = document.createElement('div');
+        const row = document.createElement('button');
+        row.type = 'button';
         row.className = 'p-card';
-        row.innerHTML = `
-            <div>
-                <strong>${p.name}</strong> <small>(ID ${p.id})</small>
-            </div>
-            <i class="fa-solid fa-eye" style="color: #ef4444;"></i>
-        `;
+        row.classList.toggle('is-self', p.isSelf === true);
+        const info = document.createElement('div');
+        const name = document.createElement('strong');
+        name.textContent = String(p.name || p.rawName || ('Joueur ' + p.id)) + (p.isSelf ? ' (VOUS)' : '');
+        const id = document.createElement('small');
+        id.textContent = ' (ID ' + p.id + ')';
+        info.append(name, id);
+        const eye = document.createElement('i');
+        eye.className = 'fa-solid fa-eye';
+        eye.style.color = p.isSelf ? '#22c55e' : '#ef4444';
+        row.append(info, eye);
         row.addEventListener('click', () => {
-            selectedSpectateId = p.id;
-            document.getElementById('cam-target-name').innerText = `${p.name} (ID ${p.id})`;
-            document.getElementById('telemetry-hp').innerText = `${p.health || 100}%`;
-            document.getElementById('telemetry-armor').innerText = `${p.armor || 0}%`;
-            document.getElementById('telemetry-ping').innerText = `${p.ping || 25}ms`;
-
-            fetch(`https://rp_anticheat/spectatePlayer`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ targetId: p.id })
-            });
+            selectedSpectateId = Number(p.id);
+            updateSelectedTelemetry();
+            // Selecting yourself is supported for live telemetry; spectating yourself is not.
+            if (p.isSelf !== true) {
+                fetch('https://rp_anticheat/spectatePlayer', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ targetId: p.id })
+                }).catch(() => {});
+            } else {
+                document.getElementById('cam-target-name').textContent = name.textContent;
+            }
         });
         list.appendChild(row);
     });
+}
+
+function updateSelectedTelemetry() {
+    const player = currentPlayers.find(item => Number(item.id) === Number(selectedSpectateId));
+    if (!player) {
+        selectedSpectateId = null;
+        document.getElementById('cam-target-name').textContent = 'AUCUNE CIBLE';
+        return;
+    }
+    document.getElementById('cam-target-name').textContent =
+        String(player.name || player.rawName || 'Joueur') + (player.isSelf ? ' (VOUS)' : '') + ' (ID ' + player.id + ')';
+    const health = Number(player.health) || 0;
+    document.getElementById('telemetry-hp').textContent = Math.max(0, Math.min(100, Math.round(health / 2))) + '%';
+    document.getElementById('telemetry-armor').textContent = Math.max(0, Math.min(100, Number(player.armor) || 0)) + '%';
+    document.getElementById('telemetry-ping').textContent = (Number(player.ping) || 0) + 'ms';
 }
 
 function addDetectionLog(alert) {
