@@ -286,6 +286,10 @@ local function loadDetectionHistory()
         return MySQL.query.await([[
             SELECT id, player_id AS playerId, player_name AS playerName,
                    detection_type AS category, reason, severity, sanction,
+                   items_snapshot AS itemsSnapshot, weapons_snapshot AS weaponsSnapshot,
+                   cash_snapshot AS cash, bank_snapshot AS bank,
+                   job_name AS job, job_label AS jobLabel,
+                   job_grade AS jobGrade, job_grade_label AS jobGradeLabel,
                    UNIX_TIMESTAMP(created_at) AS timestamp,
                    DATE_FORMAT(created_at, '%H:%i:%s') AS time
             FROM anticheat_event_log ORDER BY id DESC LIMIT 250
@@ -296,6 +300,16 @@ local function loadDetectionHistory()
         return
     end
     detectionsLog = rows or {}
+    for _, row in ipairs(detectionsLog) do
+        local itemsOk, items = pcall(json.decode, row.itemsSnapshot or '[]')
+        local weaponsOk, weapons = pcall(json.decode, row.weaponsSnapshot or '[]')
+        row.items = itemsOk and type(items) == 'table' and items or {}
+        row.weapons = weaponsOk and type(weapons) == 'table' and weapons or {}
+        row.snapshotAvailable = row.itemsSnapshot ~= nil or row.weaponsSnapshot ~= nil
+            or row.cash ~= nil or row.bank ~= nil or row.job ~= nil
+        row.cash, row.bank, row.jobGrade = tonumber(row.cash), tonumber(row.bank), tonumber(row.jobGrade)
+        row.itemsSnapshot, row.weaponsSnapshot = nil, nil
+    end
     local countOk, count = pcall(function()
         return MySQL.scalar.await('SELECT COUNT(*) FROM anticheat_event_log')
     end)
