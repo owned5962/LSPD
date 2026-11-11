@@ -6,7 +6,7 @@ author 'FiveM RP Team'
 description 'Tablette indépendante de gestion créateur'
 version '1.0.0'
 
-dependencies { 'rp_core' }
+dependencies { 'rp_core', 'rp_tablet_admin' }
 
 ui_page 'html/index.html'
 files { 'html/index.html', 'html/style.css', 'html/app.js' }
