@@ -160,6 +160,7 @@ RegisterNetEvent('rp_jobs:server:chooseJob', function(jobName)
         RespondToJobSelection(src, false, 'Votre embauche n’a pas pu être enregistrée. Vérifiez la base de données et les logs.')
         return
     end
+    RecordJobSelection(jobName)
     local message = 'Félicitations ! Vous venez d\'être embauché en tant que ' .. job.label .. ' !'
     TriggerClientEvent('rp_core:client:notify', src, message, 'success')
     RespondToJobSelection(src, true, message)
