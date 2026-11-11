@@ -42,7 +42,9 @@ def test_mysql_world_location_registry_covers_all_map_location_types():
     for column in ("shop_style", "icon", "x DOUBLE", "y DOUBLE", "z DOUBLE",
                    "blip_enabled", "blip_sprite", "blip_scale", "blip_colour"):
         assert column in server
-    assert "ON DUPLICATE KEY UPDATE" in server
+    assert "INSERT IGNORE INTO" in server
+    schema = (ROOT / "database.sql").read_text(encoding="utf-8")
+    assert "CREATE TABLE IF NOT EXISTS `rp_world_locations`" in schema
     assert "GetLocationsByType" in server
     assert "GetLocationsByType('bank')" in economy
     assert "GetLocationsByType('atm')" in economy
