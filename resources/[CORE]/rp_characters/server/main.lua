@@ -111,10 +111,25 @@ local function LoadCharacter(src, identifier, userGroup, char)
     char.skin = DecodeJson(char.skin, {})
     char.group = userGroup or 'user'
 
-    local player = exports['rp_core']:CreateRPPlayer(src, identifier, char)
-    exports['rp_core']:GetAllPlayers()[src] = player
-    player.syncClient()
+    -- Keep export/runtime errors visible in the server console instead of silently
+    -- leaving the client waiting after character selection.
+    local loadOk, player = pcall(function()
+        local createdPlayer = exports['rp_core']:CreateRPPlayer(src, identifier, char)
+        exports['rp_core']:GetAllPlayers()[src] = createdPlayer
+        createdPlayer.syncClient()
+        return createdPlayer
+    end)
+    if not loadOk or not player then
+        local activePlayers = exports['rp_core']:GetAllPlayers()
+        if activePlayers then activePlayers[src] = nil end
+        print(('[rp_characters] Failed to initialize character for player %s: %s')
+            :format(tostring(src), tostring(player)))
+        Notify(src, 'Impossible de finaliser le chargement du personnage. Consultez la console serveur.', 'error')
+        return
+    end
 
+    print(('[rp_characters] Character %s loaded for player %s; sending spawn event.')
+        :format(tostring(char.id), tostring(src)))
     TriggerClientEvent('rp_characters:client:spawnPlayer', src, char.position, char.sex, char.skin)
     TriggerClientEvent('rp_characters:client:closeMenu', src)
     Notify(src, ('Bienvenue %s %s !'):format(char.firstname, char.lastname), 'success')
