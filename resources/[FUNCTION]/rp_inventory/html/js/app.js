@@ -29,7 +29,7 @@ function makeItemImage(item) {
 
 window.addEventListener('message', function(event) {
     const data = event.data || {};
-    if (data.action === 'open') {
+    if (data.action === 'open' || data.action === 'update') {
         currentItems = Array.isArray(data.inventory) ? data.inventory : [];
         document.getElementById('inventory-wrapper').classList.remove('hidden');
         document.getElementById('cash-val').innerText = Number(data.cash || 0).toLocaleString('fr-FR') + ' $';
@@ -47,6 +47,9 @@ window.addEventListener('message', function(event) {
 });
 
 function renderGrid(items) {
+    selectedItem = selectedItem ? (items.find(item => item.name === selectedItem.name) || null) : null;
+    document.getElementById('selected-label').innerText = selectedItem
+        ? `${selectedItem.label || selectedItem.name} (x${selectedItem.count})` : 'Aucun';
     const grid = document.getElementById('items-grid');
     grid.innerHTML = '';
     items.forEach(item => {
