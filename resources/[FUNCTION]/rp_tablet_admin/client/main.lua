@@ -63,7 +63,7 @@ function OpenAdminTablet()
 end
 
 
-RegisterNetEvent('rp_tablet_admin:client:openAuthorized', function(adminData, playersList, jobsList, frozenPlayers, itemCatalog)
+RegisterNetEvent('rp_tablet_admin:client:openAuthorized', function(adminData, playersList, jobsList, frozenPlayers, itemCatalog, weaponPolicy)
     isTabletOpen = true
     StartTabletAnimation()
     SetNuiFocus(true, true)
@@ -73,7 +73,8 @@ RegisterNetEvent('rp_tablet_admin:client:openAuthorized', function(adminData, pl
         players = playersList or {},
         jobs = jobsList or {},
         items = itemCatalog or {},
-        frozenPlayers = frozenPlayers or {}
+        frozenPlayers = frozenPlayers or {},
+        weaponPolicy = weaponPolicy or {}
     })
 end)
 
@@ -121,6 +122,7 @@ RegisterServerCallback('toggleGodmode', 'rp_tablet_admin:server:toggleGodmode', 
 RegisterServerCallback('spawnVehicle', 'rp_tablet_admin:server:spawnVehicle', { 'model' })
 RegisterServerCallback('giveVehicle', 'rp_tablet_admin:server:giveVehicle', { 'playerId', 'model' })
 RegisterServerCallback('giveWeapon', 'rp_tablet_admin:server:giveWeapon', { 'playerId', 'weapon' })
+RegisterServerCallback('saveWeaponPolicy', 'rp_tablet_admin:server:saveWeaponPolicy', { 'policy' })
 RegisterServerCallback('giveItem', 'rp_tablet_admin:server:giveItem', { 'playerId', 'item', 'count' })
 RegisterServerCallback('banPlayer', 'rp_tablet_admin:server:banPlayer', { 'playerId', 'reason' })
 RegisterServerCallback('kickPlayer', 'rp_tablet_admin:server:kickPlayer', { 'playerId', 'reason' })
@@ -139,6 +141,10 @@ RegisterServerCallback('broadcastAnnouncement', 'rp_tablet_admin:server:broadcas
     { 'message' })
 RegisterServerCallback('requestPlayerPositions', 'rp_tablet_admin:server:requestPlayerPositions', {})
 RegisterServerCallback('requestAuditLogs', 'rp_tablet_admin:server:requestAuditLogs', {})
+
+RegisterNetEvent('rp_tablet_admin:client:weaponPolicySaved', function(policy)
+    SendNUIMessage({ action = 'weaponPolicySaved', weaponPolicy = policy or {} })
+end)
 
 RegisterNetEvent('rp_tablet_admin:client:auditLogs', function(logs)
     SendNUIMessage({ action = 'auditLogs', logs = logs or {} })
