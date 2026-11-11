@@ -18,7 +18,7 @@ window.addEventListener('message', (event) => {
             button.disabled = false;
             if (button.dataset.originalLabel) button.textContent = button.dataset.originalLabel;
         });
-        if (data.success) document.getElementById('jobcenter-app').classList.add('hidden');
+        if (data.success) closeJobCenter();
     } else if (data.action === 'closeJobCenter') {
         document.getElementById('jobcenter-app').classList.add('hidden');
     }
