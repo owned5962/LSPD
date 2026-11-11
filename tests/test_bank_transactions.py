@@ -70,9 +70,9 @@ def test_nui_has_biometric_gate_close_button_and_transaction_callbacks():
     assert "TriggerServerEvent('rp_economy:server:authenticate')" in client
     assert "RegisterNUICallback('deposit'" in client
     assert "RegisterNUICallback('withdraw'" in client
-    assert "https://rp_economy/authenticate" in ui
-    assert "https://rp_economy/deposit" in ui
-    assert "https://rp_economy/withdraw" in ui
+    assert "post('authenticate')" in ui
+    assert "runTransaction('deposit'" in ui
+    assert "runTransaction('withdraw'" in ui
     assert 'id="fingerprint-btn"' in html
     assert 'id="close-bank"' in html
     assert "Escape" in ui
