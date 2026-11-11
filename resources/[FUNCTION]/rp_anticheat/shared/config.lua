@@ -94,7 +94,28 @@ Config.WeaponCatalog = {
     { name = 'WEAPON_FLARE', label = "Fusée de détresse", category = "Divers", enabled = true },
     { name = 'WEAPON_PETROLCAN', label = "Bidon d'essence", category = "Divers", enabled = true },
     { name = 'WEAPON_FIREEXTINGUISHER', label = "Extincteur", category = "Divers", enabled = true },
-    { name = 'WEAPON_HAZARDCAN', label = "Bidon dangereux", category = "Divers", enabled = true }
+    { name = 'WEAPON_HAZARDCAN', label = "Bidon dangereux", category = "Divers", enabled = true },
+    { name = 'WEAPON_KNUCKLE', label = "Poing américain", category = "Mêlée", enabled = true },
+    { name = 'WEAPON_STONE_HATCHET', label = "Hache en pierre", category = "Mêlée", enabled = true },
+    { name = 'WEAPON_CANDYCANE', label = "Canne en sucre", category = "Mêlée", enabled = true },
+    { name = 'WEAPON_PISTOLXM3', label = "Pistolet XM3", category = "Armes de poing", enabled = true },
+    { name = 'WEAPON_TECPISTOL', label = "Pistolet tactique", category = "Armes de poing", enabled = true },
+    { name = 'WEAPON_FLAREGUN', label = "Pistolet de détresse", category = "Armes de poing", enabled = true },
+    { name = 'WEAPON_MG', label = "Mitrailleuse", category = "Mitrailleuses", enabled = true },
+    { name = 'WEAPON_COMBATMG', label = "Mitrailleuse de combat", category = "Mitrailleuses", enabled = true },
+    { name = 'WEAPON_COMBATMG_MK2', label = "Mitrailleuse de combat Mk II", category = "Mitrailleuses", enabled = true },
+    { name = 'WEAPON_GUSENBERG', label = "Mitrailleuse Gusenberg", category = "Mitrailleuses", enabled = true },
+    { name = 'WEAPON_ASSAULTRIFLE_MK2', label = "Fusil d'assaut Mk II", category = "Fusils", enabled = true },
+    { name = 'WEAPON_CARBINERIFLE_MK2', label = "Carabine Mk II", category = "Fusils", enabled = true },
+    { name = 'WEAPON_SPECIALCARBINE_MK2', label = "Carabine spéciale Mk II", category = "Fusils", enabled = true },
+    { name = 'WEAPON_BULLPUPRIFLE_MK2', label = "Fusil bullpup Mk II", category = "Fusils", enabled = true },
+    { name = 'WEAPON_BATTLERIFLE', label = "Fusil de combat", category = "Fusils", enabled = true },
+    { name = 'WEAPON_SMG_MK2', label = "SMG Mk II", category = "Mitraillettes", enabled = true },
+    { name = 'WEAPON_PUMPSHOTGUN_MK2', label = "Fusil à pompe Mk II", category = "Fusils à pompe", enabled = true },
+    { name = 'WEAPON_HEAVYSNIPER_MK2', label = "Fusil de précision lourd Mk II", category = "Fusils de précision", enabled = true },
+    { name = 'WEAPON_MARKSMANRIFLE_MK2', label = "Fusil de tireur d'élite Mk II", category = "Fusils de précision", enabled = true },
+    { name = 'WEAPON_SNIPERRIFLE_MK2', label = "Fusil de précision Mk II", category = "Fusils de précision", enabled = true },
+    { name = 'WEAPON_GRENADELAUNCHER_SMOKE', label = "Lance-grenades fumigènes", category = "Armes lourdes", enabled = false }
 }
 Config.WeaponPolicy = {}
 Config.WeaponHashToName = {}
