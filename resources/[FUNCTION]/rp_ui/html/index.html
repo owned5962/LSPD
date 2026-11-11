@@ -22,14 +22,26 @@
 
     <div id="player-hud" class="hidden" aria-live="off">
         <div class="hud-vitals">
-            <div class="hud-vital"><i class="fa-solid fa-utensils"></i><div class="hud-track"><span id="hud-hunger-bar"></span></div><b id="hud-hunger">100%</b></div>
-            <div class="hud-vital"><i class="fa-solid fa-droplet"></i><div class="hud-track"><span id="hud-thirst-bar"></span></div><b id="hud-thirst">100%</b></div>
+            <div class="hud-vital-circle hunger-circle" id="hud-hunger-circle" style="--progress:100%">
+                <div class="hud-circle-inner"><i class="fa-solid fa-utensils"></i><b id="hud-hunger">100%</b></div>
+            </div>
+            <div class="hud-vital-circle thirst-circle" id="hud-thirst-circle" style="--progress:100%">
+                <div class="hud-circle-inner"><i class="fa-solid fa-droplet"></i><b id="hud-thirst">100%</b></div>
+            </div>
         </div>
     </div>
 
     <div id="vehicle-hud" class="hidden" aria-live="off">
-        <div class="speedometer-ring"><span class="speed-caption">KM/H</span><strong id="vehicle-speed">0</strong><span class="speed-gear" id="vehicle-gear">N</span></div>
-        <div class="vehicle-fuel"><i class="fa-solid fa-gas-pump"></i><div class="fuel-track"><span id="vehicle-fuel-bar"></span></div><b id="vehicle-fuel">100%</b></div>
+        <div class="vehicle-speed-block">
+            <span class="speed-caption">VITESSE</span>
+            <div class="speed-digital"><strong id="vehicle-speed">000</strong><span>KM/H</span></div>
+            <span class="speed-gear" id="vehicle-gear">N</span>
+        </div>
+        <div class="vehicle-fuel">
+            <div class="fuel-icon-circle"><i class="fa-solid fa-gas-pump"></i></div>
+            <div class="fuel-info"><span>CARBURANT</span><div class="fuel-track"><span id="vehicle-fuel-bar"></span></div></div>
+            <b id="vehicle-fuel">100%</b>
+        </div>
     </div>
 
     <section id="client-diagnostics" class="hidden" aria-live="polite">
