@@ -363,8 +363,8 @@ def test_admin_tablet_uses_live_players_and_never_fakes_success():
     assert "Cette fonction n’est pas encore disponible." in ui
     assert 'id="players-list"></div>' in html
     assert "Sarah_Connor" not in html and "Alexandre_Vance" not in html
-    assert "RegisterNUICallback('setWeatherTime'" in client
-    assert "RegisterNUICallback('broadcastAnnouncement'" in client
+    assert "RegisterServerCallback('setWeatherTime'" in client
+    assert "RegisterServerCallback('broadcastAnnouncement'" in client
 
 
 def test_admin_tablet_controls_are_backed_by_server_authorization():
@@ -403,7 +403,7 @@ def test_admin_tablet_can_read_audit_logs_only_through_authorized_server_event()
     assert "AllowAdminAction(src, 'audit_logs', 2000)" in server
     assert "ORDER BY id DESC LIMIT 50" in server
     assert "rp_tablet_admin:client:auditLogs" in client
-    assert "RegisterNUICallback('requestAuditLogs'" in client
+    assert "RegisterServerCallback('requestAuditLogs'" in client
     assert "function renderAuditLogs(logs)" in ui
     assert "details.textContent" in ui
     assert 'id="admin-audit-logs"' in html
@@ -637,7 +637,7 @@ def test_admin_live_map_uses_authorized_server_world_positions():
     assert "RegisterNetEvent('rp_tablet_admin:server:requestPlayerPositions'" in extended
     assert "RegisterServerCallback('requestPlayerPositions'" in client
     assert "RegisterNetEvent('rp_tablet_admin:client:playerPositions'" in client
-    assert "RegisterNUICallback('healPlayer'" in client
+    assert "RegisterServerCallback('healPlayer'" in client
     assert 'id="player-map"' in html and 'id="admin-map-view"' in html
     assert "function renderPlayerMap()" in ui
     assert "function changeMapZoom(factor)" in ui
@@ -663,8 +663,8 @@ def test_admin_tablet_exposes_working_heal_economy_and_job_actions():
     ui = read("resources/[FUNCTION]/rp_tablet_admin/html/js/app.js")
     assert "AllowExtendedAction(src, 'heal', 500)" in extended
     assert "rp_tablet_admin:client:heal" in extended and "client:heal" in client
-    assert "RegisterNUICallback('manageEconomy'" in client
-    assert "RegisterNUICallback('setJob'" in client
+    assert "RegisterServerCallback('manageEconomy'" in client
+    assert "RegisterServerCallback('setJob'" in client
     assert 'onclick="playerAction(\'heal\')"' in html
     assert 'onclick="manageSelectedMoney(\'give\')"' in html
     assert 'onclick="manageSelectedMoney(\'remove\')"' in html
@@ -757,7 +757,7 @@ def test_admin_permanent_ban_requires_staff_reason_and_persists_license():
     assert "Un motif de bannissement est obligatoire." in server
     assert "INSERT INTO player_bans (identifier, reason, banned_by)" in server
     assert "DropPlayer(targetId, '[ADMINISTRATION - BAN PERMANENT] '" in server
-    assert "RegisterNUICallback('banPlayer'" in client
+    assert "RegisterServerCallback('banPlayer'" in client
     assert 'onclick="banSelectedPlayer()"' in html
     assert 'id="admin-ban-reason"' in html
     assert "function banSelectedPlayer()" in ui
