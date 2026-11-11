@@ -52,6 +52,29 @@ RegisterNetEvent('rp_police_interaction:server:reportOffence', function(offence)
     local ped = GetPlayerPed(src)
     local coords = GetEntityCoords(ped)
     local details = Config.Offences[offence]
+
+    -- A vehicle theft is a dispatch event, not a local NPC interpellation.
+    -- Add it to the server-owned MDT register immediately, whether or not
+    -- an officer currently has the F4 tablet open.
+    if offence == 'vehicle_theft' then
+        nextAlertId = nextAlertId + 1
+        local alert = {
+            id = nextAlertId,
+            title = details.label,
+            severity = details.severity,
+            suspect = safeName(player, src),
+            playerId = src,
+            coords = { x = coords.x, y = coords.y, z = coords.z },
+            createdAt = os.time(),
+            status = 'En cours',
+            details = 'Vol de véhicule détecté automatiquement'
+        }
+        alerts[#alerts + 1] = alert
+        while #alerts > Config.AlertLimit do table.remove(alerts, 1) end
+        broadcastAlert(alert)
+        return
+    end
+
     TriggerClientEvent('rp_police_interaction:client:interpellation', src, {
         offence = offence,
         label = details.label,
