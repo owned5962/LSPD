@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Premium Deluxe Motorsport</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <main id="tablet" class="hidden">
+        <header>
+            <div class="brand">
+                <div class="brand-mark">PDM</div>
+                <div><small>PREMIUM DELUXE MOTORSPORT</small><h1>Los Santos <span>Motors</span></h1></div>
+            </div>
+            <button id="close" class="close" aria-label="Fermer">×</button>
+        </header>
+        <section class="hero">
+            <div>
+                <p class="eyebrow">VOTRE PROCHAINE HISTOIRE COMMENCE ICI</p>
+                <h2>Choisissez votre<br><em>nouvelle voiture.</em></h2>
+                <p id="dealer-name">Concessionnaire Los Santos</p>
+            </div>
+            <div class="account"><span>VOTRE COMPTE BANCAIRE</span><strong id="bank">0 $</strong></div>
+        </section>
+        <section class="catalogue">
+            <div class="section-heading"><div><span class="eyebrow">NOTRE SÉLECTION</span><h3>Le catalogue</h3></div><span id="count">0 véhicules</span></div>
+            <div id="vehicles" class="vehicles"></div>
+        </section>
+        <footer>
+            <div class="selection"><span>VOTRE SÉLECTION</span><strong id="selected-name">Choisissez un véhicule</strong><small id="selected-price">—</small></div>
+            <button id="buy" disabled>Acheter le véhicule <span>→</span></button>
+        </footer>
+        <p id="feedback" role="status"></p>
+    </main>
+    <script src="js/app.js"></script>
+</body>
+</html>
