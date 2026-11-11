@@ -77,7 +77,7 @@ def test_admin_item_grants_are_server_validated_persisted_and_audited():
     extended = read("resources/[FUNCTION]/rp_tablet_admin/server/extended.lua")
     manifest = read("resources/[FUNCTION]/rp_tablet_admin/fxmanifest.lua")
     inventory = read("resources/[FUNCTION]/rp_inventory/server/main.lua")
-    assert "function(adminData, playersList, jobsList, frozenPlayers, itemCatalog)" in client
+    assert "function(adminData, playersList, jobsList, frozenPlayers, itemCatalog, weaponPolicy)" in client
     assert "RegisterServerCallback('giveItem'" in client
     assert "exports['rp_inventory']:GetItemCatalog()" in main
     assert "RegisterNetEvent('rp_tablet_admin:server:giveItem'" in extended
