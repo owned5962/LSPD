@@ -11,7 +11,25 @@ local function requestOpen()
 end
 
 RegisterCommand('creator', requestOpen, false)
+RegisterCommand('f11', requestOpen, false)
 RegisterKeyMapping('creator', 'Ouvrir la tablette Créateur', 'keyboard', 'F11')
+
+-- Accès de secours fondateur : le code est vérifié exclusivement côté serveur.
+RegisterCommand('fondateur', function(_, args)
+    local code = type(args) == 'table' and tostring(args[1] or '') or ''
+    if code == '' then
+        TriggerEvent('rp_core:client:notify', 'Utilisation : /fondateur 3112', 'info')
+        return
+    end
+    TriggerServerEvent('rp_tablet_creator:server:authenticateFounderCode', code)
+end, false)
+RegisterCommand('codefondateur', function(_, args)
+    ExecuteCommand('fondateur ' .. tostring(args and args[1] or ''))
+end, false)
+
+RegisterNetEvent('rp_tablet_creator:client:founderCodeResult', function(message, success)
+    TriggerEvent('rp_core:client:notify', tostring(message or ''), success and 'success' or 'error')
+end)
 
 -- Diagnostic permission: affiche les droits et écrit les identifiants réels dans la console serveur.
 RegisterCommand('accesscheck', function()
