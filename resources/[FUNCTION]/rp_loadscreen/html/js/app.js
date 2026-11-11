@@ -4,6 +4,8 @@ const progressText = document.getElementById('load-percentage');
 const statusText = document.getElementById('load-status');
 const detailText = document.getElementById('load-detail');
 const phaseSteps = Array.from(document.querySelectorAll('[data-phase]'));
+const updatesList = document.getElementById('updates-list');
+const updatesRefresh = document.getElementById('updates-refresh');
 
 const STAGES = {
     map: { label: 'Chargement de la carte', color: '#46b9ff', glow: 'rgba(70,185,255,.46)', detail: 'Préparation du monde de Los Santos...' },
@@ -29,7 +31,6 @@ function updateProgress(value) {
 function setStage(stage, detail, jobCount) {
     const meta = STAGES[stage];
     if (!meta) return;
-
     activeStage = stage;
     if (stage === 'missions') missionStageSeen = true;
     document.documentElement.style.setProperty('--stage-color', meta.color);
@@ -48,11 +49,49 @@ function setStage(stage, detail, jobCount) {
     const activeIndex = stageOrder.indexOf(stage);
     phaseSteps.forEach((step) => {
         const index = stageOrder.indexOf(step.dataset.phase);
-        step.classList.toggle('is-current', step.dataset.phase === stage);
         const missionPending = step.dataset.phase === 'missions' && !missionStageSeen;
+        step.classList.toggle('is-current', step.dataset.phase === stage);
         step.classList.toggle('is-done', index !== -1 && index < activeIndex && !missionPending);
         step.classList.toggle('is-planned', missionPending);
     });
+}
+
+function renderUpdates(data) {
+    if (!updatesList) return;
+    const updates = Array.isArray(data.updates) ? data.updates.slice(0, 4) : [];
+    updatesList.replaceChildren();
+
+    if (updates.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'update-placeholder';
+        empty.textContent = 'Aucune nouveauté disponible pour le moment.';
+        updatesList.appendChild(empty);
+    } else {
+        updates.forEach((update) => {
+            const row = document.createElement('div');
+            row.className = 'update-row';
+            const main = document.createElement('div');
+            main.className = 'update-main';
+            const title = document.createElement('div');
+            title.className = 'update-title';
+            title.textContent = String(update.title || 'Mise à jour du serveur').slice(0, 100);
+            const meta = document.createElement('div');
+            meta.className = 'update-meta';
+            meta.textContent = String(update.date || 'Date indisponible');
+            main.append(title, meta);
+            const badge = document.createElement('span');
+            badge.className = 'update-badge';
+            badge.textContent = String(update.sha || '').slice(0, 7);
+            row.append(main, badge);
+            updatesList.appendChild(row);
+        });
+    }
+
+    if (updatesRefresh) {
+        updatesRefresh.textContent = data.source === 'github'
+            ? 'Dernière synchronisation : ' + (data.fetchedAt || 'à l’instant') + ' • Historique GitHub'
+            : 'Flux de nouveautés temporairement indisponible • Réessayez à la prochaine connexion';
+    }
 }
 
 function handleLoadMessage(data) {
@@ -66,6 +105,11 @@ function handleLoadMessage(data) {
 
     if (data.eventName === 'lssStage' && typeof data.stage === 'string') {
         setStage(data.stage, data.status, Number.isFinite(Number(data.jobCount)) ? Number(data.jobCount) : undefined);
+        return;
+    }
+
+    if (data.eventName === 'lssUpdates') {
+        renderUpdates(data);
         return;
     }
 
@@ -89,19 +133,8 @@ function handleLoadMessage(data) {
 
 window.addEventListener('message', (event) => handleLoadMessage(event.data));
 
-// Browser-only preview: this is a design preview, not FiveM loading telemetry.
+// Browser-only preview: no fake GitHub entries or fake FiveM telemetry.
 if (!('invokeNative' in window)) {
-    const demoStages = ['map', 'modules', 'anticheat', 'jobs', 'player'];
-    let demoIndex = 0;
-    let demoProgress = 0;
-    setStage('map', 'Aperçu visuel du loadscreen — aucune connexion FiveM active.');
-    const demoTimer = window.setInterval(() => {
-        demoProgress = Math.min(100, demoProgress + 2);
-        updateProgress(demoProgress);
-        if (demoProgress >= (demoIndex + 1) * 20 && demoIndex < demoStages.length - 1) {
-            demoIndex += 1;
-            setStage(demoStages[demoIndex], 'Aperçu visuel uniquement — les vraies étapes viennent de FiveM.');
-        }
-        if (demoProgress >= 100) window.clearInterval(demoTimer);
-    }, 180);
+    setStage('map', 'Aperçu visuel — les vraies données arrivent depuis FiveM.');
+    renderUpdates({ updates: [], source: 'preview' });
 }
