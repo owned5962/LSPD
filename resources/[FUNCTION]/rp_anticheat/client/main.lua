@@ -25,11 +25,15 @@ local function ToggleAnticheatTablet()
     TriggerServerEvent('rp_anticheat:requestOpen')
 end
 
--- Déclarer la commande avant de lui associer F9.
-RegisterCommand('openanticheat', ToggleAnticheatTablet, false)
-RegisterKeyMapping('openanticheat', 'Ouvrir le menu Anticheat', 'keyboard', 'F9')
+-- Utiliser un identifiant neuf pour le raccourci : FiveM conserve les anciens
+-- keybinds personnalisés par nom de commande. L'ancien "openanticheat" a pu
+-- rester associé à F10 chez les joueurs après un changement de configuration.
+local ANTICHEAT_KEY_COMMAND = 'rp_anticheat_tablet_toggle_f9'
 
--- Alias pour tester l'ouverture depuis le chat.
+RegisterCommand(ANTICHEAT_KEY_COMMAND, ToggleAnticheatTablet, false)
+RegisterKeyMapping(ANTICHEAT_KEY_COMMAND, 'Ouvrir le menu Anticheat', 'keyboard', 'F9')
+
+-- Alias de chat uniquement ; il n'est plus utilisé comme commande de raccourci.
 RegisterCommand('anticheat', ToggleAnticheatTablet, false)
 
 local function markCurrentPlayer(playersList)
