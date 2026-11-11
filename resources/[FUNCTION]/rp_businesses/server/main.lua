@@ -83,16 +83,10 @@ local function initializeLocations()
     local seeds = buildSeedLocations()
     for _, location in ipairs(seeds) do
         MySQL.insert.await(([[
-            INSERT INTO %s
+            INSERT IGNORE INTO %s
                 (location_key, location_type, name, shop_style, icon, x, y, z,
                  blip_enabled, blip_sprite, blip_display, blip_scale, blip_colour, short_range)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ON DUPLICATE KEY UPDATE
-                name = VALUES(name), shop_style = VALUES(shop_style), icon = VALUES(icon),
-                x = VALUES(x), y = VALUES(y), z = VALUES(z),
-                blip_enabled = VALUES(blip_enabled), blip_sprite = VALUES(blip_sprite),
-                blip_display = VALUES(blip_display), blip_scale = VALUES(blip_scale),
-                blip_colour = VALUES(blip_colour), short_range = VALUES(short_range)
         ]]):format(LOCATION_TABLE), {
             location.location_key, location.location_type, location.name, location.shop_style,
             location.icon, location.x, location.y, location.z,
