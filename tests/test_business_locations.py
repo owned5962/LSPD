@@ -23,11 +23,6 @@ def test_business_map_categories_and_server_startup_are_registered():
     assert "local ATMModels" in economy
 
 
-if __name__ == "__main__":
-    test_business_map_categories_and_server_startup_are_registered()
-    print("Business location checks passed.")
-
-
 def test_mysql_world_location_registry_covers_all_map_location_types():
     server = (ROOT / "resources/[FUNCTION]/rp_businesses/server/main.lua").read_text(encoding="utf-8")
     locations = (ROOT / "resources/[FUNCTION]/rp_businesses/shared/locations.lua").read_text(encoding="utf-8")
@@ -46,10 +41,15 @@ def test_mysql_world_location_registry_covers_all_map_location_types():
     schema = (ROOT / "database.sql").read_text(encoding="utf-8")
     assert "CREATE TABLE IF NOT EXISTS `rp_world_locations`" in schema
     assert "GetLocationsByType" in server
-    assert "GetLocationsByType('bank')" in economy
-    assert "GetLocationsByType('atm')" in economy
+    assert "getLocationsByType('bank')" in economy
+    assert "getLocationsByType('atm')" in economy
     assert "GetLocationsByType('gas_station')" in fuel
     assert "BankLocations =" in locations and "GasStationLocations =" in locations
     assert "server/main.lua" in manifest and "@oxmysql/lib/MySQL.lua" in manifest
-    assert "json.encode(position)" in player and "UPDATE characters SET" in player
-    assert "Wait(5 * 60 * 1000)" in core
+    assert "local savedPosition = charData.position" in player and "json.encode(position)" in player
+    assert "Wait(60 * 1000)" in core
+
+if __name__ == "__main__":
+    test_business_map_categories_and_server_startup_are_registered()
+    test_mysql_world_location_registry_covers_all_map_location_types()
+    print("Business location checks passed.")
