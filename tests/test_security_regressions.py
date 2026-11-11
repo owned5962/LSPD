@@ -623,7 +623,25 @@ def test_admin_tablet_exposes_working_heal_economy_and_job_actions():
 
 def test_all_security_regressions_are_run_by_the_test_script():
     source = read("tests/test_security_regressions.py")
-    runner_index = source.index('if __name__ == "__main__":')
+    runner_index = source.index('
+
+def test_admin_permanent_ban_requires_staff_reason_and_persists_license():
+    server = read("resources/[FUNCTION]/rp_tablet_admin/server/main.lua")
+    client = read("resources/[FUNCTION]/rp_tablet_admin/client/main.lua")
+    html = read("resources/[FUNCTION]/rp_tablet_admin/html/index.html")
+    ui = read("resources/[FUNCTION]/rp_tablet_admin/html/js/app.js")
+    assert "AllowAdminAction(src, 'ban', 1500)" in server
+    assert "Un motif de bannissement est obligatoire." in server
+    assert "INSERT INTO player_bans (identifier, reason, banned_by)" in server
+    assert "DropPlayer(targetId, '[ADMINISTRATION - BAN PERMANENT] '" in server
+    assert "RegisterNUICallback('banPlayer'" in client
+    assert 'onclick="banSelectedPlayer()"' in html
+    assert 'id="admin-ban-reason"' in html
+    assert "function banSelectedPlayer()" in ui
+    assert "window.confirm(" in ui
+
+
+if __name__ == "__main__":')
     assert runner_index > source.index("def test_admin_tablet_close_controls_and_keyboard_bindings_do_not_conflict():")
     assert runner_index > source.index("def test_admin_live_map_uses_authorized_server_world_positions():")
 
