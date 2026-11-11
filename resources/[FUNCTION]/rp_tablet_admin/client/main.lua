@@ -4,6 +4,14 @@ local tabletDict = "amb@code_human_in_bus_passenger_idles@female@tablet@base"
 local tabletAnim = "base"
 local tabletModel = GetHashKey('prop_cs_tablet')
 
+-- A resource restart must never leave the NUI visible or focused.
+AddEventHandler('onClientResourceStart', function(resourceName)
+    if resourceName ~= GetCurrentResourceName() then return end
+    isTabletOpen = false
+    SetNuiFocus(false, false)
+    SendNUIMessage({ action = 'closeTablet' })
+end)
+
 function OpenAdminTablet()
     TriggerServerEvent('rp_tablet_admin:server:requestOpen')
 end
