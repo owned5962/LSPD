@@ -299,7 +299,11 @@ function renderOnlinePlayers() {
         entry.addEventListener('click', () => selectPlayer(player.id, player.name || player.rawName || 'Joueur', player.job, entry));
         list.append(entry);
     });
-    if (onlinePlayers.length) selectPlayer(onlinePlayers[0].id, onlinePlayers[0].name || onlinePlayers[0].rawName || 'Joueur', onlinePlayers[0].job, list.firstElementChild);
+    const selected = onlinePlayers.find(player => Number(player.id) === Number(selectedPlayerId)) || onlinePlayers[0];
+    if (selected) {
+        const selectedEntry = Array.from(list.children).find(entry => entry.textContent.includes('[ID: ' + selected.id + ']'));
+        selectPlayer(selected.id, selected.name || selected.rawName || 'Joueur', selected.job, selectedEntry);
+    }
     else {
         selectedPlayerId = null;
         const target = document.getElementById('selected-target-name');
@@ -409,6 +413,7 @@ function refreshPlayerMap() {
 function updateOnlinePlayerPositions(players) {
     const current = new Map(onlinePlayers.map(player => [Number(player.id), player]));
     onlinePlayers = players.map(player => Object.assign({}, current.get(Number(player.id)) || {}, player));
+    renderOnlinePlayers();
     renderPlayerMap();
     renderMapPlayerList();
     const count = document.getElementById('map-player-count');
