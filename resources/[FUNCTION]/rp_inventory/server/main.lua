@@ -86,6 +86,36 @@ local function loadInventory(player)
     saveInventory(player)
 end
 
+-- Trusted server-side snapshot API for anticheat/admin tools.
+-- Returns a detached copy so callers cannot mutate the live inventory cache.
+local function GetPlayerInventory(source)
+    local src = tonumber(source)
+    if not src then return nil end
+    local player = exports['rp_core']:GetPlayerFromId(src)
+    if not player then return nil end
+
+    if not playerInventories[src] or inventoryCharacterIds[src] ~= player.charId then
+        local ok, err = pcall(loadInventory, player)
+        if not ok then
+            print(('[rp_inventory] Snapshot load failed for character %s: %s'):format(player.charId, tostring(err)))
+            return nil
+        end
+    end
+
+    local snapshot = {}
+    for _, item in ipairs(normalizeInventory(playerInventories[src])) do
+        snapshot[#snapshot + 1] = {
+            name = item.name,
+            label = item.label or item.name,
+            count = item.count,
+            weight = item.weight
+        }
+    end
+    return snapshot
+end
+
+exports('GetPlayerInventory', GetPlayerInventory)
+
 -- Commande chat serveur : /openinventory (alias /inv).
 -- Elle déclenche le toggle sur le client concerné, sans dépendre de l'exécution
 -- des commandes locales par le chat.
