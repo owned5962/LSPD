@@ -449,6 +449,17 @@ AddEventHandler('onClientResourceStart', function(resourceName)
     characterSessionReady = false
     SetPlayerControl(PlayerId(), false, 0)
     CreateThread(function()
+        -- Re-assert the lock if spawnmanager or a reconnect flow restores player control.
+        while not characterSessionReady do
+            SetPlayerControl(PlayerId(), false, 0)
+            local ped = PlayerPedId()
+            if ped and ped ~= 0 and DoesEntityExist(ped) then
+                FreezeEntityPosition(ped, true)
+            end
+            Wait(500)
+        end
+    end)
+    CreateThread(function()
         -- Wait for FiveM's network session before requesting account data.
         local deadline = GetGameTimer() + 30000
         while not NetworkIsSessionStarted() and GetGameTimer() < deadline do
