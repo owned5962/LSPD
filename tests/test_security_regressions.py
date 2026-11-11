@@ -874,7 +874,7 @@ def test_cfx_default_resources_are_documented_and_start_order_is_valid():
     assert "ensure hardcap" in config
     assert "ensure baseevents" in config
     assert "set onesync on" in config
-    assert "onesync on" not in config
+    assert not any(line.strip() == "onesync on" for line in config.splitlines())
     assert "cfx-server-data" in readme
     assert "bash install-cfx-defaults.sh" in readme
     assert "install-cfx-defaults.ps1" in readme
