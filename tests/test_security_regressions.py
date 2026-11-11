@@ -966,7 +966,8 @@ def test_anticheat_server_protects_weapon_damage_and_explosion_spam():
     assert "AddEventHandler('explosionEvent'" in server
     assert "CancelEvent()" in server
     assert "explosion_spam" in config and "weapon_damage" in config
-    assert "rp_anticheat:setAdminInvulnerability" in server
+    assert "AddEventHandler('rp_anticheat:setAdminInvulnerability'" in server
+    assert "RegisterNetEvent('rp_anticheat:setAdminInvulnerability'" not in server
 
 
 def test_admin_map_uses_local_custom_artwork_and_player_overlay():
