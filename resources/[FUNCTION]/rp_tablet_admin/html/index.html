@@ -110,16 +110,53 @@
                                     <div class="admin-inline-form">
                                         <button type="button" class="btn-red" onclick="stopAdminSpectate()"><i class="fas fa-eye-slash"></i> Arrêter la surveillance</button>
                                         <input id="admin-vehicle-model" type="text" maxlength="40" placeholder="Modèle véhicule (ex. sultan)">
-                                        <button type="button" class="btn-red" onclick="spawnAdminVehicle()"><i class="fas fa-car"></i> Faire apparaître</button>
+                                        <button type="button" class="btn-red" onclick="spawnAdminVehicle()"><i class="fas fa-car"></i> Faire apparaître pour moi</button>
+                                        <button type="button" class="btn-red" onclick="giveAdminVehicle()"><i class="fas fa-car-side"></i> Donner au joueur sélectionné</button>
                                     </div>
                                 </div>
                                 <div class="actions-category">
                                     <h4>Changer le métier</h4>
                                     <div class="admin-inline-form">
-                                        <input id="admin-job-name" list="admin-job-options" placeholder="Métier (ex. police)">
-                                        <datalist id="admin-job-options"></datalist>
-                                        <input id="admin-job-grade" type="number" min="0" max="20" step="1" value="0" placeholder="Grade">
+                                        <select id="admin-job-name" aria-label="Métier disponible"><option value="">Choisir un métier…</option></select>
+                                        <select id="admin-job-grade" aria-label="Grade du métier"><option value="0">Grade 0</option></select>
                                         <button type="button" class="btn-red" onclick="setSelectedJob()"><i class="fas fa-briefcase"></i> Appliquer</button>
+                                    </div>
+                                </div>
+                                <div class="actions-category">
+                                    <h4>Donner une arme</h4>
+                                    <div class="admin-inline-form">
+                                        <select id="admin-weapon-name" aria-label="Arme à attribuer">
+                                            <option value="WEAPON_PISTOL">Pistolet</option>
+                                            <option value="WEAPON_COMBATPISTOL">Pistolet de combat</option>
+                                            <option value="WEAPON_SNSPISTOL">Pistolet SNS</option>
+                                            <option value="WEAPON_STUNGUN">Taser</option>
+                                            <option value="WEAPON_FLASHLIGHT">Lampe torche</option>
+                                            <option value="WEAPON_KNIFE">Couteau</option>
+                                            <option value="WEAPON_NIGHTSTICK">Matraque</option>
+                                            <option value="WEAPON_SMG">SMG</option>
+                                            <option value="WEAPON_CARBINERIFLE">Carabine</option>
+                                            <option value="WEAPON_PUMPSHOTGUN">Fusil à pompe</option>
+                                        </select>
+                                        <button type="button" class="btn-red" onclick="giveAdminWeapon()"><i class="fas fa-crosshairs"></i> Attribuer l’arme</button>
+                                    </div>
+                                </div>
+                                <div class="actions-category">
+                                    <h4>Heure et météo du serveur</h4>
+                                    <div class="admin-inline-form">
+                                        <select id="admin-weather">
+                                            <option value="">Conserver la météo</option>
+                                            <option value="EXTRASUNNY">Très ensoleillé</option>
+                                            <option value="CLEAR">Dégagé</option>
+                                            <option value="CLOUDS">Nuageux</option>
+                                            <option value="OVERCAST">Couvert</option>
+                                            <option value="FOGGY">Brouillard</option>
+                                            <option value="RAIN">Pluie</option>
+                                            <option value="THUNDER">Orage</option>
+                                            <option value="SNOW">Neige</option>
+                                        </select>
+                                        <input id="admin-world-hours" type="number" min="0" max="23" value="12" aria-label="Heure (0 à 23)" placeholder="Heure">
+                                        <input id="admin-world-minutes" type="number" min="0" max="59" value="0" aria-label="Minutes (0 à 59)" placeholder="Minutes">
+                                        <button type="button" class="btn-red" onclick="applyAdminWorldTime()"><i class="fas fa-clock"></i> Appliquer heure / météo</button>
                                     </div>
                                 </div>
                             </div>
