@@ -91,6 +91,21 @@ local function ensureDetectionStatsTable()
             PRIMARY KEY (category)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
     ]])
+
+    MySQL.query.await([[
+        CREATE TABLE IF NOT EXISTS anticheat_weapon_rules (
+            weapon_name VARCHAR(80) NOT NULL,
+            enabled TINYINT(1) NOT NULL DEFAULT 1,
+            updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            PRIMARY KEY (weapon_name)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    ]])
+    for _, weapon in ipairs(Config.WeaponCatalog) do
+        MySQL.insert.await(
+            'INSERT IGNORE INTO anticheat_weapon_rules (weapon_name, enabled) VALUES (?, ?)',
+            { weapon.name, weapon.enabled and 1 or 0 }
+        )
+    end
     MySQL.query.await([[
         CREATE TABLE IF NOT EXISTS anticheat_jails (
             identifier VARCHAR(80) NOT NULL,
@@ -433,12 +448,10 @@ AddEventHandler('weaponDamageEvent', function(sender, data)
     if type(data) ~= 'table' then return end
     local weaponType = tonumber(data.weaponType)
     if not weaponType then return end
-    for _, weaponHash in ipairs(Config.BlacklistedWeapons) do
-        if weaponType == weaponHash then
-            CancelEvent()
-            recordDetection(src, 'Arme interdite détectée')
-            return
-        end
+    local weaponName = Config.WeaponHashToName[weaponType]
+    if weaponName and Config.WeaponPolicy[weaponName] ~= true then
+        CancelEvent()
+        recordDetection(src, 'Arme interdite détectée')
     end
 end)
 
@@ -480,6 +493,88 @@ AddEventHandler('explosionEvent', function(sender, eventData)
     end
 end)
 
+local function rebuildWeaponLookups()
+    Config.WeaponHashToName = {}
+    Config.BlacklistedWeapons = {}
+    for _, weapon in ipairs(Config.WeaponCatalog) do
+        Config.WeaponHashToName[GetHashKey(weapon.name)] = weapon.name
+        if Config.WeaponPolicy[weapon.name] ~= true then
+            Config.BlacklistedWeapons[#Config.BlacklistedWeapons + 1] = GetHashKey(weapon.name)
+        end
+    end
+end
+
+local function loadWeaponPolicy()
+    local rows = MySQL.query.await('SELECT weapon_name, enabled FROM anticheat_weapon_rules')
+    local stored = {}
+    for _, row in ipairs(rows or {}) do stored[row.weapon_name] = tonumber(row.enabled) == 1 end
+    Config.WeaponPolicy = {}
+    for _, weapon in ipairs(Config.WeaponCatalog) do
+        local enabled = stored[weapon.name]
+        if enabled == nil then enabled = weapon.enabled end
+        Config.WeaponPolicy[weapon.name] = enabled
+    end
+    rebuildWeaponLookups()
+    return Config.WeaponPolicy
+end
+
+local function getWeaponPolicyList()
+    local list = {}
+    for _, weapon in ipairs(Config.WeaponCatalog) do
+        list[#list + 1] = {
+            name = weapon.name, label = weapon.label, category = weapon.category,
+            enabled = Config.WeaponPolicy[weapon.name] == true
+        }
+    end
+    return list
+end
+
+exports('GetWeaponPolicy', getWeaponPolicyList)
+exports('IsWeaponAllowed', function(rawName)
+    if type(rawName) ~= 'string' then return false end
+    return Config.WeaponPolicy[rawName:upper()] == true
+end)
+exports('SaveWeaponPolicy', function(src, rawPolicy)
+    src = tonumber(src)
+    if not src or not isStaff(src) then return false, 'Accès administrateur requis.' end
+    local accessOk, allowed = pcall(function()
+        return exports['rp_tablet_creator']:CanUseTablet(src, 'admin')
+    end)
+    if not accessOk or allowed ~= true then return false, 'Accès à la tablette administrateur désactivé.' end
+    if type(rawPolicy) ~= 'table' then return false, 'Configuration invalide.' end
+
+    local clean = {}
+    for _, weapon in ipairs(Config.WeaponCatalog) do
+        if type(rawPolicy[weapon.name]) ~= 'boolean' then
+            return false, 'État invalide pour ' .. weapon.name .. '.'
+        end
+        clean[weapon.name] = rawPolicy[weapon.name]
+    end
+    for key in pairs(rawPolicy) do
+        if not Config.WeaponHashToName or not (function()
+            for _, weapon in ipairs(Config.WeaponCatalog) do if weapon.name == key then return true end end
+            return false
+        end)() then return false, 'Arme inconnue dans la configuration.' end
+    end
+
+    local ok, err = pcall(function()
+        for _, weapon in ipairs(Config.WeaponCatalog) do
+            MySQL.update.await(
+                'UPDATE anticheat_weapon_rules SET enabled = ? WHERE weapon_name = ?',
+                { clean[weapon.name] and 1 or 0, weapon.name }
+            )
+        end
+    end)
+    if not ok then
+        print('[rp_anticheat] Enregistrement des règles d’armes impossible: ' .. tostring(err))
+        return false, 'Erreur MySQL : configuration non enregistrée.'
+    end
+    Config.WeaponPolicy = clean
+    rebuildWeaponLookups()
+    TriggerClientEvent('rp_anticheat:syncWeaponPolicy', -1, Config.WeaponPolicy)
+    return true, getWeaponPolicyList()
+end)
+
 RegisterNetEvent('rp_anticheat:requestOpen', function()
     local src = source
     local now = os.time()
@@ -519,7 +614,7 @@ RegisterNetEvent('rp_anticheat:requestOpen', function()
             snapshot = capturePlayerSnapshot(id)
         }
     end
-    TriggerClientEvent('rp_anticheat:openUI', src, Config.Protections, playersList, detectionsLog, totalDetections)
+    TriggerClientEvent('rp_anticheat:openUI', src, Config.Protections, playersList, detectionsLog, totalDetections, Config.WeaponPolicy)
 end)
 
 
@@ -727,6 +822,12 @@ CreateThread(function()
         return
     end
     loadDetectionHistory()
+    local weaponOk, weaponErr = pcall(loadWeaponPolicy)
+    if not weaponOk then
+        print('[rp_anticheat] Chargement des règles d’armes impossible: ' .. tostring(weaponErr))
+        return
+    end
+    TriggerClientEvent('rp_anticheat:syncWeaponPolicy', -1, Config.WeaponPolicy)
     local configOk, configRows = pcall(function()
         return MySQL.query.await('SELECT category, sanction FROM anticheat_sanction_config')
     end)
