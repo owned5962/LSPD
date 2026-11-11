@@ -160,10 +160,10 @@ RegisterNetEvent('rp_inventory:client:syncDrops', function(drops)
 end)
 
 RegisterNetEvent('rp_inventory:client:removeDrop', function(dropId)
-    dropId = tonumber(dropId)
-    if not dropId then return end
+    dropId = tostring(dropId or '')
+    if dropId == '' then return end
     for index = #groundDrops, 1, -1 do
-        if tonumber(groundDrops[index].id) == dropId then table.remove(groundDrops, index) end
+        if tostring(groundDrops[index].id) == dropId then table.remove(groundDrops, index) end
     end
 end)
 
@@ -205,7 +205,7 @@ CreateThread(function()
             DrawDropText(vector3(tonumber(closest.x), tonumber(closest.y), tonumber(closest.z)),
                 ('[E] Ramasser %s x%d'):format(closest.label or 'Objet', tonumber(closest.count) or 1))
             if IsControlJustReleased(0, 38) then
-                TriggerServerEvent('rp_inventory:server:pickupDrop', tonumber(closest.id))
+                TriggerServerEvent('rp_inventory:server:pickupDrop', tostring(closest.id))
                 Wait(700)
             end
         end
