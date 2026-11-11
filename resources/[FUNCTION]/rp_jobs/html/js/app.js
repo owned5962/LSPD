@@ -161,8 +161,8 @@ function renderJobs() {
 
         card.innerHTML = `
             <div>
+                <img class="job-image" src="${jobIllustration(job)}" alt="Illustration : ${escapeHtml(job.label || job.name)}" loading="lazy">
                 <div class="job-card-top">
-                    <img class="job-image" src="${jobIllustration(job)}" alt="Illustration : ${escapeHtml(job.label || job.name)}" loading="lazy">
                     <div class="job-title-wrap">
                         <h3>${escapeHtml(job.label)}</h3>
                         <span class="job-tag ${isWhitelisted ? 'tag-whitelisted' : 'tag-free'}">
