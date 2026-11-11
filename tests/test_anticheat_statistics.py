@@ -44,6 +44,8 @@ def test_statistics_are_persistent_and_access_controlled():
     assert "job_grade_label VARCHAR(100) NULL" in server
     assert "capturePlayerSnapshot(src)" in server
     assert "GetPlayerInventory" in server and "exports('GetPlayerInventory'" in read("resources/[FUNCTION]/rp_inventory/server/main.lua")
+    assert "type(GetPedWeapons) == 'function'" in server
+    assert "Never trust a client-reported loadout" in server
     assert "snapshot.items" in server and "snapshot.weapons" in server
     assert "items_snapshot AS itemsSnapshot" in server
     assert "buildSnapshotDetails(log)" in ui
