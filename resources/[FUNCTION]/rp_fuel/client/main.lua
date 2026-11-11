@@ -160,21 +160,6 @@ RegisterNetEvent('rp_fuel:client:setFuel', function(netId, fuel)
 end)
 
 CreateThread(function()
-    for _, station in ipairs(FuelConfig.Stations) do
-        local blip = AddBlipForCoord(station.x, station.y, station.z)
-        SetBlipSprite(blip, 361)
-        SetBlipDisplay(blip, 4)
-        SetBlipScale(blip, 0.68)
-        SetBlipColour(blip, 5)
-        SetBlipAsShortRange(blip, true)
-        BeginTextCommandSetBlipName('STRING')
-        AddTextComponentSubstringPlayerName('Station-service')
-        EndTextCommandSetBlipName(blip)
-        createdBlips[#createdBlips + 1] = blip
-    end
-end)
-
-CreateThread(function()
     local lastFuelTick = GetGameTimer()
     local lastStateSync = 0
     while true do
