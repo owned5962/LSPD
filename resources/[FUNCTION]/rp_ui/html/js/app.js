@@ -1,5 +1,6 @@
 let progressInterval = null;
 let textUiHideTimer = null;
+let notificationSequence = 0;
 
 function hideTextUI() {
     if (textUiHideTimer !== null) {
@@ -12,7 +13,19 @@ function hideTextUI() {
 window.addEventListener('message', function(event) {
     const data = event.data || {};
 
-    if (data.action === 'updateHUD') {
+    if (data.action === 'updateVehicleHUD') {
+        const hud = document.getElementById('vehicle-hud');
+        hud?.classList.toggle('hidden', data.visible !== true);
+        const speed = document.getElementById('vehicle-speed'); if (speed) speed.textContent = String(Math.max(0, Number(data.speed) || 0));
+        const fuel = Math.max(0, Math.min(100, Number(data.fuel) || 0));
+        const fuelText = document.getElementById('vehicle-fuel'); if (fuelText) fuelText.textContent = Math.round(fuel) + '%';
+        const fuelBar = document.getElementById('vehicle-fuel-bar'); if (fuelBar) fuelBar.style.width = fuel + '%';
+        const gear = document.getElementById('vehicle-gear'); if (gear) gear.textContent = Number(data.gear) === 0 ? 'R' : String(data.gear || 'N');
+    } else if (data.action === 'hideVehicleHUD') {
+        document.getElementById('vehicle-hud')?.classList.add('hidden');
+    } else if (data.action === 'notify') {
+        showRPNotification(data.message, data.kind, data.duration);
+    } else if (data.action === 'updateHUD') {
         updatePlayerHUD(data);
     } else if (data.action === 'hideHUD') {
         document.getElementById('player-hud')?.classList.add('hidden');
@@ -89,4 +102,21 @@ function updatePlayerHUD(data) {
         setBar('hud-' + key + '-bar', value);
     });
     hud.classList.toggle('hidden', data.visible !== true);
+}
+
+
+function showRPNotification(message, kind, duration) {
+    const host = document.getElementById('rp-notifications');
+    if (!host) return;
+    const toast = document.createElement('div');
+    toast.className = 'rp-toast ' + (['success','error','warning'].includes(kind) ? kind : 'info');
+    const title = document.createElement('strong');
+    title.textContent = kind === 'success' ? 'SUCCÈS' : kind === 'error' ? 'ERREUR' : kind === 'warning' ? 'ATTENTION' : 'LOS SANTOS RP';
+    const body = document.createElement('span');
+    body.textContent = String(message || '');
+    toast.append(title, body);
+    host.appendChild(toast);
+    const id = ++notificationSequence;
+    setTimeout(() => { toast.classList.add('leaving'); setTimeout(() => toast.remove(), 250); }, Math.max(1500, Math.min(10000, Number(duration) || 4000)));
+    while (host.children.length > 5) host.firstElementChild.remove();
 }
