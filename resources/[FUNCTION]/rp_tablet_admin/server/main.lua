@@ -141,7 +141,9 @@ RegisterNetEvent('rp_tablet_admin:server:saveWeaponPolicy', function(rawPolicy)
         return exports['rp_anticheat']:SaveWeaponPolicy(src, rawPolicy)
     end)
     if not ok or saved ~= true then
-        NotifyAdmin(src, type(result) == 'string' and result or 'Impossible d’enregistrer les règles des armes.')
+        local message = type(result) == 'string' and result or 'Impossible d’enregistrer les règles des armes.'
+        NotifyAdmin(src, message)
+        TriggerClientEvent('rp_tablet_admin:client:weaponPolicySaveFailed', src, message)
         return
     end
     LogAdminAction(src, 'weapon_policy', nil, 'Mise à jour des armes autorisées/interdites')
