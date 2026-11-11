@@ -106,6 +106,7 @@ RegisterNetEvent('rp_tablet_admin:server:requestOpen', function()
             end
             onlinePlayers[#onlinePlayers + 1] = {
                 id = pid, name = name, rawName = rawName, isSelf = pid == src, position = position,
+                characterLoaded = player ~= nil,
                 job = jobName, jobLabel = job and job.label or jobName,
                 grade = player and player.jobGrade or 0, cash = player and player.cash or 0,
                 bank = player and player.bank or 0, group = player and player.group or 'user',
@@ -290,15 +291,35 @@ RegisterNetEvent('rp_tablet_admin:server:setJob', function(targetId, jobName, gr
         return
     end
 
-    local target = exports['rp_core']:GetPlayerFromId(targetId)
+    -- A player can appear in GetPlayers() before rp_core has finished loading
+    -- the selected character. Retry briefly, while ensuring the same server ID
+    -- is still connected, instead of immediately reporting "Joueur introuvable".
+    local target
+    for attempt = 1, 10 do
+        if not GetPlayerName(targetId) then break end
+        target = exports['rp_core']:GetPlayerFromId(targetId)
+        if target then break end
+        Wait(200)
+    end
     if not target then
-        NotifyAdmin(src, 'Joueur introuvable.')
+        NotifyAdmin(src, GetPlayerName(targetId)
+            and 'Le personnage de ce joueur est encore en cours de chargement. Actualisez la liste puis réessayez.'
+            or 'Ce joueur vient de se déconnecter. Actualisez la liste des joueurs.')
+        return
+    end
+
+    local ok, applied = pcall(target.setJob, jobName, grade)
+    if not ok or applied ~= true then
+        print(('[rp_tablet_admin] setJob failed: admin=%s target=%s job=%s grade=%s error=%s')
+            :format(src, targetId, jobName, grade, tostring(applied)))
+        NotifyAdmin(src, 'Le métier n’a pas pu être enregistré. Consultez les logs serveur.')
         return
     end
 
     LogAdminAction(src, 'setjob', targetId, jobName .. ' grade ' .. grade)
-    target.setJob(jobName, grade)
     NotifyAdmin(src, 'Métier du joueur ' .. targetId .. ' défini sur ' .. jobName .. ' (Grade ' .. grade .. ')', 'success')
+    TriggerClientEvent('rp_core:client:notify', targetId,
+        'Votre métier a été défini sur ' .. (selectedJob.label or jobName) .. ' (Grade ' .. grade .. ').', 'success')
 end)
 
 RegisterNetEvent('rp_tablet_admin:server:setWeatherTime', function(weather, hours, minutes)
