@@ -68,8 +68,8 @@ local function recordDetection(src, reason)
 end
 
 -- This is a local server event: clients cannot grant themselves this exemption.
+-- Local server-only event (AddEventHandler, deliberately not RegisterNetEvent).
 AddEventHandler('rp_anticheat:setAdminInvulnerability', function(rawTargetId, enabled)
-    if source ~= 0 then return end
     local targetId = tonumber(rawTargetId)
     if not targetId or type(enabled) ~= 'boolean' or not isStaff(targetId) then return end
     adminInvulnerability[targetId] = enabled and true or nil
