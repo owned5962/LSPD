@@ -92,7 +92,29 @@ def test_weapon_policy_is_persistent_and_drives_client_and_server_anticheat():
     assert "RemoveWeaponFromPed(ped, weaponHash)" in client
     assert "weaponHash == nil" not in server
 
+
+def test_anticheat_tablet_javascript_is_not_duplicated_or_corrupted():
+    import re
+
+    ui = read("resources/[FUNCTION]/rp_anticheat/html/js/app.js")
+    declarations = re.findall(r"^function\\s+([A-Za-z_$][\\w$]*)\\s*\\(", ui, re.MULTILINE)
+    duplicates = sorted({name for name in declarations if declarations.count(name) > 1})
+    assert not duplicates, f"duplicate Anticheat UI functions: {duplicates}"
+    assert ui.count("window.setInterval(updateClock, 1000)") == 1
+    assert ui.count("window.addEventListener('message'") == 1
+    assert "function buildSnapshotDetails(snapshot)" in ui
+    assert "function renderPlayerDetail()" in ui
+    assert "function renderLogs()" in ui
+    assert "detailCell.colSpan = 6" in ui
+    assert "snapshot.cash == null" in ui
+    assert "snapshot.bank == null" in ui
+    assert "const panel = $('player-detail');" in ui
+    assert "+ Number(snapshot.cash)" not in ui
+    assert "+ Number(snapshot.bank)" not in ui
+
+
 if __name__ == "__main__":
     test_statistics_are_persistent_and_access_controlled()
     test_weapon_policy_is_persistent_and_drives_client_and_server_anticheat()
+    test_anticheat_tablet_javascript_is_not_duplicated_or_corrupted()
     print("Anticheat statistics checks passed.")
