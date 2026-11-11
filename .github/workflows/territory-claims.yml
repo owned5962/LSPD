@@ -1,0 +1,39 @@
+name: Territory claims verification
+
+on:
+  push:
+    paths:
+      - "resources/[FUNCTION]/rp_territories/**"
+      - "tests/test_territory_claims.py"
+      - ".github/workflows/territory-claims.yml"
+      - "server.cfg"
+  pull_request:
+    paths:
+      - "resources/[FUNCTION]/rp_territories/**"
+      - "tests/test_territory_claims.py"
+      - ".github/workflows/territory-claims.yml"
+      - "server.cfg"
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - name: Install test dependencies
+        run: python -m pip install pytest
+      - name: Run territory regression tests
+        run: python -m pytest -q tests/test_territory_claims.py
+      - name: Install Lua and Node.js
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y lua5.4 nodejs
+      - name: Validate Lua syntax
+        run: |
+          luac5.4 -p "resources/[FUNCTION]/rp_territories/shared/config.lua"
+          luac5.4 -p "resources/[FUNCTION]/rp_territories/client/main.lua"
+          luac5.4 -p "resources/[FUNCTION]/rp_territories/server/main.lua"
+      - name: Validate JavaScript syntax
+        run: node --check "resources/[FUNCTION]/rp_territories/html/app.js"
