@@ -111,6 +111,7 @@ CreateThread(function()
             end
         else
             waitTime = 500
+            if showingPrompt then exports['rp_ui']:HideTextUI(); showingPrompt = false end
         end
         Wait(waitTime)
     end
