@@ -25,7 +25,7 @@ function renderActions(actions) {
                 amount = prompt('Montant de la facture ($) :', '250');
                 if (!amount) return;
             }
-            fetch(`https://${GetParentResourceName()}/triggerAction`, {
+            fetch(`https://${rp_interactions}/triggerAction`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ actionId: act.id, amount: amount })
@@ -43,5 +43,5 @@ document.addEventListener('keydown', (e) => {
 
 function closeMenu() {
     document.getElementById('jobmenu-wrapper').classList.add('hidden');
-    fetch(`https://${GetParentResourceName()}/close`, { method: 'POST', body: '{}' });
+    fetch(`https://${rp_interactions}/close`, { method: 'POST', body: '{}' });
 }
