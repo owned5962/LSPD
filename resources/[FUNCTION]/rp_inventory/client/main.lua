@@ -18,8 +18,8 @@ local function OpenInventory()
         if isInventoryPending and not isInventoryOpen then
             isInventoryPending = false
             SetNuiFocus(false, false)
-            TriggerEvent('rp_core:client:notify', 'error',
-                'L’inventaire ne répond pas. Vérifiez que votre personnage est bien chargé, puis réessayez.')
+            TriggerEvent('rp_core:client:notify',
+                'L’inventaire ne répond pas. Vérifiez que votre personnage est bien chargé, puis réessayez.', 'error')
         end
     end)
 end
@@ -72,31 +72,39 @@ CreateThread(function()
     end
 end)
 
-RegisterNetEvent('rp_inventory:receiveData', function(data)
-    if type(data) ~= 'table' then
-        isInventoryPending = false
-        SetNuiFocus(false, false)
-        return
-    end
-
-    isInventoryPending = false
-    isInventoryOpen = true
-    SetNuiFocus(true, true)
+local function SendInventoryToNui(data, action)
     SendNUIMessage({
-        action = 'open',
+        action = action,
         inventory = data.inventory or {},
         maxWeight = Config.MaxWeight or 30.0,
         currentWeight = data.currentWeight or 0.0,
         cash = data.cash or 0,
         bank = data.bank or 0
     })
+end
+
+RegisterNetEvent('rp_inventory:receiveData', function(data)
+    if type(data) ~= 'table' then
+        isInventoryPending = false
+        SetNuiFocus(false, false)
+        return
+    end
+    isInventoryPending = false
+    isInventoryOpen = true
+    SetNuiFocus(true, true)
+    SendInventoryToNui(data, 'open')
+end)
+
+RegisterNetEvent('rp_inventory:updateData', function(data)
+    if type(data) ~= 'table' or not isInventoryOpen then return end
+    SendInventoryToNui(data, 'update')
 end)
 
 RegisterNetEvent('rp_inventory:requestFailed', function(message)
     isInventoryPending = false
     isInventoryOpen = false
     SetNuiFocus(false, false)
-    TriggerEvent('rp_core:client:notify', 'error', message or 'Impossible d’ouvrir votre inventaire.')
+    TriggerEvent('rp_core:client:notify', message or 'Impossible d’ouvrir votre inventaire.', 'error')
 end)
 
 RegisterNUICallback('close', function(data, cb)
@@ -119,7 +127,7 @@ RegisterNUICallback('giveItem', function(data, cb)
     if closestPlayer ~= -1 and closestDistance <= 3.0 then
         TriggerServerEvent('rp_inventory:giveItem', GetPlayerServerId(closestPlayer), data.item, tonumber(data.count) or 1)
     else
-        TriggerEvent('rp_core:client:notify', 'error', 'Aucun citoyen à proximité !')
+        TriggerEvent('rp_core:client:notify', 'Aucun citoyen à proximité !', 'error')
     end
     cb('ok')
 end)
@@ -143,6 +151,67 @@ local function GetClosestPlayer()
     end
     return closestPlayer, closestDistance
 end
+
+
+local groundDrops = {}
+
+RegisterNetEvent('rp_inventory:client:syncDrops', function(drops)
+    groundDrops = type(drops) == 'table' and drops or {}
+end)
+
+RegisterNetEvent('rp_inventory:client:removeDrop', function(dropId)
+    dropId = tostring(dropId or '')
+    if dropId == '' then return end
+    for index = #groundDrops, 1, -1 do
+        if tostring(groundDrops[index].id) == dropId then table.remove(groundDrops, index) end
+    end
+end)
+
+local function DrawDropText(coords, label)
+    local onScreen, screenX, screenY = World3dToScreen2d(coords.x, coords.y, coords.z + 0.35)
+    if not onScreen then return end
+    SetTextScale(0.30, 0.30)
+    SetTextFont(4)
+    SetTextProportional(1)
+    SetTextColour(255, 255, 255, 220)
+    SetTextCentre(true)
+    SetTextEntry('STRING')
+    AddTextComponentString(label)
+    DrawText(screenX, screenY)
+end
+
+CreateThread(function()
+    Wait(1500)
+    TriggerServerEvent('rp_inventory:server:requestDrops')
+    while true do
+        local waitTime = 750
+        local ped = PlayerPedId()
+        local coords = GetEntityCoords(ped)
+        local closest, closestDistance
+        for _, drop in ipairs(groundDrops) do
+            local dropCoords = vector3(tonumber(drop.x) or 0.0, tonumber(drop.y) or 0.0, tonumber(drop.z) or 0.0)
+            local distance = #(coords - dropCoords)
+            if distance < 15.0 then
+                waitTime = 0
+                DrawMarker(2, dropCoords.x, dropCoords.y, dropCoords.z + 0.12,
+                    0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.18, 0.18, 0.18,
+                    56, 189, 248, 170, false, true, 2, false, nil, nil, false)
+                if not closestDistance or distance < closestDistance then
+                    closest, closestDistance = drop, distance
+                end
+            end
+        end
+        if closest and closestDistance <= 2.0 and not isInventoryOpen then
+            DrawDropText(vector3(tonumber(closest.x), tonumber(closest.y), tonumber(closest.z)),
+                ('[E] Ramasser %s x%d'):format(closest.label or 'Objet', tonumber(closest.count) or 1))
+            if IsControlJustReleased(0, 38) then
+                TriggerServerEvent('rp_inventory:server:pickupDrop', tostring(closest.id))
+                Wait(700)
+            end
+        end
+        Wait(waitTime)
+    end
+end)
 
 RegisterNetEvent('rp_inventory:applyMedicalItem', function(heal)
     local ped = PlayerPedId()
