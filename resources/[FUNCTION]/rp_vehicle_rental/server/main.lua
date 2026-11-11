@@ -1,5 +1,4 @@
 local rentals = {}
-local lastAction = {}
 
 local function notify(src, message, kind)
     TriggerClientEvent('rp_core:client:notify', src, message, kind or 'info')
@@ -70,7 +69,7 @@ RegisterNetEvent('rp_vehicle_rental:server:openTablet', function(locationKey)
         return
     end
     TriggerClientEvent('rp_vehicle_rental:client:openTablet', src, false, Config.Vehicles,
-        Config.PricePerTenMinutes, Config.MaxHours)
+        Config.PricePerTenMinutes, Config.MaxHours, nil, actualLocation)
 end)
 
 RegisterNetEvent('rp_vehicle_rental:server:rent', function(locationKey, model, rawMinutes)
@@ -102,6 +101,7 @@ RegisterNetEvent('rp_vehicle_rental:server:rent', function(locationKey, model, r
         minutes = minutes,
         expiresAt = expiresAt,
         netId = nil,
+        amount = cost,
         graceUntil = nil
     }
     TriggerClientEvent('rp_vehicle_rental:client:spawnRental', src, {
@@ -120,11 +120,29 @@ RegisterNetEvent('rp_vehicle_rental:server:registerVehicle', function(netId)
     netId = tonumber(netId)
     if not rental or not netId or netId < 1 or netId % 1 ~= 0 then return end
     local entity = NetworkGetEntityFromNetworkId(netId)
-    if entity == 0 or not DoesEntityExist(entity) or GetEntityModel(entity) ~= joaat(rental.model) then
+    if entity == 0 or not DoesEntityExist(entity) or GetEntityModel(entity) ~= joaat(rental.model)
+        or NetworkGetEntityOwner(entity) ~= src
+        or #(GetEntityCoords(entity) - vector3(Config.Locations[rental.location].vehicle.x,
+            Config.Locations[rental.location].vehicle.y, Config.Locations[rental.location].vehicle.z)) > 60.0 then
         closeRental(src, 'Le véhicule n’a pas pu être enregistré.')
         return
     end
     rental.netId = netId
+end)
+
+RegisterNetEvent('rp_vehicle_rental:server:spawnFailed', function()
+    local src = source
+    local rental = rentals[src]
+    if not rental or rental.netId then return end
+    rentals[src] = nil
+    local player = exports['rp_core']:GetPlayerFromId(src)
+    if player and type(player.addCash) == 'function' then
+        local ok, refunded = pcall(player.addCash, rental.amount, 'Remboursement location impossible', 'deposit')
+        if not ok or refunded ~= true then
+            print(('[rp_vehicle_rental] Refund failed for player %s, amount %s'):format(src, tostring(rental.amount)))
+        end
+    end
+    notify(src, 'Location annulée : le véhicule n’a pas pu être créé. Votre paiement a été remboursé.', 'error')
 end)
 
 RegisterNetEvent('rp_vehicle_rental:server:renew', function(rawMinutes)
@@ -164,7 +182,6 @@ AddEventHandler('playerDropped', function()
         if entity ~= 0 and DoesEntityExist(entity) then DeleteEntity(entity) end
     end
     rentals[src] = nil
-    lastAction[src] = nil
 end)
 
 CreateThread(function()
