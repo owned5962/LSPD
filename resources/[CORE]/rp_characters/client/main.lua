@@ -419,6 +419,11 @@ RegisterNetEvent('rp_characters:client:closeMenu', function()
 end)
 
 RegisterNetEvent('rp_characters:client:spawnPlayer', function(coords, gender, skin)
+    pcall(SendLoadingScreenMessage, json.encode({
+        eventName = 'lssStage',
+        stage = 'player',
+        status = 'Finalisation de votre personnage...'
+    }))
     characterSessionReady = true
     FinishCharacterBoot()
     coords = type(coords) == 'table' and coords or { x = -1037.7, y = -2737.8, z = 20.1, heading = 330.0 }
@@ -488,6 +493,11 @@ AddEventHandler('onClientResourceStart', function(resourceName)
 
         Wait(1000)
         characterBootPending = true
+        pcall(SendLoadingScreenMessage, json.encode({
+            eventName = 'lssStage',
+            stage = 'player',
+            status = 'Chargement du compte et des personnages...'
+        }))
         print('[rp_characters] Requesting account and character data...')
         TriggerServerEvent('rp_characters:server:checkPlayer')
 
