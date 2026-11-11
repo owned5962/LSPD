@@ -15,9 +15,17 @@ RegisterCommand('openanticheat', function()
     end
 end, false)
 
+local function markCurrentPlayer(playersList)
+    local ownServerId = GetPlayerServerId(PlayerId())
+    for _, player in ipairs(playersList or {}) do
+        player.isSelf = tonumber(player.id) == ownServerId
+    end
+    return playersList
+end
+
 RegisterNetEvent('rp_anticheat:updatePlayers', function(playersList)
     if not isAnticheatUIOpen or type(playersList) ~= 'table' then return end
-    SendNUIMessage({ action = 'updatePlayers', players = playersList })
+    SendNUIMessage({ action = 'updatePlayers', players = markCurrentPlayer(playersList) })
 end)
 
 RegisterNetEvent('rp_anticheat:syncProtections', function(protections)
@@ -33,7 +41,7 @@ RegisterNetEvent('rp_anticheat:openUI', function(protections, playersList)
     SendNUIMessage({
         action = 'open',
         protections = protections,
-        players = playersList
+        players = markCurrentPlayer(playersList)
     })
 end)
 
