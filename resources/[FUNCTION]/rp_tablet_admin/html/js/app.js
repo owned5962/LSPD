@@ -388,25 +388,6 @@ function banSelectedPlayer() {
     nuiPost('banPlayer', { playerId: targetId, reason }).then(() => showToast('Demande de bannissement envoyée.')).catch(() => showToast('Impossible de bannir ce joueur.'));
 }
 
-function manageSelectedMoney(operation) {
-    if (!Number.isInteger(selectedPlayerId) || selectedPlayerId < 1) return showToast('Sélectionnez un joueur connecté.');
-    const amount = Number(document.getElementById('admin-money-amount')?.value);
-    const type = document.getElementById('admin-money-type')?.value;
-    if (!Number.isInteger(amount) || amount < 1 || amount > 1000000) return showToast('Montant invalide (1 à 1 000 000).');
-    nuiPost('manageEconomy', { playerId: selectedPlayerId, type: type, amount: amount, operation: operation })
-        .then(() => showToast((operation === 'give' ? 'Ajout' : 'Retrait') + ' demandé au serveur.'))
-        .catch(() => showToast('Impossible de modifier le compte du joueur.'));
-}
-
-function banSelectedPlayer() {
-    if (!Number.isInteger(selectedPlayerId) || selectedPlayerId < 1) return showToast('Sélectionnez un joueur connecté.');
-    const reason = document.getElementById('admin-ban-reason')?.value.trim();
-    if (!reason) return showToast('Saisissez un motif de bannissement.');
-    if (!window.confirm('Confirmer le bannissement permanent du joueur ID ' + selectedPlayerId + ' ?')) return;
-    nuiPost('banPlayer', { playerId: selectedPlayerId, reason: reason })
-        .then(() => showToast('Demande de bannissement envoyée.'))
-        .catch(() => showToast('Impossible de bannir ce joueur.'));
-}
 function setupAdminSubViews() {
     document.getElementById('weapon-policy-search')?.addEventListener('input', renderWeaponPolicy);
     document.getElementById('weapon-policy-filter')?.addEventListener('change', renderWeaponPolicy);
@@ -425,18 +406,6 @@ function setupAdminSubViews() {
 function refreshPlayerMap() {
     if (!adminTabletOpen) return;
     nuiPost('requestPlayerPositions').catch(() => showToast('Impossible de récupérer les positions des joueurs.'));
-}
-
-function updateOnlinePlayerPositions(players) {
-    const current = new Map(onlinePlayers.map(player => [Number(player.id), player]));
-    onlinePlayers = players.map(player => Object.assign({}, current.get(Number(player.id)) || {}, player));
-    renderOnlinePlayers();
-    renderPlayerMap();
-    renderMapPlayerList();
-    const count = document.getElementById('map-player-count');
-    if (count) count.textContent = String(onlinePlayers.length);
-    const updated = document.getElementById('map-updated-at');
-    if (updated) updated.textContent = 'Mis à jour à ' + new Date().toLocaleTimeString('fr-FR');
 }
 
 function setupPlayerMap() {
@@ -496,16 +465,6 @@ function renderMapPlayerList() {
 
 function changeMapZoom(factor) { if (!mapInstance) return; mapInstance.setZoom(Math.max(0,Math.min(5,mapInstance.getZoom()+(factor>1?1:-1)))); }
 function resetMapView() { if (mapInstance) mapInstance.fitBounds([[0,0],[8192,8192]]); }
-
-function manageSelectedMoney(operation) {
-    if (!Number.isInteger(selectedPlayerId) || selectedPlayerId < 1) return showToast('Sélectionnez un joueur connecté.');
-    const amount = Number(document.getElementById('admin-money-amount')?.value);
-    const type = document.getElementById('admin-money-type')?.value;
-    if (!Number.isInteger(amount) || amount < 1 || amount > 1000000) return showToast('Montant invalide (1 à 1 000 000).');
-    nuiPost('manageEconomy', { playerId: selectedPlayerId, type: type, amount: amount, operation: operation })
-        .then(() => showToast((operation === 'give' ? 'Ajout' : 'Retrait') + ' demandé au serveur.'))
-        .catch(() => showToast('Impossible de modifier le compte du joueur.'));
-}
 
 function giveAdminMoney(type) {
     const targetId = getPanelTarget('give'); if (!targetId) return;
@@ -667,29 +626,13 @@ function renderJobGrades() {
     if (!grades.length) gradeSelect.add(new Option('Grade 0', '0'));
 }
 
-function setupAdminSubViews() {
-    document.querySelectorAll('[data-admin-view]').forEach(button => {
-        button.addEventListener('click', () => {
-            const target = button.dataset.adminView;
-            document.querySelectorAll('[data-admin-view]').forEach(item => item.classList.toggle('active', item === button));
-            document.getElementById('admin-players-view')?.classList.toggle('active', target === 'players');
-            document.getElementById('admin-map-view')?.classList.toggle('active', target === 'map');
-            if (target === 'map') {
-                renderPlayerMap();
-                refreshPlayerMap();
-            }
-        });
-    });
-}
-
-function refreshPlayerMap() {
-    if (!adminTabletOpen) return;
-    nuiPost('requestPlayerPositions').catch(() => showToast('Impossible de récupérer les positions des joueurs.'));
-}
-
 function updateOnlinePlayerPositions(players) {
-    onlinePlayers = Array.isArray(players) ? players : [];
-    renderOnlinePlayers(); renderPlayerPickers(); renderPlayerMap();
+    const current = new Map(onlinePlayers.map(player => [Number(player.id), player]));
+    const incoming = Array.isArray(players) ? players : [];
+    onlinePlayers = incoming.map(player => Object.assign({}, current.get(Number(player.id)) || {}, player));
+    renderOnlinePlayers();
+    renderPlayerPickers();
+    renderPlayerMap();
     renderMapPlayerList();
     const count = document.getElementById('map-player-count');
     if (count) count.textContent = String(onlinePlayers.length);
@@ -713,24 +656,6 @@ function spawnAdminVehicle() {
     if (!/^[a-zA-Z0-9_]{2,40}$/.test(model)) return showToast('Saisissez un modèle valide (ex. sultan).');
     nuiPost('spawnVehicle', { model }).then(() => showToast('Demande de création envoyée.')).catch(() => showToast('Création du véhicule impossible.'));
 }
-function giveAdminVehicle() {
-    if (!Number.isInteger(selectedPlayerId) || selectedPlayerId < 1) return showToast('Sélectionnez un joueur connecté.');
-    const model = (document.getElementById('admin-vehicle-model')?.value || '').trim();
-    if (!/^[a-zA-Z0-9_]{2,40}$/.test(model)) return showToast('Saisissez un modèle de véhicule valide.');
-    nuiPost('giveVehicle', { playerId: selectedPlayerId, model })
-        .then(() => showToast('Attribution du véhicule demandée au joueur.'))
-        .catch(() => showToast('Impossible d’attribuer le véhicule.'));
-}
-
-function giveAdminWeapon() {
-    if (!Number.isInteger(selectedPlayerId) || selectedPlayerId < 1) return showToast('Sélectionnez un joueur connecté.');
-    const weapon = document.getElementById('admin-weapon-name')?.value;
-    if (!weapon) return showToast('Sélectionnez une arme.');
-    nuiPost('giveWeapon', { playerId: selectedPlayerId, weapon })
-        .then(() => showToast('Attribution de l’arme demandée au joueur.'))
-        .catch(() => showToast('Impossible d’attribuer cette arme.'));
-}
-
 function applyAdminWorldTime() {
     const weather = document.getElementById('admin-weather')?.value || '';
     const hours = Number(document.getElementById('admin-world-hours')?.value);
