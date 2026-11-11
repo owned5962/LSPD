@@ -130,7 +130,14 @@ local function LoadCharacter(src, identifier, userGroup, char)
 
     -- Publish the saved RP identity as the server player name (scoreboard/player list).
     local roleplayName = tostring(char.firstname or '') .. ' ' .. tostring(char.lastname or '')
-    if roleplayName ~= ' ' then SetPlayerName(src, roleplayName) end
+    if roleplayName ~= ' ' then
+        local nameOk, nameError = pcall(function()
+            SetPlayerName(src, roleplayName)
+        end)
+        if not nameOk then
+            print(('[rp_characters] Unable to publish RP name for player %s: %s'):format(tostring(src), tostring(nameError)))
+        end
+    end
     print(('[rp_characters] Character loaded for player %s; sending spawn event.'):format(tostring(src)))
     TriggerClientEvent('rp_characters:client:spawnPlayer', src, char.position, char.sex, char.skin)
     TriggerClientEvent('rp_characters:client:closeMenu', src)
