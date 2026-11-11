@@ -1098,3 +1098,55 @@ if __name__ == "__main__":
     for name, check in checks:
         check()
     print(f"All {len(checks)} security and persistence regression checks passed.")
+
+
+def test_character_creator_has_left_panel_french_birth_date_and_clothing_controls():
+    html = read("resources/[CORE]/rp_characters/html/index.html")
+    css = read("resources/[CORE]/rp_characters/html/css/style.css")
+    ui = read("resources/[CORE]/rp_characters/html/js/app.js")
+    client = read("resources/[CORE]/rp_characters/client/main.lua")
+    assert 'placeholder="JJ/MM/AAAA"' in html
+    assert 'pattern="[0-9]{2}/[0-9]{2}/[0-9]{4}"' in html
+    assert "inset: 3vh auto 3vh 2vw" in css
+    for control in ("component-5", "component-9", "prop-1", "prop-7"):
+        assert 'id="' + control + '"' in html
+        assert control in ui
+    assert "components: Object.fromEntries" in ui
+    assert "props: Object.fromEntries" in ui
+    assert "UpdatePedHeadBlendData(ped, true)" in client
+
+
+def test_job_center_is_proximity_gated_and_waits_for_core_character_load():
+    client = read("resources/[FUNCTION]/rp_jobs/client/main.lua")
+    server = read("resources/[FUNCTION]/rp_jobs/server/main.lua")
+    assert "local function IsPlayerAtJobCenter()" in client
+    assert "if not IsPlayerAtJobCenter() then" in client
+    assert "RegisterKeyMapping('jobcenter'" in client and "'F5'" in client
+    assert "for attempt = 1, 24 do" in server
+    assert "Wait(250)" in server
+    assert "Votre personnage est encore en cours de chargement" in server
+
+
+def test_hud_has_separate_job_panel_and_no_money_display():
+    html = read("resources/[FUNCTION]/rp_ui/html/index.html")
+    css = read("resources/[FUNCTION]/rp_ui/html/css/style.css")
+    ui = read("resources/[FUNCTION]/rp_ui/html/js/app.js")
+    client = read("resources/[FUNCTION]/rp_ui/client/main.lua")
+    assert 'id="hud-job-panel"' in html
+    assert 'id="hud-cash"' not in html and 'id="hud-bank"' not in html
+    assert "#hud-job-panel" in css
+    assert "hud-job-panel" in ui
+    assert "cash = tonumber(data.cash)" not in client
+    assert "SetMinimapClipType(1)" in client
+
+
+def test_f12_client_diagnostics_are_registered_and_rendered():
+    client = read("resources/[FUNCTION]/rp_ui/client/main.lua")
+    html = read("resources/[FUNCTION]/rp_ui/html/index.html")
+    ui = read("resources/[FUNCTION]/rp_ui/html/js/app.js")
+    assert "RegisterKeyMapping('clientdiagnostics'" in client
+    assert "'F12'" in client
+    assert "GetFrameTime()" in client
+    assert 'id="client-diagnostics"' in html
+    assert "updateDiagnostics" in ui
+
