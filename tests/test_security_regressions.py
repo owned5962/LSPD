@@ -683,7 +683,7 @@ def test_loadscreen_has_offline_visual_banners_and_correct_keybinds():
     for asset in ("los_santos_ems.svg", "los_santos_jobs.svg", "los_santos_coast.svg"):
         assert asset in manifest
         assert asset in html
-        assert os.path.isfile(os.path.join(ROOT, "resources/[FUNCTION]/rp_loadscreen/html/images", asset))
+        assert (ROOT / "resources/[FUNCTION]/rp_loadscreen/html/images" / asset).is_file()
     assert "https://cdnjs.cloudflare.com" not in html
     assert "fonts.googleapis.com" not in html
     assert 'kbd>F2</kbd><span>Inventaire joueur' in html
