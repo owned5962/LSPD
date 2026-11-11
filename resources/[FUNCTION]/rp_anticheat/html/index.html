@@ -2,130 +2,82 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Centre de Sécurité & Anticheat</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AEGIS | Centre de sécurité</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-    <div id="anticheat-window" class="hidden">
-        <div class="ac-container">
-            <!-- Sidebar Navigation -->
-            <div class="ac-sidebar">
-                <div class="ac-brand">
-                    <i class="fa-solid fa-shield-halved"></i>
-                    <div>
-                        <h2>AEGIS AC</h2>
-                        <span>v1.0 Pro Edition</span>
-                    </div>
-                </div>
-                <div class="ac-nav">
-                    <button class="nav-item active" data-tab="dashboard"><i class="fa-solid fa-gauge-high"></i> Dashboard</button>
-                    <button class="nav-item" data-tab="protections"><i class="fa-solid fa-sliders"></i> Protections</button>
-                    <button class="nav-item" data-tab="surveillance"><i class="fa-solid fa-video"></i> Surveillance Direct</button>
-                    <button class="nav-item" data-tab="logs"><i class="fa-solid fa-clock-rotate-left"></i> Alertes Détections</button>
-                </div>
-                <div class="ac-status">
-                    <span class="pulse-dot"></span> Système Actif & En Ligne
-                </div>
+<div id="anticheat-window" class="hidden">
+    <div class="ac-shell">
+        <aside class="ac-sidebar">
+            <div class="brand">
+                <div class="brand-mark"><i class="fa-solid fa-shield-halved"></i></div>
+                <div><strong>AEGIS <span>AC</span></strong><small>CENTRE DE SÉCURITÉ</small></div>
             </div>
+            <div class="server-state"><span class="live-dot"></span><div><strong>Système opérationnel</strong><small>Surveillance en temps réel</small></div></div>
+            <nav class="ac-nav">
+                <button class="nav-item active" data-tab="dashboard"><i class="fa-solid fa-chart-line"></i> Vue générale</button>
+                <button class="nav-item" data-tab="protections"><i class="fa-solid fa-shield"></i> Protections <span id="nav-protection-count">7</span></button>
+                <button class="nav-item" data-tab="players"><i class="fa-solid fa-users"></i> Joueurs</button>
+                <button class="nav-item" data-tab="surveillance"><i class="fa-solid fa-eye"></i> Surveillance</button>
+                <button class="nav-item" data-tab="logs"><i class="fa-solid fa-triangle-exclamation"></i> Détections <span id="nav-alert-count">0</span></button>
+                <button class="nav-item" data-tab="bans"><i class="fa-solid fa-ban"></i> Bannissements</button>
+            </nav>
+            <div class="sidebar-footer"><span class="live-dot"></span> AEGIS MONITOR <small>F9 · Fermer / arrêter</small></div>
+        </aside>
 
-            <!-- Main Content Area -->
-            <div class="ac-main">
-                <div class="ac-header">
-                    <h3 id="tab-title">Tableau de bord de sécurité</h3>
-                    <button id="btn-close" class="close-icon"><i class="fa-solid fa-xmark"></i></button>
+        <main class="ac-main">
+            <header class="topbar">
+                <div><div class="eyebrow">CENTRE DE CONTRÔLE / <span id="section-name">VUE GÉNÉRALE</span></div><h1 id="page-title">Tableau de bord</h1></div>
+                <div class="top-actions"><div class="clock"><i class="fa-regular fa-clock"></i> <span id="current-clock">--:--:--</span></div><button id="btn-refresh" class="icon-btn" title="Actualiser"><i class="fa-solid fa-rotate"></i></button><button id="btn-close" class="icon-btn close-btn" title="Fermer"><i class="fa-solid fa-xmark"></i></button></div>
+            </header>
+
+            <section class="tab-pane active" id="pane-dashboard">
+                <div class="welcome-row"><div><h2>État de la sécurité</h2><p>Vue d'ensemble des événements et protections du serveur.</p></div><span class="status-pill"><span class="live-dot"></span> EN LIGNE</span></div>
+                <div class="metric-grid">
+                    <article class="metric-card"><div class="metric-icon blue"><i class="fa-solid fa-users"></i></div><div><span class="metric-label">Joueurs connectés</span><strong id="stat-players">0</strong><small>Connectés actuellement</small></div></article>
+                    <article class="metric-card"><div class="metric-icon red"><i class="fa-solid fa-triangle-exclamation"></i></div><div><span class="metric-label">Détections enregistrées</span><strong id="stat-threats">0</strong><small>Session en cours</small></div></article>
+                    <article class="metric-card"><div class="metric-icon green"><i class="fa-solid fa-shield-check"></i></div><div><span class="metric-label">Protections actives</span><strong id="stat-modules">0/0</strong><small>Modules activés</small></div></article>
+                    <article class="metric-card"><div class="metric-icon amber"><i class="fa-solid fa-user-shield"></i></div><div><span class="metric-label">Bannissements</span><strong id="stat-bans">—</strong><small>Chargés depuis la base</small></div></article>
                 </div>
-
-                <!-- Tab 1: Dashboard -->
-                <div class="tab-pane active" id="pane-dashboard">
-                    <div class="stats-row">
-                        <div class="stat-card">
-                            <i class="fa-solid fa-users"></i>
-                            <div>
-                                <span class="stat-num" id="stat-players">0</span>
-                                <span class="stat-desc">Joueurs Connectés</span>
-                            </div>
-                        </div>
-                        <div class="stat-card alert">
-                            <i class="fa-solid fa-triangle-exclamation"></i>
-                            <div>
-                                <span class="stat-num" id="stat-threats">0</span>
-                                <span class="stat-desc">Alertes Détectées</span>
-                            </div>
-                        </div>
-                        <div class="stat-card success">
-                            <i class="fa-solid fa-shield-virus"></i>
-                            <div>
-                                <span class="stat-num" id="stat-modules">0/7</span>
-                                <span class="stat-desc">Modules Actifs</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="recent-alerts-box">
-                        <h4><i class="fa-solid fa-bell"></i> Dernières alertes en temps réel</h4>
-                        <div class="alerts-feed" id="live-alerts-feed">
-                            <div class="empty-state">Aucune anomalie récente détectée.</div>
-                        </div>
-                    </div>
+                <div class="content-grid">
+                    <article class="panel large-panel"><div class="panel-heading"><div><h3>Dernières détections</h3><p>Événements remontés par le système</p></div><button class="text-btn" data-goto="logs">Tout afficher <i class="fa-solid fa-arrow-right"></i></button></div><div id="dashboard-alerts" class="alert-list"><div class="empty-state">Aucune anomalie signalée.</div></div></article>
+                    <article class="panel"><div class="panel-heading"><div><h3>État des modules</h3><p>Répartition des protections</p></div></div><div id="dashboard-protections" class="module-summary"></div></article>
                 </div>
+            </section>
 
-                <!-- Tab 2: Configurable Protections -->
-                <div class="tab-pane" id="pane-protections">
-                    <div class="protections-grid" id="protections-list"></div>
-                </div>
+            <section class="tab-pane" id="pane-protections">
+                <div class="section-intro"><div><h2>Centre des protections</h2><p>Active ou désactive les contrôles. Les changements sont appliqués côté serveur lorsque le module le permet.</p></div><span class="info-chip"><i class="fa-solid fa-circle-info"></i> Configuration de session</span></div>
+                <div id="protections-list" class="protections-grid"></div>
+            </section>
 
-                <!-- Tab 3: Live Surveillance (Spectate) -->
-                <div class="tab-pane" id="pane-surveillance">
-                    <div class="surveillance-container">
-                        <div class="players-surveillance-list">
-                            <h4>Joueurs sous surveillance</h4>
-                            <div class="player-cards-scroll" id="surveillance-players"></div>
-                        </div>
-                        <div class="surveillance-viewer">
-                            <div class="cam-header">
-                                <span><i class="fa-solid fa-satellite-dish"></i> CAMÉRA SPECTATEUR EN JEU</span>
-                                <span id="cam-target-name">AUCUNE CIBLE</span>
-                            </div>
-                            <div class="cam-feed">
-                                <div class="cam-placeholder">La vue du joueur s’affiche dans le monde du jeu après sélection. FiveM ne transmet pas l’écran Windows du joueur dans cette tablette.</div>
-                                <div class="cam-overlay">
-                                    <div class="rec-badge"><span class="rec-dot"></span> SPECTATE LIVE</div>
-                                    <div class="cam-telemetry">
-                                        <div>SANTÉ: <span id="telemetry-hp">100%</span></div>
-                                        <div>ARMURE: <span id="telemetry-armor">0%</span></div>
-                                        <div>PING: <span id="telemetry-ping">24ms</span></div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="cam-controls">
-                                <button class="cam-btn stop" id="btn-stop-spectate"><i class="fa-solid fa-stop"></i> Arrêter la surveillance</button>
-                                <button class="cam-btn kick" id="btn-cam-kick"><i class="fa-solid fa-user-xmark"></i> Expulser</button>
-                                <button class="cam-btn ban" id="btn-cam-ban"><i class="fa-solid fa-gavel"></i> Bannir</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+            <section class="tab-pane" id="pane-players">
+                <div class="section-intro"><div><h2>Joueurs connectés</h2><p>Informations réseau et état des personnages en ligne.</p></div><div class="search-box"><i class="fa-solid fa-magnifying-glass"></i><input id="player-search" type="search" placeholder="Rechercher un nom ou ID..."></div></div>
+                <div class="players-layout"><article class="panel"><div class="panel-heading"><h3>Liste des joueurs <span id="player-list-count" class="count-chip">0</span></h3></div><div id="players-list" class="players-list"><div class="empty-state">Chargement des joueurs...</div></div></article>
+                    <article class="panel player-detail" id="player-detail"><div class="detail-empty"><i class="fa-solid fa-user-shield"></i><strong>Aucun joueur sélectionné</strong><span>Sélectionne un joueur dans la liste pour afficher ses informations.</span></div></article></div>
+            </section>
 
-                <!-- Tab 4: Logs -->
-                <div class="tab-pane" id="pane-logs">
-                    <table class="ac-table">
-                        <thead>
-                            <tr>
-                                <th>Heure</th>
-                                <th>Joueur (ID)</th>
-                                <th>Type d'infraction</th>
-                                <th>Action immédiate</th>
-                            </tr>
-                        </thead>
-                        <tbody id="logs-table-body">
-                            <tr><td colspan="4" style="text-align:center;">Aucune entrée pour le moment.</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
+            <section class="tab-pane" id="pane-surveillance">
+                <div class="section-intro"><div><h2>Surveillance en direct</h2><p>Sélectionne un joueur pour lancer la vue spectateur dans le jeu.</p></div><span class="info-chip"><i class="fa-solid fa-video"></i> Vue en jeu · pas de capture écran Windows</span></div>
+                <div class="surveillance-layout"><article class="panel"><div class="panel-heading"><h3>Cibles disponibles</h3></div><div id="surveillance-players" class="players-list"></div></article>
+                    <article class="panel camera-panel"><div class="camera-head"><div><span class="live-dot"></span> FLUX DE SURVEILLANCE</div><strong id="cam-target-name">AUCUNE CIBLE</strong></div><div class="camera-screen"><div class="camera-reticle"><i class="fa-solid fa-crosshairs"></i><strong>AEGIS LIVE MONITOR</strong><span>La vue spectateur s'affiche dans le monde du jeu.</span></div><div class="telemetry"><div><small>SANTÉ</small><strong id="telemetry-hp">—</strong></div><div><small>ARMURE</small><strong id="telemetry-armor">—</strong></div><div><small>PING</small><strong id="telemetry-ping">—</strong></div></div></div><div class="camera-actions"><button id="btn-start-spectate" class="primary-btn"><i class="fa-solid fa-eye"></i> Observer</button><button id="btn-stop-spectate" class="secondary-btn"><i class="fa-solid fa-stop"></i> Arrêter</button></div></article></div>
+            </section>
+
+            <section class="tab-pane" id="pane-logs">
+                <div class="section-intro"><div><h2>Centre des détections</h2><p>Historique conservé en mémoire pendant la session serveur (250 événements maximum).</p></div><div class="search-box"><i class="fa-solid fa-filter"></i><input id="log-search" type="search" placeholder="Filtrer les alertes..."></div></div>
+                <article class="panel table-panel"><div class="table-wrap"><table class="ac-table"><thead><tr><th>Heure</th><th>Joueur</th><th>Détection</th><th>Niveau</th><th>Action</th></tr></thead><tbody id="logs-table-body"><tr><td colspan="5" class="empty-state">Aucune détection enregistrée.</td></tr></tbody></table></div></article>
+            </section>
+
+            <section class="tab-pane" id="pane-bans">
+                <div class="section-intro"><div><h2>Gestion des bannissements</h2><p>Liste des bannissements permanents enregistrés dans la base de données.</p></div><button id="btn-refresh-bans" class="secondary-btn"><i class="fa-solid fa-rotate"></i> Actualiser</button></div>
+                <article class="panel table-panel"><div class="table-wrap"><table class="ac-table"><thead><tr><th>Identifiant</th><th>Motif</th><th>Émis par</th><th>Date</th><th>Gestion</th></tr></thead><tbody id="bans-table-body"><tr><td colspan="5" class="empty-state">Chargement...</td></tr></tbody></table></div></article>
+            </section>
+            <footer class="main-footer"><span><i class="fa-solid fa-lock"></i> Accès administrateur sécurisé</span><span>AEGIS ANTICHEAT · SURVEILLANCE SERVEUR</span></footer>
+        </main>
     </div>
-    <script src="js/app.js"></script>
+    <div id="toast-region" class="toast-region" aria-live="polite"></div>
+</div>
+<script src="js/app.js"></script>
 </body>
 </html>
