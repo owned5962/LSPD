@@ -133,6 +133,7 @@ body {
     box-shadow: 0 10px 32px rgba(0,0,0,.35);
     backdrop-filter: blur(12px);
     pointer-events: none;
+    z-index: 1000;
 }
 .hud-identity { display:flex; align-items:center; gap:9px; padding-bottom:9px; border-bottom:1px solid rgba(148,163,184,.16); }
 .hud-job-icon { width:30px; height:30px; display:grid; place-items:center; border-radius:8px; color:#7dd3fc; background:rgba(14,165,233,.14); }
