@@ -1,7 +1,11 @@
 local DISABLE_POLICE = true
-local PED_DENSITY = 0.65
-local SCENARIO_PED_DENSITY = 0.65
-local VEHICLE_DENSITY = 0.80
+
+-- Densités GTA : 0.0 = aucun spawn ambiant, 1.0 = densité normale.
+-- Réduction marquée des PNJ et de la circulation sans vider totalement la ville.
+local PED_DENSITY = 0.35
+local SCENARIO_PED_DENSITY = 0.35
+local VEHICLE_DENSITY = 0.25
+local PARKED_VEHICLE_DENSITY = 0.40
 
 CreateThread(function()
     while true do
@@ -20,11 +24,12 @@ CreateThread(function()
             CancelCurrentPoliceReport()
         end
 
+        -- Ces natives doivent être réappliquées chaque frame.
         SetPedDensityMultiplierThisFrame(PED_DENSITY)
         SetScenarioPedDensityMultiplierThisFrame(SCENARIO_PED_DENSITY, SCENARIO_PED_DENSITY)
         SetVehicleDensityMultiplierThisFrame(VEHICLE_DENSITY)
         SetRandomVehicleDensityMultiplierThisFrame(VEHICLE_DENSITY)
-        SetParkedVehicleDensityMultiplierThisFrame(VEHICLE_DENSITY)
+        SetParkedVehicleDensityMultiplierThisFrame(PARKED_VEHICLE_DENSITY)
         Wait(0)
     end
 end)
