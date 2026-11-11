@@ -18,6 +18,7 @@ RegisterNetEvent('rp_tablet_creator:server:requestOpen', function()
     local src = source
     if not creatorAccessAllowed(src) then
         reply(src, 'Accès réservé aux créateurs et fondateurs.', false)
+        TriggerClientEvent('rp_core:client:notify', src, 'Tablette Créateur : accès réservé au rôle Fondateur/Superadmin (ou ACE rp_creator).', 'error')
         return
     end
     local player = exports['rp_core']:GetPlayerFromId(src)
