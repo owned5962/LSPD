@@ -305,7 +305,8 @@ def test_clothing_saved_outfits_can_be_listed_and_applied_safely():
 
 def test_job_hiring_only_confirms_persisted_changes():
     source = read("resources/[FUNCTION]/rp_jobs/server/main.lua")
-    assert "if not player.setJob(jobName, 0) then" in source
+    assert "local ok, applied = pcall(player.setJob, jobName, 0)" in source
+    assert "if applied ~= true then" in source
     assert "if not targetPlayer.setJob(jobName, grade) then" in source
 
 def test_character_creator_persists_genetics_and_face_morphs():
