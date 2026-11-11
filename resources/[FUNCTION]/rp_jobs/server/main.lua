@@ -31,6 +31,69 @@ exports('IsValidJob', IsValidJob)
 exports('GetJobGrade', GetJobGrade)
 exports('GetAllJobs', GetAllJobs)
 
+-- Persistent job-center choice statistics (one increment per successful application).
+local JOB_STATS_TABLE = 'rp_job_selection_stats'
+local jobStatsReady = false
+
+MySQL.ready(function()
+    local ok, err = pcall(function()
+        MySQL.query.await(([[
+            CREATE TABLE IF NOT EXISTS %s (
+                job_name VARCHAR(50) NOT NULL,
+                selection_count BIGINT UNSIGNED NOT NULL DEFAULT 0,
+                updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                PRIMARY KEY (job_name)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+        ]]):format(JOB_STATS_TABLE))
+    end)
+    jobStatsReady = ok
+    if not ok then
+        print(('[rp_jobs] Impossible de préparer les statistiques des métiers : %s'):format(tostring(err)))
+    end
+end)
+
+local function RecordJobSelection(jobName)
+    if not jobStatsReady then return false end
+    local ok, err = pcall(function()
+        MySQL.update.await(
+            ('INSERT INTO %s (job_name, selection_count) VALUES (?, 1) ON DUPLICATE KEY UPDATE selection_count = selection_count + 1'):format(JOB_STATS_TABLE),
+            { jobName }
+        )
+    end)
+    if not ok then
+        print(('[rp_jobs] Échec de comptabilisation du métier %s : %s'):format(jobName, tostring(err)))
+    end
+    return ok
+end
+
+local function SendJobStats(src)
+    if not jobStatsReady then
+        TriggerClientEvent('rp_jobs:client:jobStats', src, {})
+        return
+    end
+
+    local ok, rows = pcall(function()
+        return MySQL.query.await(('SELECT job_name, selection_count FROM %s'):format(JOB_STATS_TABLE))
+    end)
+    if not ok then
+        print(('[rp_jobs] Impossible de récupérer les statistiques : %s'):format(tostring(rows)))
+        TriggerClientEvent('rp_jobs:client:jobStats', src, {})
+        return
+    end
+
+    local stats = {}
+    for _, row in ipairs(rows or {}) do
+        stats[row.job_name] = tonumber(row.selection_count) or 0
+    end
+    TriggerClientEvent('rp_jobs:client:jobStats', src, stats)
+end
+
+RegisterNetEvent('rp_jobs:server:requestJobStats', function()
+    local src = source
+    if not exports['rp_core']:CanPerformAction(src, 'job_center_stats', 1000) then return end
+    SendJobStats(src)
+end)
+
 
 -- Job applications are accepted only while the player is physically at the
 -- employment center. Never trust the client-side marker or NUI state.
