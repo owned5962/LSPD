@@ -731,7 +731,8 @@ def test_nui_endpoints_are_fixed_and_do_not_recurse_through_parent_lookup():
     for resource, path in resources.items():
         ui = read(path)
         assert "GetParentResourceName" not in ui
-        assert f"https://{resource}/" in ui or resource == "rp_jobs"
+        assert "https://${rp_" not in ui
+        assert f"https://{resource}/" in ui or f"NUI_RESOURCE = '{resource}'" in ui
 
 
 def test_jobcenter_application_returns_server_result_and_closes_focus_on_success():
