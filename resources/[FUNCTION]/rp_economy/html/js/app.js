@@ -10,6 +10,7 @@ let authenticated = false;
 let isATM = false;
 let toastTimer = null;
 const busy = new Set();
+const pendingInputs = new Map();
 
 function formatMoney(value) {
     const amount = Number(value);
@@ -47,6 +48,7 @@ function resetTerminal() {
     bankOpen = false;
     authenticated = false;
     busy.clear();
+    pendingInputs.clear();
     $('bank-container').classList.add('hidden');
     $('screen-auth').classList.remove('hidden');
     $('screen-account').classList.add('hidden');
@@ -88,7 +90,7 @@ async function runTransaction(name, buttonId, payload, inputs, label) {
         setButtonBusy(buttonId, false);
         return;
     }
-    inputs.forEach(id => { if ($(id)) $(id).value = ''; });
+    pendingInputs.set(name, inputs);
     showToast('Demande envoyée à la banque…', 'info');
 }
 
@@ -192,6 +194,8 @@ window.addEventListener('message', event => {
         $('display-bank').textContent = formatMoney(data.bank);
         ['deposit', 'withdraw', 'transfer'].forEach(name => {
             if (busy.has(name)) {
+                (pendingInputs.get(name) || []).forEach(id => { if ($(id)) $(id).value = ''; });
+                pendingInputs.delete(name);
                 busy.delete(name);
                 setButtonBusy(name + '-btn', false);
             }
@@ -201,6 +205,7 @@ window.addEventListener('message', event => {
         if (data.kind === 'error' || data.kind === 'warning' || data.kind === 'success') {
             ['deposit', 'withdraw', 'transfer'].forEach(name => {
                 if (busy.has(name)) {
+                    pendingInputs.delete(name);
                     busy.delete(name);
                     setButtonBusy(name + '-btn', false);
                 }
