@@ -26,3 +26,28 @@ def test_business_map_categories_and_server_startup_are_registered():
 if __name__ == "__main__":
     test_business_map_categories_and_server_startup_are_registered()
     print("Business location checks passed.")
+
+
+def test_mysql_world_location_registry_covers_all_map_location_types():
+    server = (ROOT / "resources/[FUNCTION]/rp_businesses/server/main.lua").read_text(encoding="utf-8")
+    locations = (ROOT / "resources/[FUNCTION]/rp_businesses/shared/locations.lua").read_text(encoding="utf-8")
+    manifest = (ROOT / "resources/[FUNCTION]/rp_businesses/fxmanifest.lua").read_text(encoding="utf-8")
+    economy = (ROOT / "resources/[FUNCTION]/rp_economy/server/main.lua").read_text(encoding="utf-8")
+    fuel = (ROOT / "resources/[FUNCTION]/rp_fuel/server/main.lua").read_text(encoding="utf-8")
+    player = (ROOT / "resources/[CORE]/rp_core/server/player.lua").read_text(encoding="utf-8")
+    core = (ROOT / "resources/[CORE]/rp_core/server/main.lua").read_text(encoding="utf-8")
+
+    for location_type in ("atm", "bank", "shop", "gas_station"):
+        assert f"'{location_type}'" in server
+    for column in ("shop_style", "icon", "x DOUBLE", "y DOUBLE", "z DOUBLE",
+                   "blip_enabled", "blip_sprite", "blip_scale", "blip_colour"):
+        assert column in server
+    assert "ON DUPLICATE KEY UPDATE" in server
+    assert "GetLocationsByType" in server
+    assert "GetLocationsByType('bank')" in economy
+    assert "GetLocationsByType('atm')" in economy
+    assert "GetLocationsByType('gas_station')" in fuel
+    assert "BankLocations =" in locations and "GasStationLocations =" in locations
+    assert "server/main.lua" in manifest and "@oxmysql/lib/MySQL.lua" in manifest
+    assert "json.encode(position)" in player and "UPDATE characters SET" in player
+    assert "Wait(5 * 60 * 1000)" in core
