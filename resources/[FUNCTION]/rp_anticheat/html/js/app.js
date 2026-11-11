@@ -139,14 +139,15 @@ document.getElementById('btn-cam-ban').addEventListener('click', () => {
     if (selectedSpectateId) punish(selectedSpectateId, 'ban');
 });
 
-document.getElementById('btn-close').addEventListener('click', () => {
+function closeAnticheatUI() {
     document.getElementById('anticheat-window').classList.add('hidden');
-    fetch(`https://${GetParentResourceName()}/close`, { method: 'POST', body: '{}' });
+    fetch(`https://${GetParentResourceName()}/close`, { method: 'POST', body: '{}' }).catch(() => {});
+}
+
+document.getElementById('btn-close').addEventListener('click', () => {
+    closeAnticheatUI();
 });
 
 document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' || e.key === 'F10') {
-        document.getElementById('anticheat-window').classList.add('hidden');
-        fetch(`https://${GetParentResourceName()}/close`, { method: 'POST', body: '{}' });
-    }
+    if (e.key === 'Escape') { e.preventDefault(); closeAnticheatUI(); }
 });
