@@ -33,3 +33,13 @@ body{width:100vw;height:100vh;background:transparent;display:flex;align-items:ce
 .action-modal{position:fixed;inset:0;z-index:30;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(2,6,12,.78);backdrop-filter:blur(7px)}
 .action-modal-card{width:min(430px,92vw);padding:22px;background:#111c2b;border:1px solid rgba(240,82,96,.35);border-radius:15px;box-shadow:0 25px 80px rgba(0,0,0,.65)}
 .modal-heading{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:15px}.modal-heading h3{font-size:17px;margin-top:5px}.action-modal-card>p{font-size:11px;color:var(--muted);line-height:1.6;margin-bottom:16px}.reason-field{display:block;font-size:10px;color:#cbd5e1}.reason-field input{display:block;width:100%;margin-top:7px;padding:11px 12px;border-radius:8px;border:1px solid var(--line);background:#09111d;color:white;font-size:11px;outline:none;user-select:text}.reason-field input:focus{border-color:rgba(240,82,96,.6)}.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:19px}
+
+/* Anticheat statistics */
+.stats-toolbar{display:flex;align-items:center;gap:9px}.stats-toolbar select{background:#101c2b;color:#e6edf7;border:1px solid var(--line);border-radius:8px;padding:10px;font-size:10px}
+.stats-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:14px 0}.stats-categories,.stats-timeline{display:flex;flex-direction:column;gap:13px}
+.stats-category-head{display:flex;justify-content:space-between;gap:12px;font-size:10px;margin-bottom:6px}.stats-category-head span{color:#cbd5e1}.stats-category-head strong{color:#fff}
+.stats-bar,.timeline-bar{height:7px;border-radius:20px;background:#263448;overflow:hidden}.stats-bar i,.timeline-bar i{display:block;height:100%;border-radius:20px;transition:width .25s}
+.timeline-row{display:grid;grid-template-columns:95px minmax(60px,1fr) 28px;align-items:center;gap:9px;font-size:9px}.timeline-row span{color:var(--muted)}.timeline-row strong{text-align:right;color:#e5edf8}
+.timeline-bar i{background:linear-gradient(90deg,#4389e8,#70b8ff)}
+.severity-low{background:rgba(57,201,138,.13);color:#55dfa3}.severity-medium{background:rgba(232,197,71,.13);color:#f1d46b}.severity-high{background:rgba(243,155,56,.14);color:#ffb45f}.severity-critical{background:rgba(239,70,88,.15);color:#ff7180}
+@media(max-width:800px){.stats-grid{grid-template-columns:1fr}.stats-toolbar{width:100%;flex-wrap:wrap}.stats-toolbar select{flex:1}}
