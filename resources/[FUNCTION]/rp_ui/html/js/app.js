@@ -3,7 +3,11 @@ let progressInterval = null;
 window.addEventListener('message', function(event) {
     const data = event.data;
 
-    if (data.action === 'showTextUI') {
+    if (data.action === 'updateHUD') {
+        updatePlayerHUD(data);
+    } else if (data.action === 'hideHUD') {
+        document.getElementById('player-hud')?.classList.add('hidden');
+    } else if (data.action === 'showTextUI') {
         document.getElementById('textui-text').innerHTML = data.text;
         document.getElementById('textui-container').classList.remove('hidden');
     } else if (data.action === 'hideTextUI') {
@@ -48,4 +52,26 @@ function startProgress(duration, label, canCancel) {
 function cancelProgress() {
     clearInterval(progressInterval);
     document.getElementById('progress-container').classList.add('hidden');
+}
+
+
+function updatePlayerHUD(data) {
+    const hud = document.getElementById('player-hud');
+    if (!hud) return;
+    const setText = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = String(value); };
+    const setBar = (id, value) => {
+        const el = document.getElementById(id);
+        if (el) el.style.width = Math.max(0, Math.min(100, Number(value) || 0)) + '%';
+    };
+    const money = value => new Intl.NumberFormat('fr-FR').format(Number(value) || 0) + ' $';
+    setText('hud-job', data.job || 'Sans-emploi');
+    setText('hud-grade', data.grade || '');
+    setText('hud-cash', money(data.cash));
+    setText('hud-bank', money(data.bank));
+    ['health', 'armor', 'hunger', 'thirst'].forEach(key => {
+        const value = Math.max(0, Math.min(100, Number(data[key]) || 0));
+        setText('hud-' + key, Math.round(value) + '%');
+        setBar('hud-' + key + '-bar', value);
+    });
+    hud.classList.toggle('hidden', data.visible !== true);
 }
