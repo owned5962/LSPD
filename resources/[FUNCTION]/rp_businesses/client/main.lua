@@ -78,6 +78,10 @@ RegisterNetEvent('rp_businesses:client:locations', function(locations)
 end)
 
 RegisterNetEvent('rp_businesses:client:openAmmunation', function(cash)
+    if ammunationPromptVisible then
+        exports['rp_ui']:HideTextUI()
+        ammunationPromptVisible = false
+    end
     ammunationTabletOpen = true
     SetNuiFocus(true, true)
     SendNUIMessage({
