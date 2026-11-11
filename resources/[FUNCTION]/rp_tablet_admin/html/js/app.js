@@ -293,7 +293,7 @@ function renderOnlinePlayers() {
         entry.type = 'button'; entry.className = 'player-entry';
         const info = document.createElement('span'); info.className = 'player-info';
         const name = document.createElement('span'); name.className = 'name';
-        name.textContent = `${player.name || player.rawName || 'Joueur'} [ID: ${player.id}]`;
+        name.textContent = `${player.name || player.rawName || 'Joueur'} [ID: ${player.id}]${player.isSelf ? ' (VOUS)' : ''}`;
         const meta = document.createElement('span'); meta.className = 'meta';
         meta.textContent = `Métier : ${player.jobLabel || player.job || 'Inconnu'} · Grade : ${player.grade ?? 0}`;
         info.append(name, meta); entry.append(info);
