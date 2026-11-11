@@ -8,20 +8,6 @@ local BankPositions = {
     { x = 236.4, y = 217.4, z = 106.2, label = "Pacific Standard Public Bank" }
 }
 
-CreateThread(function()
-    for _, bank in ipairs(BankPositions) do
-        local blip = AddBlipForCoord(bank.x, bank.y, bank.z)
-        SetBlipSprite(blip, 108)
-        SetBlipDisplay(blip, 4)
-        SetBlipScale(blip, 0.8)
-        SetBlipColour(blip, 2)
-        SetBlipAsShortRange(blip, true)
-        BeginTextCommandSetBlipName("STRING")
-        AddTextComponentSubstringPlayerName(bank.label)
-        EndTextCommandSetBlipName(blip)
-    end
-end)
-
 local ATMModels = { 'prop_atm_01', 'prop_atm_02', 'prop_atm_03', 'prop_fleeca_atm' }
 
 local function GetNearbyATM(maxDistance)
