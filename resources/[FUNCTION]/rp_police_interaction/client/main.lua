@@ -160,7 +160,7 @@ AddEventHandler('gameEventTriggered', function(name, args)
     local playerPed = PlayerPedId()
     local playerVehicleHit = IsEntityAVehicle(attacker) and GetPedInVehicleSeat(attacker, -1) == playerPed
     if (attacker ~= playerPed and not playerVehicleHit) or victim == playerPed or not DoesEntityExist(victim) then return end
-    if playerVehicleHit and IsEntityAPed(victim) and not IsPedAPlayer(victim) then
+    if playerVehicleHit and GetEntitySpeed(attacker) >= 5.0 and IsEntityAPed(victim) and not IsPedAPlayer(victim) then
         report('pedestrian_collision')
         return
     end
