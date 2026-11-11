@@ -43,6 +43,13 @@ CreateThread(function()
     EndTextCommandSetBlipName(blip)
 end)
 
+AddEventHandler('onClientResourceStart', function(resourceName)
+    if resourceName ~= GetCurrentResourceName() then return end
+    isJobCenterOpen = false
+    SetNuiFocus(false, false)
+    SendNUIMessage({ action = 'closeJobCenter' })
+end)
+
 function OpenJobCenter()
     isJobCenterOpen = true
     SetNuiFocus(true, true)
@@ -68,7 +75,14 @@ RegisterNUICallback('close', function(data, cb)
 end)
 
 RegisterNUICallback('selectJob', function(data, cb)
+    if not isJobCenterOpen or type(data) ~= 'table' or type(data.jobName) ~= 'string' then
+        cb({ status = 'invalid_request' })
+        return
+    end
     TriggerServerEvent('rp_jobs:server:chooseJob', data.jobName)
-    CloseJobCenter()
-    cb('ok')
+    cb({ status = 'submitted' })
+end)
+
+RegisterNetEvent('rp_jobs:client:jobSelectionResult', function(success, message)
+    SendNUIMessage({ action = 'jobSelectionResult', success = success == true, message = tostring(message or '') })
 end)
