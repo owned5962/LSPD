@@ -4,12 +4,12 @@ on:
   push:
     branches: [main]
     paths:
-      - 'resources/[FUNCTION]/rp_tablet_admin/**'
+      - 'resources/**/rp_tablet_admin/**'
       - '.github/workflows/tablet-admin-lua.yml'
   pull_request:
     branches: [main]
     paths:
-      - 'resources/[FUNCTION]/rp_tablet_admin/**'
+      - 'resources/**/rp_tablet_admin/**'
       - '.github/workflows/tablet-admin-lua.yml'
   workflow_dispatch:
 
