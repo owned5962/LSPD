@@ -234,6 +234,8 @@ local function ApplyCharacterAppearance(gender, skin)
             blendId('shapeFirst', 0), blendId('shapeSecond', 21), blendId('shapeThird', 0),
             blendId('skinFirst', 0), blendId('skinSecond', 21), blendId('skinThird', 0),
             blendMix('shapeMix', 0.5), blendMix('skinMix', 0.5), blendMix('thirdMix', 0.0), false)
+        -- Force GTA to refresh the blended face after parent and mix sliders change.
+        UpdatePedHeadBlendData(ped, true)
     end
 
     if type(skin.faceFeatures) == 'table' then
