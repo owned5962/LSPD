@@ -56,7 +56,8 @@ window.addEventListener('message',e=>{
         renderPropOptions();
         if(jobSelect.value)loadBlipForJob(jobSelect.value);
         renderMapping();
-        renderCreatorAdminData(d);
+    } else if(d.action==='creatorAdminData'){
+        renderCreatorAdminData(d.data||{});
     } else if(d.action==='mappingAdded'){
         if(d.item)creatorMapping.unshift(d.item);renderMapping();
     } else if(d.action==='mappingRemoved'){
@@ -88,6 +89,7 @@ function creatorMessage(message, success=false) {
     status.style.color = success ? '#86efac' : '#fca5a5';
 }
 function renderCreatorAdminData(data) {
+    if (Array.isArray(data.jobs)) creatorJobs = data.jobs;
     creatorPlayers = Array.isArray(data.players) ? data.players : [];
     creatorItems = Array.isArray(data.items) ? data.items : [];
     creatorModules = Array.isArray(data.modules) ? data.modules : [];
