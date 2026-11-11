@@ -1,17 +1,31 @@
 let progressInterval = null;
+let textUiHideTimer = null;
+
+function hideTextUI() {
+    if (textUiHideTimer !== null) {
+        clearTimeout(textUiHideTimer);
+        textUiHideTimer = null;
+    }
+    document.getElementById('textui-container')?.classList.add('hidden');
+}
 
 window.addEventListener('message', function(event) {
-    const data = event.data;
+    const data = event.data || {};
 
     if (data.action === 'updateHUD') {
         updatePlayerHUD(data);
     } else if (data.action === 'hideHUD') {
         document.getElementById('player-hud')?.classList.add('hidden');
     } else if (data.action === 'showTextUI') {
-        document.getElementById('textui-text').innerHTML = data.text;
-        document.getElementById('textui-container').classList.remove('hidden');
+        const textElement = document.getElementById('textui-text');
+        if (textElement) textElement.textContent = String(data.text ?? '');
+        document.getElementById('textui-container')?.classList.remove('hidden');
+        if (textUiHideTimer !== null) clearTimeout(textUiHideTimer);
+        // Job resources refresh the prompt while the player remains nearby.
+        // Auto-hide it when they leave, even if a resource forgets to send hideTextUI.
+        textUiHideTimer = setTimeout(hideTextUI, 350);
     } else if (data.action === 'hideTextUI') {
-        document.getElementById('textui-container').classList.add('hidden');
+        hideTextUI();
     } else if (data.action === 'startProgress') {
         startProgress(data.duration, data.label, data.canCancel);
     } else if (data.action === 'cancelProgress') {
@@ -31,6 +45,7 @@ function startProgress(duration, label, canCancel) {
     percentEl.innerText = '0%';
     container.classList.remove('hidden');
 
+    duration = Math.max(100, Math.min(120000, Number(duration) || 5000));
     const startTime = Date.now();
     progressInterval = setInterval(() => {
         const elapsed = Date.now() - startTime;
