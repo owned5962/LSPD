@@ -67,6 +67,14 @@ RegisterNetEvent('rp_tablet_admin:server:requestOpen', function()
         return
     end
 
+    local accessOk, tabletAllowed = pcall(function()
+        return exports['rp_tablet_creator']:CanUseTablet(src, 'admin')
+    end)
+    if not accessOk or tabletAllowed ~= true then
+        NotifyAdmin(src, "Votre accès à la tablette administrateur est désactivé.")
+        return
+    end
+
     local adminPlayer = exports['rp_core']:GetPlayerFromId(src)
     local adminData = {
         name = adminPlayer and ((adminPlayer.firstname or '') .. ' ' .. (adminPlayer.lastname or '')) or (GetPlayerName(src) or 'Administrateur'),
