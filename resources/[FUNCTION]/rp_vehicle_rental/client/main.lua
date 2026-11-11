@@ -1,4 +1,5 @@
 local rentalPeds = {}
+local rentalTablets = {}
 local activeRental = nil
 local tabletOpen = false
 local promptVisible = false
@@ -19,7 +20,8 @@ end
 
 local function createRentalPeds()
     local hash = loadModel(Config.PedModel)
-    if not hash then
+    local tabletHash = loadModel('prop_cs_tablet')
+    if not hash or not tabletHash then
         print('[rp_vehicle_rental] Impossible de charger le modèle du PNJ.')
         return
     end
@@ -32,11 +34,19 @@ local function createRentalPeds()
             SetPedCanRagdoll(ped, false)
             SetEntityInvincible(ped, true)
             FreezeEntityPosition(ped, true)
-            TaskStartScenarioInPlace(ped, 'WORLD_HUMAN_STAND_MOBILE', 0, true)
+            TaskStartScenarioInPlace(ped, 'WORLD_HUMAN_STAND_IMPATIENT', 0, true)
+            local tablet = CreateObject(tabletHash, p.x, p.y, p.z, false, false, false)
+            if tablet and tablet ~= 0 then
+                SetEntityCollision(tablet, false, false)
+                AttachEntityToEntity(tablet, ped, GetPedBoneIndex(ped, 57005),
+                    0.12, 0.02, -0.02, 10.0, 160.0, 0.0, true, true, false, true, 1, true)
+                rentalTablets[key] = tablet
+            end
             rentalPeds[key] = ped
         end
     end
     SetModelAsNoLongerNeeded(hash)
+    SetModelAsNoLongerNeeded(tabletHash)
 end
 
 local function drawTimer(seconds)
@@ -244,6 +254,9 @@ AddEventHandler('onClientResourceStop', function(resourceName)
     if resourceName ~= GetCurrentResourceName() then return end
     SetNuiFocus(false, false)
     if promptVisible then exports['rp_ui']:HideTextUI() end
+    for _, tablet in pairs(rentalTablets) do
+        if DoesEntityExist(tablet) then DeleteEntity(tablet) end
+    end
     for _, ped in pairs(rentalPeds) do
         if DoesEntityExist(ped) then DeleteEntity(ped) end
     end
