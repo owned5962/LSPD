@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ammu-Nation</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <main id="tablet" class="hidden" aria-label="Tablette Ammu-Nation">
+        <div class="tablet-shell">
+            <header class="topbar">
+                <div class="brand-mark">A</div>
+                <div class="brand-copy">
+                    <span class="eyebrow">AMMU-NATION</span>
+                    <strong>ARMURERIE</strong>
+                </div>
+                <div class="topbar-right">
+                    <div class="cash-display"><span>ESPÈCES DISPONIBLES</span><strong id="cash-value">0 $</strong></div>
+                    <button id="close" class="close-button" type="button" aria-label="Fermer">×</button>
+                </div>
+            </header>
+            <section class="content">
+                <div class="section-heading">
+                    <div><span class="eyebrow">CATALOGUE CIVIL</span><h1>Nos équipements</h1></div>
+                    <span class="stock-tag"><i></i> DISPONIBLE</span>
+                </div>
+                <article class="product-card">
+                    <div class="product-visual">
+                        <span class="product-index">01 / ARME DE POING</span>
+                        <img src="images/pistol.svg" alt="Illustration d'un pistolet standard">
+                        <span class="visual-caption">AMMU-NATION · STANDARD ISSUE</span>
+                    </div>
+                    <div class="product-details">
+                        <span class="eyebrow">ARME DE POING</span>
+                        <h2>Pistolet standard</h2>
+                        <p class="description">Pistolet semi-automatique. Modèle civil standard, prêt à l'utilisation.</p>
+                        <div class="spec-row"><span>Modèle</span><strong>PISTOL</strong></div>
+                        <div class="spec-row"><span>Catégorie</span><strong>Arme de poing</strong></div>
+                        <div class="purchase-row">
+                            <div class="price-block"><span>PRIX À L'UNITÉ</span><strong>500 <small>$</small></strong></div>
+                            <button id="buy" type="button"><span>ACHETER</span><b>→</b></button>
+                        </div>
+                        <p id="feedback" class="feedback" role="status">Paiement en espèces uniquement.</p>
+                    </div>
+                </article>
+                <footer class="tablet-footer"><span>AMMU-NATION</span><span>QUALITÉ · FIABILITÉ · SÉCURITÉ</span><span>LOS SANTOS</span></footer>
+            </section>
+        </div>
+    </main>
+    <script src="js/app.js"></script>
+</body>
+</html>
