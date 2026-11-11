@@ -4,7 +4,7 @@ Config = {}
 Config.Protections = {
     ['godmode'] = { label = 'Détection GodMode (Invincibilité)', enabled = true },
     ['speedhack'] = { label = 'Détection SpeedHack / SuperVitesse', enabled = true },
-    ['blacklisted_weapons'] = { label = 'Armes Blacklistées (RPG, Minigun)', enabled = true },
+    ['blacklisted_weapons'] = { label = 'Armes interdites (liste administrateur)', enabled = true },
     ['thermal_night_vision'] = { label = 'Vision Thermique / Nocturne Illégale', enabled = true },
     ['spectate_monitoring'] = { label = 'Surveillance Staff en Direct', enabled = true },
     ['explosion_spam'] = { label = 'Protection anti-spam d’explosions (serveur)', enabled = true },
@@ -115,7 +115,15 @@ Config.WeaponCatalog = {
     { name = 'WEAPON_HEAVYSNIPER_MK2', label = "Fusil de précision lourd Mk II", category = "Fusils de précision", enabled = true },
     { name = 'WEAPON_MARKSMANRIFLE_MK2', label = "Fusil de tireur d'élite Mk II", category = "Fusils de précision", enabled = true },
     { name = 'WEAPON_SNIPERRIFLE_MK2', label = "Fusil de précision Mk II", category = "Fusils de précision", enabled = true },
-    { name = 'WEAPON_GRENADELAUNCHER_SMOKE', label = "Lance-grenades fumigènes", category = "Armes lourdes", enabled = false }
+    { name = 'WEAPON_GRENADELAUNCHER_SMOKE', label = "Lance-grenades fumigènes", category = "Armes lourdes", enabled = false },
+    { name = 'WEAPON_PISTOL_MK2', label = "Pistolet Mk II", category = "Armes de poing", enabled = true },
+    { name = 'WEAPON_SNSPISTOL_MK2', label = "Pistolet SNS Mk II", category = "Armes de poing", enabled = true },
+    { name = 'WEAPON_REVOLVER_MK2', label = "Revolver Mk II", category = "Armes de poing", enabled = true },
+    { name = 'WEAPON_SWEEPERSHOTGUN', label = "Fusil à pompe balayeur", category = "Fusils à pompe", enabled = true },
+    { name = 'WEAPON_COMBATSHOTGUN', label = "Fusil à pompe de combat", category = "Fusils à pompe", enabled = true },
+    { name = 'WEAPON_STUNGUN_MP', label = "Taser MP", category = "Armes de poing", enabled = true },
+    { name = 'WEAPON_RAILGUNXM3', label = "Railgun XM3", category = "Armes lourdes", enabled = false },
+    { name = 'WEAPON_RAYPISTOL', label = "Pistolet alien", category = "Armes lourdes", enabled = false }
 }
 Config.WeaponPolicy = {}
 Config.WeaponHashToName = {}
