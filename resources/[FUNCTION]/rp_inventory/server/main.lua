@@ -58,15 +58,20 @@ local function getInventoryWeight(inventory)
     return weight
 end
 
-local function sendInventory(src, player)
+local function sendInventory(src, player, open)
     local inventory = playerInventories[src]
     if not inventory then return end
-    TriggerClientEvent('rp_inventory:receiveData', src, {
+    local payload = {
         inventory = inventory,
         currentWeight = getInventoryWeight(inventory),
         cash = player.cash or 0,
         bank = player.bank or 0
-    })
+    }
+    if open then
+        TriggerClientEvent('rp_inventory:receiveData', src, payload)
+    else
+        TriggerClientEvent('rp_inventory:updateData', src, payload)
+    end
 end
 
 local function loadInventory(player)
@@ -148,7 +153,7 @@ RegisterNetEvent('rp_inventory:requestData', function()
             return
         end
     end
-    sendInventory(src, player)
+    sendInventory(src, player, true)
 end)
 
 RegisterNetEvent('rp_inventory:useItem', function(itemName)
@@ -376,6 +381,7 @@ end)
 
 -- Les objets au sol sont des entités réseau créées et contrôlées par le serveur.
 local groundDrops = {}
+local dropLocks = {}
 local nextDropId = 0
 local DROP_MODEL = GetHashKey('prop_cs_cardbox_01')
 
@@ -519,22 +525,25 @@ RegisterNetEvent('rp_inventory:server:pickupDrop', function(rawDropId)
         notify(src, 'error', 'Vous êtes trop loin de cet objet.')
         return
     end
-    if transferLocks[src] then
-        notify(src, 'error', 'Une opération est déjà en cours.')
+    if transferLocks[src] or dropLocks[dropId] then
+        notify(src, 'error', 'Cet objet est déjà en cours de récupération.')
         return
     end
+    dropLocks[dropId] = true
 
     if not playerInventories[src] or inventoryCharacterIds[src] ~= player.charId then
         local ok = pcall(loadInventory, player)
         if not ok then
+            dropLocks[dropId] = nil
             notify(src, 'error', 'Impossible de charger votre inventaire.')
             return
         end
     end
     local definition = Config.DefaultItems[drop.itemName]
-    if not definition then return end
+    if not definition then dropLocks[dropId] = nil; return end
     local updated = normalizeInventory(playerInventories[src])
     if getInventoryWeight(updated) + definition.weight * drop.count > Config.MaxWeight then
+        dropLocks[dropId] = nil
         notify(src, 'error', 'Votre inventaire est trop lourd.')
         return
     end
@@ -550,6 +559,7 @@ RegisterNetEvent('rp_inventory:server:pickupDrop', function(rawDropId)
     end
 
     if not exports['rp_core']:AcquireCharacterLock({ player.charId }) then
+        dropLocks[dropId] = nil
         notify(src, 'error', 'Une sauvegarde de votre personnage est en cours. Réessayez.')
         return
     end
@@ -562,6 +572,7 @@ RegisterNetEvent('rp_inventory:server:pickupDrop', function(rawDropId)
     end)
     transferLocks[src] = nil
     exports['rp_core']:ReleaseCharacterLock({ player.charId })
+    dropLocks[dropId] = nil
     if not persisted then
         print(('[rp_inventory] Pickup save failed for character %s: %s'):format(player.charId, tostring(persistError)))
         notify(src, 'error', 'Sauvegarde impossible : l’objet reste au sol.')
