@@ -94,8 +94,18 @@ RegisterNetEvent('rp_tablet_admin:server:spectatePlayer', function(rawTargetId)
         return
     end
 
+    if GetPlayerRoutingBucket(src) ~= GetPlayerRoutingBucket(targetId) then
+        NotifyExtended(src, 'Le joueur se trouve dans une instance différente.')
+        return
+    end
+    local targetPed = GetPlayerPed(targetId)
+    if not targetPed or targetPed == 0 or not DoesEntityExist(targetPed) then
+        NotifyExtended(src, 'Position du joueur indisponible.')
+        return
+    end
+    local coords = GetEntityCoords(targetPed)
     LogExtendedAction(src, 'spectate', targetId, 'Début de surveillance')
-    TriggerClientEvent('rp_tablet_admin:client:startSpectate', src, targetId)
+    TriggerClientEvent('rp_tablet_admin:client:startSpectate', src, targetId, { x = coords.x, y = coords.y, z = coords.z })
 end)
 
 RegisterNetEvent('rp_tablet_admin:server:stopSpectate', function()
