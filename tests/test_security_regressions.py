@@ -614,7 +614,7 @@ def test_admin_tablet_close_controls_and_keyboard_bindings_do_not_conflict():
     anticheat = read("resources/[FUNCTION]/rp_anticheat/client/main.lua")
     ui = read("resources/[FUNCTION]/rp_tablet_admin/html/js/app.js")
     assert "RegisterKeyMapping('admin', 'Ouvrir la Tablette Admin', 'keyboard', 'F10')" in admin
-    assert "RegisterKeyMapping('openanticheat', 'Ouvrir le menu Anticheat', 'keyboard', 'F11')" in anticheat
+    assert "RegisterKeyMapping('openanticheat', 'Ouvrir le menu Anticheat', 'keyboard', 'F9')" in anticheat
     assert "if isTabletOpen then" in admin and "CloseAdminTablet()" in admin
     assert "closeButton.addEventListener('click', closeAdminTablet)" in ui
     assert "nuiPost('close', { source })" in ui
@@ -867,7 +867,11 @@ def test_creator_tablet_is_separate_and_started():
     config = read("server.cfg")
     assert "view-creator" not in admin_html and "mode-switcher" not in admin_html
     assert "RegisterCommand('creator'" in creator_client
-    assert "RegisterKeyMapping('creator'" in creator_client
+    assert "RegisterKeyMapping('creator', 'Ouvrir la tablette Créateur', 'keyboard', 'F11')" in creator_client
+    jobs = read("resources/[FUNCTION]/rp_jobs/client/main.lua")
+    inventory = read("resources/[FUNCTION]/rp_inventory/client/main.lua")
+    assert "RegisterKeyMapping('jobcenter', 'Ouvrir le menu des métiers', 'keyboard', 'F5')" in jobs
+    assert "RegisterKeyMapping('openinventory'" in inventory and "'F2'" in inventory
     assert "ensure rp_tablet_creator" in config
     assert "server/extended.lua" in read("resources/[FUNCTION]/rp_tablet_admin/fxmanifest.lua")
 
@@ -917,3 +921,56 @@ def test_character_server_trim_helper_uses_a_complete_pattern():
     server = read("resources/[CORE]/rp_characters/server/main.lua")
     assert "return value:match('^%s*(.-)%s*$') or ''" in server
     assert "value:gsub('^%s*(.-)%s*'" not in server
+
+
+def test_character_player_controls_stay_locked_until_a_character_is_loaded():
+    client = read("resources/[CORE]/rp_characters/client/main.lua")
+    assert "SetPlayerControl(PlayerId(), false, 0)" in client
+    assert "SetPlayerControl(PlayerId(), true, 0)" in client
+    assert "SetEntityVisible(ped, false, false)" in client
+    assert "FreezeEntityPosition(ped, not characterSessionReady)" in client
+
+
+def test_admin_server_has_no_duplicate_legacy_event_handlers():
+    server = read("resources/[FUNCTION]/rp_tablet_admin/server/main.lua")
+    for event in ("kickPlayer", "freezePlayer", "teleportToPlayer", "bringPlayer", "revivePlayer", "manageEconomy", "setJob", "setWeatherTime", "broadcastAnnouncement"):
+        assert server.count("RegisterNetEvent('rp_tablet_admin:server:" + event + "'") == 1
+
+
+def test_admin_give_actions_are_server_authorized_and_audited():
+    server = read("resources/[FUNCTION]/rp_tablet_admin/server/extended.lua")
+    client = read("resources/[FUNCTION]/rp_tablet_admin/client/main.lua")
+    assert "AllowExtendedAction(src, 'give_vehicle', 1000)" in server
+    assert "AllowExtendedAction(src, 'give_weapon', 750)" in server
+    assert "AllowedAdminWeapons[weapon]" in server
+    assert "RegisterNUICallback('giveVehicle'" in client
+    assert "RegisterNUICallback('giveWeapon'" in client
+    assert "LogExtendedAction(src, 'give_vehicle'" in server
+    assert "LogExtendedAction(src, 'give_weapon'" in server
+
+
+def test_admin_job_picker_and_world_time_controls_are_present():
+    html = read("resources/[FUNCTION]/rp_tablet_admin/html/index.html")
+    ui = read("resources/[FUNCTION]/rp_tablet_admin/html/js/app.js")
+    assert '<select id="admin-job-name"' in html
+    assert '<select id="admin-job-grade"' in html
+    assert "function renderJobGrades()" in ui
+    assert "function applyAdminWorldTime()" in ui
+    assert 'id="admin-world-hours"' in html and 'id="admin-world-minutes"' in html
+
+
+def test_anticheat_server_protects_weapon_damage_and_explosion_spam():
+    server = read("resources/[FUNCTION]/rp_anticheat/server/main.lua")
+    config = read("resources/[FUNCTION]/rp_anticheat/shared/config.lua")
+    assert "AddEventHandler('weaponDamageEvent'" in server
+    assert "AddEventHandler('explosionEvent'" in server
+    assert "CancelEvent()" in server
+    assert "explosion_spam" in config and "weapon_damage" in config
+    assert "rp_anticheat:setAdminInvulnerability" in server
+
+
+def test_admin_map_uses_local_custom_artwork_and_player_overlay():
+    manifest = read("resources/[FUNCTION]/rp_tablet_admin/fxmanifest.lua")
+    ui = read("resources/[FUNCTION]/rp_tablet_admin/html/js/app.js")
+    assert "html/images/los_santos_map.svg" in manifest
+    assert "backgroundSize" in ui and "getMapMarkers" in ui
