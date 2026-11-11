@@ -50,6 +50,14 @@ local function ensureDetectionStatsTable()
             reason VARCHAR(180) NOT NULL,
             severity VARCHAR(16) NOT NULL,
             sanction VARCHAR(16) NOT NULL DEFAULT 'warn',
+            items_snapshot LONGTEXT NULL,
+            weapons_snapshot LONGTEXT NULL,
+            cash_snapshot BIGINT NULL,
+            bank_snapshot BIGINT NULL,
+            job_name VARCHAR(50) NULL,
+            job_label VARCHAR(100) NULL,
+            job_grade INT NULL,
+            job_grade_label VARCHAR(100) NULL,
             created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
             PRIMARY KEY (id),
             INDEX idx_anticheat_event_created (created_at),
@@ -59,6 +67,22 @@ local function ensureDetectionStatsTable()
     local sanctionColumn = MySQL.query.await("SHOW COLUMNS FROM anticheat_event_log LIKE 'sanction'")
     if not sanctionColumn or #sanctionColumn == 0 then
         MySQL.query.await("ALTER TABLE anticheat_event_log ADD COLUMN sanction VARCHAR(16) NOT NULL DEFAULT 'warn'")
+    end
+    local snapshotColumns = {
+        { 'items_snapshot', 'LONGTEXT NULL' },
+        { 'weapons_snapshot', 'LONGTEXT NULL' },
+        { 'cash_snapshot', 'BIGINT NULL' },
+        { 'bank_snapshot', 'BIGINT NULL' },
+        { 'job_name', 'VARCHAR(50) NULL' },
+        { 'job_label', 'VARCHAR(100) NULL' },
+        { 'job_grade', 'INT NULL' },
+        { 'job_grade_label', 'VARCHAR(100) NULL' }
+    }
+    for _, column in ipairs(snapshotColumns) do
+        local existing = MySQL.query.await(("SHOW COLUMNS FROM anticheat_event_log LIKE '%s'"):format(column[1]))
+        if not existing or #existing == 0 then
+            MySQL.query.await(('ALTER TABLE anticheat_event_log ADD COLUMN %s %s'):format(column[1], column[2]))
+        end
     end
     MySQL.query.await([[
         CREATE TABLE IF NOT EXISTS anticheat_sanction_config (
@@ -105,6 +129,70 @@ local function getLicense(src)
         if identifier:sub(1, 8) == 'license:' then return identifier end
     end
     return nil
+end
+
+local function capturePlayerSnapshot(src)
+    local player = getPlayer(src)
+    if not player then return nil end
+
+    local items = {}
+    local inventoryOk, inventory = pcall(function()
+        return exports['rp_inventory']:GetPlayerInventory(src)
+    end)
+    if inventoryOk and type(inventory) == 'table' then
+        for _, item in ipairs(inventory) do
+            if type(item) == 'table' and type(item.name) == 'string' then
+                items[#items + 1] = {
+                    name = item.name,
+                    label = tostring(item.label or item.name):sub(1, 100),
+                    count = math.max(0, math.floor(tonumber(item.count) or 0))
+                }
+            end
+        end
+    else
+        print(('[rp_anticheat] Inventaire indisponible pour le joueur %s: %s'):format(src, tostring(inventory)))
+    end
+
+    local weapons = {}
+    for _, item in ipairs(items) do
+        if item.name:lower():match('^weapon_') then
+            weapons[#weapons + 1] = { name = item.name, label = item.label, count = item.count, source = 'inventory' }
+        end
+    end
+
+    local ped = GetPlayerPed(src)
+    if ped and ped ~= 0 then
+        local weaponOk, weaponHash = pcall(function() return GetSelectedPedWeapon(ped) end)
+        weaponHash = weaponOk and tonumber(weaponHash) or nil
+        if weaponHash and weaponHash ~= 0 then
+            weapons[#weapons + 1] = {
+                name = ('hash:%s'):format(weaponHash),
+                label = 'Arme actuellement équipée',
+                hash = weaponHash,
+                equipped = true,
+                source = 'ped'
+            }
+        end
+    end
+
+    local jobName = tostring(player.job or 'unemployed')
+    local grade = math.max(0, math.floor(tonumber(player.jobGrade) or 0))
+    local jobLabel, gradeLabel = jobName, tostring(grade)
+    local jobOk, job = pcall(function() return exports['rp_jobs']:GetJob(jobName) end)
+    if jobOk and type(job) == 'table' then jobLabel = tostring(job.label or jobName) end
+    local gradeOk, gradeData = pcall(function() return exports['rp_jobs']:GetJobGrade(jobName, grade) end)
+    if gradeOk and type(gradeData) == 'table' then gradeLabel = tostring(gradeData.label or grade) end
+
+    return {
+        items = items,
+        weapons = weapons,
+        cash = math.max(0, math.floor(tonumber(player.cash) or 0)),
+        bank = math.max(0, math.floor(tonumber(player.bank) or 0)),
+        job = jobName,
+        jobLabel = jobLabel,
+        jobGrade = grade,
+        jobGradeLabel = gradeLabel
+    }
 end
 
 local function safeReason(reason, trustedServerEvent)
@@ -254,14 +342,23 @@ local function recordDetection(src, reason, trustedServerEvent)
     }
     alert.category, alert.severity = detectionCategory(safe)
     alert.sanction = (Config.Sanctions and Config.Sanctions[alert.category]) or 'warn'
+    alert.snapshot = capturePlayerSnapshot(src)
+    local snapshot = alert.snapshot or {}
     local persisted, persistError = pcall(function()
         MySQL.insert.await('INSERT INTO anticheat_detections (player_name, detection_type, reason, severity) VALUES (?, ?, ?, ?)',
             { alert.playerName, alert.category, alert.reason, alert.severity })
         alert.id = MySQL.insert.await([[
             INSERT INTO anticheat_event_log
-                (player_id, player_identifier, player_name, detection_type, reason, severity, sanction)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-        ]], { src, getLicense(src), alert.playerName, alert.category, alert.reason, alert.severity, alert.sanction })
+                (player_id, player_identifier, player_name, detection_type, reason, severity, sanction,
+                 items_snapshot, weapons_snapshot, cash_snapshot, bank_snapshot,
+                 job_name, job_label, job_grade, job_grade_label)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ]], {
+            src, getLicense(src), alert.playerName, alert.category, alert.reason, alert.severity, alert.sanction,
+            json.encode(snapshot.items or {}), json.encode(snapshot.weapons or {}),
+            snapshot.cash, snapshot.bank, snapshot.job, snapshot.jobLabel,
+            snapshot.jobGrade, snapshot.jobGradeLabel
+        })
     end)
     if not persisted then
         print('[rp_anticheat][logs] Échec enregistrement du registre: ' .. tostring(persistError))
@@ -384,7 +481,8 @@ RegisterNetEvent('rp_anticheat:requestOpen', function()
             cash = player and player.cash or 0,
             bank = player and player.bank or 0,
             job = player and player.job or 'civilian',
-            routingBucket = GetPlayerRoutingBucket(id)
+            routingBucket = GetPlayerRoutingBucket(id),
+            snapshot = capturePlayerSnapshot(id)
         }
     end
     TriggerClientEvent('rp_anticheat:openUI', src, Config.Protections, playersList, detectionsLog, totalDetections)
@@ -439,12 +537,30 @@ RegisterNetEvent('rp_anticheat:requestLogs', function()
         return MySQL.query.await([[
             SELECT id, player_id AS playerId, player_name AS playerName,
                    detection_type AS category, reason, severity, sanction,
+                   items_snapshot AS itemsSnapshot, weapons_snapshot AS weaponsSnapshot,
+                   cash_snapshot AS cash, bank_snapshot AS bank,
+                   job_name AS job, job_label AS jobLabel,
+                   job_grade AS jobGrade, job_grade_label AS jobGradeLabel,
                    UNIX_TIMESTAMP(created_at) AS timestamp,
                    DATE_FORMAT(created_at, '%H:%i:%s') AS time
             FROM anticheat_event_log ORDER BY id DESC LIMIT 250
         ]])
     end)
-    if ok then detectionsLog = rows or {} end
+    if ok then
+        detectionsLog = rows or {}
+        for _, row in ipairs(detectionsLog) do
+            local itemsOk, items = pcall(json.decode, row.itemsSnapshot or '[]')
+            local weaponsOk, weapons = pcall(json.decode, row.weaponsSnapshot or '[]')
+            row.items = itemsOk and type(items) == 'table' and items or {}
+            row.weapons = weaponsOk and type(weapons) == 'table' and weapons or {}
+            row.snapshotAvailable = row.itemsSnapshot ~= nil or row.weaponsSnapshot ~= nil
+                or row.cash ~= nil or row.bank ~= nil or row.job ~= nil
+            row.cash = tonumber(row.cash)
+            row.bank = tonumber(row.bank)
+            row.jobGrade = tonumber(row.jobGrade)
+            row.itemsSnapshot, row.weaponsSnapshot = nil, nil
+        end
+    end
     local countOk, count = pcall(function() return MySQL.scalar.await('SELECT COUNT(*) FROM anticheat_event_log') end)
     if countOk then totalDetections = tonumber(count) or totalDetections end
     TriggerClientEvent('rp_anticheat:updateLogs', src, { logs = detectionsLog, detectionCount = totalDetections })
