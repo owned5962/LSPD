@@ -157,6 +157,7 @@ function StartSpectate(targetServerId, targetCoords)
     isSpectating = true
     spectateTarget = targetPed
     NetworkSetInSpectatorMode(true, targetPed)
+    SetNuiFocus(false, false)
     SendNUIMessage({ action = 'spectateStarted', targetId = targetServerId })
     TriggerEvent('rp_core:notify', 'info', 'Vue spectateur activée. Appuie sur F9 pour arrêter.')
 end
@@ -167,6 +168,7 @@ function StopSpectate()
     ClearFocus()
     isSpectating = false
     spectateTarget = nil
+    if isAnticheatUIOpen then SetNuiFocus(true, true) end
     SendNUIMessage({ action = 'spectateStopped' })
     TriggerEvent('rp_core:notify', 'info', 'Surveillance arrêtée.')
 end
