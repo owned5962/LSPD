@@ -372,26 +372,18 @@ def test_admin_tablet_controls_are_backed_by_server_authorization():
     server = read("resources/[FUNCTION]/rp_tablet_admin/server/main.lua")
     extended = read("resources/[FUNCTION]/rp_tablet_admin/server/extended.lua")
 
-    for permission, action in (
-        ("spectate", "spectate"),
-        ("heal", "heal"),
-        ("noclip", "noclip"),
-        ("godmode", "godmode"),
-        ("ban", "ban"),
-        ("revive", "revive"),
-    ):
-        button = next(line for line in html.splitlines() if f'data-perm="{permission}"' in line)
-        assert "disabled" not in button, permission
+    for tab in ("players", "gives", "sanctions", "functions", "jobs", "weather", "map", "audit"):
+        assert f'data-admin-view="{tab}"' in html
     assert "AllowExtendedAction(src, 'spectate', 500)" in extended
     assert "AllowExtendedAction(src, 'heal', 500)" in extended
     assert "AllowExtendedAction(src, 'noclip', 500)" in extended
     assert "AllowExtendedAction(src, 'godmode', 500)" in extended
     assert "AllowExtendedAction(src, 'ban', 1500)" in extended
     assert "AllowAdminAction(src, 'revive', 500)" in server
-    assert "onclick=\"manageSelectedMoney('give')\"" in html
-    assert "onclick=\"manageSelectedMoney('remove')\"" in html
+    assert "onclick=\"giveAdminMoney('cash')\"" in html
+    assert "onclick=\"giveAdminMoney('bank')\"" in html
     assert "AllowAdminAction(src, 'economy', 750)" in server
-    assert "onclick=\"spawnAdminVehicle()\"" in html
+    assert "onclick=\"giveAdminVehicle()\"" in html
     assert "AllowExtendedAction(src, 'spawn_vehicle', 1000)" in extended
 
 
@@ -405,8 +397,8 @@ def test_admin_tablet_can_read_audit_logs_only_through_authorized_server_event()
     assert "rp_tablet_admin:client:auditLogs" in client
     assert "RegisterServerCallback('requestAuditLogs'" in client
     assert "function renderAuditLogs(logs)" in ui
-    assert "details.textContent" in ui
-    assert 'id="admin-audit-logs"' in html
+    assert "cell.textContent = String(value)" in ui
+    assert 'id="admin-audit-table-body"' in html
 
 
 def test_admin_tablet_rate_limits_and_persists_audit_logs():
@@ -666,10 +658,10 @@ def test_admin_tablet_exposes_working_heal_economy_and_job_actions():
     assert "RegisterServerCallback('manageEconomy'" in client
     assert "RegisterServerCallback('setJob'" in client
     assert 'onclick="playerAction(\'heal\')"' in html
-    assert 'onclick="manageSelectedMoney(\'give\')"' in html
-    assert 'onclick="manageSelectedMoney(\'remove\')"' in html
+    assert 'onclick="giveAdminMoney(\'cash\')"' in html
+    assert 'onclick="giveAdminMoney(\'bank\')"' in html
     assert 'onclick="setSelectedJob()"' in html
-    assert "function manageSelectedMoney(operation)" in ui
+    assert "function giveAdminMoney(type)" in ui
     assert "function setSelectedJob()" in ui
 
 
@@ -1256,3 +1248,35 @@ if __name__ == "__main__":
     for name, check in checks:
         check()
     print(f"All {len(checks)} security and persistence regression checks passed.")
+
+
+def test_admin_tablet_has_separate_give_sanction_function_job_weather_and_audit_pages():
+    html = read("resources/[FUNCTION]/rp_tablet_admin/html/index.html")
+    ui = read("resources/[FUNCTION]/rp_tablet_admin/html/js/app.js")
+    for tab in ("gives", "sanctions", "functions", "jobs", "weather", "map", "audit"):
+        assert f'data-admin-view="{tab}"' in html
+        assert f'id="admin-{tab}-view"' in html
+    for prefix in ("give", "sanction", "function", "job"):
+        assert f'id="{prefix}-player-search"' in html
+        assert f'id="{prefix}-player-target"' in html
+    for control in ("admin-vehicle-model", "admin-give-cash-amount", "admin-give-bank-amount",
+                    "admin-weapon-name", "admin-item-name", "admin-item-count",
+                    "admin-job-name", "admin-job-grade", "admin-weather"):
+        assert f'id="{control}"' in html
+    assert "function renderAuditLogs(logs)" in ui
+    assert 'id="admin-audit-table-body"' in html
+
+
+def test_admin_item_give_uses_inventory_catalog_and_server_side_authorization():
+    client = read("resources/[FUNCTION]/rp_tablet_admin/client/main.lua")
+    server = read("resources/[FUNCTION]/rp_tablet_admin/server/extended.lua")
+    main = read("resources/[FUNCTION]/rp_tablet_admin/server/main.lua")
+    manifest = read("resources/[FUNCTION]/rp_tablet_admin/fxmanifest.lua")
+    ui = read("resources/[FUNCTION]/rp_tablet_admin/html/js/app.js")
+    assert "RegisterServerCallback('giveItem'" in client
+    assert "RegisterNetEvent('rp_tablet_admin:server:giveItem'" in server
+    assert "AllowExtendedAction(src, 'give_item', 750)" in server
+    assert "exports['rp_inventory']:AdminSetItem(targetId, itemName, 'add', count)" in server
+    assert "exports['rp_inventory']:GetItemCatalog()" in main
+    assert "'rp_inventory'" in manifest
+    assert "function giveAdminItem()" in ui
