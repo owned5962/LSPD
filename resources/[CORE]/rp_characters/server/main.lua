@@ -33,7 +33,9 @@ local function SafeDatabaseCall(src, operation, callback)
     local ok, result = pcall(callback)
     if not ok then
         print(('[rp_characters] %s failed for player %s: %s'):format(operation, tostring(src), tostring(result)))
-        Notify(src, 'La base de données est temporairement indisponible. Réessayez dans quelques instants.', 'error')
+        local message = 'La base de données est temporairement indisponible. Vérifiez oxmysql et la console serveur.'
+        Notify(src, message, 'error')
+        TriggerClientEvent('rp_characters:client:bootError', src, message)
         return false, nil
     end
     return true, result
@@ -146,7 +148,10 @@ end
 
 RegisterNetEvent('rp_characters:server:checkPlayer', function()
     local src = source
-    if not exports['rp_core']:CanPerformAction(src, 'character:check_player', 5000) then return end
+    if not exports['rp_core']:CanPerformAction(src, 'character:check_player', 5000) then
+        TriggerClientEvent('rp_characters:client:bootError', src, 'Une demande de chargement est déjà en cours. Reconnectez-vous si le problème persiste.')
+        return
+    end
     local identifier = GetLicenseIdentifier(src)
     if not identifier then
         DropPlayer(src, 'Identifiant FiveM license introuvable.')
@@ -176,7 +181,9 @@ RegisterNetEvent('rp_characters:server:checkPlayer', function()
         )
         if not insertOk then
             print(('[rp_characters] Account creation failed for %s: %s'):format(identifier, tostring(insertResult)))
-            Notify(src, 'Impossible de créer ou charger votre compte. Réessayez plus tard.')
+            local message = 'Impossible de créer ou charger votre compte. Vérifiez la base de données et la console serveur.'
+            Notify(src, message)
+            TriggerClientEvent('rp_characters:client:bootError', src, message)
             return
         end
         local reloadOk
@@ -185,7 +192,9 @@ RegisterNetEvent('rp_characters:server:checkPlayer', function()
         end)
         if not reloadOk then return end
         if not user then
-            Notify(src, 'Impossible de charger votre compte. Réessayez plus tard.')
+            local message = 'Compte introuvable après sa création. Vérifiez la table users.'
+            Notify(src, message)
+            TriggerClientEvent('rp_characters:client:bootError', src, message)
             return
         end
     else
