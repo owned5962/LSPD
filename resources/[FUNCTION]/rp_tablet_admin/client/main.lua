@@ -13,7 +13,7 @@ local function Notify(message, kind)
     TriggerEvent('rp_core:client:notify', message, kind or 'info')
 end
 
-local function StopTabletAnimation()
+function StopTabletAnimation()
     local ped = PlayerPedId()
     ClearPedSecondaryTask(ped)
     if tabletEntity and DoesEntityExist(tabletEntity) then
@@ -23,7 +23,7 @@ local function StopTabletAnimation()
     SetModelAsNoLongerNeeded(tabletModel)
 end
 
-local function StartTabletAnimation()
+function StartTabletAnimation()
     local ped = PlayerPedId()
     RequestAnimDict(tabletDict)
     local deadline = GetGameTimer() + 5000
@@ -47,7 +47,7 @@ local function StartTabletAnimation()
     SetModelAsNoLongerNeeded(tabletModel)
 end
 
-local function CloseAdminTablet()
+function CloseAdminTablet()
     if isAdminSpectating then
         TriggerServerEvent('rp_tablet_admin:server:stopSpectate')
     end
@@ -62,9 +62,6 @@ function OpenAdminTablet()
     TriggerServerEvent('rp_tablet_admin:server:requestOpen')
 end
 
-function CloseAdminTabletPublic()
-    CloseAdminTablet()
-end
 
 RegisterNetEvent('rp_tablet_admin:client:openAuthorized', function(adminData, playersList, jobsList, frozenPlayers)
     isTabletOpen = true
