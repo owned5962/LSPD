@@ -207,7 +207,7 @@ document.querySelectorAll('.spawn-card').forEach(card => card.addEventListener('
     document.querySelectorAll('.spawn-card').forEach(c => c.classList.remove('active'));
     card.classList.add('active'); selectedSpawn = card.dataset.spawn;
 }));
-['gender','clothing-style','father','mother','shape-mix','skin-mix','eye-color','brow-style','beard-style','brow-opacity','beard-opacity'].forEach(id => {
+['gender','clothing-style','father','mother','shape-mix','skin-mix','eye-color','brow-style','beard-style','brow-opacity','beard-opacity','component-3','component-4','component-5','component-6','component-9','component-11','prop-0','prop-1','prop-6','prop-7'].forEach(id => {
     document.getElementById(id).addEventListener('input', sendAppearancePreview);
     document.getElementById(id).addEventListener('change', sendAppearancePreview);
 });
@@ -216,10 +216,14 @@ document.getElementById('creator-form').addEventListener('submit', e => {
     postNui('saveCharacter', {
         firstname: document.getElementById('firstname').value.trim(),
         lastname: document.getElementById('lastname').value.trim(),
-        dateofbirth: document.getElementById('dateofbirth').value,
+        dateofbirth: document.getElementById('dateofbirth').value.split('/').reverse().join('-'),
         gender: document.getElementById('gender').value,
         height: Number(document.getElementById('height').value),
         spawnPoint: selectedSpawn, skin: getSkin()
     }).catch(() => {});
 });
 fillParents(); buildFaceSliders();
+document.getElementById('dateofbirth').addEventListener('input', event => {
+    const digits = event.target.value.replace(/[^0-9]/g, '').slice(0, 8);
+    event.target.value = digits.length > 4 ? digits.slice(0, 2) + '/' + digits.slice(2, 4) + '/' + digits.slice(4) : digits.length > 2 ? digits.slice(0, 2) + '/' + digits.slice(2) : digits;
+});
