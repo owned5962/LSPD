@@ -1036,7 +1036,7 @@ def test_admin_map_uses_real_gta_v_tiles_and_live_player_markers():
     ui = read("resources/[FUNCTION]/rp_tablet_admin/html/js/app.js")
     css = read("resources/[FUNCTION]/rp_tablet_admin/html/css/style.css")
     assert "leaflet@1.9.4" in html
-    assert "viruxe.github.io/gtav-map-tiles/atlas/{z}/{x}-{y}.webp" in ui
+    assert "viruxe.github.io/gtav-map-tiles/satelite/{z}/{x}-{y}.webp" in ui
     assert "worldToMap(position)" in ui
     assert "gta-player-marker" in css
     assert 'id="player-map"' in html
