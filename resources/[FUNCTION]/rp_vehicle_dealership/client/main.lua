@@ -66,6 +66,7 @@ RegisterNetEvent('rp_vehicle_dealership:client:open', function(payload)
 end)
 
 RegisterNetEvent('rp_vehicle_dealership:client:purchaseFailed', function(message)
+    if pendingSpawn and DoesEntityExist(pendingSpawn) then DeleteEntity(pendingSpawn) end
     pendingSpawn = nil
     notify(message or 'L’achat n’a pas pu être effectué.', 'error')
     SendNUIMessage({ action = 'purchaseError', message = message or 'Achat impossible.' })
