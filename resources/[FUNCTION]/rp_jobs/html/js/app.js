@@ -81,7 +81,7 @@ function renderJobs() {
 }
 
 function chooseJob(jobName) {
-    const button = document.querySelector(`.select-job-btn[data-name="${CSS.escape(jobName)}"]`);
+    const button = Array.from(document.querySelectorAll('.select-job-btn')).find(item => item.dataset.name === jobName);
     if (!button || button.disabled) return;
     button.dataset.originalLabel = button.textContent;
     button.disabled = true;
