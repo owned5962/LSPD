@@ -26,6 +26,10 @@ end)
 
 RegisterNetEvent('job_police:getArmoryWeapons', function()
     local src = source
+    if not exports['rp_core']:CanPerformAction(src, 'job_police:armory', 5000) then
+        TriggerClientEvent('rp_core:client:notify', src, 'Patientez avant de demander une nouvelle dotation.', 'warning')
+        return
+    end
     local player = exports['rp_core']:GetPlayer(src)
     if not player or player.job ~= 'police' or not dutyPlayers[src] or not isAt(Config.ArmoryCoords, src, 4.0) then
         TriggerClientEvent('rp_core:client:notify', src, 'Accès armurerie réservé aux agents en service présents à l’armurerie.', 'error')
