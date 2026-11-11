@@ -73,6 +73,9 @@ def test_weapon_policy_is_persistent_and_drives_client_and_server_anticheat():
     server = read("resources/[FUNCTION]/rp_anticheat/server/main.lua")
     client = read("resources/[FUNCTION]/rp_anticheat/client/main.lua")
     assert "Config.WeaponCatalog" in config and "Config.WeaponPolicy" in config
+    weapon_names = [line.split("name = '", 1)[1].split("'", 1)[0] for line in config.splitlines() if "name = 'WEAPON_" in line]
+    assert len(weapon_names) >= 100
+    assert len(weapon_names) == len(set(weapon_names))
     assert "CREATE TABLE IF NOT EXISTS anticheat_weapon_rules" in server
     assert "INSERT IGNORE INTO anticheat_weapon_rules" in server
     assert "exports('GetWeaponPolicy'" in server
