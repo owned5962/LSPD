@@ -5,7 +5,10 @@ let selectedPlayerId = null;
 let onlinePlayers = [];
 let availableJobs = [];
 let adminTabletOpen = false;
-let mapViewState = { zoom: 1, panX: 0, panY: 0, dragging: false, dragMoved: false, lastX: 0, lastY: 0 };
+let mapInstance = null;
+let mapMarkers = new Map();
+let itemCatalog = [];
+const panelTargets = { give: null, sanction: null, function: null, job: null };
 const frozenPlayers = new Set();
 
 const ADMIN_NUI_RESOURCE = 'rp_tablet_admin';
@@ -100,6 +103,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupTabSwitching();
     setupAdminSubViews();
     setupPlayerMap();
+    setupPlayerPickers();
     document.getElementById('admin-job-name')?.addEventListener('change', renderJobGrades);
     renderPermissionsMatrix();
     setInterval(() => {
@@ -238,12 +242,20 @@ function handleTabletMessage(event) {
         renderAuditLogs(data.logs);
         return;
     }
+    if (data.action === 'itemCatalog') {
+        itemCatalog = Array.isArray(data.items) ? data.items : [];
+        renderItemCatalog();
+        return;
+    }
     if (data.action !== 'openTablet') return;
 
     adminTabletOpen = true;
     if (tabletWrapper) tabletWrapper.classList.add('is-open');
     onlinePlayers = Array.isArray(data.players) ? data.players : [];
     availableJobs = Array.isArray(data.jobs) ? data.jobs : [];
+    itemCatalog = Array.isArray(data.items) ? data.items : [];
+    renderPlayerPickers();
+    renderItemCatalog();
     renderJobOptions();
     renderPlayerMap();
     renderMapPlayerList();
@@ -260,95 +272,104 @@ function requestAuditLogs() {
 }
 
 function renderAuditLogs(logs) {
-    const container = document.getElementById('admin-audit-logs');
-    if (!container) return;
-    container.replaceChildren();
+    const body = document.getElementById('admin-audit-table-body');
+    if (!body) return;
+    body.replaceChildren();
     if (!Array.isArray(logs) || logs.length === 0) {
-        const empty = document.createElement('p');
-        empty.textContent = 'Aucune action enregistrée.';
-        container.append(empty);
-        return;
+        const row = document.createElement('tr'), cell = document.createElement('td');
+        cell.colSpan = 5; cell.textContent = 'Aucune action enregistrée.';
+        row.appendChild(cell); body.appendChild(row); return;
     }
     logs.forEach(log => {
-        const entry = document.createElement('article');
-        entry.className = 'audit-log-entry';
-        const heading = document.createElement('strong');
-        heading.textContent = `${log.admin_name || 'Administrateur'} · ${log.action || 'action'}`;
-        const details = document.createElement('p');
-        details.textContent = `${log.details || ''}${log.target_identifier ? ` · Cible : ${log.target_identifier}` : ''}`;
-        const date = document.createElement('small');
-        date.textContent = log.created_at ? String(log.created_at) : '';
-        entry.append(heading, details, date);
-        container.append(entry);
+        const row = document.createElement('tr');
+        [log.admin_name || 'Administrateur', log.action || 'Action', log.target_identifier || '—', log.details || '—', log.created_at || ''].forEach(value => {
+            const cell = document.createElement('td'); cell.textContent = String(value); row.appendChild(cell);
+        });
+        body.appendChild(row);
     });
 }
 
 function renderOnlinePlayers() {
-    const list = document.getElementById('players-list');
-    const count = document.getElementById('player-count');
+    const list = document.getElementById('players-list'), count = document.getElementById('player-count');
     if (!list) return;
     if (count) count.textContent = String(onlinePlayers.length);
     list.replaceChildren();
     onlinePlayers.forEach(player => {
-        const entry = document.createElement('button');
-        entry.type = 'button'; entry.className = 'player-entry';
+        const entry = document.createElement('button'); entry.type = 'button'; entry.className = 'player-entry';
         const info = document.createElement('span'); info.className = 'player-info';
         const name = document.createElement('span'); name.className = 'name';
-        name.textContent = `${player.name || player.rawName || 'Joueur'} [ID: ${player.id}]${player.isSelf ? ' (VOUS)' : ''}`;
+        name.textContent = (player.name || player.rawName || 'Joueur') + ' [ID: ' + player.id + ']' + (player.isSelf ? ' (VOUS)' : '');
         const meta = document.createElement('span'); meta.className = 'meta';
-        meta.textContent = `Métier : ${player.jobLabel || player.job || 'Inconnu'} · Grade : ${player.grade ?? 0}`;
+        meta.textContent = 'Job : ' + (player.jobLabel || player.job || 'Inconnu') + ' · Grade : ' + (player.grade ?? 0) + ' · Ping : ' + (player.ping ?? 0) + ' ms';
         info.append(name, meta); entry.append(info);
         entry.addEventListener('click', () => selectPlayer(player.id, player.name || player.rawName || 'Joueur', player.job, entry));
         list.append(entry);
     });
-    const selected = onlinePlayers.find(player => Number(player.id) === Number(selectedPlayerId)) || onlinePlayers[0];
-    if (selected) {
-        const selectedEntry = Array.from(list.children).find(entry => entry.textContent.includes('[ID: ' + selected.id + ']'));
-        selectPlayer(selected.id, selected.name || selected.rawName || 'Joueur', selected.job, selectedEntry);
-    }
-    else {
-        selectedPlayerId = null;
-        const target = document.getElementById('selected-target-name');
-        if (target) target.textContent = 'Aucune cible';
-    }
+    if (selectedPlayerId && !onlinePlayers.some(p => Number(p.id) === Number(selectedPlayerId))) selectedPlayerId = null;
+    filterPlayers();
 }
-
 function filterPlayers() {
     const query = (document.getElementById('player-search')?.value || '').trim().toLowerCase();
-    document.querySelectorAll('.player-entry').forEach(entry => {
-        entry.hidden = query !== '' && !entry.textContent.toLowerCase().includes(query);
-    });
+    document.querySelectorAll('.player-entry').forEach(entry => { entry.hidden = query !== '' && !entry.textContent.toLowerCase().includes(query); });
 }
-
 function selectPlayer(id, name, job, element) {
     selectedPlayerId = Number(id);
-    document.querySelectorAll('.player-entry').forEach(el => el.classList.remove('selected'));
-    if (element) element.classList.add('selected');
-    renderMapPlayerList();
-    renderPlayerMap();
+    document.querySelectorAll('.player-entry').forEach(el => el.classList.toggle('selected', el === element));
     const target = document.getElementById('selected-target-name');
-    if (target) target.textContent = `${name} [ID: ${id}]`;
+    if (target) target.textContent = name + ' [ID: ' + id + ']';
+    renderMapPlayerList(); renderPlayerMap();
+}
+function setupPlayerPickers() {
+    ['give','sanction','function','job'].forEach(prefix => {
+        const search = document.getElementById(prefix + '-player-search'), select = document.getElementById(prefix + '-player-target');
+        if (search) search.addEventListener('input', () => renderPlayerPicker(prefix));
+        if (select) select.addEventListener('change', () => { panelTargets[prefix] = Number(select.value) || null; updatePanelTargetLabel(prefix); });
+    });
+}
+function renderPlayerPickers() { ['give','sanction','function','job'].forEach(prefix => renderPlayerPicker(prefix)); }
+function renderPlayerPicker(prefix) {
+    const search = document.getElementById(prefix + '-player-search'), select = document.getElementById(prefix + '-player-target');
+    if (!select) return;
+    const query = (search?.value || '').trim().toLowerCase(), previous = panelTargets[prefix] || Number(select.value) || null;
+    const matches = onlinePlayers.filter(player => !query || String(player.id).includes(query) || String(player.name || '').toLowerCase().includes(query) || String(player.rawName || '').toLowerCase().includes(query));
+    select.replaceChildren(new Option('Sélectionner un joueur connecté…', ''));
+    matches.forEach(player => select.add(new Option((player.name || player.rawName || 'Joueur') + ' · ID ' + player.id, String(player.id))));
+    if (previous && matches.some(player => Number(player.id) === Number(previous))) select.value = String(previous);
+    else if (/^\d+$/.test(query) && matches.some(player => Number(player.id) === Number(query))) select.value = query;
+    panelTargets[prefix] = Number(select.value) || null; updatePanelTargetLabel(prefix);
+}
+function updatePanelTargetLabel(prefix) {
+    const label = document.getElementById(prefix + '-player-selected'); if (!label) return;
+    const player = onlinePlayers.find(item => Number(item.id) === Number(panelTargets[prefix]));
+    label.textContent = player ? 'Sélection : ' + (player.name || player.rawName || 'Joueur') + ' · ID ' + player.id : 'Aucun joueur sélectionné';
+}
+function getPanelTarget(prefix) {
+    const id = Number(panelTargets[prefix]);
+    if (!Number.isInteger(id) || id < 1 || !onlinePlayers.some(player => Number(player.id) === id)) { showToast('Sélectionnez un joueur connecté avec son ID.'); return null; }
+    return id;
 }
 
 function playerAction(action) {
-    if (!Number.isInteger(selectedPlayerId) || selectedPlayerId < 1) return showToast('Sélectionnez un joueur connecté.');
-    const endpoints = { goto: 'teleportToPlayer', bring: 'bringPlayer', freeze: 'freezePlayer', revive: 'revivePlayer', heal: 'healPlayer', kick: 'kickPlayer', spectate: 'spectatePlayer' };
-    const endpoint = endpoints[action];
-    if (!endpoint) return showToast('Cette fonction n’est pas encore disponible.');
-    const payload = { playerId: selectedPlayerId };
-    if (action === 'freeze') {
-        payload.freeze = !frozenPlayers.has(selectedPlayerId);
-    }
-    if (action === 'kick') payload.reason = 'Expulsé par un administrateur.';
+    const targetId = getPanelTarget('function'); if (!targetId) return;
+    const endpoints = { goto:'teleportToPlayer', bring:'bringPlayer', freeze:'freezePlayer', revive:'revivePlayer', heal:'healPlayer', spectate:'spectatePlayer' };
+    const endpoint = endpoints[action]; if (!endpoint) return showToast('Fonction indisponible.');
+    const payload = { playerId: targetId }; if (action === 'freeze') payload.freeze = !frozenPlayers.has(targetId);
     nuiPost(endpoint, payload).then(() => {
-        if (action === 'freeze') {
-            if (payload.freeze) frozenPlayers.add(selectedPlayerId);
-            else frozenPlayers.delete(selectedPlayerId);
-        }
-        showToast(action === 'freeze' ? (payload.freeze ? 'Demande de gel envoyée.' : 'Demande de dégel envoyée.') : action === 'heal' ? 'Demande de soin envoyée au serveur.' : 'Demande envoyée au serveur.');
+        if (action === 'freeze') { if (payload.freeze) frozenPlayers.add(targetId); else frozenPlayers.delete(targetId); }
+        showToast('Action ' + action + ' envoyée pour ID ' + targetId + '.');
     }).catch(() => showToast('Impossible de contacter le serveur.'));
 }
-
+function sanctionPlayer(action) {
+    const targetId = getPanelTarget('sanction'); if (!targetId || action !== 'kick') return;
+    const reason = (document.getElementById('admin-kick-reason')?.value || 'Expulsé par un administrateur.').trim();
+    nuiPost('kickPlayer', { playerId: targetId, reason }).then(() => showToast('Demande de kick envoyée.')).catch(() => showToast('Impossible d’expulser ce joueur.'));
+}
+function banSelectedPlayer() {
+    const targetId = getPanelTarget('sanction'); if (!targetId) return;
+    const reason = document.getElementById('admin-ban-reason')?.value.trim(); if (!reason) return showToast('Saisissez un motif de bannissement.');
+    if (!window.confirm('Confirmer le bannissement permanent du joueur ID ' + targetId + ' ?')) return;
+    nuiPost('banPlayer', { playerId: targetId, reason }).then(() => showToast('Demande de bannissement envoyée.')).catch(() => showToast('Impossible de bannir ce joueur.'));
+}
 
 function manageSelectedMoney(operation) {
     if (!Number.isInteger(selectedPlayerId) || selectedPlayerId < 1) return showToast('Sélectionnez un joueur connecté.');
@@ -373,16 +394,10 @@ function setupAdminSubViews() {
     document.querySelectorAll('[data-admin-view]').forEach(button => {
         button.addEventListener('click', () => {
             const target = button.dataset.adminView;
-            document.querySelectorAll('[data-admin-view]').forEach(item => item.classList.toggle('active', item === button));
-            document.getElementById('admin-players-view')?.classList.toggle('active', target === 'players');
-            document.getElementById('admin-map-view')?.classList.toggle('active', target === 'map');
-            document.getElementById('admin-audit-view')?.classList.toggle('active', target === 'audit');
-            if (target === 'map') {
-                renderPlayerMap();
-                refreshPlayerMap();
-            } else if (target === 'audit') {
-                requestAuditLogs();
-            }
+            document.querySelectorAll('[data-admin-view]').forEach(item => item.classList.toggle('active',item===button));
+            document.querySelectorAll('.admin-subview').forEach(view => view.classList.toggle('active',view.id==='admin-'+target+'-view'));
+            if (target==='map') { setTimeout(()=>{mapInstance?.invalidateSize();renderPlayerMap();},50); refreshPlayerMap(); }
+            else if (target==='audit') requestAuditLogs();
         });
     });
 }
@@ -405,117 +420,31 @@ function updateOnlinePlayerPositions(players) {
 }
 
 function setupPlayerMap() {
-    const canvas = document.getElementById('player-map');
-    if (!canvas) return;
-    const resize = () => {
-        const rect = canvas.getBoundingClientRect();
-        if (!rect.width || !rect.height) return;
-        const ratio = window.devicePixelRatio || 1;
-        canvas.width = Math.round(rect.width * ratio);
-        canvas.height = Math.round(rect.height * ratio);
-        canvas.getContext('2d').setTransform(ratio, 0, 0, ratio, 0, 0);
-        renderPlayerMap();
-    };
-    if (typeof ResizeObserver === 'function') new ResizeObserver(resize).observe(canvas.parentElement);
-    else window.addEventListener('resize', resize);
-    canvas.addEventListener('wheel', event => {
-        event.preventDefault();
-        changeMapZoom(event.deltaY < 0 ? 1.15 : 0.87);
-    }, { passive: false });
-    canvas.addEventListener('mousedown', event => {
-        mapViewState.dragging = true;
-        mapViewState.dragMoved = false;
-        mapViewState.lastX = event.clientX;
-        mapViewState.lastY = event.clientY;
-        canvas.classList.add('dragging');
-    });
-    window.addEventListener('mouseup', () => {
-        mapViewState.dragging = false;
-        canvas.classList.remove('dragging');
-    });
-    window.addEventListener('mousemove', event => {
-        if (!mapViewState.dragging) return;
-        const dx = event.clientX - mapViewState.lastX;
-        const dy = event.clientY - mapViewState.lastY;
-        if (Math.abs(dx) + Math.abs(dy) > 2) mapViewState.dragMoved = true;
-        mapViewState.panX += dx;
-        mapViewState.panY += dy;
-        mapViewState.lastX = event.clientX;
-        mapViewState.lastY = event.clientY;
-        renderPlayerMap();
-    });
-    canvas.addEventListener('click', event => {
-        if (mapViewState.dragMoved) {
-            mapViewState.dragMoved = false;
-            return;
-        }
-        const rect = canvas.getBoundingClientRect();
-        const x = event.clientX - rect.left;
-        const y = event.clientY - rect.top;
-        const hit = getMapMarkers(rect.width, rect.height).find(marker => Math.hypot(marker.x - x, marker.y - y) < 18);
-        if (!hit) return;
-        const player = onlinePlayers.find(item => Number(item.id) === hit.id);
-        if (player) {
-            selectPlayer(player.id, player.name || player.rawName || 'Joueur', player.job);
-            renderMapPlayerList();
-            renderPlayerMap();
-        }
-    });
-    resize();
+    const container = document.getElementById('player-map'); if (!container) return;
+    if (typeof L === 'undefined') { container.textContent = 'Carte GTA V indisponible : Leaflet ne s’est pas chargé.'; return; }
+    mapInstance = L.map(container, { crs:L.CRS.Simple, minZoom:0, maxZoom:5, zoomSnap:0.25, attributionControl:false, zoomControl:false });
+    const bounds = L.latLngBounds([[0,0],[8192,8192]]);
+    L.tileLayer('https://viruxe.github.io/gtav-map-tiles/atlas/{z}/{x}-{y}.webp', { minZoom:0, maxZoom:5, noWrap:true, bounds, tileSize:256, attribution:'GTA V map tiles · viruxe/gtav-map-tiles' }).addTo(mapInstance);
+    mapInstance.fitBounds(bounds); mapInstance.setMaxBounds(bounds.pad(0.03));
 }
-
-const MAP_BOUNDS = { minX: -4500, maxX: 4500, minY: -4500, maxY: 8500 };
-function mapPoint(position, width, height) {
-    const baseX = ((Number(position.x) - MAP_BOUNDS.minX) / (MAP_BOUNDS.maxX - MAP_BOUNDS.minX)) * width;
-    const baseY = ((MAP_BOUNDS.maxY - Number(position.y)) / (MAP_BOUNDS.maxY - MAP_BOUNDS.minY)) * height;
-    return {
-        x: width / 2 + (baseX - width / 2) * mapViewState.zoom + mapViewState.panX,
-        y: height / 2 + (baseY - height / 2) * mapViewState.zoom + mapViewState.panY
-    };
+const GTA_WORLD = { minX:-4500, maxX:4500, minY:-4500, maxY:8500 };
+function worldToMap(position) {
+    const x = ((Number(position.x)-GTA_WORLD.minX)/(GTA_WORLD.maxX-GTA_WORLD.minX))*8192;
+    const y = ((Number(position.y)-GTA_WORLD.minY)/(GTA_WORLD.maxY-GTA_WORLD.minY))*8192;
+    return [y,x];
 }
-
-function getMapMarkers(width, height) {
-    return onlinePlayers.filter(player => player.position && Number.isFinite(Number(player.position.x)) && Number.isFinite(Number(player.position.y)))
-        .map(player => Object.assign({ id: Number(player.id) }, mapPoint(player.position, width, height)));
-}
-
 function renderPlayerMap() {
-    const canvas = document.getElementById('player-map');
-    if (!canvas) return;
-    const rect = canvas.getBoundingClientRect();
-    const width = rect.width;
-    const height = rect.height;
-    if (!width || !height) return;
-    const ctx = canvas.getContext('2d');
-    ctx.clearRect(0, 0, width, height);
-    const wrap = canvas.parentElement;
-    if (wrap) {
-        const scale = Math.round(mapViewState.zoom * 100);
-        wrap.style.backgroundSize = `${scale}% ${scale}%`;
-        wrap.style.backgroundPosition = `calc(50% + ${mapViewState.panX}px) calc(50% + ${mapViewState.panY}px)`;
-    }
-
-    const markers = getMapMarkers(width, height);
-    markers.forEach(marker => {
-        const player = onlinePlayers.find(item => Number(item.id) === marker.id);
-        if (marker.x < -20 || marker.x > width + 20 || marker.y < -20 || marker.y > height + 20) return;
-        ctx.beginPath();
-        ctx.arc(marker.x, marker.y, 10, 0, Math.PI * 2);
-        ctx.fillStyle = Number(player && player.id) === Number(selectedPlayerId) ? '#fbbf24' : '#ef4444';
-        ctx.shadowColor = ctx.fillStyle;
-        ctx.shadowBlur = 13;
-        ctx.fill();
-        ctx.shadowBlur = 0;
-        ctx.lineWidth = 2;
-        ctx.strokeStyle = '#fff';
-        ctx.stroke();
-        ctx.fillStyle = '#fff';
-        ctx.font = '700 10px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText(String(marker.id), marker.x, marker.y - 15);
+    if (!mapInstance) return;
+    mapMarkers.forEach(marker => mapInstance.removeLayer(marker)); mapMarkers.clear();
+    onlinePlayers.filter(player => player.position && Number.isFinite(Number(player.position.x)) && Number.isFinite(Number(player.position.y))).forEach(player => {
+        const marker = L.marker(worldToMap(player.position), {
+            icon:L.divIcon({ className:'gta-player-marker'+(Number(player.id)===Number(selectedPlayerId)?' selected':''), html:'<span>'+Number(player.id)+'</span>', iconSize:[30,30], iconAnchor:[15,15] }),
+            title:(player.name||player.rawName||'Joueur')+' · ID '+player.id
+        }).addTo(mapInstance);
+        marker.on('click', () => { selectPlayer(player.id, player.name||player.rawName||'Joueur', player.job); renderMapPlayerList(); });
+        mapMarkers.set(Number(player.id),marker);
     });
-    const count = document.getElementById('map-player-count');
-    if (count) count.textContent = String(markers.length);
+    const count=document.getElementById('map-player-count'); if(count) count.textContent=String(mapMarkers.size);
 }
 
 function renderMapPlayerList() {
@@ -542,17 +471,8 @@ function renderMapPlayerList() {
     });
 }
 
-function changeMapZoom(factor) {
-    mapViewState.zoom = Math.max(0.75, Math.min(4, mapViewState.zoom * factor));
-    renderPlayerMap();
-}
-
-function resetMapView() {
-    mapViewState.zoom = 1;
-    mapViewState.panX = 0;
-    mapViewState.panY = 0;
-    renderPlayerMap();
-}
+function changeMapZoom(factor) { if (!mapInstance) return; mapInstance.setZoom(Math.max(0,Math.min(5,mapInstance.getZoom()+(factor>1?1:-1)))); }
+function resetMapView() { if (mapInstance) mapInstance.fitBounds([[0,0],[8192,8192]]); }
 
 function manageSelectedMoney(operation) {
     if (!Number.isInteger(selectedPlayerId) || selectedPlayerId < 1) return showToast('Sélectionnez un joueur connecté.');
@@ -564,12 +484,42 @@ function manageSelectedMoney(operation) {
         .catch(() => showToast('Impossible de modifier le compte du joueur.'));
 }
 
+function giveAdminMoney(type) {
+    const targetId = getPanelTarget('give'); if (!targetId) return;
+    const inputId = type === 'bank' ? 'admin-give-bank-amount' : 'admin-give-cash-amount';
+    const amount = Number(document.getElementById(inputId)?.value);
+    if (!Number.isInteger(amount) || amount < 1 || amount > 1000000) return showToast('Montant invalide (1 à 1 000 000).');
+    nuiPost('manageEconomy', { playerId: targetId, type, amount, operation: 'give' }).then(() => showToast((type === 'bank' ? 'Argent bancaire' : 'Argent liquide') + ' attribué au joueur ID ' + targetId + '.')).catch(() => showToast('Impossible d’attribuer cet argent.'));
+}
+function giveAdminVehicle() {
+    const targetId = getPanelTarget('give'); if (!targetId) return;
+    const model = (document.getElementById('admin-vehicle-model')?.value || '').trim();
+    if (!/^[a-zA-Z0-9_]{2,40}$/.test(model)) return showToast('Saisissez un modèle de véhicule valide.');
+    nuiPost('giveVehicle', { playerId: targetId, model }).then(() => showToast('Véhicule attribué au joueur ID ' + targetId + '.')).catch(() => showToast('Impossible d’attribuer le véhicule.'));
+}
+function giveAdminWeapon() {
+    const targetId = getPanelTarget('give'); if (!targetId) return;
+    const weapon = document.getElementById('admin-weapon-name')?.value; if (!weapon) return showToast('Sélectionnez une arme.');
+    nuiPost('giveWeapon', { playerId: targetId, weapon }).then(() => showToast('Arme attribuée au joueur ID ' + targetId + '.')).catch(() => showToast('Impossible d’attribuer cette arme.'));
+}
+function renderItemCatalog() {
+    const select = document.getElementById('admin-item-name'); if (!select) return;
+    select.replaceChildren(new Option(itemCatalog.length ? 'Sélectionner un item…' : 'Catalogue indisponible', ''));
+    itemCatalog.forEach(item => { if (item && typeof item.name === 'string') select.add(new Option((item.label || item.name) + ' · ' + item.name, item.name)); });
+}
+function giveAdminItem() {
+    const targetId = getPanelTarget('give'); if (!targetId) return;
+    const item = document.getElementById('admin-item-name')?.value, count = Number(document.getElementById('admin-item-count')?.value);
+    if (!item || !Number.isInteger(count) || count < 1 || count > 1000) return showToast('Item ou quantité invalide.');
+    nuiPost('giveItem', { playerId: targetId, item, count }).then(() => showToast('Item attribué au joueur ID ' + targetId + '.')).catch(() => showToast('Impossible d’attribuer cet item.'));
+}
+
 function setSelectedJob() {
-    if (!Number.isInteger(selectedPlayerId) || selectedPlayerId < 1) return showToast('Sélectionnez un joueur connecté.');
+    const targetId = getPanelTarget('job'); if (!targetId) return;
     const jobName = document.getElementById('admin-job-name')?.value;
     const grade = Number(document.getElementById('admin-job-grade')?.value);
     if (!jobName || !Number.isInteger(grade) || grade < 0 || grade > 20) return showToast('Métier ou grade invalide.');
-    nuiPost('setJob', { playerId: selectedPlayerId, jobName, grade })
+    nuiPost('setJob', { playerId: targetId, jobName, grade })
         .then(() => showToast('Métier attribué : ' + jobName + ' (grade ' + grade + ').'))
         .catch(() => showToast('Impossible de modifier le métier.'));
 }
@@ -621,9 +571,8 @@ function refreshPlayerMap() {
 }
 
 function updateOnlinePlayerPositions(players) {
-    const current = new Map(onlinePlayers.map(player => [Number(player.id), player]));
-    onlinePlayers = players.map(player => Object.assign({}, current.get(Number(player.id)) || {}, player));
-    renderPlayerMap();
+    onlinePlayers = Array.isArray(players) ? players : [];
+    renderOnlinePlayers(); renderPlayerPickers(); renderPlayerMap();
     renderMapPlayerList();
     const count = document.getElementById('map-player-count');
     if (count) count.textContent = String(onlinePlayers.length);
