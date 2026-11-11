@@ -69,7 +69,7 @@ RegisterNetEvent('rp_fuel:server:purchase', function(rawNetId, rawLitres, paymen
     Entity(vehicle).state:set('rpFuel', newFuel, true)
     TriggerClientEvent('rp_core:client:updateCash', src, player.cash)
     TriggerClientEvent('rp_core:client:updateBank', src, player.bank)
-    TriggerEvent('rp_economy:server:logTransaction', player.charId, 'withdraw', amount, 'Station-service', ('Achat de %s L de carburant'):format(litres))
+    TriggerEvent('rp_economy:server:logTransaction', player.charId, 'fuel', amount, 'Station-service', ('Achat de %s L de carburant'):format(litres))
     TriggerClientEvent('rp_fuel:client:setFuel', -1, netId, newFuel)
     TriggerClientEvent('rp_fuel:client:purchaseResult', src, true,
         ('Plein effectué : %s L · %s $ payés par %s.'):format(litres, amount, account == 'cash' and 'espèces' or 'banque'),
