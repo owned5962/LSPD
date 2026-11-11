@@ -88,6 +88,15 @@ RegisterNetEvent('rp_anticheat:updateBans', function(bansList)
     if isAnticheatUIOpen then SendNUIMessage({ action = 'updateBans', bans = bansList or {} }) end
 end)
 
+RegisterNUICallback('requestStatistics', function(data, cb)
+    TriggerServerEvent('rp_anticheat:requestStatistics', data.period)
+    cb({ ok = true })
+end)
+
+RegisterNetEvent('rp_anticheat:updateStatistics', function(payload)
+    if isAnticheatUIOpen then SendNUIMessage({ action = 'updateStatistics', statistics = payload }) end
+end)
+
 RegisterNUICallback('requestLogs', function(data, cb)
     TriggerServerEvent('rp_anticheat:requestLogs')
     cb({ ok = true })
