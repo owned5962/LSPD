@@ -40,3 +40,14 @@ Config.Vehicles = {
     { model = 'faggio', label = 'Pegassi Faggio', category = 'Scooter' },
     { model = 'sanchez', label = 'Maibatsu Sanchez', category = 'Moto' }
 }
+
+-- Repères cartographiques des agences de location.
+-- Sprite 225 : icône véhicule ; couleur 3 : bleu.
+Config.MapBlip = {
+    enabled = true,
+    sprite = 225,
+    display = 4,
+    scale = 0.75,
+    colour = 3,
+    shortRange = true
+}
