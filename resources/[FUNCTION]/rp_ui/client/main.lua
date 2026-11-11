@@ -140,3 +140,36 @@ CreateThread(function()
         Wait(500)
     end
 end)
+
+
+-- Remove GTA's native health/armour bars below the minimap. These bars are
+-- rendered by the minimap Scaleform, so HideHudComponentThisFrame cannot remove
+-- them. SETUP_HEALTH_ARMOUR(3) selects the layout without those bars.
+CreateThread(function()
+    local minimap = RequestScaleformMovie('minimap')
+    local deadline = GetGameTimer() + 10000
+    while not HasScaleformMovieLoaded(minimap) and GetGameTimer() < deadline do
+        Wait(50)
+    end
+
+    if not HasScaleformMovieLoaded(minimap) then
+        print('[rp_ui] Minimap Scaleform failed to load; native health/armour bars may remain visible.')
+        return
+    end
+
+    -- Rebuild the minimap once so the custom layout is applied immediately.
+    SetBigmapActive(true, false)
+    Wait(0)
+    SetBigmapActive(false, false)
+
+    while true do
+        if not IsPauseMenuActive() then
+            BeginScaleformMovieMethod(minimap, 'SETUP_HEALTH_ARMOUR')
+            ScaleformMovieMethodAddParamInt(3)
+            EndScaleformMovieMethod()
+        end
+        -- The game can reset the minimap Scaleform after respawn, map changes
+        -- or settings updates; reapply at a low frequency instead of every frame.
+        Wait(750)
+    end
+end)
