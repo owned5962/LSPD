@@ -32,6 +32,18 @@
         <div class="vehicle-fuel"><i class="fa-solid fa-gas-pump"></i><div class="fuel-track"><span id="vehicle-fuel-bar"></span></div><b id="vehicle-fuel">100%</b></div>
     </div>
 
+    <section id="client-diagnostics" class="hidden" aria-live="polite">
+        <header><strong>STATISTIQUES CLIENT</strong><button type="button" id="close-diagnostics" aria-label="Fermer">×</button></header>
+        <div class="diagnostic-grid">
+            <div><small>FPS</small><b id="diag-fps">--</b></div>
+            <div><small>Ping</small><b id="diag-ping">-- ms</b></div>
+            <div><small>Joueurs</small><b id="diag-players">--</b></div>
+            <div><small>Position</small><b id="diag-coords">--</b></div>
+        </div>
+        <p>Les températures et taux d'utilisation CPU/GPU ne sont pas accessibles aux scripts FiveM.</p>
+        <footer>F12 pour fermer</footer>
+    </section>
+
     <div id="rp-notifications" aria-live="polite"></div>
 
     <!-- Animated Action Progress Bar -->
