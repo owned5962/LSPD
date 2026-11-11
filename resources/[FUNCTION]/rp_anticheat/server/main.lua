@@ -451,7 +451,7 @@ AddEventHandler('weaponDamageEvent', function(sender, data)
     local weaponName = Config.WeaponHashToName[weaponType]
     if weaponName and Config.WeaponPolicy[weaponName] ~= true then
         CancelEvent()
-        recordDetection(src, 'Arme interdite détectée')
+        recordDetection(src, 'Arme interdite détectée : ' .. weaponName)
     end
 end)
 
