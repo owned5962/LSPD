@@ -8,7 +8,10 @@ $tempDir = Join-Path ([System.IO.Path]::GetTempPath()) ("cfx-server-data-" + [gu
 $zipPath = Join-Path $tempDir "cfx-server-data.zip"
 
 try {
-    New-Item -ItemType Directory -Force -Path $tempDir, $targetDir | Out-Null
+    New-Item -ItemType Directory -Force -Path $tempDir, $ResourceRoot | Out-Null
+    if (-not (Test-Path -LiteralPath $targetDir -PathType Container)) {
+        New-Item -ItemType Directory -Force -Path $ResourceRoot -Name "[cfx-default]" | Out-Null
+    }
     Write-Host "Téléchargement des ressources officielles citizenfx/cfx-server-data..."
     Invoke-WebRequest -Uri "https://github.com/citizenfx/cfx-server-data/archive/refs/heads/master.zip" -OutFile $zipPath
     Expand-Archive -LiteralPath $zipPath -DestinationPath $tempDir -Force
