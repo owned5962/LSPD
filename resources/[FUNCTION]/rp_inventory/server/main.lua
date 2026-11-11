@@ -222,8 +222,11 @@ RegisterNetEvent('rp_inventory:useItem', function(itemName)
     local persisted, persistError = pcall(function()
         local ok = MySQL.transaction.await({
             {
-                query = 'UPDATE player_inventories SET items = ? WHERE character_id = ?',
-                values = { json.encode(updatedInventory), player.charId }
+                query = [[
+                    INSERT INTO player_inventories (character_id, items) VALUES (?, ?)
+                    ON DUPLICATE KEY UPDATE items = VALUES(items)
+                ]],
+                values = { player.charId, json.encode(updatedInventory) }
             },
             {
                 query = 'UPDATE characters SET metadata = ? WHERE id = ? AND identifier = ?',
@@ -250,38 +253,55 @@ RegisterNetEvent('rp_inventory:useItem', function(itemName)
     notify(src, 'success', itemDef.label .. ' utilisé.')
 end)
 
+
 RegisterNetEvent('rp_inventory:giveItem', function(rawTargetId, itemName, rawCount)
     local src = source
     if not exports['rp_core']:CanPerformAction(src, 'inventory:give_item', 1500) then return end
+
     local targetId, count = tonumber(rawTargetId), tonumber(rawCount)
     local player = exports['rp_core']:GetPlayerFromId(src)
     local target = targetId and exports['rp_core']:GetPlayerFromId(targetId)
     if not player or not target or targetId == src or type(itemName) ~= 'string'
         or not count or count % 1 ~= 0 or count < 1 or count > 100 then return end
-    local definition = Config.DefaultItems[itemName]
-    if not playerInventories[targetId] then
-        local ok, err = pcall(loadInventory, target)
-        if not ok then
-            print(('[rp_inventory] Target load failed for character %s: %s'):format(target.charId, tostring(err)))
-            notify(src, 'error', 'Impossible de charger l’inventaire du destinataire.')
-            return
-        end
+    if GetPlayerRoutingBucket(src) ~= GetPlayerRoutingBucket(targetId) then
+        notify(src, 'error', 'Ce joueur n’est pas dans votre instance.')
+        return
     end
+
+    local function ensureInventory(targetSource, targetPlayer)
+        if not playerInventories[targetSource] or inventoryCharacterIds[targetSource] ~= targetPlayer.charId then
+            local ok, err = pcall(loadInventory, targetPlayer)
+            if not ok then
+                print(('[rp_inventory] Load failed for character %s: %s'):format(targetPlayer.charId, tostring(err)))
+                return false
+            end
+        end
+        return true
+    end
+    if not ensureInventory(src, player) or not ensureInventory(targetId, target) then
+        notify(src, 'error', 'Impossible de charger un des inventaires.')
+        return
+    end
+
+    local definition = Config.DefaultItems[itemName]
     local sourceInventory, targetInventory = playerInventories[src], playerInventories[targetId]
     if not definition or not sourceInventory or not targetInventory then
         notify(src, 'error', 'Inventaire indisponible ou objet invalide.')
         return
     end
-    local sourceIndex, sourceItem
-    for index, item in ipairs(sourceInventory) do
-        if item.name == itemName then sourceIndex, sourceItem = index, item break end
+
+    local sourceItem
+    for _, item in ipairs(sourceInventory) do
+        if item.name == itemName then sourceItem = item break end
     end
     if not sourceItem or sourceItem.count < count then
         notify(src, 'error', 'Quantité insuffisante.')
         return
     end
+
     local sourcePed, targetPed = GetPlayerPed(src), GetPlayerPed(targetId)
-    if sourcePed == 0 or targetPed == 0 or #(GetEntityCoords(sourcePed) - GetEntityCoords(targetPed)) > 3.0 then
+    if sourcePed == 0 or targetPed == 0
+        or #(GetEntityCoords(sourcePed) - GetEntityCoords(targetPed)) > 3.0 then
         notify(src, 'error', 'Le joueur est trop éloigné.')
         return
     end
@@ -289,42 +309,58 @@ RegisterNetEvent('rp_inventory:giveItem', function(rawTargetId, itemName, rawCou
         notify(src, 'error', 'Le joueur ne peut pas porter cette charge.')
         return
     end
-
     if transferLocks[src] or transferLocks[targetId] then
         notify(src, 'error', 'Un transfert est déjà en cours.')
         return
     end
-    transferLocks[src], transferLocks[targetId] = true, true
+    if not exports['rp_core']:AcquireCharacterLock({ player.charId, target.charId }) then
+        notify(src, 'error', 'Une sauvegarde est en cours. Réessayez.')
+        return
+    end
 
+    transferLocks[src], transferLocks[targetId] = true, true
     local sourceNew = normalizeInventory(sourceInventory)
     local targetNew = normalizeInventory(targetInventory)
-    local newSourceItem
     for index, item in ipairs(sourceNew) do
-        if item.name == itemName then newSourceItem = item; if item.count <= count then table.remove(sourceNew, index) else item.count = item.count - count end; break end
+        if item.name == itemName then
+            if item.count <= count then table.remove(sourceNew, index)
+            else item.count = item.count - count end
+            break
+        end
     end
     local existing
-    for _, item in ipairs(targetNew) do if item.name == itemName then existing = item break end end
+    for _, item in ipairs(targetNew) do
+        if item.name == itemName then existing = item break end
+    end
     if existing then existing.count = existing.count + count
-    else targetNew[#targetNew + 1] = { name = itemName, count = count, label = definition.label, weight = definition.weight } end
+    else
+        targetNew[#targetNew + 1] = {
+            name = itemName, count = count, label = definition.label, weight = definition.weight
+        }
+    end
 
     local persisted, persistError = pcall(function()
-        -- Ensure both rows exist before the atomic two-row update.
-        if not saveInventory(player) or not saveInventory(target) then
-            error('Unable to prepare inventory rows')
-        end
         local ok = MySQL.transaction.await({
             {
-                query = 'UPDATE player_inventories SET items = ? WHERE character_id = ?',
-                values = { json.encode(sourceNew), player.charId }
+                query = [[
+                    INSERT INTO player_inventories (character_id, items) VALUES (?, ?)
+                    ON DUPLICATE KEY UPDATE items = VALUES(items)
+                ]],
+                values = { player.charId, json.encode(sourceNew) }
             },
             {
-                query = 'UPDATE player_inventories SET items = ? WHERE character_id = ?',
-                values = { json.encode(targetNew), target.charId }
+                query = [[
+                    INSERT INTO player_inventories (character_id, items) VALUES (?, ?)
+                    ON DUPLICATE KEY UPDATE items = VALUES(items)
+                ]],
+                values = { target.charId, json.encode(targetNew) }
             }
         })
-        if not ok then error('Inventory transaction rejected') end
+        if not ok then error('Inventory transfer transaction rejected') end
     end)
+
     transferLocks[src], transferLocks[targetId] = nil, nil
+    exports['rp_core']:ReleaseCharacterLock({ player.charId, target.charId })
     if not persisted then
         print(('[rp_inventory] Atomic transfer failed (%s -> %s): %s'):format(player.charId, target.charId, tostring(persistError)))
         notify(src, 'error', 'Le transfert a échoué. Aucun objet n’a été transféré.')
@@ -332,19 +368,212 @@ RegisterNetEvent('rp_inventory:giveItem', function(rawTargetId, itemName, rawCou
     end
 
     playerInventories[src], playerInventories[targetId] = sourceNew, targetNew
-    notify(src, 'success', 'Objet transféré.')
-    notify(targetId, 'success', 'Vous avez reçu ' .. count .. ' x ' .. definition.label .. '.')
+    notify(src, 'success', ('Vous avez donné %dx %s.'):format(count, definition.label))
+    notify(targetId, 'success', ('Vous avez reçu %dx %s.'):format(count, definition.label))
     sendInventory(src, player)
     sendInventory(targetId, target)
 end)
 
+-- Les objets au sol sont des entités réseau créées et contrôlées par le serveur.
+local groundDrops = {}
+local nextDropId = 0
+local DROP_MODEL = GetHashKey('prop_cs_cardbox_01')
+
+local function buildDropSnapshot(bucket)
+    local snapshot = {}
+    for id, drop in pairs(groundDrops) do
+        if drop.bucket == bucket then
+            snapshot[#snapshot + 1] = {
+                id = id, x = drop.x, y = drop.y, z = drop.z,
+                label = drop.label, count = drop.count
+            }
+        end
+    end
+    return snapshot
+end
+
+local function syncDrops(target)
+    if target then
+        TriggerClientEvent('rp_inventory:client:syncDrops', target,
+            buildDropSnapshot(GetPlayerRoutingBucket(target)))
+        return
+    end
+    for _, rawSource in ipairs(GetPlayers()) do
+        local targetId = tonumber(rawSource)
+        TriggerClientEvent('rp_inventory:client:syncDrops', targetId,
+            buildDropSnapshot(GetPlayerRoutingBucket(targetId)))
+    end
+end
+
+RegisterNetEvent('rp_inventory:server:requestDrops', function()
+    syncDrops(source)
+end)
+
 RegisterNetEvent('rp_inventory:dropItem', function(itemName, rawCount)
     local src = source
+    if not exports['rp_core']:CanPerformAction(src, 'inventory:drop_item', 1000) then return end
+
     local count = tonumber(rawCount)
     local player = exports['rp_core']:GetPlayerFromId(src)
-    if not player or not playerInventories[src] or type(itemName) ~= 'string' or not count or count % 1 ~= 0 or count < 1 or count > 100 then return end
-    -- Ground drops are deliberately rejected until a server-owned pickup entity flow is installed.
-    notify(src, 'error', 'Le dépôt au sol est temporairement désactivé.')
+    if not player or type(itemName) ~= 'string' or not count
+        or count % 1 ~= 0 or count < 1 or count > 100 then return end
+    if not playerInventories[src] or inventoryCharacterIds[src] ~= player.charId then
+        local ok, err = pcall(loadInventory, player)
+        if not ok then
+            print(('[rp_inventory] Drop inventory load failed for %s: %s'):format(player.charId, tostring(err)))
+            notify(src, 'error', 'Impossible de charger votre inventaire.')
+            return
+        end
+    end
+
+    local definition = Config.DefaultItems[itemName]
+    local inventory = playerInventories[src]
+    local index, item
+    for i, entry in ipairs(inventory or {}) do
+        if entry.name == itemName then index, item = i, entry break end
+    end
+    if not definition or not item or item.count < count then
+        notify(src, 'error', 'Vous ne possédez pas cette quantité.')
+        return
+    end
+    if transferLocks[src] then
+        notify(src, 'error', 'Une opération est déjà en cours.')
+        return
+    end
+
+    local ped = GetPlayerPed(src)
+    if ped == 0 then return end
+    local coords = GetEntityCoords(ped)
+    local forward = GetEntityForwardVector(ped)
+    local dropX, dropY, dropZ = coords.x + forward.x * 0.8, coords.y + forward.y * 0.8, coords.z - 0.85
+    local object = CreateObjectNoOffset(DROP_MODEL, dropX, dropY, dropZ, true, true, false)
+    if not object or object == 0 or not DoesEntityExist(object) then
+        notify(src, 'error', 'Impossible de créer le paquet au sol. Aucun objet retiré.')
+        return
+    end
+    SetEntityHeading(object, GetEntityHeading(ped))
+    FreezeEntityPosition(object, true)
+
+    local updated = normalizeInventory(inventory)
+    local updatedIndex
+    for i, entry in ipairs(updated) do
+        if entry.name == itemName then updatedIndex = i break end
+    end
+    if not updatedIndex then
+        DeleteEntity(object)
+        return
+    end
+    if updated[updatedIndex].count <= count then table.remove(updated, updatedIndex)
+    else updated[updatedIndex].count = updated[updatedIndex].count - count end
+
+    if not exports['rp_core']:AcquireCharacterLock({ player.charId }) then
+        DeleteEntity(object)
+        notify(src, 'error', 'Une sauvegarde de votre personnage est en cours. Réessayez.')
+        return
+    end
+    transferLocks[src] = true
+    local persisted, persistError = pcall(function()
+        MySQL.insert.await([[
+            INSERT INTO player_inventories (character_id, items) VALUES (?, ?)
+            ON DUPLICATE KEY UPDATE items = VALUES(items)
+        ]], { player.charId, json.encode(updated) })
+    end)
+    transferLocks[src] = nil
+    exports['rp_core']:ReleaseCharacterLock({ player.charId })
+    if not persisted then
+        DeleteEntity(object)
+        print(('[rp_inventory] Drop save failed for character %s: %s'):format(player.charId, tostring(persistError)))
+        notify(src, 'error', 'Sauvegarde impossible : objet conservé dans votre inventaire.')
+        return
+    end
+
+    playerInventories[src] = updated
+    nextDropId = nextDropId + 1
+    local dropId = nextDropId
+    groundDrops[dropId] = {
+        entity = object, x = dropX, y = dropY, z = dropZ,
+        label = definition.label, count = count, itemName = itemName,
+        bucket = GetPlayerRoutingBucket(src)
+    }
+    sendInventory(src, player)
+    notify(src, 'success', ('Vous avez déposé %dx %s.'):format(count, definition.label))
+    syncDrops()
+end)
+
+RegisterNetEvent('rp_inventory:server:pickupDrop', function(rawDropId)
+    local src = source
+    if not exports['rp_core']:CanPerformAction(src, 'inventory:pickup_drop', 1000) then return end
+    local dropId = tonumber(rawDropId)
+    local drop = dropId and groundDrops[dropId]
+    local player = exports['rp_core']:GetPlayerFromId(src)
+    if not drop or not player then return end
+    if drop.bucket ~= GetPlayerRoutingBucket(src) then return end
+
+    local ped = GetPlayerPed(src)
+    if ped == 0 or not DoesEntityExist(drop.entity) then
+        groundDrops[dropId] = nil
+        syncDrops()
+        return
+    end
+    if #(GetEntityCoords(ped) - GetEntityCoords(drop.entity)) > 2.2 then
+        notify(src, 'error', 'Vous êtes trop loin de cet objet.')
+        return
+    end
+    if transferLocks[src] then
+        notify(src, 'error', 'Une opération est déjà en cours.')
+        return
+    end
+
+    if not playerInventories[src] or inventoryCharacterIds[src] ~= player.charId then
+        local ok = pcall(loadInventory, player)
+        if not ok then
+            notify(src, 'error', 'Impossible de charger votre inventaire.')
+            return
+        end
+    end
+    local definition = Config.DefaultItems[drop.itemName]
+    if not definition then return end
+    local updated = normalizeInventory(playerInventories[src])
+    if getInventoryWeight(updated) + definition.weight * drop.count > Config.MaxWeight then
+        notify(src, 'error', 'Votre inventaire est trop lourd.')
+        return
+    end
+    local found = false
+    for _, entry in ipairs(updated) do
+        if entry.name == drop.itemName then entry.count = entry.count + drop.count; found = true; break end
+    end
+    if not found then
+        updated[#updated + 1] = {
+            name = drop.itemName, count = drop.count,
+            label = definition.label, weight = definition.weight
+        }
+    end
+
+    if not exports['rp_core']:AcquireCharacterLock({ player.charId }) then
+        notify(src, 'error', 'Une sauvegarde de votre personnage est en cours. Réessayez.')
+        return
+    end
+    transferLocks[src] = true
+    local persisted, persistError = pcall(function()
+        MySQL.insert.await([[
+            INSERT INTO player_inventories (character_id, items) VALUES (?, ?)
+            ON DUPLICATE KEY UPDATE items = VALUES(items)
+        ]], { player.charId, json.encode(updated) })
+    end)
+    transferLocks[src] = nil
+    exports['rp_core']:ReleaseCharacterLock({ player.charId })
+    if not persisted then
+        print(('[rp_inventory] Pickup save failed for character %s: %s'):format(player.charId, tostring(persistError)))
+        notify(src, 'error', 'Sauvegarde impossible : l’objet reste au sol.')
+        return
+    end
+
+    playerInventories[src] = updated
+    groundDrops[dropId] = nil
+    DeleteEntity(drop.entity)
+    TriggerClientEvent('rp_inventory:client:removeDrop', -1, dropId)
+    sendInventory(src, player)
+    notify(src, 'success', ('Vous avez récupéré %dx %s.'):format(drop.count, definition.label))
 end)
 
 AddEventHandler('playerDropped', function()
