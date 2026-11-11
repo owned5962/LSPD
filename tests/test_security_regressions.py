@@ -692,7 +692,7 @@ def test_all_security_regressions_are_run_by_the_test_script():
     assert "RegisterNetEvent('rp_anticheat:requestLogs'" in server
     assert "RegisterNetEvent('rp_anticheat:requestBans'" in server
     assert "RegisterNetEvent('rp_anticheat:unban'" in server
-    assert "CanUseAnticheatTablet(src)" in server
+    assert "canUseAnticheatTablet(src)" in server
     assert "entity_spam" in config and "AddEventHandler('entityCreating'" in server
     assert "MaxEntitiesPerWindow" in config and "CancelEvent()" in server
     assert "textContent" in ui
