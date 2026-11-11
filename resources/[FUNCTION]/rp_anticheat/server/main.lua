@@ -10,9 +10,13 @@ local spectateRequestAt = {}
 
 local function detectionCategory(reason)
     if reason:find('GodMode', 1, true) then return 'godmode', 'critical' end
+    if reason:find('Obtention', 1, true) then return 'money', 'critical' end
+    if reason:find('Spawn de véhicule', 1, true) then return 'vehicle_spawn', 'high' end
+    if reason:find('Modification de gravité', 1, true) then return 'gravity', 'high' end
     if reason:find('argent', 1, true) or reason:find('money', 1, true) then return 'money', 'critical' end
     if reason:find('véhicule', 1, true) or reason:find('vehicle', 1, true) then return 'vehicle_spawn', 'high' end
-    if reason:find('Arme', 1, true) then return 'weapon_spawn', 'critical' end
+    if reason:find("Spawn d'arme", 1, true) then return 'weapon_spawn', 'critical' end
+    if reason:find('Arme interdite', 1, true) then return 'weapon_blacklist', 'high' end
     if reason:find('SpeedHack', 1, true) then return 'speedhack', 'high' end
     if reason:find('gravité', 1, true) or reason:find('gravity', 1, true) then return 'gravity', 'high' end
     if reason:find('spam', 1, true) then return 'spam', 'medium' end
@@ -64,7 +68,7 @@ local function getLicense(src)
     return nil
 end
 
-local function safeReason(reason)
+local function safeReason(reason, trustedServerEvent)
     if type(reason) ~= 'string' then return nil end
     reason = reason:gsub('[%c]', ' '):sub(1, 180)
     local allowed = {
@@ -78,13 +82,24 @@ local function safeReason(reason)
     for _, prefix in ipairs(allowed) do
         if reason:sub(1, #prefix) == prefix then return reason end
     end
+    if trustedServerEvent then
+        local serverOnly = {
+            "Obtention d'argent non autorisée",
+            "Spawn de véhicule non autorisé",
+            "Spawn d'arme non autorisé",
+            "Modification de gravité détectée"
+        }
+        for _, prefix in ipairs(serverOnly) do
+            if reason:sub(1, #prefix) == prefix then return reason end
+        end
+    end
     return nil
 end
 
-local function recordDetection(src, reason)
+local function recordDetection(src, reason, trustedServerEvent)
     local now = os.time()
     if not GetPlayerName(src) or (lastFlagAt[src] and now - lastFlagAt[src] < 5) then return false end
-    local safe = safeReason(reason)
+    local safe = safeReason(reason, trustedServerEvent == true)
     if not safe then return false end
     lastFlagAt[src] = now
 
@@ -115,6 +130,13 @@ local function recordDetection(src, reason)
     end
     return true
 end
+
+-- Server-side resources can report trusted detections without exposing a network event.
+exports('RecordServerDetection', function(rawPlayerId, reason)
+    local playerId = tonumber(rawPlayerId)
+    if not playerId or not GetPlayerName(playerId) then return false end
+    return recordDetection(playerId, reason, true)
+end)
 
 -- This is a local server event: clients cannot grant themselves this exemption.
 -- Local server-only event (AddEventHandler, deliberately not RegisterNetEvent).
@@ -243,10 +265,14 @@ RegisterNetEvent('rp_anticheat:requestStatistics', function(period)
             SELECT DATE_FORMAT(created_at, ?) AS bucket, detection_type AS category,
                    severity, COUNT(*) AS total
             FROM anticheat_detections
-            WHERE created_at >= DATE_SUB(NOW(), INTERVAL 1 YEAR)
+            WHERE created_at >= CASE
+                WHEN ? = 'day' THEN DATE_SUB(NOW(), INTERVAL 30 DAY)
+                WHEN ? = 'month' THEN DATE_SUB(NOW(), INTERVAL 12 MONTH)
+                ELSE '1970-01-01 00:00:00'
+            END
             GROUP BY bucket, detection_type, severity
             ORDER BY bucket ASC
-        ]], { format })
+         ]], { format, period, period })
     end)
     if not ok then
         print('[rp_anticheat][stats] Chargement des statistiques impossible: ' .. tostring(rows))
