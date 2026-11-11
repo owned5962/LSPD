@@ -33,6 +33,32 @@ CREATE TABLE IF NOT EXISTS `characters` (
     CONSTRAINT `fk_characters_users` FOREIGN KEY (`identifier`) REFERENCES `users` (`identifier`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Registre central des points d'intérêt de la carte (alimenté au démarrage par rp_businesses).
+-- Les coordonnées et réglages peuvent ensuite être modifiés directement en base.
+CREATE TABLE IF NOT EXISTS `rp_world_locations` (
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `location_key` VARCHAR(100) NOT NULL,
+    `location_type` ENUM('atm','bank','shop','gas_station') NOT NULL,
+    `name` VARCHAR(120) NOT NULL,
+    `shop_style` VARCHAR(60) DEFAULT NULL,
+    `icon` VARCHAR(60) NOT NULL,
+    `x` DOUBLE NOT NULL,
+    `y` DOUBLE NOT NULL,
+    `z` DOUBLE NOT NULL,
+    `blip_enabled` TINYINT(1) NOT NULL DEFAULT 1,
+    `blip_sprite` INT NOT NULL DEFAULT 1,
+    `blip_display` INT NOT NULL DEFAULT 4,
+    `blip_scale` DECIMAL(4,2) NOT NULL DEFAULT 0.70,
+    `blip_colour` INT NOT NULL DEFAULT 0,
+    `short_range` TINYINT(1) NOT NULL DEFAULT 1,
+    `enabled` TINYINT(1) NOT NULL DEFAULT 1,
+    `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uq_rp_world_locations_key` (`location_key`),
+    KEY `idx_rp_world_locations_type` (`location_type`, `enabled`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS `bank_transactions` (
     `id` INT AUTO_INCREMENT PRIMARY KEY,
     `character_id` INT NOT NULL,
