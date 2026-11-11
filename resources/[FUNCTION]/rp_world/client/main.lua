@@ -1,7 +1,7 @@
 local DISABLE_POLICE = true
-local PED_DENSITY = 0.78
-local SCENARIO_PED_DENSITY = 0.78
-local VEHICLE_DENSITY = 0.82
+local PED_DENSITY = 0.65
+local SCENARIO_PED_DENSITY = 0.65
+local VEHICLE_DENSITY = 0.80
 
 CreateThread(function()
     while true do
