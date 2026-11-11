@@ -86,32 +86,65 @@ window.addEventListener('message', (event) => {
     }
 });
 function renderCharacters(characters) {
-    const list = document.getElementById('character-list'); list.replaceChildren();
-    const occupied = new Set();
+    const list = document.getElementById('character-list');
+    list.replaceChildren();
     selectedCharacterSlot = null;
+
+    const slots = new Map();
+    const safeCharacters = Array.isArray(characters) ? characters : [];
+    safeCharacters.forEach((character) => {
+        const slot = Number(character && character.char_id);
+        if (!Number.isInteger(slot) || slot < 1 || slot > maxCharacters || slots.has(slot)) return;
+        slots.set(slot, character);
+    });
+
     const countLabel = document.getElementById('character-count');
-    if (countLabel) countLabel.textContent = `${characters.length} personnage(s) créé(s) sur ${maxCharacters} · Sélectionnez une identité pour entrer en ville.`;
+    if (countLabel) {
+        countLabel.textContent = `${slots.size} personnage(s) créé(s) sur ${maxCharacters} · Sélectionnez une identité pour entrer en ville.`;
+    }
+
     const enterButton = document.getElementById('enter-city-btn');
     enterButton.disabled = true;
-    characters.forEach((character) => {
-        occupied.add(Number(character.char_id));
-        const card = document.createElement('button'); card.type = 'button'; card.className = 'character-card';
-        const name = document.createElement('strong'); name.textContent = `${character.firstname} ${character.lastname}`;
-        const details = document.createElement('span'); details.textContent = `Emplacement ${character.char_id} · ${character.job || 'Sans emploi'}`;
-        card.append(name, details); card.dataset.slot = String(character.char_id);
+
+    slots.forEach((character, slot) => {
+        const card = document.createElement('button');
+        card.type = 'button';
+        card.className = 'character-card';
+        card.setAttribute('aria-pressed', 'false');
+
+        const name = document.createElement('strong');
+        name.textContent = `${character.firstname || 'Prénom'} ${character.lastname || 'inconnu'}`;
+        const details = document.createElement('span');
+        details.textContent = `Emplacement ${slot} · ${character.job || 'Sans emploi'}`;
+        card.append(name, details);
+
         card.addEventListener('click', () => {
-            selectedCharacterSlot = Number(character.char_id);
-            list.querySelectorAll('.character-card').forEach(item => item.classList.toggle('selected', item === card));
+            selectedCharacterSlot = slot;
+            list.querySelectorAll('.character-card[aria-pressed]').forEach((item) => {
+                item.classList.remove('selected');
+                item.setAttribute('aria-pressed', 'false');
+            });
+            card.classList.add('selected');
+            card.setAttribute('aria-pressed', 'true');
             enterButton.disabled = false;
         });
         list.appendChild(card);
     });
-    for (let slot = 1; slot <= maxCharacters; slot++) if (!occupied.has(slot)) {
-        const empty = document.createElement('div'); empty.className = 'character-card empty'; empty.textContent = `Emplacement ${slot} · Libre`; list.appendChild(empty);
+
+    for (let slot = 1; slot <= maxCharacters; slot++) {
+        if (!slots.has(slot)) {
+            const empty = document.createElement('div');
+            empty.className = 'character-card empty';
+            empty.textContent = `Emplacement ${slot} · Libre`;
+            list.appendChild(empty);
+        }
     }
+
     const createButton = document.getElementById('create-character-btn');
-    createButton.disabled = characters.length >= maxCharacters;
-    createButton.textContent = characters.length >= maxCharacters ? 'Limite de personnages atteinte' : (characters.length ? 'Créer un autre personnage' : 'Créer mon personnage');
+    createButton.disabled = slots.size >= maxCharacters;
+    createButton.textContent = slots.size >= maxCharacters
+        ? 'Limite de personnages atteinte'
+        : (slots.size > 0 ? 'Créer un autre personnage' : 'Créer mon personnage');
 }
 document.getElementById('create-character-btn').addEventListener('click', () => postNui('beginCreation').catch(() => {}));
 document.getElementById('enter-city-btn').addEventListener('click', () => {
