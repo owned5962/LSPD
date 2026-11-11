@@ -70,7 +70,7 @@ function renderGrid(items) {
 
 document.getElementById('btn-close').addEventListener('click', closeUI);
 document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' || e.key === 'F2') { e.preventDefault(); closeUI(); }
+    if (e.key === 'Escape') { e.preventDefault(); closeUI(); }
 });
 
 function closeUI() {
