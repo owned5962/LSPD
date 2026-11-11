@@ -68,3 +68,25 @@ ATMBlipLocations = {
     { 1968.1, 3743.6, 32.3 }, { 540.3, 2671.1, 42.2 },
     { 2564.5, 2584.8, 38.1 }, { 2683.0, 3286.5, 55.2 }
 }
+
+
+-- Points bancaires avec guichet (utilisés pour les virements et services en agence).
+BankLocations = {
+    { 149.9, -1040.5, 29.3, 'Fleeca Bank Legion Square' },
+    { -1212.9, -330.8, 37.7, 'Fleeca Bank Boulevard Del Perro' },
+    { -2962.6, 482.1, 15.7, 'Fleeca Bank Great Ocean Hwy' },
+    { 1175.0, 2706.8, 38.0, 'Fleeca Bank Sandy Shores' },
+    { 236.4, 217.4, 106.2, 'Pacific Standard Public Bank' }
+}
+
+-- Stations-service enregistrées dans rp_fuel.
+GasStationLocations = {
+    { -724.6, -935.2, 8.9 }, { -70.2, -1761.8, 29.5 },
+    { 265.0, -1261.3, 29.3 }, { 819.6, -1028.2, 26.4 },
+    { 1208.3, -1402.3, 35.2 }, { 1181.4, -330.8, 69.3 },
+    { 620.8, 269.1, 103.0 }, { 2581.0, 362.0, 108.5 },
+    { 2005.0, 3774.0, 32.2 }, { 1687.2, 4929.2, 42.1 },
+    { 1701.3, 6416.0, 32.8 }, { 179.9, 6602.8, 31.9 },
+    { -2555.5, 2334.0, 33.1 }, { -2096.2, -320.3, 13.2 },
+    { -1437.6, -276.7, 46.2 }, { -1800.1, 803.5, 138.5 }
+}
