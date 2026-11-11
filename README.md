@@ -35,7 +35,7 @@ Les noms des ressources FiveM (`rp_core`, `job_police`, etc.) restent inchangés
 ## Mise à jour d'une base existante
 1. Faites une sauvegarde complète de la base.
 2. Arrêtez le serveur.
-3. Exécutez une seule fois `migrations/001_character_persistence.sql`, `migrations/002_inventory_persistence.sql`, puis `migrations/003_persistent_bans.sql` et `migrations/004_character_metadata.sql` sur la base existante.
+3. Exécutez une seule fois `migrations/001_character_persistence.sql`, `migrations/002_inventory_persistence.sql`, `migrations/003_persistent_bans.sql`, `migrations/004_character_metadata.sql` et `migrations/005_seed_jobs_and_grades.sql` sur la base existante. La migration 005 ajoute les 50 métiers, le métier `unemployed` et les grades/salaires par défaut sans écraser les entrées déjà personnalisées.
 4. Redémarrez le serveur avec oxmysql installé et configuré.
 
 La migration adapte le champ de date de naissance. Elle ne supprime aucun personnage. Si vous avez des dates invalides ou un schéma personnalisé, vérifiez la base avant l'exécution.
