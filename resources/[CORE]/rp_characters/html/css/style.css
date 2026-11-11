@@ -365,3 +365,33 @@ input[type="range"] {
         padding: 18px;
     }
 }
+
+
+/* Character creator: keep the form as a left-side panel and leave the 3D ped
+   unobstructed on the right side of the screen. */
+#registration-app {
+    position: fixed;
+    inset: 3vh auto 3vh 2vw;
+    width: min(43vw, 560px);
+    max-height: 94vh;
+    overflow-y: auto;
+    background: rgba(10, 16, 28, .88);
+    border: 1px solid rgba(148, 163, 184, .22);
+}
+#registration-app .creator-wrapper { padding: 24px; }
+#registration-app .header h1 { font-size: 21px; }
+#registration-app .tabs { gap: 4px; margin-bottom: 16px; }
+#registration-app .tab-btn { padding: 9px 5px; font-size: 11px; }
+#registration-app .tab-content { max-height: 58vh; overflow-y: auto; padding-right: 5px; }
+#registration-app input[type="number"] {
+    width: 100%; min-width: 0; background: rgba(255,255,255,.06);
+    border: 1px solid rgba(255,255,255,.12); color: #fff;
+    padding: 9px 10px; border-radius: 8px; font-size: 13px;
+}
+.appearance-editor { display:flex; flex-direction:column; gap:12px; padding:14px; border:1px solid rgba(56,189,248,.2); border-radius:12px; background:rgba(15,23,42,.55); }
+.appearance-editor h3 { color:#e0f2fe; font-size:14px; }
+.appearance-editor .section-help { margin:0; font-size:11px; color:#94a3b8; }
+#registration-app .form-row { gap:10px; }
+@media (max-width: 1100px) {
+    #registration-app { width: min(52vw, 560px); }
+}
