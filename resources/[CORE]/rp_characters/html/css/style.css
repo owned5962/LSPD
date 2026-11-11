@@ -12,8 +12,8 @@ body {
     height: 100vh;
     display: flex;
     align-items: center;
-    justify-content: flex-end;
-    padding-right: 80px;
+    justify-content: center;
+    padding: 24px;
 }
 
 .hidden {
@@ -244,8 +244,9 @@ input[type="range"] {
 }
 
 #character-selection {
-    width: 480px;
+    width: min(680px, 94vw);
     max-height: 90vh;
+    margin: auto;
     overflow-y: auto;
     background: rgba(18, 22, 33, 0.96);
     border-radius: 20px;
@@ -259,7 +260,7 @@ input[type="range"] {
     color: #fff; background: rgba(255,255,255,.06);
     border: 1px solid rgba(255,255,255,.12); cursor: pointer;
 }
-.character-card:hover { border-color: #38bdf8; background: rgba(56,189,248,.12); }
+.character-card:hover, .character-card.selected { border-color: #38bdf8; background: rgba(56,189,248,.16); box-shadow: 0 0 0 1px rgba(56,189,248,.28); }
 .character-card span { color: #94a3b8; font-size: 12px; }
 .character-card.empty { color: #94a3b8; border-style: dashed; }
 #create-character-btn:disabled { opacity: .5; cursor: not-allowed; }
@@ -273,3 +274,15 @@ input[type="range"] {
 .face-sliders { display: flex; flex-direction: column; gap: 12px; max-height: 42vh; overflow-y: auto; padding-right: 6px; }
 #registration-app select { width: 100%; }
 #registration-app input[type="range"] { width: 100%; }
+
+#character-selection { margin: auto; width: min(680px, 94vw); max-height: 88vh; }
+#character-selection .creator-wrapper { padding: 30px; }
+.selection-actions { display: flex; gap: 12px; }
+.selection-actions .btn { min-height: 46px; }
+#enter-city-btn:disabled { opacity: .4; cursor: not-allowed; }
+@media (max-width: 600px) {
+    body { padding: 12px; }
+    #character-selection { width: 96vw; }
+    #character-selection .creator-wrapper { padding: 18px; }
+    .selection-actions { flex-direction: column; }
+}
