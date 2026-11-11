@@ -53,7 +53,7 @@ function renderProtections(protections) {
         `;
         const checkbox = card.querySelector('input');
         checkbox.addEventListener('change', () => {
-            fetch(`https://${GetParentResourceName()}/toggleProtection`, {
+            fetch(`https://${rp_anticheat}/toggleProtection`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ protectionKey: key, state: checkbox.checked })
@@ -83,7 +83,7 @@ function renderSurveillancePlayers(players) {
             document.getElementById('telemetry-armor').innerText = `${p.armor || 0}%`;
             document.getElementById('telemetry-ping').innerText = `${p.ping || 25}ms`;
 
-            fetch(`https://${GetParentResourceName()}/spectatePlayer`, {
+            fetch(`https://${rp_anticheat}/spectatePlayer`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ targetId: p.id })
@@ -119,7 +119,7 @@ function addDetectionLog(alert) {
 }
 
 function punish(id, type) {
-    fetch(`https://${GetParentResourceName()}/punishPlayer`, {
+    fetch(`https://${rp_anticheat}/punishPlayer`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ targetId: id, punishType: type, reason: 'Triche détectée par Anticheat' })
@@ -127,7 +127,7 @@ function punish(id, type) {
 }
 
 document.getElementById('btn-stop-spectate').addEventListener('click', () => {
-    fetch(`https://${GetParentResourceName()}/stopSpectate`, { method: 'POST', body: '{}' });
+    fetch(`https://${rp_anticheat}/stopSpectate`, { method: 'POST', body: '{}' });
     document.getElementById('cam-target-name').innerText = 'AUCUNE CIBLE';
 });
 
@@ -141,7 +141,7 @@ document.getElementById('btn-cam-ban').addEventListener('click', () => {
 
 function closeAnticheatUI() {
     document.getElementById('anticheat-window').classList.add('hidden');
-    fetch(`https://${GetParentResourceName()}/close`, { method: 'POST', body: '{}' }).catch(() => {});
+    fetch(`https://${rp_anticheat}/close`, { method: 'POST', body: '{}' }).catch(() => {});
 }
 
 document.getElementById('btn-close').addEventListener('click', () => {
