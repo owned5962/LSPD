@@ -12,7 +12,7 @@ end
 local function isStaff(src)
     local player = getPlayer(src)
     return IsPlayerAceAllowed(src, 'rp_admin')
-        or (player and (player.group == 'admin' or player.group == 'superadmin'))
+        or (player and (player.group == 'admin' or player.group == 'superadmin' or player.group == 'fondateur'))
 end
 
 local function notify(src, kind, message)
@@ -115,6 +115,14 @@ RegisterNetEvent('rp_anticheat:requestOpen', function()
         return
     end
 
+    local accessOk, tabletAllowed = pcall(function()
+        return exports['rp_tablet_creator']:CanUseTablet(src, 'anticheat')
+    end)
+    if not accessOk or tabletAllowed ~= true then
+        notify(src, 'error', 'Votre accès à la tablette anticheat est désactivé.')
+        return
+    end
+
     local playersList = {}
     openStaff[src] = true
     for _, pid in ipairs(GetPlayers()) do
@@ -169,12 +177,19 @@ end
 CreateThread(function()
     while true do
         Wait(1000)
+        local hasOpenStaff = false
         for staffId in pairs(openStaff) do
             if not GetPlayerName(staffId) or not isStaff(staffId) then
                 openStaff[staffId] = nil
             else
-                local snapshot = BuildSurveillanceSnapshot()
-                for _, item in ipairs(snapshot) do item.isSelf = item.id == staffId end
+                hasOpenStaff = true
+            end
+        end
+
+        -- Build the player snapshot once per second, not once for every staff member.
+        if hasOpenStaff then
+            local snapshot = BuildSurveillanceSnapshot()
+            for staffId in pairs(openStaff) do
                 TriggerClientEvent('rp_anticheat:updatePlayers', staffId, snapshot)
             end
         end
