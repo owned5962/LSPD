@@ -123,3 +123,77 @@ MySQL.ready(function()
         print(('[rp_businesses] Initialisation MySQL impossible: %s'):format(tostring(err)))
     end
 end)
+
+
+-- Boutique Ammu-Nation : le prix et l'arme sont définis côté serveur.
+local AMMUNATION_PISTOL_PRICE = 500
+local AMMUNATION_PISTOL_WEAPON = 'WEAPON_PISTOL'
+
+local function getPlayerAtAmmunation(src, maxDistance)
+    local player = exports['rp_core']:GetPlayerFromId(src)
+    local ped = GetPlayerPed(src)
+    if not player or ped == 0 or not DoesEntityExist(ped) then return nil end
+
+    local playerCoords = GetEntityCoords(ped)
+    for _, location in ipairs(cachedLocations) do
+        if location.location_type == 'shop' and location.shop_style == 'ammunation' then
+            local shopCoords = vector3(tonumber(location.x) or 0.0, tonumber(location.y) or 0.0, tonumber(location.z) or 0.0)
+            if #(playerCoords - shopCoords) <= maxDistance then
+                return player
+            end
+        end
+    end
+    return nil
+end
+
+RegisterNetEvent('rp_businesses:server:requestAmmunation', function()
+    local src = source
+    if not exports['rp_core']:CanPerformAction(src, 'businesses:open_ammunation', 1000) then return end
+    local player = getPlayerAtAmmunation(src, 3.0)
+    if not player then
+        TriggerClientEvent('rp_core:client:notify', src, 'Vous devez être devant un comptoir Ammu-Nation.', 'error')
+        return
+    end
+    TriggerClientEvent('rp_businesses:client:openAmmunation', src, tonumber(player.cash) or 0)
+end)
+
+RegisterNetEvent('rp_businesses:server:buyPistol', function()
+    local src = source
+    if not exports['rp_core']:CanPerformAction(src, 'businesses:buy_ammunation_pistol', 1800) then
+        TriggerClientEvent('rp_businesses:client:purchaseResult', src, {
+            success = false, message = 'Veuillez patienter avant de renouveler votre achat.'
+        })
+        return
+    end
+
+    local player = getPlayerAtAmmunation(src, 4.0)
+    if not player then
+        TriggerClientEvent('rp_businesses:client:purchaseResult', src, {
+            success = false, message = 'Achat refusé : vous êtes trop éloigné de l’armurerie.'
+        })
+        return
+    end
+
+    if (tonumber(player.cash) or 0) < AMMUNATION_PISTOL_PRICE then
+        TriggerClientEvent('rp_businesses:client:purchaseResult', src, {
+            success = false, message = 'Fonds insuffisants. Le pistolet coûte 500 $.',
+            cash = tonumber(player.cash) or 0
+        })
+        return
+    end
+
+    if type(player.removeCash) ~= 'function' or not player.removeCash(AMMUNATION_PISTOL_PRICE) then
+        TriggerClientEvent('rp_businesses:client:purchaseResult', src, {
+            success = false, message = 'Le paiement n’a pas pu être enregistré. Aucun achat effectué.',
+            cash = tonumber(player.cash) or 0
+        })
+        return
+    end
+
+    TriggerClientEvent('rp_businesses:client:weaponPurchased', src, AMMUNATION_PISTOL_WEAPON)
+    TriggerClientEvent('rp_businesses:client:purchaseResult', src, {
+        success = true,
+        message = 'Pistolet acheté pour 500 $.',
+        cash = tonumber(player.cash) or 0
+    })
+end)
