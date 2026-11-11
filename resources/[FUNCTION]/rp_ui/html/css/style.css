@@ -122,9 +122,9 @@ body {
 /* Persistent roleplay status HUD */
 #player-hud {
     position: absolute;
-    left: 18.5vw;
+    left: 17.8vw;
     bottom: 3.2vh;
-    width: 270px;
+    width: 250px;
     padding: 12px 14px;
     border: 1px solid rgba(148, 163, 184, .25);
     border-radius: 12px;
@@ -164,7 +164,7 @@ body {
     left: 50%;
     bottom: 3.2vh;
     transform: translateX(-50%);
-    min-width: 190px;
+    min-width: 220px;
     padding: 12px 20px 10px;
     border: 1px solid rgba(125,211,252,.28);
     border-radius: 18px;
@@ -176,7 +176,7 @@ body {
     z-index: 1001;
 }
 .speedometer-ring { position: relative; display:flex; align-items:baseline; justify-content:center; gap:6px; }
-.speedometer-ring strong { font: 800 42px/1 'Segoe UI',sans-serif; letter-spacing:-2px; }
+.speedometer-ring strong { font: 900 52px/1 'Segoe UI',sans-serif; letter-spacing:-2.5px; text-shadow:0 0 22px rgba(56,189,248,.28); }
 .speed-caption { color:#7dd3fc; font-size:9px; font-weight:800; letter-spacing:1.5px; }
 .speed-gear { color:#a5b4fc; font-size:11px; font-weight:800; min-width:12px; }
 .vehicle-fuel { display:flex; align-items:center; justify-content:center; gap:8px; margin-top:9px; color:#cbd5e1; font-size:10px; }
@@ -192,4 +192,5 @@ body {
 .rp-toast.warning { border-left-color:#f59e0b; } .rp-toast.warning strong { color:#fcd34d; }
 .rp-toast.leaving { opacity:0; transform:translateX(24px); transition:.22s ease; }
 @keyframes rpToastIn { from { opacity:0; transform:translateX(24px); } to { opacity:1; transform:translateX(0); } }
-@media (max-width: 900px) { #player-hud { left:18vw; width:220px; padding:8px; } #rp-notifications { width:44vw; } }
+@media (max-width: 900px) { #player-hud { left:17.5vw; width:205px; padding:8px; } #rp-notifications { width:44vw; } }
+@media (max-width: 600px) { #player-hud { left:17vw; width:175px; padding:7px; } .hud-money { flex-direction:column; gap:4px; } #vehicle-hud { min-width:190px; bottom:4vh; } .speedometer-ring strong { font-size:44px; } }
