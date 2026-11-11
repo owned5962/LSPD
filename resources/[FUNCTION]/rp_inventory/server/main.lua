@@ -348,3 +348,72 @@ local function AddItem(source, itemName, rawCount)
 end
 
 exports('AddItem', AddItem)
+
+
+-- Trusted staff API for the creator tablet. The caller must authorize the staff role
+-- before invoking this export; item names and quantities are validated here as well.
+local function AdminSetItem(source, itemName, operation, rawCount)
+    local src, count = tonumber(source), tonumber(rawCount)
+    local player = src and exports['rp_core']:GetPlayerFromId(src)
+    if not player or type(itemName) ~= 'string' or not Config.DefaultItems[itemName]
+        or (operation ~= 'add' and operation ~= 'remove')
+        or not count or count % 1 ~= 0 or count < 1 or count > 1000 then
+        return false
+    end
+
+    if not playerInventories[src] then
+        local ok = pcall(loadInventory, player)
+        if not ok then return false end
+    end
+
+    local inventory = normalizeInventory(playerInventories[src])
+    local definition = Config.DefaultItems[itemName]
+    local foundIndex, currentCount
+    for index, item in ipairs(inventory) do
+        if item.name == itemName then foundIndex, currentCount = index, item.count; break end
+    end
+    currentCount = currentCount or 0
+    local nextCount = operation == 'add' and (currentCount + count) or (currentCount - count)
+    if nextCount < 0 or nextCount > 10000 then return false end
+
+    if nextCount == 0 then
+        if foundIndex then table.remove(inventory, foundIndex) end
+    elseif foundIndex then
+        inventory[foundIndex].count = nextCount
+    else
+        inventory[#inventory + 1] = { name = itemName, count = nextCount, label = definition.label, weight = definition.weight }
+    end
+
+    if getInventoryWeight(inventory) > Config.MaxWeight then return false end
+    local ok, err = pcall(function()
+        MySQL.update.await(
+            'INSERT INTO player_inventories (character_id, items) VALUES (?, ?) ON DUPLICATE KEY UPDATE items = VALUES(items)',
+            { player.charId, json.encode(inventory) }
+        )
+    end)
+    if not ok then
+        print(('[rp_inventory] Admin inventory update failed for character %s: %s'):format(player.charId, tostring(err)))
+        return false
+    end
+
+    playerInventories[src] = inventory
+    sendInventory(src, player)
+    notify(src, 'success', ('Inventaire modifié : %s x%d.'):format(definition.label, count))
+    return true
+end
+
+local function GetItemCatalog()
+    local catalog = {}
+    for name, definition in pairs(Config.DefaultItems) do
+        catalog[#catalog + 1] = {
+            name = name,
+            label = definition.label or name,
+            weight = tonumber(definition.weight) or 0
+        }
+    end
+    table.sort(catalog, function(a, b) return a.label < b.label end)
+    return catalog
+end
+
+exports('AdminSetItem', AdminSetItem)
+exports('GetItemCatalog', GetItemCatalog)
