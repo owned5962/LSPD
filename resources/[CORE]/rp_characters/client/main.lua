@@ -1,6 +1,7 @@
 local isCreating = false
 local charCamera = nil
 local characterBootPending = false
+local characterSessionReady = false
 
 local function FinishCharacterBoot()
     characterBootPending = false
@@ -318,6 +319,7 @@ local function ApplyCharacterAppearance(gender, skin)
 end
 
 local function OpenCreator(maxCharacters)
+    SetPlayerControl(PlayerId(), false, 0)
     SetNuiFocus(true, true)
     ApplyCharacterAppearance('m', { hairStyle = 4, hairColor = 0, clothing = 'casual' })
     SendNUIMessage({ action = 'openRegistration', maxCharacters = maxCharacters or 3 })
@@ -346,7 +348,7 @@ local function CloseCharacterUI()
         DestroyCam(charCamera, false)
         charCamera = nil
     end
-    FreezeEntityPosition(PlayerPedId(), false)
+    FreezeEntityPosition(PlayerPedId(), not characterSessionReady)
     isCreating = false
 end
 
@@ -379,8 +381,14 @@ RegisterNetEvent('rp_characters:client:openMenu', function(maxCharacters)
 end)
 
 RegisterNetEvent('rp_characters:client:openCharacterSelection', function(characters, maxCharacters)
-    -- Existing accounts must be able to select a character before spawning.
+    -- Keep the default spawn unusable until the player explicitly selects a saved character.
     FinishCharacterBoot()
+    characterSessionReady = false
+    SetPlayerControl(PlayerId(), false, 0)
+    local ped = PlayerPedId()
+    FreezeEntityPosition(ped, true)
+    SetEntityVisible(ped, false, false)
+    SetEntityAlpha(ped, 0, false)
     SetNuiFocus(true, true)
     SendNUIMessage({ action = 'openCharacterSelection', characters = characters, maxCharacters = maxCharacters or 3 })
 end)
@@ -395,6 +403,7 @@ RegisterNetEvent('rp_characters:client:closeMenu', function()
 end)
 
 RegisterNetEvent('rp_characters:client:spawnPlayer', function(coords, gender, skin)
+    characterSessionReady = true
     FinishCharacterBoot()
     coords = type(coords) == 'table' and coords or { x = -1037.7, y = -2737.8, z = 20.1, heading = 330.0 }
 
@@ -424,6 +433,7 @@ RegisterNetEvent('rp_characters:client:spawnPlayer', function(coords, gender, sk
     ResetEntityAlpha(ped)
     SetEntityCollision(ped, true, true)
     FreezeEntityPosition(ped, false)
+    SetPlayerControl(PlayerId(), true, 0)
 
     -- Close both loading-screen layers after the character has been placed.
     ShutdownLoadingScreen()
@@ -436,6 +446,8 @@ end)
 
 AddEventHandler('onClientResourceStart', function(resourceName)
     if GetCurrentResourceName() ~= resourceName then return end
+    characterSessionReady = false
+    SetPlayerControl(PlayerId(), false, 0)
     CreateThread(function()
         -- Wait for FiveM's network session before requesting account data.
         local deadline = GetGameTimer() + 30000
