@@ -91,6 +91,8 @@ const rolePermissions = {
 
 // Initialisation au chargement
 document.addEventListener('DOMContentLoaded', () => {
+    const tablet = document.getElementById('tablet-wrapper');
+    if (tablet) tablet.classList.remove('is-open');
     setupTabSwitching();
     renderPermissionsMatrix();
     window.addEventListener('message', handleTabletMessage);
@@ -186,11 +188,18 @@ function saveCurrentPermissions() {
 // Actions du Menu Admin
 function handleTabletMessage(event) {
     const data = event.data || {};
+    const tablet = document.getElementById('tablet-wrapper');
+
+    if (data.action === 'closeTablet') {
+        if (tablet) tablet.classList.remove('is-open');
+        return;
+    }
     if (data.action === 'auditLogs') {
         renderAuditLogs(data.logs);
         return;
     }
     if (data.action !== 'openTablet') return;
+    if (tablet) tablet.classList.add('is-open');
     onlinePlayers = Array.isArray(data.players) ? data.players : [];
     frozenPlayers.clear();
     if (Array.isArray(data.frozenPlayers)) data.frozenPlayers.forEach(id => { const parsed = Number(id); if (Number.isInteger(parsed) && parsed > 0) frozenPlayers.add(parsed); });

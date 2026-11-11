@@ -1,89 +1,60 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chargement GTA 5 RP</title>
-    <link rel="stylesheet" href="css/style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#080d18">
+  <title>Los Santos Roleplay — Connexion</title>
+  <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <div class="video-overlay"></div>
-    <div class="bg-gradient"></div>
+  <div class="backdrop" aria-hidden="true"></div>
+  <div class="grain" aria-hidden="true"></div>
+  <main class="shell">
+    <header class="topbar">
+      <a class="brand" href="#" aria-label="Los Santos Roleplay">
+        <span class="brand-mark">LS</span>
+        <span><strong>LOS SANTOS</strong><small>ROLEPLAY • FRANCE</small></span>
+      </a>
+      <div class="live-pill"><span class="live-dot"></span> UNIVERS EN LIGNE</div>
+    </header>
 
-    <div class="loadscreen-container">
-        <!-- Topbar -->
-        <header class="topbar">
-            <div class="server-branding">
-                <span class="badge">SERVEUR ROLEPLAY FR</span>
-                <h1>LOS SANTOS STORIES</h1>
-                <p class="subtitle">50 Métiers | Économie Dynamique | Expérience Immersive</p>
-            </div>
-            
-            <div class="music-controller">
-                <button id="toggle-audio-btn" class="audio-btn">
-                    <i class="fas fa-volume-up" id="audio-icon"></i>
-                </button>
-                <div class="track-info">
-                    <span class="track-title">Ambiance Urbaine - San Andreas</span>
-                    <span class="track-state">Lecture en cours</span>
-                </div>
-            </div>
-        </header>
+    <section class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow"><span></span> BIENVENUE DANS VOTRE NOUVELLE VIE</p>
+        <h1>VOTRE HISTOIRE.<br><em>VOTRE VILLE.</em></h1>
+        <p class="intro">Une ville vivante, des rencontres inattendues et des possibilités sans limites. Los Santos n'attend plus que vous.</p>
+        <div class="hero-tags"><span>50 MÉTIERS</span><i></i><span>ÉCONOMIE PERSISTANTE</span><i></i><span>ROLEPLAY IMMERSIF</span></div>
+      </div>
+      <div class="hero-art" role="img" aria-label="Vue nocturne illustrée de Los Santos">
+        <div class="art-caption"><span>01 / LOS SANTOS</span><strong>THE CITY NEVER SLEEPS</strong></div>
+      </div>
+    </section>
 
-        <!-- Main Info Center -->
-        <main class="content-grid">
-            <div class="info-card rules-card">
-                <h2><i class="fas fa-scroll"></i> Règles Fondamentales</h2>
-                <ul>
-                    <li><strong>Fair-Play RP :</strong> Privilégiez toujours les scènes interactives avant les tirs.</li>
-                    <li><strong>PainRP & FearRP :</strong> Respectez la peur du danger et ressentez les blessures physiques.</li>
-                    <li><strong>Métiers & Économie :</strong> 50 métiers sont accessibles au Pôle Emploi ou sur concours.</li>
-                    <li><strong>Tablette Admin :</strong> Les modérateurs veillent en permanence au bon déroulement des scènes.</li>
-                </ul>
-            </div>
+    <section class="feature-row" aria-label="Découvrir la ville">
+      <article class="feature">
+        <img src="assets/police.svg" alt="Véhicule de police devant la ville">
+        <div class="feature-shade"></div><div class="feature-copy"><span>01 — PROTÉGER</span><h2>Forces de l'ordre</h2><p>Faites respecter la loi et protégez les habitants.</p></div>
+      </article>
+      <article class="feature">
+        <img src="assets/medical.svg" alt="Ambulance et secours">
+        <div class="feature-shade"></div><div class="feature-copy"><span>02 — SECOURIR</span><h2>Services médicaux</h2><p>Chaque intervention peut changer une vie.</p></div>
+      </article>
+      <article class="feature">
+        <img src="assets/city.svg" alt="Quartier d'affaires de Los Santos">
+        <div class="feature-shade"></div><div class="feature-copy"><span>03 — CONSTRUIRE</span><h2>Votre carrière</h2><p>Créez votre entreprise et bâtissez votre avenir.</p></div>
+      </article>
+    </section>
 
-            <div class="info-card updates-card">
-                <h2><i class="fas fa-bolt"></i> Nouveautés de la Ville</h2>
-                <div class="update-item">
-                    <span class="update-date">Mise à jour v2.4</span>
-                    <p>Déploiement de 50 métiers réalistes et rééquilibrage complet de l'économie.</p>
-                </div>
-                <div class="update-item">
-                    <span class="update-date">Tablette Admin OS</span>
-                    <p>Nouvel outil de modération avec gestion des joueurs, économie et véhicules en direct.</p>
-                </div>
-            </div>
-
-            <div class="info-card keybinds-card">
-                <h2><i class="fas fa-keyboard"></i> Raccourcis Clés</h2>
-                <div class="keybind-list">
-                    <div class="key-item"><span class="key">F10</span> Ouvrir la Tablette Admin (Staff)</div>
-                    <div class="key-item"><span class="key">/jobcenter</span> Menu des 50 métiers</div>
-                    <div class="key-item"><span class="key">/bank</span> Accéder au compte bancaire</div>
-                    <div class="key-item"><span class="key">/pay [ID] [Montant]</span> Donner du cash</div>
-                </div>
-            </div>
-        </main>
-
-        <!-- Bottom Loading Status -->
-        <footer class="bottom-bar">
-            <div class="progress-details">
-                <span id="load-status">Initialisation des ressources du serveur...</span>
-                <span id="load-percentage">15%</span>
-            </div>
-            <div class="progress-track">
-                <div class="progress-fill" id="progress-bar"></div>
-            </div>
-        </footer>
-    </div>
-
-    <!-- Background Audio Loop -->
-    <audio id="bg-music" loop>
-        <source src="https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=cyberpunk-2099-10701.mp3" type="audio/mpeg">
-    </audio>
-
-    <script src="js/app.js"></script>
+    <section class="bottom">
+      <div class="welcome-note"><span class="note-icon">✦</span><div><strong>QUELQUES SECONDES AVANT L'IMMERSION</strong><p>Préparez-vous, votre aventure commence ici.</p></div></div>
+      <div class="loading">
+        <div class="loading-line"><span id="load-status">Connexion à Los Santos...</span><strong id="load-percentage">0%</strong></div>
+        <div class="progress-track"><div id="progress-bar" class="progress-fill"></div></div>
+        <div class="loading-foot"><span><b></b> SYNCHRONISATION DU MONDE</span><span>LOS SANTOS ROLEPLAY <i>•</i> SAISON 01</span></div>
+      </div>
+    </section>
+  </main>
+  <script src="js/app.js"></script>
 </body>
 </html>

@@ -44,9 +44,14 @@ body {
 #tablet-wrapper {
     width: 1200px;
     height: 740px;
-    display: flex;
+    display: none;
     justify-content: center;
     align-items: center;
+}
+
+/* The NUI must remain completely hidden until the server authorizes an open request. */
+#tablet-wrapper.is-open {
+    display: flex;
 }
 
 /* Chassis */

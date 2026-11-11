@@ -4,6 +4,13 @@ local tabletDict = "amb@code_human_in_bus_passenger_idles@female@tablet@base"
 local tabletAnim = "base"
 local tabletModel = GetHashKey('prop_cs_tablet')
 
+-- Never leave NUI focus captured when the resource starts or the player joins.
+AddEventHandler('onClientResourceStart', function(resourceName)
+    if resourceName ~= GetCurrentResourceName() then return end
+    isTabletOpen = false
+    SetNuiFocus(false, false)
+end)
+
 function OpenAdminTablet()
     TriggerServerEvent('rp_tablet_admin:server:requestOpen')
 end

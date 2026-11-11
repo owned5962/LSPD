@@ -533,13 +533,37 @@ def test_reconnect_waits_for_final_disconnect_save():
     assert "pendingDisconnectSaves[characterId] = true" in core
     assert "pendingDisconnectPlayers[characterId] = player" in core
     assert "pcall(player.save, true)" in core
-    assert "for attempt = 1, 20 do" in core
-    assert "if saved and characterId then" in core
-    assert "elseif characterId then" in core
-    assert "Keep reconnect blocked" in core
+    assert "while true do" in core
+    assert "local backoff = math.min(30000" in core
+    assert "attempt % 20 == 0" in core
+    assert "pendingDisconnectSaves[characterId] = nil" in core
     assert "AddEventHandler('onResourceStop'" in core
     assert "exports['rp_core']:IsCharacterSavePending(char.id)" in characters
     assert "Votre dernière sauvegarde est en cours." in characters
+
+
+def test_job_grade_lookup_never_invents_a_default_salary_for_invalid_grades():
+    server = read("resources/[FUNCTION]/rp_jobs/server/main.lua")
+    client = read("resources/[FUNCTION]/rp_jobs/client/main.lua")
+    assert "local job = JobsMap[jobName]" in server
+    assert "grade % 1 ~= 0 or not job.grades" in server
+    assert "return job.grades[grade]" in server
+    assert 'return { label = "Grade " .. grade, salary = 200 }' not in server
+    assert "local job = JobsMap[jobName]" in client
+    assert 'return { label = "Grade " .. grade, salary = 200 }' not in client
+
+
+def test_job_center_requires_proximity_and_renders_job_data_as_text():
+    client = read("resources/[FUNCTION]/rp_jobs/client/main.lua")
+    ui = read("resources/[FUNCTION]/rp_jobs/html/js/app.js")
+    server = read("resources/[FUNCTION]/rp_jobs/server/main.lua")
+    assert "if #(coords - JobCenterCoords) > 5.0 then" in client
+    assert "Vous devez être au Pôle Emploi" in server
+    assert "title.textContent" in ui
+    assert "description.textContent" in ui
+    assert "container.replaceChildren()" in ui
+    assert "card.innerHTML" not in ui
+
 
 if __name__ == "__main__":
     checks = sorted(
@@ -550,3 +574,28 @@ if __name__ == "__main__":
     for name, check in checks:
         check()
     print(f"All {len(checks)} security and persistence regression checks passed.")
+
+
+def test_police_armory_requests_are_rate_limited_server_side():
+    source = read("resources/[JOB]/job_police/server/main.lua")
+    handler_start = source.index("RegisterNetEvent('job_police:getArmoryWeapons'")
+    handler_end = source.index("exports('IsOnDuty'", handler_start)
+    handler = source[handler_start:handler_end]
+    assert "CanPerformAction(src, 'job_police:armory', 5000)" in handler
+    assert handler.index("CanPerformAction") < handler.index("GiveWeaponToPed")
+
+
+def test_admin_tablet_stays_hidden_until_authorized_open_message():
+    css = read("resources/[FUNCTION]/rp_tablet_admin/html/css/style.css")
+    ui = read("resources/[FUNCTION]/rp_tablet_admin/html/js/app.js")
+    client = read("resources/[FUNCTION]/rp_tablet_admin/client/main.lua")
+    wrapper = css[css.index("#tablet-wrapper {"):css.index("/* The NUI must remain")]
+    assert "display: none" in wrapper
+    assert "#tablet-wrapper.is-open" in css
+    assert "tablet.classList.add('is-open')" in ui
+    assert "tablet.classList.remove('is-open')" in ui
+    assert "data.action === 'closeTablet'" in ui
+    assert "onClientResourceStart" in client
+    assert "SetNuiFocus(false, false)" in client
+    assert "RegisterKeyMapping('admin'" in client
+    assert "RegisterCommand('admin'" in client
