@@ -1,5 +1,22 @@
 local isCreating = false
 local charCamera = nil
+local characterBootPending = false
+
+local function FinishCharacterBoot()
+    characterBootPending = false
+    ShutdownLoadingScreen()
+    ShutdownLoadingScreenNui()
+    DoScreenFadeIn(500)
+end
+
+local function ShowCharacterBootError(message)
+    FinishCharacterBoot()
+    TriggerEvent('chat:addMessage', {
+        color = { 255, 90, 90 },
+        multiline = true,
+        args = { 'LOS SANTOS RP', message or 'Le chargement du personnage a échoué. Consultez la console serveur.' }
+    })
+end
 
 -- First-login onboarding. Controls are intentionally simple and do not depend on
 -- external UI resources: E = next, Q = previous, Backspace = finish/skip.
@@ -304,12 +321,22 @@ RegisterNUICallback('updateSkinPreview', function(data, cb)
 end)
 
 RegisterNetEvent('rp_characters:client:openMenu', function(maxCharacters)
+    -- The creator is the first screen for a new account. The loading screen
+    -- must be closed here, not only after a character is spawned.
+    FinishCharacterBoot()
     OpenCreator(maxCharacters)
 end)
 
 RegisterNetEvent('rp_characters:client:openCharacterSelection', function(characters, maxCharacters)
+    -- Existing accounts must be able to select a character before spawning.
+    FinishCharacterBoot()
     SetNuiFocus(true, true)
     SendNUIMessage({ action = 'openCharacterSelection', characters = characters, maxCharacters = maxCharacters or 3 })
+end)
+
+RegisterNetEvent('rp_characters:client:bootError', function(message)
+    if not characterBootPending then return end
+    ShowCharacterBootError(message)
 end)
 
 RegisterNetEvent('rp_characters:client:closeMenu', function()
@@ -317,6 +344,7 @@ RegisterNetEvent('rp_characters:client:closeMenu', function()
 end)
 
 RegisterNetEvent('rp_characters:client:spawnPlayer', function(coords, gender, skin)
+    FinishCharacterBoot()
     coords = type(coords) == 'table' and coords or { x = -1037.7, y = -2737.8, z = 20.1, heading = 330.0 }
 
     DoScreenFadeOut(500)
@@ -347,6 +375,27 @@ end)
 
 AddEventHandler('onClientResourceStart', function(resourceName)
     if GetCurrentResourceName() ~= resourceName then return end
-    Wait(2000)
-    TriggerServerEvent('rp_characters:server:checkPlayer')
+    CreateThread(function()
+        -- Wait for FiveM's network session before requesting account data.
+        local deadline = GetGameTimer() + 30000
+        while not NetworkIsSessionStarted() and GetGameTimer() < deadline do
+            Wait(250)
+        end
+        if not NetworkIsSessionStarted() then
+            ShowCharacterBootError('La session FiveM ne répond pas. Reconnectez-vous au serveur.')
+            return
+        end
+
+        Wait(1000)
+        characterBootPending = true
+        print('[rp_characters] Requesting account and character data...')
+        TriggerServerEvent('rp_characters:server:checkPlayer')
+
+        -- Never leave the loading screen covering the UI indefinitely.
+        Wait(20000)
+        if characterBootPending then
+            ShowCharacterBootError('Le serveur ne répond pas au chargement du compte. Vérifiez oxmysql et la console serveur, puis reconnectez-vous.')
+            print('[rp_characters] Character boot timed out waiting for server response.')
+        end
+    end)
 end)
