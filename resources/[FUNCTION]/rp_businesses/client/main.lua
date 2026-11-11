@@ -15,6 +15,10 @@ local function addLocationBlip(location)
     createdBlips[#createdBlips + 1] = blip
 end
 
+local function requestLocations()
+    TriggerServerEvent('rp_businesses:server:requestLocations')
+end
+
 RegisterNetEvent('rp_businesses:client:locations', function(locations)
     if type(locations) ~= 'table' then return end
     for _, blip in ipairs(createdBlips) do
@@ -24,12 +28,11 @@ RegisterNetEvent('rp_businesses:client:locations', function(locations)
     for _, location in ipairs(locations) do
         addLocationBlip(location)
     end
-    locationsLoaded = true
+    locationsLoaded = #locations > 0
+    if not locationsLoaded then
+        SetTimeout(5000, requestLocations)
+    end
 end)
-
-local function requestLocations()
-    TriggerServerEvent('rp_businesses:server:requestLocations')
-end
 
 CreateThread(function()
     Wait(1500)
