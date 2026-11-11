@@ -438,7 +438,7 @@ RegisterNetEvent('rp_anticheat:requestLogs', function()
     local ok, rows = pcall(function()
         return MySQL.query.await([[
             SELECT id, player_id AS playerId, player_name AS playerName,
-                   detection_type AS category, reason, severity,
+                   detection_type AS category, reason, severity, sanction,
                    UNIX_TIMESTAMP(created_at) AS timestamp,
                    DATE_FORMAT(created_at, '%H:%i:%s') AS time
             FROM anticheat_event_log ORDER BY id DESC LIMIT 250
