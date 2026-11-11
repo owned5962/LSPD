@@ -82,6 +82,7 @@ local function GetClothingCatalog()
             drawable = GetPedPropIndex(ped, category.index) + 1
             texture = GetPedPropTextureIndex(ped, category.index)
         end
+        texture = math.max(0, tonumber(texture) or 0)
         local nativeDrawable = category.kind == 'prop' and drawable - 1 or drawable
         local textureCount = 1
         if nativeDrawable >= 0 then
