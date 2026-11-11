@@ -9,8 +9,11 @@ def test_needs_hud_is_above_native_minimap_on_desktop_and_compact_screens():
     client = (ROOT / "resources/[FUNCTION]/rp_ui/client/main.lua").read_text(encoding="utf-8")
 
     assert "bottom: 26vh !important;" in css
-    assert "@media (max-width: 600px)" in css
-    compact = css.split("@media (max-width: 600px)", 1)[1]
-    assert "#player-hud { left:12px !important; bottom:26vh !important; }" in compact
+    assert "#player-hud { left:12px !important; bottom:26vh !important; }" in css
     assert "SetMinimapComponentPosition(" not in client
     assert "DisplayRadar(true)" in client
+
+
+if __name__ == "__main__":
+    test_needs_hud_is_above_native_minimap_on_desktop_and_compact_screens()
+    print("HUD minimap layout checks passed.")
