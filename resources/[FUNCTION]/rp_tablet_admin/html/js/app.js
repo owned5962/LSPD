@@ -594,7 +594,7 @@ function giveAdminWeapon() {
     const targetId = getPanelTarget('give'); if (!targetId) return;
     const weapon = document.getElementById('admin-weapon-name')?.value; if (!weapon) return showToast('Sélectionnez une arme autorisée.');
     if (!weaponPolicy.some(item => item.name === weapon && item.enabled === true)) return showToast('Cette arme est désactivée dans la politique serveur.');
-    nuiPost('giveWeapon', { playerId: targetId, weapon }).then(() => showToast('Arme attribuée au joueur ID ' + targetId + '.')).catch(() => showToast('Impossible d’attribuer cette arme.'));
+    nuiPost('giveWeapon', { playerId: targetId, weapon }).then(() => showToast('Demande d’attribution envoyée au serveur pour le joueur ID ' + targetId + '.')).catch(() => showToast('Impossible d’envoyer la demande d’attribution.'));
 }
 function renderItemCatalog() {
     const select = document.getElementById('admin-item-name'); if (!select) return;
