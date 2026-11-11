@@ -541,6 +541,20 @@ def test_reconnect_waits_for_final_disconnect_save():
     assert "exports['rp_core']:IsCharacterSavePending(char.id)" in characters
     assert "Votre dernière sauvegarde est en cours." in characters
 
+def test_admin_tablet_stays_hidden_until_authorized_open_message():
+    css = read("resources/[FUNCTION]/rp_tablet_admin/html/css/style.css")
+    ui = read("resources/[FUNCTION]/rp_tablet_admin/html/js/app.js")
+    client = read("resources/[FUNCTION]/rp_tablet_admin/client/main.lua")
+    assert "#tablet-wrapper" in css and "display: none;" in css
+    assert "#tablet-wrapper.is-open" in css
+    assert "tabletWrapper.classList.remove('is-open')" in ui
+    assert "tabletWrapper.classList.add('is-open')" in ui
+    assert "data.action === 'closeTablet'" in ui
+    assert "SetNuiFocus(false, false)" in client
+    assert "RegisterCommand('admin'" in client
+    assert "RegisterKeyMapping('admin'" in client
+
+
 if __name__ == "__main__":
     checks = sorted(
         (name, check)
