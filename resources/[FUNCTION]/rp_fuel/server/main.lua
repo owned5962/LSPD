@@ -35,6 +35,16 @@ RegisterNetEvent('rp_fuel:server:purchase', function(rawNetId, rawLitres, paymen
     if not isAtStation(playerCoords) or not isAtStation(vehicleCoords) or #(playerCoords - vehicleCoords) > 18.0 then
         notify(src, 'Vous devez être près d’une pompe et de votre véhicule.'); return
     end
+    -- Validate tank capacity before charging the player. A failed fill must never consume money.
+    local currentFuel = tonumber(Entity(vehicle).state.rpFuel)
+    if currentFuel == nil then currentFuel = tonumber(rawCurrentFuel) or 0 end
+    currentFuel = math.max(0, math.min(100, currentFuel))
+    local availableLitres = math.max(0, math.floor(100 - currentFuel))
+    if litres > availableLitres then
+        notify(src, ('Le réservoir ne peut contenir que %d L supplémentaires.'):format(availableLitres))
+        return
+    end
+
     local amount = litres * PRICE_PER_LITRE
     local account = payment == 'auto' and (player.cash >= amount and 'cash' or 'bank') or payment
     local balance = account == 'cash' and player.cash or player.bank
@@ -55,13 +65,6 @@ RegisterNetEvent('rp_fuel:server:purchase', function(rawNetId, rawLitres, paymen
     end
 
     if account == 'cash' then player.cash = player.cash - amount else player.bank = player.bank - amount end
-    local currentFuel = tonumber(Entity(vehicle).state.rpFuel)
-    if currentFuel == nil then currentFuel = tonumber(rawCurrentFuel) or 0 end
-    currentFuel = math.max(0, math.min(100, currentFuel))
-    if litres > math.floor(100 - currentFuel) then
-        notify(src, ('Le réservoir ne peut contenir que %d L supplémentaires.'):format(math.max(0, math.floor(100 - currentFuel))))
-        return
-    end
     local newFuel = math.min(100, currentFuel + litres)
     Entity(vehicle).state:set('rpFuel', newFuel, true)
     TriggerClientEvent('rp_core:client:updateCash', src, player.cash)
