@@ -2,15 +2,19 @@ fx_version 'cerulean'
 game 'gta5'
 lua54 'yes'
 
-author 'FiveM RP Team'
-description 'Los Santos Stories cinematic loading screen with live phase telemetry'
-version '1.2.0'
+author 'Gautier'
+description 'Los Santos Stories live loading screen'
+version '1.3.0'
 
 loadscreen 'html/index.html'
 loadscreen_manual_shutdown 'yes'
 
 client_scripts {
     'client/main.lua'
+}
+
+server_scripts {
+    'server/main.lua'
 }
 
 files {
