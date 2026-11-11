@@ -50,6 +50,85 @@ local function ApplyPreset(name)
     return true
 end
 
+
+local clothingCategories = {
+    { id = 'tops', label = 'Hauts & vestes', kind = 'component', index = 11 },
+    { id = 'undershirts', label = 'T-shirts & sous-hauts', kind = 'component', index = 8 },
+    { id = 'arms', label = 'Bras & gants', kind = 'component', index = 3 },
+    { id = 'pants', label = 'Pantalons', kind = 'component', index = 4 },
+    { id = 'shoes', label = 'Chaussures', kind = 'component', index = 6 },
+    { id = 'bags', label = 'Sacs', kind = 'component', index = 5 },
+    { id = 'accessories', label = 'Accessoires', kind = 'component', index = 7 },
+    { id = 'decals', label = 'Motifs & écussons', kind = 'component', index = 10 },
+    { id = 'vests', label = 'Gilets & protections', kind = 'component', index = 9 },
+    { id = 'hats', label = 'Casquettes & chapeaux', kind = 'prop', index = 0 },
+    { id = 'glasses', label = 'Lunettes', kind = 'prop', index = 1 },
+    { id = 'ears', label = 'Bijoux & boucles d’oreilles', kind = 'prop', index = 2 },
+    { id = 'watches', label = 'Montres', kind = 'prop', index = 6 },
+    { id = 'bracelets', label = 'Bracelets', kind = 'prop', index = 7 }
+}
+
+local function GetClothingCatalog()
+    local ped = PlayerPedId()
+    local catalog = {}
+    for _, category in ipairs(clothingCategories) do
+        local count, drawable, texture
+        if category.kind == 'component' then
+            count = GetNumberOfPedDrawableVariations(ped, category.index) or 0
+            drawable = GetPedDrawableVariation(ped, category.index)
+            texture = GetPedTextureVariation(ped, category.index)
+        else
+            count = (GetNumberOfPedPropDrawableVariations(ped, category.index) or 0) + 1
+            drawable = GetPedPropIndex(ped, category.index) + 1
+            texture = GetPedPropTextureIndex(ped, category.index)
+        end
+        local nativeDrawable = category.kind == 'prop' and drawable - 1 or drawable
+        local textureCount = 1
+        if nativeDrawable >= 0 then
+            textureCount = category.kind == 'component'
+                and (GetNumberOfPedTextureVariations(ped, category.index, nativeDrawable) or 1)
+                or (GetNumberOfPedPropTextureVariations(ped, category.index, nativeDrawable) or 1)
+        end
+        catalog[#catalog + 1] = {
+            id = category.id, label = category.label, kind = category.kind, index = category.index,
+            count = math.max(1, count), drawable = drawable, texture = texture,
+            textureCount = math.max(1, textureCount)
+        }
+    end
+    return catalog
+end
+
+local function ApplyCatalogVariation(data)
+    if type(data) ~= 'table' or type(data.kind) ~= 'string' then return nil end
+    local index, drawable, texture = tonumber(data.index), tonumber(data.drawable), tonumber(data.texture) or 0
+    if not index or not drawable or index % 1 ~= 0 or drawable % 1 ~= 0 or texture % 1 ~= 0 then return nil end
+    local ped = PlayerPedId()
+    local count, textureCount
+    if data.kind == 'component' and index >= 0 and index <= 11 then
+        count = GetNumberOfPedDrawableVariations(ped, index) or 0
+        if count < 1 or drawable < 0 or drawable >= count then return nil end
+        textureCount = GetNumberOfPedTextureVariations(ped, index, drawable) or 1
+        texture = math.max(0, math.min(texture, math.max(0, textureCount - 1)))
+        SetPedComponentVariation(ped, index, drawable, texture, 0)
+    elseif data.kind == 'prop' and index >= 0 and index <= 7 then
+        count = (GetNumberOfPedPropDrawableVariations(ped, index) or 0) + 1
+        if drawable < 0 or drawable >= count then return nil end
+        if drawable == 0 then
+            ClearPedProp(ped, index)
+            textureCount = 1
+            texture = 0
+        else
+            local nativeDrawable = drawable - 1
+            textureCount = GetNumberOfPedPropTextureVariations(ped, index, nativeDrawable) or 1
+            texture = math.max(0, math.min(texture, math.max(0, textureCount - 1)))
+            SetPedPropIndex(ped, index, nativeDrawable, texture, true)
+        end
+    else
+        return nil
+    end
+    return { texture = texture, textureCount = math.max(1, textureCount or 1) }
+end
+
 local function CaptureAppearance()
     local ped = PlayerPedId()
     local appearance = { components = {}, props = {} }
@@ -97,13 +176,18 @@ CreateThread(function()
                     if IsControlJustPressed(0, 38) then
                         isShopOpen = true
                         SetNuiFocus(true, true)
-                        SendNUIMessage({ action = 'open' })
+                        SendNUIMessage({ action = 'open', catalog = GetClothingCatalog() })
                     end
                 end
             end
         end
         Wait(sleep)
     end
+end)
+
+RegisterNUICallback('previewVariation', function(data, cb)
+    local result = ApplyCatalogVariation(data)
+    cb(result or { status = 'invalid_variation' })
 end)
 
 RegisterNUICallback('applyPreset', function(data, cb)
