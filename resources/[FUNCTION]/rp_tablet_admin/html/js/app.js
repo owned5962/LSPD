@@ -8,6 +8,7 @@ let adminTabletOpen = false;
 let mapInstance = null;
 let mapMarkers = new Map();
 let itemCatalog = [];
+let weaponPolicy = [];
 const panelTargets = { give: null, sanction: null, function: null, job: null };
 const frozenPlayers = new Set();
 
@@ -241,6 +242,14 @@ function handleTabletMessage(event) {
         renderAuditLogs(data.logs);
         return;
     }
+    if (data.action === 'weaponPolicySaved') {
+        weaponPolicy = Array.isArray(data.weaponPolicy) ? data.weaponPolicy : [];
+        renderWeaponPolicy();
+        renderAdminWeaponOptions();
+        const status = document.getElementById('weapon-policy-status');
+        if (status) status.textContent = 'Configuration enregistrée dans MySQL.';
+        return;
+    }
     if (data.action === 'itemCatalog') {
         itemCatalog = Array.isArray(data.items) ? data.items : [];
         renderItemCatalog();
@@ -253,6 +262,9 @@ function handleTabletMessage(event) {
     onlinePlayers = Array.isArray(data.players) ? data.players : [];
     availableJobs = Array.isArray(data.jobs) ? data.jobs : [];
     itemCatalog = Array.isArray(data.items) ? data.items : [];
+    weaponPolicy = Array.isArray(data.weaponPolicy) ? data.weaponPolicy : [];
+    renderWeaponPolicy();
+    renderAdminWeaponOptions();
     renderPlayerPickers();
     renderItemCatalog();
     renderJobOptions();
@@ -390,6 +402,9 @@ function banSelectedPlayer() {
         .catch(() => showToast('Impossible de bannir ce joueur.'));
 }
 function setupAdminSubViews() {
+    document.getElementById('weapon-policy-search')?.addEventListener('input', renderWeaponPolicy);
+    document.getElementById('weapon-policy-filter')?.addEventListener('change', renderWeaponPolicy);
+
     document.querySelectorAll('[data-admin-view]').forEach(button => {
         button.addEventListener('click', () => {
             const target = button.dataset.adminView;
@@ -499,9 +514,103 @@ function giveAdminVehicle() {
     if (!/^[a-zA-Z0-9_]{2,40}$/.test(model)) return showToast('Saisissez un modèle de véhicule valide.');
     nuiPost('giveVehicle', { playerId: targetId, model }).then(() => showToast('Véhicule attribué au joueur ID ' + targetId + '.')).catch(() => showToast('Impossible d’attribuer le véhicule.'));
 }
+function renderAdminWeaponOptions() {
+    const select = document.getElementById('admin-weapon-name');
+    if (!select) return;
+    const allowed = weaponPolicy.filter(weapon => weapon && weapon.enabled === true);
+    const previous = select.value;
+    select.replaceChildren(new Option(allowed.length ? 'Sélectionner une arme autorisée…' : 'Aucune arme autorisée', ''));
+    allowed.forEach(weapon => select.add(new Option((weapon.label || weapon.name) + ' · ' + weapon.name, weapon.name)));
+    if (allowed.some(weapon => weapon.name === previous)) select.value = previous;
+}
+
+function renderWeaponPolicy() {
+    const root = document.getElementById('weapon-policy-list');
+    if (!root) return;
+    const query = (document.getElementById('weapon-policy-search')?.value || '').trim().toLowerCase();
+    const filter = document.getElementById('weapon-policy-filter')?.value || 'all';
+    const allowedCount = weaponPolicy.filter(weapon => weapon.enabled === true).length;
+    const blockedCount = weaponPolicy.length - allowedCount;
+    const allowedLabel = document.getElementById('weapon-policy-allowed');
+    const blockedLabel = document.getElementById('weapon-policy-blocked');
+    if (allowedLabel) allowedLabel.textContent = allowedCount + ' autorisées';
+    if (blockedLabel) blockedLabel.textContent = blockedCount + ' interdites';
+    root.replaceChildren();
+    const filtered = weaponPolicy.filter(weapon => {
+        const matchesText = !query || (weapon.label + ' ' + weapon.name + ' ' + weapon.category).toLowerCase().includes(query);
+        const matchesState = filter === 'all' || (filter === 'allowed' ? weapon.enabled === true : weapon.enabled !== true);
+        return matchesText && matchesState;
+    });
+    if (!filtered.length) {
+        const empty = document.createElement('div'); empty.className = 'weapon-policy-empty';
+        empty.textContent = weaponPolicy.length ? 'Aucune arme ne correspond à ce filtre.' : 'Catalogue indisponible.';
+        root.appendChild(empty); return;
+    }
+    const groups = new Map();
+    filtered.forEach(weapon => {
+        const category = weapon.category || 'Autres';
+        if (!groups.has(category)) groups.set(category, []);
+        groups.get(category).push(weapon);
+    });
+    groups.forEach((weapons, category) => {
+        const group = document.createElement('section'); group.className = 'weapon-policy-group';
+        const heading = document.createElement('h4'); heading.textContent = category + ' · ' + weapons.length;
+        const list = document.createElement('div'); list.className = 'weapon-policy-grid';
+        weapons.forEach(weapon => {
+            const row = document.createElement('label'); row.className = 'weapon-policy-row' + (weapon.enabled ? ' is-allowed' : ' is-blocked');
+            const copy = document.createElement('span'); copy.className = 'weapon-policy-copy';
+            const name = document.createElement('strong'); name.textContent = weapon.label || weapon.name;
+            const code = document.createElement('small'); code.textContent = weapon.name;
+            copy.append(name, code);
+            const status = document.createElement('span'); status.className = 'weapon-policy-status';
+            status.textContent = weapon.enabled ? 'AUTORISÉE' : 'INTERDITE';
+            const toggle = document.createElement('input'); toggle.type = 'checkbox'; toggle.checked = weapon.enabled === true;
+            toggle.setAttribute('aria-label', (weapon.label || weapon.name) + ' autorisée');
+            toggle.addEventListener('change', () => {
+                weapon.enabled = toggle.checked;
+                row.classList.toggle('is-allowed', toggle.checked);
+                row.classList.toggle('is-blocked', !toggle.checked);
+                status.textContent = toggle.checked ? 'AUTORISÉE' : 'INTERDITE';
+                const saveStatus = document.getElementById('weapon-policy-status');
+                if (saveStatus) saveStatus.textContent = 'Modifications non enregistrées.';
+                renderAdminWeaponOptions();
+                updateWeaponPolicyCounts();
+            });
+            row.append(copy, status, toggle); list.appendChild(row);
+        });
+        group.append(heading, list); root.appendChild(group);
+    });
+    updateWeaponPolicyCounts();
+}
+
+function updateWeaponPolicyCounts() {
+    const allowed = weaponPolicy.filter(weapon => weapon.enabled === true).length;
+    const blocked = weaponPolicy.length - allowed;
+    const a = document.getElementById('weapon-policy-allowed'), b = document.getElementById('weapon-policy-blocked');
+    if (a) a.textContent = allowed + ' autorisées';
+    if (b) b.textContent = blocked + ' interdites';
+}
+
+function saveWeaponPolicy() {
+    if (!weaponPolicy.length) return showToast('Le catalogue des armes est indisponible.');
+    const policy = {};
+    weaponPolicy.forEach(weapon => { policy[weapon.name] = weapon.enabled === true; });
+    const button = document.querySelector('#admin-weapons-view .weapon-policy-actions button');
+    if (button) button.disabled = true;
+    nuiPost('saveWeaponPolicy', { policy })
+        .then(() => {
+            const status = document.getElementById('weapon-policy-status');
+            if (status) status.textContent = 'Enregistrement envoyé au serveur…';
+            showToast('Enregistrement des autorisations demandé.');
+        })
+        .catch(() => showToast('Impossible d’enregistrer les autorisations des armes.'))
+        .finally(() => { if (button) button.disabled = false; });
+}
+
 function giveAdminWeapon() {
     const targetId = getPanelTarget('give'); if (!targetId) return;
-    const weapon = document.getElementById('admin-weapon-name')?.value; if (!weapon) return showToast('Sélectionnez une arme.');
+    const weapon = document.getElementById('admin-weapon-name')?.value; if (!weapon) return showToast('Sélectionnez une arme autorisée.');
+    if (!weaponPolicy.some(item => item.name === weapon && item.enabled === true)) return showToast('Cette arme est désactivée dans la politique serveur.');
     nuiPost('giveWeapon', { playerId: targetId, weapon }).then(() => showToast('Arme attribuée au joueur ID ' + targetId + '.')).catch(() => showToast('Impossible d’attribuer cette arme.'));
 }
 function renderItemCatalog() {
