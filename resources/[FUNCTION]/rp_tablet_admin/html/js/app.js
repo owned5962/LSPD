@@ -428,10 +428,12 @@ function setupPlayerMap() {
     mapInstance.fitBounds(bounds); mapInstance.setMaxBounds(bounds.pad(0.03));
 }
 const GTA_WORLD = { minX:-4500, maxX:4500, minY:-4500, maxY:8500 };
+const GTA_MAP_SCALE = 8192 / (GTA_WORLD.maxY - GTA_WORLD.minY);
+const GTA_MAP_OFFSET_X = (8192 - (GTA_WORLD.maxX - GTA_WORLD.minX) * GTA_MAP_SCALE) / 2;
 function worldToMap(position) {
-    const x = ((Number(position.x)-GTA_WORLD.minX)/(GTA_WORLD.maxX-GTA_WORLD.minX))*8192;
-    const y = ((Number(position.y)-GTA_WORLD.minY)/(GTA_WORLD.maxY-GTA_WORLD.minY))*8192;
-    return [y,x];
+    const x = GTA_MAP_OFFSET_X + (Number(position.x) - GTA_WORLD.minX) * GTA_MAP_SCALE;
+    const y = (Number(position.y) - GTA_WORLD.minY) * GTA_MAP_SCALE;
+    return [y, x];
 }
 function renderPlayerMap() {
     if (!mapInstance) return;
