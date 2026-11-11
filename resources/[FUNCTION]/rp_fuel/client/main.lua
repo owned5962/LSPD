@@ -1,5 +1,6 @@
 local isOpen = false
 local isRefueling = false
+local isPurchasePending = false
 local currentVehicle = 0
 local currentNetId = 0
 local previousEngineState = false
@@ -43,6 +44,7 @@ end
 local function closeFuelUI()
     if isRefueling then return end
     isOpen = false
+    isPurchasePending = false
     currentVehicle = 0
     currentNetId = 0
     SetNuiFocus(false, false)
@@ -81,7 +83,7 @@ local function openFuelUI(vehicle)
 end
 
 RegisterNUICallback('close', function(_, cb)
-    if isRefueling then
+    if isRefueling or isPurchasePending then
         cb({ ok = false, reason = 'refueling' })
         return
     end
@@ -97,6 +99,7 @@ RegisterNUICallback('purchase', function(data, cb)
         cb({ ok = false })
         return
     end
+    isPurchasePending = true
     TriggerServerEvent('rp_fuel:server:purchase', currentNetId, litres, payment,
         GetVehicleFuelLevel(currentVehicle))
     cb({ ok = true })
@@ -106,6 +109,7 @@ RegisterNetEvent('rp_fuel:client:fuelingStarted', function(netId, durationMs, li
     if not isOpen or tonumber(netId) ~= currentNetId or currentVehicle == 0
         or not DoesEntityExist(currentVehicle) then return end
 
+    isPurchasePending = false
     isRefueling = true
     previousEngineState = GetIsVehicleEngineRunning(currentVehicle)
     SetVehicleEngineOn(currentVehicle, false, true, true)
@@ -122,6 +126,7 @@ end)
 
 RegisterNetEvent('rp_fuel:client:purchaseResult', function(success, message, netId, fuel)
     if not success then
+        isPurchasePending = false
         if isRefueling then
             setVehicleAfterRefuel(true)
             SendNUIMessage({ action = 'fuelingCancelled', message = message or 'Ravitaillement annulé.' })
@@ -132,6 +137,7 @@ RegisterNetEvent('rp_fuel:client:purchaseResult', function(success, message, net
         return
     end
     if tonumber(netId) ~= currentNetId then return end
+    isPurchasePending = false
 
     local vehicle = NetworkGetEntityFromNetworkId(currentNetId)
     if vehicle ~= 0 and DoesEntityExist(vehicle) then
@@ -234,14 +240,14 @@ end)
 
 AddEventHandler('onClientResourceStart', function(resource)
     if resource ~= GetCurrentResourceName() then return end
-    isOpen, isRefueling = false, false
+    isOpen, isRefueling, isPurchasePending = false, false, false
     SetNuiFocus(false, false)
     SendNUIMessage({ action = 'closeFuel' })
 end)
 
 AddEventHandler('onClientResourceStop', function(resource)
     if resource ~= GetCurrentResourceName() then return end
-    setVehicleAfterRefuel(true)
+    if isRefueling then setVehicleAfterRefuel(true) end
     SetNuiFocus(false, false)
     exports['rp_ui']:HideTextUI()
     for _, blip in ipairs(createdBlips) do
