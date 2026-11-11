@@ -372,6 +372,7 @@ const statLabels = {
     money: 'Obtention d’argent',
     vehicle_spawn: 'Spawn de véhicule',
     weapon_spawn: 'Spawn d’arme',
+    weapon_blacklist: 'Arme interdite détectée',
     speedhack: 'Speedhack',
     gravity: 'Modification de gravité',
     spam: 'Tentative de spam',
