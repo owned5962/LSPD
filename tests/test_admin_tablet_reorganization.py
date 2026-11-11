@@ -96,11 +96,7 @@ def test_admin_job_picker_excludes_unloaded_characters_and_server_waits_for_core
     assert "pcall(target.setJob, jobName, grade)" in main
     assert "Votre métier a été défini sur " in main
 
-if __name__ == "__main__":
-    for name, check in sorted(globals().items()):
-        if name.startswith("test_") and callable(check):
-            check()
-    print("All focused admin tablet reorganization checks passed.")
+
 
 
 def test_admin_weapon_grants_use_anticheat_policy_and_persistent_admin_controls():
@@ -120,3 +116,9 @@ def test_admin_weapon_grants_use_anticheat_policy_and_persistent_admin_controls(
     assert "function renderWeaponPolicy()" in ui and "function saveWeaponPolicy()" in ui
     assert "weaponPolicy.filter(weapon => weapon && weapon.enabled === true)" in ui
     assert "'rp_anticheat'" in manifest
+
+if __name__ == "__main__":
+    for name, check in sorted(globals().items()):
+        if name.startswith("test_") and callable(check):
+            check()
+    print("All focused admin tablet reorganization checks passed.")
