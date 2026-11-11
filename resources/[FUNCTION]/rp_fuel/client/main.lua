@@ -97,6 +97,30 @@ RegisterNetEvent('rp_fuel:client:setFuel', function(netId, fuel)
 end)
 
 CreateThread(function()
+    local lastFuelTick = GetGameTimer()
+    local lastStateSync = 0
+    while true do
+        Wait(1000)
+        local ped = PlayerPedId()
+        local vehicle = GetVehiclePedIsIn(ped, false)
+        if vehicle ~= 0 and GetPedInVehicleSeat(vehicle, -1) == ped then
+            local now = GetGameTimer()
+            local elapsed = math.max(0, math.min(5000, now - lastFuelTick)) / 1000.0
+            lastFuelTick = now
+            local fuel = math.max(0.0, GetVehicleFuelLevel(vehicle))
+            local consumption = GetEntitySpeed(vehicle) * 0.00022 * elapsed
+            if consumption > 0 and fuel > 0 then SetVehicleFuelLevel(vehicle, math.max(0.0, fuel - consumption)) end
+            if now - lastStateSync >= 5000 then
+                Entity(vehicle).state:set('rpFuel', GetVehicleFuelLevel(vehicle), true)
+                lastStateSync = now
+            end
+        else
+            lastFuelTick = GetGameTimer()
+        end
+    end
+end)
+
+CreateThread(function()
     local prompt = false
     while true do
         local waitTime = 700
