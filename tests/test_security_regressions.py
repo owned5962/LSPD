@@ -382,9 +382,6 @@ def test_admin_tablet_controls_are_backed_by_server_authorization():
     ):
         button = next(line for line in html.splitlines() if f'data-perm="{permission}"' in line)
         assert "disabled" not in button, permission
-        source = extended if action in ("spectate", "heal", "noclip", "godmode", "ban") else server
-        assert f"Allow{'Extended' if source is extended else ''}AdminAction(src, '{action}'" not in source if False else True
-
     assert "AllowExtendedAction(src, 'spectate', 500)" in extended
     assert "AllowExtendedAction(src, 'heal', 500)" in extended
     assert "AllowExtendedAction(src, 'noclip', 500)" in extended
