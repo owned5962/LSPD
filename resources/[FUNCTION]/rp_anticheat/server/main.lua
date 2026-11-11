@@ -15,6 +15,13 @@ local function isStaff(src)
         or (player and (player.group == 'admin' or player.group == 'superadmin' or player.group == 'fondateur'))
 end
 
+local function canUseAnticheatTablet(src)
+    local ok, allowed = pcall(function()
+        return exports['rp_tablet_creator']:CanUseTablet(src, 'anticheat')
+    end)
+    return ok and allowed == true
+end
+
 local function notify(src, kind, message)
     TriggerClientEvent('rp_core:client:notify', src, message, kind or 'info')
 end
@@ -198,7 +205,7 @@ end)
 
 RegisterNetEvent('rp_anticheat:toggleProtection', function(key, state)
     local src = source
-    if not isStaff(src) then return end
+    if not isStaff(src) or not canUseAnticheatTablet(src) then return end
     if type(key) ~= 'string' or type(state) ~= 'boolean' or not Config.Protections[key] then return end
 
     Config.Protections[key].enabled = state
@@ -216,7 +223,7 @@ end)
 
 RegisterNetEvent('rp_anticheat:requestSpectate', function(rawTargetId)
     local src = source
-    if not isStaff(src) or not Config.Protections.spectate_monitoring.enabled then
+    if not isStaff(src) or not canUseAnticheatTablet(src) or not Config.Protections.spectate_monitoring.enabled then
         notify(src, 'error', 'Surveillance non autorisée.')
         return
     end
@@ -244,7 +251,7 @@ end)
 
 RegisterNetEvent('rp_anticheat:punish', function(rawTargetId, punishType, rawReason)
     local src = source
-    if not isStaff(src) then return end
+    if not isStaff(src) or not canUseAnticheatTablet(src) then return end
     local targetId = tonumber(rawTargetId)
     if not targetId or targetId == src or not GetPlayerName(targetId) then
         notify(src, 'error', 'Joueur cible introuvable.')
