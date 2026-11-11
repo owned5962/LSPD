@@ -13,6 +13,11 @@ end
 RegisterCommand('creator', requestOpen, false)
 RegisterKeyMapping('creator', 'Ouvrir la tablette Créateur', 'keyboard', 'F11')
 
+-- Diagnostic permission: affiche les droits et écrit les identifiants réels dans la console serveur.
+RegisterCommand('accesscheck', function()
+    TriggerServerEvent('rp_tablet_creator:server:requestAccessStatus')
+end, false)
+
 RegisterNetEvent('rp_tablet_creator:client:open', function(role)
     isOpen = true
     SetNuiFocus(true, true)
