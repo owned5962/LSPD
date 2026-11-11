@@ -69,6 +69,7 @@ RegisterNetEvent('rp_tablet_admin:server:requestPlayerPositions', function()
                 id = id,
                 name = name,
                 rawName = rawName,
+                characterLoaded = player ~= nil,
                 isSelf = id == src,
                 position = position,
                 job = jobName,
