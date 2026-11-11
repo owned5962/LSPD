@@ -3,6 +3,10 @@ local spectateTarget = nil
 local lastCoords = nil
 local lastCheck = 0
 local isAnticheatUIOpen = false
+local isAnticheatPrisoner = false
+local prisonEndsAt = 0
+local prisonCenter = nil
+local prisonRelease = nil
 
 -- Commande locale d'ouverture du menu Anticheat.
 local function ToggleAnticheatTablet()
@@ -80,8 +84,11 @@ AddEventHandler('onClientResourceStop', function(resourceName)
     SetNuiFocus(false, false)
 end)
 
-RegisterNetEvent('rp_anticheat:updateLogs', function(logsList)
-    if isAnticheatUIOpen then SendNUIMessage({ action = 'updateLogs', logs = logsList or {} }) end
+RegisterNetEvent('rp_anticheat:updateLogs', function(payload)
+    if isAnticheatUIOpen then
+        payload = type(payload) == 'table' and payload or {}
+        SendNUIMessage({ action = 'updateLogs', logs = payload.logs or {}, detectionCount = payload.detectionCount or 0 })
+    end
 end)
 
 RegisterNetEvent('rp_anticheat:updateBans', function(bansList)
@@ -100,6 +107,22 @@ end)
 RegisterNUICallback('requestLogs', function(data, cb)
     TriggerServerEvent('rp_anticheat:requestLogs')
     cb({ ok = true })
+end)
+
+RegisterNUICallback('requestSanctionConfig', function(data, cb)
+    TriggerServerEvent('rp_anticheat:requestSanctionConfig')
+    cb({ ok = true })
+end)
+
+RegisterNUICallback('saveSanctionConfig', function(data, cb)
+    TriggerServerEvent('rp_anticheat:saveSanctionConfig', data.sanctions, data.prisonMinutes)
+    cb({ ok = true })
+end)
+
+RegisterNetEvent('rp_anticheat:updateSanctionConfig', function(payload)
+    if isAnticheatUIOpen and type(payload) == 'table' then
+        SendNUIMessage({ action = 'updateSanctionConfig', sanctions = payload.sanctions or {}, prisonMinutes = payload.prisonMinutes or 30 })
+    end
 end)
 
 RegisterNUICallback('requestBans', function(data, cb)
@@ -182,6 +205,52 @@ function StopSpectate()
     TriggerEvent('rp_core:notify', 'info', 'Surveillance arrêtée.')
 end
 
+RegisterNetEvent('rp_anticheat:applyPrison', function(payload)
+    if type(payload) ~= 'table' or type(payload.jail) ~= 'table' or type(payload.release) ~= 'table' then return end
+    local jail = payload.jail
+    local release = payload.release
+    if not tonumber(jail.x) or not tonumber(jail.y) or not tonumber(jail.z)
+        or not tonumber(release.x) or not tonumber(release.y) or not tonumber(release.z) then return end
+    isAnticheatPrisoner = true
+    prisonEndsAt = tonumber(payload.endsAt) or (os.time() + 1800)
+    prisonCenter = vector3(tonumber(jail.x), tonumber(jail.y), tonumber(jail.z))
+    prisonRelease = vector3(tonumber(release.x), tonumber(release.y), tonumber(release.z))
+    SetEntityCoords(PlayerPedId(), prisonCenter.x, prisonCenter.y, prisonCenter.z, false, false, false, false)
+    TriggerEvent('rp_core:client:notify', 'error', 'Tu es placé en prison pour une sanction anticheat.')
+end)
+
+RegisterNetEvent('rp_anticheat:releasePrison', function()
+    if not isAnticheatPrisoner then return end
+    isAnticheatPrisoner = false
+    local ped = PlayerPedId()
+    if prisonRelease then SetEntityCoords(ped, prisonRelease.x, prisonRelease.y, prisonRelease.z, false, false, false, false) end
+    prisonCenter, prisonRelease, prisonEndsAt = nil, nil, 0
+    TriggerEvent('rp_core:client:notify', 'success', 'Ta peine de prison est terminée.')
+end)
+
+CreateThread(function()
+    while true do
+        if not isAnticheatPrisoner then
+            Wait(1000)
+        else
+            Wait(1000)
+            if os.time() >= prisonEndsAt then
+                TriggerServerEvent('rp_anticheat:prisonExpired')
+            else
+                local ped = PlayerPedId()
+                local coords = GetEntityCoords(ped)
+                if prisonCenter and #(coords - prisonCenter) > (Config.PrisonRadius or 90.0) then
+                    SetEntityCoords(ped, prisonCenter.x, prisonCenter.y, prisonCenter.z, false, false, false, false)
+                end
+                BeginTextCommandDisplayHelp('STRING')
+                AddTextComponentSubstringPlayerName(('~r~AEGIS PRISON~s~  ·  Temps restant : ~b~%d min %02d sec'):format(
+                    math.floor((prisonEndsAt - os.time()) / 60), math.max(0, (prisonEndsAt - os.time()) % 60)))
+                EndTextCommandDisplayHelp(0, false, true, 1000)
+            end
+        end
+    end
+end)
+
 -- Client-side Detection Thread
 Citizen.CreateThread(function()
     while true do
@@ -230,10 +299,11 @@ Citizen.CreateThread(function()
 end)
 
 -- Staff Security Notification Popup
-RegisterNetEvent('rp_anticheat:notifyStaff', function(data)
+RegisterNetEvent('rp_anticheat:notifyStaff', function(data, detectionCount)
     SendNUIMessage({
         action = 'newDetection',
-        alert = data
+        alert = data,
+        detectionCount = detectionCount
     })
     TriggerEvent('rp_core:notify', 'error', '[ANTICHEAT] ' .. data.playerName .. ' (ID ' .. data.playerId .. ') : ' .. data.reason)
 end)
