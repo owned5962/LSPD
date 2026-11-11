@@ -330,7 +330,7 @@ function selectPlayer(id, name, job, element) {
 
 function playerAction(action) {
     if (!Number.isInteger(selectedPlayerId) || selectedPlayerId < 1) return showToast('Sélectionnez un joueur connecté.');
-    const endpoints = { goto: 'teleportToPlayer', bring: 'bringPlayer', freeze: 'freezePlayer', revive: 'revivePlayer', heal: 'healPlayer', kick: 'kickPlayer' };
+    const endpoints = { goto: 'teleportToPlayer', bring: 'bringPlayer', freeze: 'freezePlayer', revive: 'revivePlayer', heal: 'healPlayer', kick: 'kickPlayer', spectate: 'spectatePlayer' };
     const endpoint = endpoints[action];
     if (!endpoint) return showToast('Cette fonction n’est pas encore disponible.');
     const payload = { playerId: selectedPlayerId };
@@ -682,6 +682,22 @@ function updateOnlinePlayerPositions(players) {
     if (updated) updated.textContent = 'Mis à jour à ' + new Date().toLocaleTimeString('fr-FR');
 }
 
+function toggleAdminMode(mode) {
+    const endpoint = mode === 'noclip' ? 'toggleNoclip' : mode === 'godmode' ? 'toggleGodmode' : null;
+    if (!endpoint) return;
+    nuiPost(endpoint).then(() => showToast('Demande ' + mode + ' envoyée.')).catch(() => showToast('Impossible de modifier le mode ' + mode + '.'));
+}
+
+function stopAdminSpectate() {
+    nuiPost('stopSpectate').catch(() => showToast('Impossible d’arrêter la surveillance.'));
+}
+
+function spawnAdminVehicle() {
+    const input = document.getElementById('admin-vehicle-model');
+    const model = (input?.value || '').trim();
+    if (!/^[a-zA-Z0-9_]{2,40}$/.test(model)) return showToast('Saisissez un modèle valide (ex. sultan).');
+    nuiPost('spawnVehicle', { model }).then(() => showToast('Demande de création envoyée.')).catch(() => showToast('Création du véhicule impossible.'));
+}
 function triggerAdminAction(act) {
     showToast('Cette action globale n’est pas encore disponible.');
 }
