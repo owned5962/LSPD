@@ -11,5 +11,6 @@ loadscreen 'html/index.html'
 files {
     'html/index.html',
     'html/css/style.css',
-    'html/js/app.js'
+    'html/js/app.js',
+    'html/images/los_santos_skyline.svg'
 }
