@@ -54,7 +54,7 @@ local function drawTimer(seconds)
     DrawRect(0.91, 0.955, 0.14, 0.035, 8, 13, 22, 185)
 end
 
-local function openTablet(isRenewal, vehicles, price, maxHours, label)
+local function openTablet(isRenewal, vehicles, price, maxHours, label, locationKey)
     if tabletOpen then return end
     tabletOpen = true
     SetNuiFocus(true, true)
@@ -64,18 +64,19 @@ local function openTablet(isRenewal, vehicles, price, maxHours, label)
         vehicles = vehicles or {},
         price = price or Config.PricePerTenMinutes,
         maxHours = maxHours or Config.MaxHours,
-        vehicleLabel = label or ''
+        vehicleLabel = label or '',
+        location = locationKey
     })
 end
 
-RegisterNetEvent('rp_vehicle_rental:client:openTablet', function(isRenewal, vehicles, price, maxHours, label)
-    openTablet(isRenewal, vehicles, price, maxHours, label)
+RegisterNetEvent('rp_vehicle_rental:client:openTablet', function(isRenewal, vehicles, price, maxHours, label, locationKey)
+    openTablet(isRenewal, vehicles, price, maxHours, label, locationKey)
 end)
 
 RegisterNetEvent('rp_vehicle_rental:client:spawnRental', function(data)
     local hash = loadModel(data.model)
     if not hash then
-        TriggerServerEvent('rp_vehicle_rental:server:decline')
+        TriggerServerEvent('rp_vehicle_rental:server:spawnFailed')
         notify('Le véhicule n’a pas pu être chargé. Contactez un membre du staff.', 'error')
         return
     end
@@ -83,7 +84,7 @@ RegisterNetEvent('rp_vehicle_rental:client:spawnRental', function(data)
     local vehicle = CreateVehicle(hash, p.x, p.y, p.z, p.w, true, true)
     SetModelAsNoLongerNeeded(hash)
     if not vehicle or vehicle == 0 or not DoesEntityExist(vehicle) then
-        TriggerServerEvent('rp_vehicle_rental:server:decline')
+        TriggerServerEvent('rp_vehicle_rental:server:spawnFailed')
         notify('Impossible de sortir le véhicule de location.', 'error')
         return
     end
@@ -96,8 +97,11 @@ RegisterNetEvent('rp_vehicle_rental:client:spawnRental', function(data)
     activeRental = {
         vehicle = vehicle,
         netId = netId,
-        expiresAt = tonumber(data.expiresAt) or os.time() + (data.minutes * 60)
+        expiresAt = GetGameTimer() + (tonumber(data.minutes) or 60) * 60000
     }
+    tabletOpen = false
+    SetNuiFocus(false, false)
+    SendNUIMessage({ action = 'close' })
     TriggerServerEvent('rp_vehicle_rental:server:registerVehicle', netId)
     TaskWarpPedIntoVehicle(PlayerPedId(), vehicle, -1)
 end)
@@ -108,13 +112,13 @@ RegisterNetEvent('rp_vehicle_rental:client:renewalRequired', function(graceSecon
         return
     end
     activeRental.graceUntil = GetGameTimer() + (tonumber(graceSeconds) or 60) * 1000
-    openTablet(true, {}, price, maxHours, label)
+    openTablet(true, {}, price, maxHours, label, nil)
     notify('Votre location est terminée. Prolongez ou rendez le véhicule dans le délai affiché.', 'warning')
 end)
 
 RegisterNetEvent('rp_vehicle_rental:client:renewed', function(expiresAt, minutes)
     if activeRental then
-        activeRental.expiresAt = tonumber(expiresAt) or (os.time() + minutes * 60)
+        activeRental.expiresAt = GetGameTimer() + (tonumber(minutes) or 60) * 60000
         activeRental.graceUntil = nil
     end
     tabletOpen = false
@@ -219,7 +223,7 @@ end)
 CreateThread(function()
     while true do
         if activeRental then
-            local remaining = (activeRental.expiresAt or os.time()) - os.time()
+            local remaining = math.ceil(((activeRental.expiresAt or GetGameTimer()) - GetGameTimer()) / 1000)
             if remaining > 0 then
                 drawTimer(remaining)
                 Wait(0)
