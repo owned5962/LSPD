@@ -647,7 +647,7 @@ def test_admin_permanent_ban_requires_staff_reason_and_persists_license():
     client = read("resources/[FUNCTION]/rp_tablet_admin/client/main.lua")
     html = read("resources/[FUNCTION]/rp_tablet_admin/html/index.html")
     ui = read("resources/[FUNCTION]/rp_tablet_admin/html/js/app.js")
-    assert "AllowAdminAction(src, 'ban', 1500)" in server
+    assert "AllowExtendedAction(src, 'ban', 1500)" in server
     assert "Un motif de bannissement est obligatoire." in server
     assert "INSERT INTO player_bans (identifier, reason, banned_by)" in server
     assert "DropPlayer(targetId, '[ADMINISTRATION - BAN PERMANENT] '" in server
