@@ -38,7 +38,6 @@ window.addEventListener('message', function(event) {
         const setDiag = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = String(value); };
         setDiag('diag-fps', Math.max(0, Number(data.fps) || 0));
         setDiag('diag-ping', Math.max(0, Number(data.ping) || 0) + ' ms');
-        setDiag('diag-players', (Number(data.players) || 0) + ' / ' + (Number(data.maxPlayers) || 0));
         const frameMs = Math.max(0, Number(data.frameMs) || 0);
         setDiag('diag-frame-ms', frameMs.toFixed(2) + ' ms');
         setDiag('diag-frame-current', frameMs.toFixed(2) + ' ms');
