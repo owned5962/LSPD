@@ -1007,7 +1007,8 @@ def test_admin_give_actions_are_server_authorized_and_audited():
     client = read("resources/[FUNCTION]/rp_tablet_admin/client/main.lua")
     assert "AllowExtendedAction(src, 'give_vehicle', 1000)" in server
     assert "AllowExtendedAction(src, 'give_weapon', 750)" in server
-    assert "AllowedAdminWeapons[weapon]" in server
+    assert "exports['rp_anticheat']:IsWeaponAllowed(weapon)" in server
+    assert "AllowedAdminWeapons" not in server
     assert "RegisterServerCallback('giveVehicle'" in client
     assert "RegisterServerCallback('giveWeapon'" in client
     assert "LogExtendedAction(src, 'give_vehicle'" in server
