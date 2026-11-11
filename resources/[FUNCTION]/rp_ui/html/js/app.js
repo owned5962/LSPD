@@ -29,6 +29,7 @@ window.addEventListener('message', function(event) {
         updatePlayerHUD(data);
     } else if (data.action === 'hideHUD') {
         document.getElementById('player-hud')?.classList.add('hidden');
+        document.getElementById('hud-job-panel')?.classList.add('hidden');
     } else if (data.action === 'showTextUI') {
         const textElement = document.getElementById('textui-text');
         if (textElement) textElement.textContent = String(data.text ?? '');
@@ -91,11 +92,9 @@ function updatePlayerHUD(data) {
         const el = document.getElementById(id);
         if (el) el.style.width = Math.max(0, Math.min(100, Number(value) || 0)) + '%';
     };
-    const money = value => new Intl.NumberFormat('fr-FR').format(Number(value) || 0) + ' $';
     setText('hud-job', data.job || 'Sans-emploi');
     setText('hud-grade', data.grade || '');
-    setText('hud-cash', money(data.cash));
-    setText('hud-bank', money(data.bank));
+    document.getElementById('hud-job-panel')?.classList.toggle('hidden', data.visible !== true);
     ['health', 'armor', 'hunger', 'thirst'].forEach(key => {
         const value = Math.max(0, Math.min(100, Number(data[key]) || 0));
         setText('hud-' + key, Math.round(value) + '%');
