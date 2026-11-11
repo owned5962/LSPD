@@ -118,7 +118,7 @@ CreateThread(function()
             end
         else
             waitTime = 500
-            if showingPrompt then exports['rp_ui']:HideTextUI(); showingPrompt = false end
+            if activePrompt then exports['rp_ui']:HideTextUI(); activePrompt = nil end
         end
         Wait(waitTime)
     end
