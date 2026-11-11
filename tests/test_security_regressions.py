@@ -675,7 +675,7 @@ def test_admin_tablet_exposes_working_heal_economy_and_job_actions():
 
 def test_all_security_regressions_are_run_by_the_test_script():
     source = read("tests/test_security_regressions.py")
-    runner_index = source.rindex('\n
+    runner_index = source.rindex('if __name__ == "__main__":')
 
 def test_loadscreen_has_offline_visual_banners_and_correct_keybinds():
     manifest = read("resources/[FUNCTION]/rp_loadscreen/fxmanifest.lua")
