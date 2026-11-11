@@ -1,37 +1,43 @@
 local createdBlips = {}
+local locationsLoaded = false
 
-local function addLocationBlip(point, category)
-    local blip = AddBlipForCoord(point[1], point[2], point[3])
-    SetBlipSprite(blip, category.sprite)
-    SetBlipDisplay(blip, 4)
-    SetBlipScale(blip, category.id == 'nightclub' and 0.9 or 0.72)
-    SetBlipColour(blip, category.colour)
-    SetBlipAsShortRange(blip, true)
+local function addLocationBlip(location)
+    if not location.blip_enabled then return end
+    local blip = AddBlipForCoord(location.x, location.y, location.z)
+    SetBlipSprite(blip, tonumber(location.blip_sprite) or 1)
+    SetBlipDisplay(blip, tonumber(location.blip_display) or 4)
+    SetBlipScale(blip, tonumber(location.blip_scale) or 0.7)
+    SetBlipColour(blip, tonumber(location.blip_colour) or 0)
+    SetBlipAsShortRange(blip, location.short_range == true or tonumber(location.short_range) == 1)
     BeginTextCommandSetBlipName('STRING')
-    AddTextComponentSubstringPlayerName(category.label)
+    AddTextComponentSubstringPlayerName(location.name or 'Lieu')
     EndTextCommandSetBlipName(blip)
     createdBlips[#createdBlips + 1] = blip
 end
 
-CreateThread(function()
-    for _, category in ipairs(BusinessLocations or {}) do
-        for _, point in ipairs(category.points or {}) do
-            addLocationBlip(point, category)
-        end
+RegisterNetEvent('rp_businesses:client:locations', function(locations)
+    if type(locations) ~= 'table' then return end
+    for _, blip in ipairs(createdBlips) do
+        if DoesBlipExist(blip) then RemoveBlip(blip) end
     end
+    createdBlips = {}
+    for _, location in ipairs(locations) do
+        addLocationBlip(location)
+    end
+    locationsLoaded = true
+end)
 
-    for _, point in ipairs(ATMBlipLocations or {}) do
-        local blip = AddBlipForCoord(point[1], point[2], point[3])
-        SetBlipSprite(blip,  277)
-        SetBlipDisplay(blip, 4)
-        SetBlipScale(blip, 0.55)
-        SetBlipColour(blip, 2)
-        SetBlipAsShortRange(blip, true)
-        BeginTextCommandSetBlipName('STRING')
-        AddTextComponentSubstringPlayerName('Distributeur automatique')
-        EndTextCommandSetBlipName(blip)
-        createdBlips[#createdBlips + 1] = blip
-    end
+local function requestLocations()
+    TriggerServerEvent('rp_businesses:server:requestLocations')
+end
+
+CreateThread(function()
+    Wait(1500)
+    requestLocations()
+end)
+
+RegisterNetEvent('rp_core:client:setPlayerData', function()
+    if not locationsLoaded then requestLocations() end
 end)
 
 AddEventHandler('onClientResourceStop', function(resourceName)
