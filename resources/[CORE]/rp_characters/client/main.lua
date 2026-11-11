@@ -395,6 +395,7 @@ end)
 
 RegisterNetEvent('rp_characters:client:resumeLoadedCharacter', function()
     characterSessionReady = true
+    FinishCharacterBoot()
     SetPlayerControl(PlayerId(), true, 0)
     local ped = PlayerPedId()
     if ped and ped ~= 0 and DoesEntityExist(ped) then
