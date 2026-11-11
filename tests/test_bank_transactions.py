@@ -32,6 +32,17 @@ def test_withdraw_updates_live_balances_before_releasing_core_lock():
     assert "Retrait réussi" in handler
 
 
+
+def test_transfer_updates_both_live_balances_before_releasing_core_lock():
+    server = (ECONOMY / "server/main.lua").read_text(encoding="utf-8")
+    start = server.index("RegisterNetEvent('rp_economy:server:transfer'")
+    end = server.index("CreateThread(function()", start)
+    handler = server[start:end]
+    assert "UPDATE characters AS sender JOIN characters AS recipient" in handler
+    assert handler.index("player.bank, target.bank =") < handler.index("ReleaseCharacterLock")
+    assert "Virement de " in handler
+
+
 def test_bank_nui_callbacks_reach_server_transactions():
     client = (ECONOMY / "client/main.lua").read_text(encoding="utf-8")
     ui = (ECONOMY / "html/js/app.js").read_text(encoding="utf-8")
@@ -48,6 +59,7 @@ if __name__ == "__main__":
         test_atm_server_validation_uses_fixed_map_locations,
         test_deposit_updates_live_balances_before_releasing_core_lock,
         test_withdraw_updates_live_balances_before_releasing_core_lock,
+        test_transfer_updates_both_live_balances_before_releasing_core_lock,
         test_bank_nui_callbacks_reach_server_transactions,
     ]
     for check in checks:
