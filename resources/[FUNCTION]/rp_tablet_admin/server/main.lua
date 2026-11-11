@@ -128,7 +128,25 @@ RegisterNetEvent('rp_tablet_admin:server:requestOpen', function()
     for targetId, isFrozen in pairs(FrozenPlayers) do
         if isFrozen and GetPlayerName(targetId) then frozenPlayers[#frozenPlayers + 1] = targetId end
     end
-    TriggerClientEvent('rp_tablet_admin:client:openAuthorized', src, adminData, onlinePlayers, jobs, frozenPlayers, itemCatalog)
+    local weaponPolicy = {}
+    local weaponsOk, weapons = pcall(function() return exports['rp_anticheat']:GetWeaponPolicy() end)
+    if weaponsOk and type(weapons) == 'table' then weaponPolicy = weapons end
+    TriggerClientEvent('rp_tablet_admin:client:openAuthorized', src, adminData, onlinePlayers, jobs, frozenPlayers, itemCatalog, weaponPolicy)
+end)
+
+RegisterNetEvent('rp_tablet_admin:server:saveWeaponPolicy', function(rawPolicy)
+    local src = source
+    if not AllowAdminAction(src, 'weapon_policy', 1500) then return end
+    local ok, saved, result = pcall(function()
+        return exports['rp_anticheat']:SaveWeaponPolicy(src, rawPolicy)
+    end)
+    if not ok or saved ~= true then
+        NotifyAdmin(src, type(result) == 'string' and result or 'Impossible d’enregistrer les règles des armes.')
+        return
+    end
+    LogAdminAction(src, 'weapon_policy', nil, 'Mise à jour des armes autorisées/interdites')
+    TriggerClientEvent('rp_tablet_admin:client:weaponPolicySaved', src, result)
+    NotifyAdmin(src, 'Liste des armes enregistrée et synchronisée avec l’anticheat.', 'success')
 end)
 
 RegisterNetEvent('rp_tablet_admin:server:kickPlayer', function(targetId, reason)
