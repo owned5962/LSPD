@@ -3,6 +3,7 @@ local lastFlagAt = {}
 local openStaff = {}
 local adminInvulnerability = {}
 local explosionWindows = {}
+local spectateRequestAt = {}
 
 local function getPlayer(src)
     return exports['rp_core']:GetPlayerFromId(tonumber(src))
@@ -198,6 +199,34 @@ RegisterNetEvent('rp_anticheat:flag', function(rawReason)
     recordDetection(src, reason)
 end)
 
+RegisterNetEvent('rp_anticheat:requestSpectate', function(rawTargetId)
+    local src = source
+    if not isStaff(src) or not Config.Protections.spectate_monitoring.enabled then
+        notify(src, 'error', 'Surveillance non autorisée.')
+        return
+    end
+    local now = os.time()
+    if spectateRequestAt[src] and now - spectateRequestAt[src] < 1 then return end
+    spectateRequestAt[src] = now
+
+    local targetId = tonumber(rawTargetId)
+    if not targetId or targetId == src or not GetPlayerName(targetId) then
+        notify(src, 'error', 'Joueur cible introuvable.')
+        return
+    end
+    if GetPlayerRoutingBucket(src) ~= GetPlayerRoutingBucket(targetId) then
+        notify(src, 'error', 'Le joueur se trouve dans une instance différente.')
+        return
+    end
+    local ped = GetPlayerPed(targetId)
+    if not ped or ped == 0 or not DoesEntityExist(ped) then
+        notify(src, 'error', 'Position du joueur indisponible.')
+        return
+    end
+    local coords = GetEntityCoords(ped)
+    TriggerClientEvent('rp_anticheat:startSpectate', src, targetId, { x = coords.x, y = coords.y, z = coords.z })
+end)
+
 RegisterNetEvent('rp_anticheat:punish', function(rawTargetId, punishType, rawReason)
     local src = source
     if not isStaff(src) then return end
@@ -278,4 +307,5 @@ AddEventHandler('playerDropped', function()
     openStaff[source] = nil
     adminInvulnerability[source] = nil
     explosionWindows[source] = nil
+    spectateRequestAt[source] = nil
 end)
