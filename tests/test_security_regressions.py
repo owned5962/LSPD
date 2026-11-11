@@ -714,10 +714,6 @@ def test_loadscreen_phase_progress_uses_fivem_events_and_real_resource_starts():
     assert "Chargement des missions" in ui
 
 
-if __name__ == "__main__":')
-    assert runner_index > source.index("def test_admin_tablet_close_controls_and_keyboard_bindings_do_not_conflict():")
-    assert runner_index > source.index("def test_admin_live_map_uses_authorized_server_world_positions():")
-    assert runner_index > source.index("def test_admin_advanced_actions_are_server_authorized()")
 
 
 def test_admin_permanent_ban_requires_staff_reason_and_persists_license():
