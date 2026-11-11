@@ -4,7 +4,7 @@ local lastCoords = nil
 local lastCheck = 0
 
 -- In-game Anticheat UI command for Admins
-RegisterKeyMapping('openanticheat', 'Ouvrir le menu Anticheat', 'keyboard', 'F10')
+RegisterKeyMapping('openanticheat', 'Ouvrir le menu Anticheat', 'keyboard', 'F11')
 
 RegisterCommand('openanticheat', function()
     TriggerServerEvent('rp_anticheat:requestOpen')
