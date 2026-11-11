@@ -974,3 +974,16 @@ def test_admin_map_uses_local_custom_artwork_and_player_overlay():
     ui = read("resources/[FUNCTION]/rp_tablet_admin/html/js/app.js")
     assert "html/images/los_santos_map.svg" in manifest
     assert "backgroundSize" in ui and "getMapMarkers" in ui
+
+
+def test_spectate_is_server_authorized_and_streams_target_coordinates():
+    anticheat_server = read("resources/[FUNCTION]/rp_anticheat/server/main.lua")
+    anticheat_client = read("resources/[FUNCTION]/rp_anticheat/client/main.lua")
+    admin_server = read("resources/[FUNCTION]/rp_tablet_admin/server/extended.lua")
+    admin_client = read("resources/[FUNCTION]/rp_tablet_admin/client/main.lua")
+    assert "RegisterNetEvent('rp_anticheat:requestSpectate'" in anticheat_server
+    assert "not isStaff(src)" in anticheat_server
+    assert "GetPlayerRoutingBucket(src) ~= GetPlayerRoutingBucket(targetId)" in anticheat_server
+    assert "SetFocusPosAndVel" in anticheat_client and "RequestCollisionAtCoord" in anticheat_client
+    assert "SetFocusPosAndVel" in admin_client and "RequestCollisionAtCoord" in admin_client
+    assert "GetPlayerRoutingBucket(src) ~= GetPlayerRoutingBucket(targetId)" in admin_server
