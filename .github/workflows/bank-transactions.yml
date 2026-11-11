@@ -1,0 +1,33 @@
+name: Banking transaction validation
+
+on:
+  push:
+    paths:
+      - "resources/[FUNCTION]/rp_economy/**"
+      - "resources/[CORE]/rp_core/server/player.lua"
+      - "tests/test_bank_transactions.py"
+      - ".github/workflows/bank-transactions.yml"
+  pull_request:
+    paths:
+      - "resources/[FUNCTION]/rp_economy/**"
+      - "resources/[CORE]/rp_core/server/player.lua"
+      - "tests/test_bank_transactions.py"
+      - ".github/workflows/bank-transactions.yml"
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - name: Install Lua 5.4
+        run: sudo apt-get update && sudo apt-get install -y lua5.4
+      - name: Run banking regression checks
+        run: python tests/test_bank_transactions.py
+      - name: Compile banking Lua scripts
+        run: |
+          luac5.4 -p "resources/[FUNCTION]/rp_economy/server/main.lua"
+          luac5.4 -p "resources/[FUNCTION]/rp_economy/client/main.lua"
+          luac5.4 -p "resources/[CORE]/rp_core/server/player.lua"
