@@ -11,8 +11,9 @@ def read(path):
 def test_atm_and_bank_access_uses_registered_world_locations():
     server = read("server/main.lua")
     client = read("client/main.lua")
-    assert "GetLocationsByType('bank')" in server
-    assert "GetLocationsByType('atm')" in server
+    assert "GetLocationsByType(locationType)" in server
+    assert "getLocationsByType('bank')" in server
+    assert "getLocationsByType('atm')" in server
     assert "rp_businesses:server:requestLocations" in client
     assert "GetNearbyATM(2.0)" in client
     assert "GetNearbyBank(3.0)" in client
