@@ -27,7 +27,7 @@ window.addEventListener('message', (event) => {
 });
 
 function closeBank() {
-    fetch(`https://${rp_economy}/close`, {
+    fetch(`https://rp_economy/close`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({})
@@ -44,7 +44,7 @@ document.addEventListener('keydown', (e) => {
 document.getElementById('deposit-btn').addEventListener('click', () => {
     const amount = parseInt(document.getElementById('deposit-amount').value);
     if (!amount || amount <= 0) return;
-    fetch(`https://${rp_economy}/deposit`, {
+    fetch(`https://rp_economy/deposit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ amount })
@@ -55,7 +55,7 @@ document.getElementById('deposit-btn').addEventListener('click', () => {
 document.getElementById('withdraw-btn').addEventListener('click', () => {
     const amount = parseInt(document.getElementById('withdraw-amount').value);
     if (!amount || amount <= 0) return;
-    fetch(`https://${rp_economy}/withdraw`, {
+    fetch(`https://rp_economy/withdraw`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ amount })
@@ -67,7 +67,7 @@ document.getElementById('transfer-btn').addEventListener('click', () => {
     const targetId = parseInt(document.getElementById('transfer-id').value);
     const amount = parseInt(document.getElementById('transfer-amount').value);
     if (!targetId || !amount || amount <= 0) return;
-    fetch(`https://${rp_economy}/transfer`, {
+    fetch(`https://rp_economy/transfer`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ targetId, amount })
