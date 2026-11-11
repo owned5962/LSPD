@@ -900,3 +900,20 @@ def test_character_has_a_visible_default_freemode_skin_when_saved_skin_is_missin
     assert "local appearanceApplied = ApplyCharacterAppearance(gender, skin)" in client
     assert "Appearance fallback was required" in client
     assert "outfits.casual" in client
+
+
+def test_admin_tablet_server_audit_and_open_handlers_are_well_formed():
+    server = read("resources/[FUNCTION]/rp_tablet_admin/server/main.lua")
+    assert "adminName = adminName:gsub('^%s*(.-)%s*$', '%1')" in server
+    assert "local function LogAdminAction(src, action, targetId, details)" in server
+    assert server.count("RegisterNetEvent('rp_tablet_admin:server:requestOpen'") == 1
+    assert "server:requestAuditLogs" in server
+    assert "server:broadcastAnnouncement" in server
+    assert "adminName:gsub('^%s*(.-)%s*, function()" not in server
+    assert "\\n, '%1')" not in server
+
+
+def test_character_server_trim_helper_uses_a_complete_pattern():
+    server = read("resources/[CORE]/rp_characters/server/main.lua")
+    assert "return value:match('^%s*(.-)%s*$') or ''" in server
+    assert "value:gsub('^%s*(.-)%s*'" not in server
