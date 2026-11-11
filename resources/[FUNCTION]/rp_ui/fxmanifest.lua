@@ -3,7 +3,9 @@ game 'gta5'
 
 author 'FiveM RP Framework'
 description 'Modern TextUI & Animated Progress Bar'
-version '1.0.0'
+version '1.1.0'
+
+dependency 'rp_core'
 
 ui_page 'html/index.html'
 
