@@ -39,6 +39,20 @@ def test_surrender_and_refusal_have_distinct_server_and_client_paths():
     assert "rp_police_interaction:server:refused" in client
     assert "broadcastAlert(alert)" in server
 
+
+def test_vehicle_theft_detection_creates_mdt_dispatch_alert_immediately():
+    server = read("resources/[FUNCTION]/rp_police_interaction/server/main.lua")
+    client = read("resources/[FUNCTION]/rp_police_interaction/client/main.lua")
+    assert "if offence == 'vehicle_theft' then" in server
+    assert "title = details.label" in server
+    assert "suspect = safeName(player, src)" in server
+    assert "details = 'Vol de véhicule détecté automatiquement'" in server
+    assert "alerts[#alerts + 1] = alert" in server
+    assert "broadcastAlert(alert)" in server
+    assert "return" in server[server.index("if offence == 'vehicle_theft' then"):server.index("TriggerClientEvent('rp_police_interaction:client:interpellation'")]
+    assert "report('vehicle_theft')" in client
+    assert "IsPedJacking(ped)" in client
+
 def test_dispatch_alerts_are_limited_to_police_on_duty():
     server = read("resources/[FUNCTION]/rp_police_interaction/server/main.lua")
     tablet_client = read("resources/[FUNCTION]/rp_tablet_job/client/main.lua")
