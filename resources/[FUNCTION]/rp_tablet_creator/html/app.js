@@ -56,6 +56,7 @@ window.addEventListener('message',e=>{
         renderPropOptions();
         if(jobSelect.value)loadBlipForJob(jobSelect.value);
         renderMapping();
+        renderCreatorAdminData(d);
     } else if(d.action==='mappingAdded'){
         if(d.item)creatorMapping.unshift(d.item);renderMapping();
     } else if(d.action==='mappingRemoved'){
@@ -74,4 +75,165 @@ document.getElementById('save-blip').addEventListener('click',()=>{
         scale:Number(document.getElementById('blip-scale').value),enabled:document.getElementById('blip-enabled').checked};
     if(!data.job||!data.label||![data.x,data.y,data.z,data.sprite,data.color,data.scale].every(Number.isFinite)){status.textContent='Complétez tous les champs du blip.';return;}
     post('saveJobBlip',data).catch(()=>{status.textContent='Erreur lors de la sauvegarde du blip.';});
+});
+
+
+// Creator server/player administration. All server mutations are revalidated in Lua.
+let creatorPlayers = [];
+let creatorItems = [];
+let creatorModules = [];
+
+function creatorMessage(message, success=false) {
+    status.textContent = message;
+    status.style.color = success ? '#86efac' : '#fca5a5';
+}
+function renderCreatorAdminData(data) {
+    creatorPlayers = Array.isArray(data.players) ? data.players : [];
+    creatorItems = Array.isArray(data.items) ? data.items : [];
+    creatorModules = Array.isArray(data.modules) ? data.modules : [];
+
+    const serverName = document.getElementById('creator-server-name');
+    const serverSlots = document.getElementById('creator-server-slots');
+    if (serverName && data.settings) serverName.value = data.settings.name || 'Los Santos Stories';
+    if (serverSlots && data.settings) serverSlots.value = Number(data.settings.slots || 64);
+
+    const playerSelect = document.getElementById('creator-player');
+    const selectedId = playerSelect.value;
+    playerSelect.replaceChildren();
+    creatorPlayers.forEach(player => {
+        const option = document.createElement('option');
+        option.value = String(player.id);
+        option.textContent = (player.name || ('Joueur ' + player.id)) + ' · ID ' + player.id;
+        playerSelect.append(option);
+    });
+    if (creatorPlayers.some(player => String(player.id) === selectedId)) playerSelect.value = selectedId;
+    else if (creatorPlayers.length) playerSelect.value = String(creatorPlayers[0].id);
+
+    const jobSelect = document.getElementById('creator-job');
+    fillSelect(jobSelect, creatorJobs, 'name', 'label');
+    const itemSelect = document.getElementById('creator-item');
+    fillSelect(itemSelect, creatorItems, 'name', 'label');
+    renderCreatorModules();
+    renderCreatorJobGrades();
+    loadCreatorPlayer();
+}
+function renderCreatorModules() {
+    const host = document.getElementById('creator-module-list');
+    if (!host) return;
+    host.replaceChildren();
+    if (!creatorModules.length) { host.textContent = 'Aucun module facultatif disponible.'; return; }
+    creatorModules.forEach(module => {
+        const row = document.createElement('div');
+        row.className = 'module-row';
+        const description = document.createElement('div');
+        const name = document.createElement('strong');
+        name.textContent = module.label || module.name;
+        const state = document.createElement('small');
+        state.textContent = module.name + ' · ' + (module.state || 'inconnu');
+        description.append(name, state);
+        const toggle = document.createElement('input');
+        toggle.type = 'checkbox';
+        toggle.checked = module.enabled === true;
+        toggle.disabled = module.state === 'missing' || module.state === 'starting' || module.state === 'stopping';
+        toggle.setAttribute('aria-label', 'Activer ' + (module.label || module.name));
+        toggle.addEventListener('change', () => {
+            toggle.disabled = true;
+            post('setModuleState', { name: module.name, enabled: toggle.checked })
+                .catch(() => { toggle.disabled = false; toggle.checked = !toggle.checked; creatorMessage('Impossible de contacter le serveur.'); });
+        });
+        row.append(description, toggle);
+        host.append(row);
+    });
+}
+function getSelectedCreatorPlayer() {
+    const id = Number(document.getElementById('creator-player')?.value);
+    return creatorPlayers.find(player => Number(player.id) === id) || null;
+}
+function loadCreatorPlayer() {
+    const player = getSelectedCreatorPlayer();
+    if (!player) return;
+    document.getElementById('creator-firstname').value = player.firstname || '';
+    document.getElementById('creator-lastname').value = player.lastname || '';
+    document.getElementById('creator-age').value = Number(player.age || 25);
+    document.getElementById('creator-role').value = player.group || 'user';
+    document.getElementById('creator-skin').value = 'keep';
+    document.getElementById('creator-gender').value = player.gender || 'm';
+    document.getElementById('creator-cash').value = Number(player.cash || 0);
+    document.getElementById('creator-bank').value = Number(player.bank || 0);
+    document.getElementById('creator-job').value = player.job || 'unemployed';
+    document.getElementById('creator-access-admin').checked = player.tablets?.admin !== false;
+    document.getElementById('creator-access-anticheat').checked = player.tablets?.anticheat !== false;
+    document.getElementById('creator-access-creator').checked = player.tablets?.creator !== false;
+    renderCreatorJobGrades(player.grade);
+}
+function renderCreatorJobGrades(selectedGrade) {
+    const select = document.getElementById('creator-job-grade');
+    const job = creatorJobs.find(item => item.name === document.getElementById('creator-job').value);
+    select.replaceChildren();
+    const grades = Array.isArray(job?.grades) ? job.grades : [{ grade: 0, label: 'Grade 0' }];
+    grades.forEach(item => {
+        const option = document.createElement('option');
+        option.value = String(item.grade);
+        option.textContent = item.label || ('Grade ' + item.grade);
+        select.append(option);
+    });
+    if (selectedGrade !== undefined && grades.some(item => Number(item.grade) === Number(selectedGrade))) {
+        select.value = String(selectedGrade);
+    }
+}
+document.getElementById('creator-player').addEventListener('change', loadCreatorPlayer);
+document.getElementById('creator-job').addEventListener('change', () => renderCreatorJobGrades());
+document.getElementById('creator-refresh').addEventListener('click', () => post('refreshTools').catch(() => creatorMessage('Actualisation impossible.')));
+document.getElementById('creator-save-server').addEventListener('click', () => {
+    const name = document.getElementById('creator-server-name').value.trim();
+    const slots = Number(document.getElementById('creator-server-slots').value);
+    if (name.length < 3 || !Number.isInteger(slots) || slots < 1 || slots > 1024) {
+        creatorMessage('Nom du serveur ou nombre de slots invalide.'); return;
+    }
+    post('setServerSettings', { name, slots }).catch(() => creatorMessage('Erreur lors de la sauvegarde du serveur.'));
+});
+document.getElementById('creator-save-identity').addEventListener('click', () => {
+    const player = getSelectedCreatorPlayer(); if (!player) { creatorMessage('Sélectionnez un joueur.'); return; }
+    const data = {
+        playerId: player.id,
+        firstname: document.getElementById('creator-firstname').value.trim(),
+        lastname: document.getElementById('creator-lastname').value.trim(),
+        age: Number(document.getElementById('creator-age').value),
+        group: document.getElementById('creator-role').value,
+        skinPreset: document.getElementById('creator-skin').value
+    };
+    post('updatePlayerIdentity', data).catch(() => creatorMessage('Erreur lors de la modification de l’identité.'));
+});
+document.getElementById('creator-save-balances').addEventListener('click', () => {
+    const player = getSelectedCreatorPlayer(); if (!player) { creatorMessage('Sélectionnez un joueur.'); return; }
+    const cash = Number(document.getElementById('creator-cash').value);
+    const bank = Number(document.getElementById('creator-bank').value);
+    if (![cash, bank].every(value => Number.isInteger(value) && value >= 0 && value <= 100000000)) {
+        creatorMessage('Les soldes doivent être des nombres entiers entre 0 et 100 000 000.'); return;
+    }
+    post('updatePlayerBalances', { playerId: player.id, cash, bank }).catch(() => creatorMessage('Erreur lors de la modification des soldes.'));
+});
+document.getElementById('creator-save-job').addEventListener('click', () => {
+    const player = getSelectedCreatorPlayer(); if (!player) { creatorMessage('Sélectionnez un joueur.'); return; }
+    post('updatePlayerJob', { playerId: player.id, jobName: document.getElementById('creator-job').value, grade: Number(document.getElementById('creator-job-grade').value) })
+        .catch(() => creatorMessage('Erreur lors de la modification du métier.'));
+});
+function updateCreatorInventory(operation) {
+    const player = getSelectedCreatorPlayer(); if (!player) { creatorMessage('Sélectionnez un joueur.'); return; }
+    const count = Number(document.getElementById('creator-item-count').value);
+    const itemName = document.getElementById('creator-item').value;
+    if (!itemName || !Number.isInteger(count) || count < 1 || count > 1000) { creatorMessage('Objet ou quantité invalide.'); return; }
+    post('updatePlayerInventory', { playerId: player.id, itemName, count, operation })
+        .catch(() => creatorMessage('Erreur lors de la modification de l’inventaire.'));
+}
+document.getElementById('creator-item-add').addEventListener('click', () => updateCreatorInventory('add'));
+document.getElementById('creator-item-remove').addEventListener('click', () => updateCreatorInventory('remove'));
+document.getElementById('creator-save-access').addEventListener('click', () => {
+    const player = getSelectedCreatorPlayer(); if (!player) { creatorMessage('Sélectionnez un joueur.'); return; }
+    post('updatePlayerAccess', {
+        playerId: player.id,
+        admin: document.getElementById('creator-access-admin').checked,
+        anticheat: document.getElementById('creator-access-anticheat').checked,
+        creator: document.getElementById('creator-access-creator').checked
+    }).catch(() => creatorMessage('Erreur lors de la sauvegarde des accès.'));
 });
