@@ -187,7 +187,13 @@ local function runRescue()
     end
 
     notify('Les secours ont été alertés. Restez au sol, une ambulance arrive.', 'info')
-    if not driveTo(driver, ambulance, pickup) then cleanup() return end
+    if not driveTo(driver, ambulance, pickup) then
+        if not IsEntityDead(PlayerPedId()) then cleanup() return end
+        -- Si le GPS ne trouve pas de chemin (intérieur ou zone bloquée), l'ambulance rejoint le point de prise en charge.
+        SetEntityCoords(ambulance, pickup.x + 5.0, pickup.y + 5.0, pickup.z, false, false, false, false)
+        SetEntityHeading(ambulance, GetHeadingFromVector_2d(pickup.x - (pickup.x + 5.0), pickup.y - (pickup.y + 5.0)))
+        SetVehicleOnGroundProperly(ambulance)
+    end
 
     TaskLeaveVehicle(medic, ambulance, 256)
     local deadline = GetGameTimer() + 6000
