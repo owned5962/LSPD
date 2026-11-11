@@ -1,56 +1,69 @@
 local isTabletOpen = false
 local lastAdminToggleAt = 0
 local tabletEntity = nil
-local tabletDict = "amb@code_human_in_bus_passenger_idles@female@tablet@base"
-local tabletAnim = "base"
+local tabletDict = 'amb@code_human_in_bus_passenger_idles@female@tablet@base'
+local tabletAnim = 'base'
 local tabletModel = GetHashKey('prop_cs_tablet')
 local isAdminNoclip = false
 local isAdminGodmode = false
 local isAdminSpectating = false
 local spectateTargetPed = nil
 
--- A resource restart must never leave the NUI visible or focused.
-AddEventHandler('onClientResourceStart', function(resourceName)
-    if resourceName ~= GetCurrentResourceName() then return end
+local function Notify(message, kind)
+    TriggerEvent('rp_core:client:notify', message, kind or 'info')
+end
+
+local function StopTabletAnimation()
+    local ped = PlayerPedId()
+    ClearPedSecondaryTask(ped)
+    if tabletEntity and DoesEntityExist(tabletEntity) then
+        DeleteEntity(tabletEntity)
+    end
+    tabletEntity = nil
+    SetModelAsNoLongerNeeded(tabletModel)
+end
+
+local function StartTabletAnimation()
+    local ped = PlayerPedId()
+    RequestAnimDict(tabletDict)
+    local deadline = GetGameTimer() + 5000
+    while not HasAnimDictLoaded(tabletDict) and GetGameTimer() < deadline do Wait(10) end
+    if not HasAnimDictLoaded(tabletDict) then return end
+
+    RequestModel(tabletModel)
+    deadline = GetGameTimer() + 5000
+    while not HasModelLoaded(tabletModel) and GetGameTimer() < deadline do Wait(10) end
+    if not HasModelLoaded(tabletModel) then return end
+
+    if tabletEntity and DoesEntityExist(tabletEntity) then DeleteEntity(tabletEntity) end
+    tabletEntity = CreateObject(tabletModel, 0.0, 0.0, 0.0, true, true, false)
+    if tabletEntity and tabletEntity ~= 0 then
+        AttachEntityToEntity(tabletEntity, ped, GetPedBoneIndex(ped, 28422),
+            -0.05, 0.0, 0.0, 0.0, 0.0, 0.0, true, true, false, true, 1, true)
+        TaskPlayAnim(ped, tabletDict, tabletAnim, 3.0, 3.0, -1, 49, 0, false, false, false)
+    else
+        tabletEntity = nil
+    end
+    SetModelAsNoLongerNeeded(tabletModel)
+end
+
+local function CloseAdminTablet()
+    if isAdminSpectating then
+        TriggerServerEvent('rp_tablet_admin:server:stopSpectate')
+    end
+    local wasOpen = isTabletOpen
     isTabletOpen = false
     SetNuiFocus(false, false)
     SendNUIMessage({ action = 'closeTablet' })
-end)
+    if wasOpen then StopTabletAnimation() end
+end
 
 function OpenAdminTablet()
     TriggerServerEvent('rp_tablet_admin:server:requestOpen')
 end
 
-function CloseAdminTablet()
-    -- Idempotent: always release NUI focus, even if Lua and NUI state drift.
-    if isAdminSpectating then TriggerServerEvent('rp_tablet_admin:server:stopSpectate') end
-    local wasOpen = isTabletOpen
-    isTabletOpen = false
-    SetNuiFocus(false, false)
-    SendNUIMessage({ action = "closeTablet" })
-    if wasOpen then StopTabletAnimation() end
-end
-
-function StartTabletAnimation()
-    local ped = PlayerPedId()
-    RequestAnimDict(tabletDict)
-    while not HasAnimDictLoaded(tabletDict) do Wait(10) end
-
-    RequestModel(tabletModel)
-    while not HasModelLoaded(tabletModel) do Wait(10) end
-
-    tabletEntity = CreateObject(tabletModel, 0.0, 0.0, 0.0, true, true, false)
-    AttachEntityToEntity(tabletEntity, ped, GetPedBoneIndex(ped, 28422), -0.05, 0.0, 0.0, 0.0, 0.0, 0.0, true, true, false, true, 1, true)
-    TaskPlayAnim(ped, tabletDict, tabletAnim, 3.0, 3.0, -1, 49, 0, false, false, false)
-end
-
-function StopTabletAnimation()
-    local ped = PlayerPedId()
-    ClearPedTasks(ped)
-    if tabletEntity and DoesEntityExist(tabletEntity) then
-        DeleteEntity(tabletEntity)
-        tabletEntity = nil
-    end
+function CloseAdminTabletPublic()
+    CloseAdminTablet()
 end
 
 RegisterNetEvent('rp_tablet_admin:client:openAuthorized', function(adminData, playersList, jobsList, frozenPlayers)
@@ -58,10 +71,10 @@ RegisterNetEvent('rp_tablet_admin:client:openAuthorized', function(adminData, pl
     StartTabletAnimation()
     SetNuiFocus(true, true)
     SendNUIMessage({
-        action = "openTablet",
-        admin = adminData,
-        players = playersList,
-        jobs = jobsList,
+        action = 'openTablet',
+        admin = adminData or {},
+        players = playersList or {},
+        jobs = jobsList or {},
         frozenPlayers = frozenPlayers or {}
     })
 end)
@@ -73,22 +86,15 @@ local function ToggleAdminTablet()
 
     if isAdminSpectating then
         TriggerServerEvent('rp_tablet_admin:server:stopSpectate')
-        return
-    end
-
-    if isTabletOpen then
+    elseif isTabletOpen then
         CloseAdminTablet()
     else
         OpenAdminTablet()
     end
 end
 
--- Commande dédiée au raccourci : nom unique pour éviter les conflits avec
--- une autre ressource qui pourrait également enregistrer /admin.
 RegisterCommand('rp_admin_tablet_toggle', ToggleAdminTablet, false)
 RegisterKeyMapping('rp_admin_tablet_toggle', 'Ouvrir la Tablette Admin', 'keyboard', 'F10')
-
--- Commandes de secours utilisables depuis le chat.
 RegisterCommand('admin', ToggleAdminTablet, false)
 RegisterCommand('adminmenu', ToggleAdminTablet, false)
 
@@ -100,107 +106,40 @@ RegisterNUICallback('close', function(data, cb)
     cb('ok')
 end)
 
-RegisterNUICallback('spectatePlayer', function(data, cb)
-    TriggerServerEvent('rp_tablet_admin:server:spectatePlayer', data.playerId)
-    cb('ok')
-end)
+local function RegisterServerCallback(name, eventName, fields)
+    RegisterNUICallback(name, function(data, cb)
+        data = type(data) == 'table' and data or {}
+        local args = {}
+        for i = 1, #fields do args[i] = data[fields[i]] end
+        TriggerServerEvent(eventName, table.unpack(args))
+        cb('ok')
+    end)
+end
 
-RegisterNUICallback('stopSpectate', function(data, cb)
-    TriggerServerEvent('rp_tablet_admin:server:stopSpectate')
-    cb('ok')
-end)
-
-RegisterNUICallback('toggleNoclip', function(data, cb)
-    TriggerServerEvent('rp_tablet_admin:server:toggleNoclip')
-    cb('ok')
-end)
-
-RegisterNUICallback('toggleGodmode', function(data, cb)
-    TriggerServerEvent('rp_tablet_admin:server:toggleGodmode')
-    cb('ok')
-end)
-
-RegisterNUICallback('spawnVehicle', function(data, cb)
-    TriggerServerEvent('rp_tablet_admin:server:spawnVehicle', data.model)
-    cb('ok')
-end)
-
-RegisterNUICallback('giveVehicle', function(data, cb)
-    TriggerServerEvent('rp_tablet_admin:server:giveVehicle', data.playerId, data.model)
-    cb('ok')
-end)
-
-RegisterNUICallback('giveWeapon', function(data, cb)
-    TriggerServerEvent('rp_tablet_admin:server:giveWeapon', data.playerId, data.weapon)
-    cb('ok')
-end)
-RegisterNUICallback('banPlayer', function(data, cb)
-    TriggerServerEvent('rp_tablet_admin:server:banPlayer', data.playerId, data.reason)
-    cb('ok')
-end)
-
-RegisterNUICallback('kickPlayer', function(data, cb)
-    TriggerServerEvent('rp_tablet_admin:server:kickPlayer', data.playerId, data.reason)
-    cb('ok')
-end)
-
-RegisterNUICallback('freezePlayer', function(data, cb)
-    TriggerServerEvent('rp_tablet_admin:server:freezePlayer', data.playerId, data.freeze)
-    cb('ok')
-end)
-
-RegisterNUICallback('teleportToPlayer', function(data, cb)
-    TriggerServerEvent('rp_tablet_admin:server:teleportToPlayer', data.playerId)
-    cb('ok')
-end)
-
-RegisterNUICallback('bringPlayer', function(data, cb)
-    TriggerServerEvent('rp_tablet_admin:server:bringPlayer', data.playerId)
-    cb('ok')
-end)
-
-RegisterNUICallback('healPlayer', function(data, cb)
-    TriggerServerEvent('rp_tablet_admin:server:healPlayer', data.playerId)
-    cb('ok')
-end)
-
-RegisterNUICallback('revivePlayer', function(data, cb)
-    TriggerServerEvent('rp_tablet_admin:server:revivePlayer', data.playerId)
-    cb('ok')
-end)
-
-RegisterNUICallback('manageEconomy', function(data, cb)
-    TriggerServerEvent('rp_tablet_admin:server:manageEconomy', data.playerId, data.type, data.amount, data.operation)
-    cb('ok')
-end)
-
-RegisterNUICallback('setJob', function(data, cb)
-    TriggerServerEvent('rp_tablet_admin:server:setJob', data.playerId, data.jobName, data.grade)
-    cb('ok')
-end)
-
--- Vehicle spawning/deletion are intentionally unavailable until they use
--- server-authorized entity creation and ownership validation.
-
-RegisterNUICallback('setWeatherTime', function(data, cb)
-    TriggerServerEvent('rp_tablet_admin:server:setWeatherTime', data.weather, tonumber(data.hours), tonumber(data.minutes))
-    cb('ok')
-end)
-
-RegisterNUICallback('broadcastAnnouncement', function(data, cb)
-    TriggerServerEvent('rp_tablet_admin:server:broadcastAnnouncement', data.message)
-    cb('ok')
-end)
-
-RegisterNUICallback('requestPlayerPositions', function(data, cb)
-    TriggerServerEvent('rp_tablet_admin:server:requestPlayerPositions')
-    cb('ok')
-end)
-
-RegisterNUICallback('requestAuditLogs', function(data, cb)
-    TriggerServerEvent('rp_tablet_admin:server:requestAuditLogs')
-    cb('ok')
-end)
+RegisterServerCallback('spectatePlayer', 'rp_tablet_admin:server:spectatePlayer', { 'playerId' })
+RegisterServerCallback('stopSpectate', 'rp_tablet_admin:server:stopSpectate', {})
+RegisterServerCallback('toggleNoclip', 'rp_tablet_admin:server:toggleNoclip', {})
+RegisterServerCallback('toggleGodmode', 'rp_tablet_admin:server:toggleGodmode', {})
+RegisterServerCallback('spawnVehicle', 'rp_tablet_admin:server:spawnVehicle', { 'model' })
+RegisterServerCallback('giveVehicle', 'rp_tablet_admin:server:giveVehicle', { 'playerId', 'model' })
+RegisterServerCallback('giveWeapon', 'rp_tablet_admin:server:giveWeapon', { 'playerId', 'weapon' })
+RegisterServerCallback('banPlayer', 'rp_tablet_admin:server:banPlayer', { 'playerId', 'reason' })
+RegisterServerCallback('kickPlayer', 'rp_tablet_admin:server:kickPlayer', { 'playerId', 'reason' })
+RegisterServerCallback('freezePlayer', 'rp_tablet_admin:server:freezePlayer', { 'playerId', 'freeze' })
+RegisterServerCallback('teleportToPlayer', 'rp_tablet_admin:server:teleportToPlayer', { 'playerId' })
+RegisterServerCallback('bringPlayer', 'rp_tablet_admin:server:bringPlayer', { 'playerId' })
+RegisterServerCallback('healPlayer', 'rp_tablet_admin:server:healPlayer', { 'playerId' })
+RegisterServerCallback('revivePlayer', 'rp_tablet_admin:server:revivePlayer', { 'playerId' })
+RegisterServerCallback('manageEconomy', 'rp_tablet_admin:server:manageEconomy',
+    { 'playerId', 'type', 'amount', 'operation' })
+RegisterServerCallback('setJob', 'rp_tablet_admin:server:setJob',
+    { 'playerId', 'jobName', 'grade' })
+RegisterServerCallback('setWeatherTime', 'rp_tablet_admin:server:setWeatherTime',
+    { 'weather', 'hours', 'minutes' })
+RegisterServerCallback('broadcastAnnouncement', 'rp_tablet_admin:server:broadcastAnnouncement',
+    { 'message' })
+RegisterServerCallback('requestPlayerPositions', 'rp_tablet_admin:server:requestPlayerPositions', {})
+RegisterServerCallback('requestAuditLogs', 'rp_tablet_admin:server:requestAuditLogs', {})
 
 RegisterNetEvent('rp_tablet_admin:client:auditLogs', function(logs)
     SendNUIMessage({ action = 'auditLogs', logs = logs or {} })
@@ -217,13 +156,19 @@ RegisterNetEvent('rp_tablet_admin:client:startSpectate', function(targetId, targ
         SendNUIMessage({ action = 'closeTablet' })
         StopTabletAnimation()
     end
-    if type(targetCoords) ~= 'table' or not tonumber(targetCoords.x) or not tonumber(targetCoords.y) or not tonumber(targetCoords.z) then
-        TriggerEvent('rp_core:client:notify', 'Coordonnées de surveillance invalides.', 'error')
+
+    if type(targetCoords) ~= 'table'
+        or not tonumber(targetCoords.x)
+        or not tonumber(targetCoords.y)
+        or not tonumber(targetCoords.z) then
+        Notify('Coordonnées de surveillance invalides.', 'error')
         return
     end
 
-    SetFocusPosAndVel(tonumber(targetCoords.x), tonumber(targetCoords.y), tonumber(targetCoords.z), 0.0, 0.0, 0.0)
-    RequestCollisionAtCoord(tonumber(targetCoords.x), tonumber(targetCoords.y), tonumber(targetCoords.z))
+    local x, y, z = tonumber(targetCoords.x), tonumber(targetCoords.y), tonumber(targetCoords.z)
+    SetFocusPosAndVel(x, y, z, 0.0, 0.0, 0.0)
+    RequestCollisionAtCoord(x, y, z)
+
     local deadline = GetGameTimer() + 10000
     local playerIndex, targetPed = -1, 0
     repeat
@@ -237,13 +182,14 @@ RegisterNetEvent('rp_tablet_admin:client:startSpectate', function(targetId, targ
 
     if playerIndex == -1 or targetPed == 0 or not DoesEntityExist(targetPed) then
         ClearFocus()
-        TriggerEvent('rp_core:client:notify', 'Joueur non disponible dans la zone de streaming.', 'error')
+        Notify('Joueur non disponible dans la zone de streaming.', 'error')
         return
     end
+
     spectateTargetPed = targetPed
     isAdminSpectating = true
     NetworkSetInSpectatorMode(true, targetPed)
-    TriggerEvent('rp_core:client:notify', 'Surveillance activée. Appuyez sur F10 pour arrêter.', 'info')
+    Notify('Surveillance activée. Appuyez sur F10 pour arrêter.', 'info')
 end)
 
 RegisterNetEvent('rp_tablet_admin:client:stopSpectate', function()
@@ -252,25 +198,26 @@ RegisterNetEvent('rp_tablet_admin:client:stopSpectate', function()
     ClearFocus()
     isAdminSpectating = false
     spectateTargetPed = nil
-    TriggerEvent('rp_core:client:notify', 'Surveillance arrêtée.', 'success')
+    Notify('Surveillance arrêtée.', 'success')
 end)
 
 RegisterNetEvent('rp_tablet_admin:client:toggleGodmode', function(enabled)
     isAdminGodmode = enabled == true
-    SetPlayerInvincible(PlayerId(), isAdminGodmode or isAdminNoclip)
-    SetEntityInvincible(PlayerPedId(), isAdminGodmode or isAdminNoclip)
-    TriggerEvent('rp_core:client:notify', isAdminGodmode and 'GodMode activé.' or 'GodMode désactivé.', 'info')
+    local invincible = isAdminGodmode or isAdminNoclip
+    SetPlayerInvincible(PlayerId(), invincible)
+    SetEntityInvincible(PlayerPedId(), invincible)
+    Notify(isAdminGodmode and 'GodMode activé.' or 'GodMode désactivé.', 'info')
 end)
 
 RegisterNetEvent('rp_tablet_admin:client:toggleNoclip', function(enabled)
     isAdminNoclip = enabled == true
-    local enabled = isAdminNoclip
     local ped = PlayerPedId()
-    SetEntityCollision(ped, not enabled, not enabled)
-    SetEntityInvincible(ped, enabled or isAdminGodmode)
-    SetPlayerInvincible(PlayerId(), enabled or isAdminGodmode)
-    TriggerEvent('rp_core:client:notify', enabled and 'NoClip activé. WASD / Espace / Ctrl pour bouger.' or 'NoClip désactivé.', 'info')
-    if enabled then
+    SetEntityCollision(ped, not isAdminNoclip, not isAdminNoclip)
+    SetEntityInvincible(ped, isAdminNoclip or isAdminGodmode)
+    SetPlayerInvincible(PlayerId(), isAdminNoclip or isAdminGodmode)
+    Notify(isAdminNoclip and 'NoClip activé. WASD / Espace / Ctrl pour bouger.' or 'NoClip désactivé.', 'info')
+
+    if isAdminNoclip then
         CreateThread(function()
             while isAdminNoclip do
                 Wait(0)
@@ -278,7 +225,8 @@ RegisterNetEvent('rp_tablet_admin:client:toggleNoclip', function(enabled)
                 local camRot = GetGameplayCamRot(2)
                 local pitch = math.rad(camRot.x)
                 local heading = math.rad(camRot.z)
-                local forward = vector3(-math.sin(heading) * math.cos(pitch), math.cos(heading) * math.cos(pitch), math.sin(pitch))
+                local forward = vector3(-math.sin(heading) * math.cos(pitch),
+                    math.cos(heading) * math.cos(pitch), math.sin(pitch))
                 local right = vector3(math.cos(heading), math.sin(heading), 0.0)
                 local position = GetEntityCoords(ped)
                 local speed = IsControlPressed(0, 21) and 4.0 or 1.2
@@ -291,6 +239,7 @@ RegisterNetEvent('rp_tablet_admin:client:toggleNoclip', function(enabled)
                 SetEntityVelocity(ped, 0.0, 0.0, 0.0)
                 SetEntityCoordsNoOffset(ped, position.x, position.y, position.z, true, true, true)
             end
+
             ped = PlayerPedId()
             SetEntityCollision(ped, true, true)
             SetEntityInvincible(ped, isAdminGodmode)
@@ -299,161 +248,61 @@ RegisterNetEvent('rp_tablet_admin:client:toggleNoclip', function(enabled)
     end
 end)
 
-RegisterNetEvent('rp_tablet_admin:client:spawnVehicle', function(model)
-    if type(model) ~= 'string' then return end
-    local hash = GetHashKey(model)
-    if not IsModelInCdimage(hash) or not IsModelAVehicle(hash) then
-        TriggerEvent('rp_core:client:notify', 'Modèle de véhicule inconnu ou invalide.', 'error')
+local function CreateAdminVehicle(model, offset)
+    if type(model) ~= 'string' or not model:match('^[%w_]+$') then
+        Notify('Modèle de véhicule invalide.', 'error')
         return
     end
+
+    local hash = GetHashKey(model)
+    if not IsModelInCdimage(hash) or not IsModelAVehicle(hash) then
+        Notify('Modèle de véhicule inconnu ou invalide.', 'error')
+        return
+    end
+
     RequestModel(hash)
     local deadline = GetGameTimer() + 5000
     while not HasModelLoaded(hash) and GetGameTimer() < deadline do Wait(10) end
-    if not HasModelLoaded(hash) then TriggerEvent('rp_core:client:notify', 'Chargement du véhicule impossible.', 'error'); return end
+    if not HasModelLoaded(hash) then
+        Notify('Chargement du véhicule impossible.', 'error')
+        return
+    end
+
     local ped = PlayerPedId()
-    local coords = GetOffsetFromEntityInWorldCoords(ped, 0.0, 4.0, 0.0)
+    local coords = GetOffsetFromEntityInWorldCoords(ped, 0.0, offset or 4.0, 0.0)
     local vehicle = CreateVehicle(hash, coords.x, coords.y, coords.z, GetEntityHeading(ped), true, true)
     if not vehicle or vehicle == 0 or not DoesEntityExist(vehicle) then
         SetModelAsNoLongerNeeded(hash)
-        TriggerEvent('rp_core:client:notify', 'Création impossible : vérifiez les restrictions d’entités du serveur.', 'error')
+        Notify('Création impossible : vérifiez les restrictions d’entités du serveur.', 'error')
         return
     end
 
     SetEntityAsMissionEntity(vehicle, true, true)
     SetVehicleOnGroundProperly(vehicle)
     SetPedIntoVehicle(ped, vehicle, -1)
-    TriggerEvent('rp_core:client:notify', 'Véhicule créé : ' .. model, 'success')
     SetModelAsNoLongerNeeded(hash)
+    return vehicle
+end
+
+RegisterNetEvent('rp_tablet_admin:client:spawnVehicle', function(model)
+    local vehicle = CreateAdminVehicle(model, 4.0)
+    if vehicle then Notify('Véhicule créé : ' .. model, 'success') end
 end)
+
 RegisterNetEvent('rp_tablet_admin:client:spawnVehicleForPlayer', function(model)
-    if type(model) ~= 'string' or not model:match('^[%w_]+
-    local ped = PlayerPedId()
-    SetEntityHealth(ped, GetEntityMaxHealth(ped))
-    ClearPedBloodDamage(ped)
-end)
-
-RegisterNetEvent('rp_tablet_admin:client:freezeToggle', function(freeze)
-    FreezeEntityPosition(PlayerPedId(), freeze)
-end)
-
-RegisterNetEvent('rp_tablet_admin:client:teleport', function(coords)
-    local ped = PlayerPedId()
-    SetEntityCoords(ped, coords.x, coords.y, coords.z, false, false, false, true)
-end)
-
-RegisterNetEvent('rp_tablet_admin:client:revive', function()
-    local ped = PlayerPedId()
-    local coords = GetEntityCoords(ped)
-    NetworkResurrectLocalPlayer(coords.x, coords.y, coords.z, GetEntityHeading(ped), true, false)
-    SetEntityHealth(ped, 200)
-    ClearPedBloodDamage(ped)
-end)
-
-RegisterNetEvent('rp_tablet_admin:client:syncWeather', function(weather)
-    SetWeatherTypeOverTime(weather, 10.0)
-    Wait(1000)
-    ClearOverrideWeather()
-    SetWeatherTypePersist(weather)
-    SetWeatherTypeNow(weather)
-    SetWeatherTypeNowPersist(weather)
-end)
-
-AddEventHandler('onClientResourceStop', function(resourceName)
-    if resourceName ~= GetCurrentResourceName() then return end
-    isAdminNoclip = false
-    if isAdminSpectating then NetworkSetInSpectatorMode(false, spectateTargetPed or PlayerPedId()); ClearFocus() end
-    isAdminSpectating = false
-    spectateTargetPed = nil
-    local ped = PlayerPedId()
-    SetEntityCollision(ped, true, true)
-    SetEntityInvincible(ped, false)
-    SetPlayerInvincible(PlayerId(), false)
-    SetNuiFocus(false, false)
-    if tabletEntity and DoesEntityExist(tabletEntity) then DeleteEntity(tabletEntity); tabletEntity = nil end
-end)
-RegisterNetEvent('rp_tablet_admin:client:syncTime', function(hours, minutes)
-    NetworkOverrideClockTime(hours, minutes, 0)
-end)
-) then return end
-    local hash = GetHashKey(model)
-    if not IsModelInCdimage(hash) or not IsModelAVehicle(hash) then
-        TriggerEvent('rp_core:client:notify', 'Modèle de véhicule inconnu ou invalide.', 'error')
-        return
+    local vehicle = CreateAdminVehicle(model, 5.0)
+    if vehicle then
+        SetPedIntoVehicle(PlayerPedId(), vehicle, -1)
+        Notify('Un véhicule vous a été attribué par un administrateur.', 'success')
     end
-    RequestModel(hash)
-    local deadline = GetGameTimer() + 5000
-    while not HasModelLoaded(hash) and GetGameTimer() < deadline do Wait(10) end
-    if not HasModelLoaded(hash) then
-        TriggerEvent('rp_core:client:notify', 'Chargement du véhicule impossible.', 'error')
-        return
-    end
-    local ped = PlayerPedId()
-    local coords = GetOffsetFromEntityInWorldCoords(ped, 0.0, 5.0, 0.0)
-    local vehicle = CreateVehicle(hash, coords.x, coords.y, coords.z, GetEntityHeading(ped), true, true)
-    if vehicle and vehicle ~= 0 and DoesEntityExist(vehicle) then
-        SetEntityAsMissionEntity(vehicle, true, true)
-        SetVehicleOnGroundProperly(vehicle)
-        TriggerEvent('rp_core:client:notify', 'Un véhicule vous a été attribué par un administrateur.', 'success')
-    else
-        TriggerEvent('rp_core:client:notify', 'Impossible de créer le véhicule.', 'error')
-    end
-    SetModelAsNoLongerNeeded(hash)
 end)
 
 RegisterNetEvent('rp_tablet_admin:client:giveWeapon', function(weaponName)
-    if type(weaponName) ~= 'string' or not weaponName:match('^WEAPON_[A-Z0-9_]+
-    local ped = PlayerPedId()
-    SetEntityHealth(ped, GetEntityMaxHealth(ped))
-    ClearPedBloodDamage(ped)
-end)
-
-RegisterNetEvent('rp_tablet_admin:client:freezeToggle', function(freeze)
-    FreezeEntityPosition(PlayerPedId(), freeze)
-end)
-
-RegisterNetEvent('rp_tablet_admin:client:teleport', function(coords)
-    local ped = PlayerPedId()
-    SetEntityCoords(ped, coords.x, coords.y, coords.z, false, false, false, true)
-end)
-
-RegisterNetEvent('rp_tablet_admin:client:revive', function()
-    local ped = PlayerPedId()
-    local coords = GetEntityCoords(ped)
-    NetworkResurrectLocalPlayer(coords.x, coords.y, coords.z, GetEntityHeading(ped), true, false)
-    SetEntityHealth(ped, 200)
-    ClearPedBloodDamage(ped)
-end)
-
-RegisterNetEvent('rp_tablet_admin:client:syncWeather', function(weather)
-    SetWeatherTypeOverTime(weather, 10.0)
-    Wait(1000)
-    ClearOverrideWeather()
-    SetWeatherTypePersist(weather)
-    SetWeatherTypeNow(weather)
-    SetWeatherTypeNowPersist(weather)
-end)
-
-AddEventHandler('onClientResourceStop', function(resourceName)
-    if resourceName ~= GetCurrentResourceName() then return end
-    isAdminNoclip = false
-    if isAdminSpectating then NetworkSetInSpectatorMode(false, spectateTargetPed or PlayerPedId()) end
-    isAdminSpectating = false
-    spectateTargetPed = nil
-    local ped = PlayerPedId()
-    SetEntityCollision(ped, true, true)
-    SetEntityInvincible(ped, false)
-    SetPlayerInvincible(PlayerId(), false)
-    SetNuiFocus(false, false)
-    if tabletEntity and DoesEntityExist(tabletEntity) then DeleteEntity(tabletEntity); tabletEntity = nil end
-end)
-RegisterNetEvent('rp_tablet_admin:client:syncTime', function(hours, minutes)
-    NetworkOverrideClockTime(hours, minutes, 0)
-end)
-) then return end
+    if type(weaponName) ~= 'string' or not weaponName:match('^WEAPON_[A-Z0-9_]+$') then return end
     local hash = GetHashKey(weaponName)
     if not IsWeaponValid(hash) then return end
     GiveWeaponToPed(PlayerPedId(), hash, 120, false, false)
-    TriggerEvent('rp_core:client:notify', 'Arme reçue : ' .. weaponName:gsub('^WEAPON_', ''), 'success')
+    Notify('Arme reçue : ' .. weaponName:gsub('^WEAPON_', ''), 'success')
 end)
 
 RegisterNetEvent('rp_tablet_admin:client:heal', function()
@@ -463,23 +312,26 @@ RegisterNetEvent('rp_tablet_admin:client:heal', function()
 end)
 
 RegisterNetEvent('rp_tablet_admin:client:freezeToggle', function(freeze)
-    FreezeEntityPosition(PlayerPedId(), freeze)
+    FreezeEntityPosition(PlayerPedId(), freeze == true)
 end)
 
 RegisterNetEvent('rp_tablet_admin:client:teleport', function(coords)
+    if type(coords) ~= 'table' or not tonumber(coords.x)
+        or not tonumber(coords.y) or not tonumber(coords.z) then return end
     local ped = PlayerPedId()
-    SetEntityCoords(ped, coords.x, coords.y, coords.z, false, false, false, true)
+    SetEntityCoords(ped, tonumber(coords.x), tonumber(coords.y), tonumber(coords.z), false, false, false, true)
 end)
 
 RegisterNetEvent('rp_tablet_admin:client:revive', function()
     local ped = PlayerPedId()
     local coords = GetEntityCoords(ped)
     NetworkResurrectLocalPlayer(coords.x, coords.y, coords.z, GetEntityHeading(ped), true, false)
-    SetEntityHealth(ped, 200)
-    ClearPedBloodDamage(ped)
+    SetEntityHealth(PlayerPedId(), 200)
+    ClearPedBloodDamage(PlayerPedId())
 end)
 
 RegisterNetEvent('rp_tablet_admin:client:syncWeather', function(weather)
+    if type(weather) ~= 'string' then return end
     SetWeatherTypeOverTime(weather, 10.0)
     Wait(1000)
     ClearOverrideWeather()
@@ -488,10 +340,26 @@ RegisterNetEvent('rp_tablet_admin:client:syncWeather', function(weather)
     SetWeatherTypeNowPersist(weather)
 end)
 
+RegisterNetEvent('rp_tablet_admin:client:syncTime', function(hours, minutes)
+    hours, minutes = tonumber(hours), tonumber(minutes)
+    if not hours or not minutes or hours < 0 or hours > 23 or minutes < 0 or minutes > 59 then return end
+    NetworkOverrideClockTime(hours, minutes, 0)
+end)
+
+AddEventHandler('onClientResourceStart', function(resourceName)
+    if resourceName ~= GetCurrentResourceName() then return end
+    isTabletOpen = false
+    SetNuiFocus(false, false)
+    SendNUIMessage({ action = 'closeTablet' })
+end)
+
 AddEventHandler('onClientResourceStop', function(resourceName)
     if resourceName ~= GetCurrentResourceName() then return end
     isAdminNoclip = false
-    if isAdminSpectating then NetworkSetInSpectatorMode(false, spectateTargetPed or PlayerPedId()) end
+    if isAdminSpectating then
+        NetworkSetInSpectatorMode(false, spectateTargetPed or PlayerPedId())
+        ClearFocus()
+    end
     isAdminSpectating = false
     spectateTargetPed = nil
     local ped = PlayerPedId()
@@ -499,8 +367,6 @@ AddEventHandler('onClientResourceStop', function(resourceName)
     SetEntityInvincible(ped, false)
     SetPlayerInvincible(PlayerId(), false)
     SetNuiFocus(false, false)
-    if tabletEntity and DoesEntityExist(tabletEntity) then DeleteEntity(tabletEntity); tabletEntity = nil end
-end)
-RegisterNetEvent('rp_tablet_admin:client:syncTime', function(hours, minutes)
-    NetworkOverrideClockTime(hours, minutes, 0)
+    SendNUIMessage({ action = 'closeTablet' })
+    StopTabletAnimation()
 end)
