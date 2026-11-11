@@ -14,8 +14,7 @@ Citizen.CreateThread(function()
                 local label = onDuty and "[E] Fin de service" or "[E] Prise de service"
                 exports['rp_ui']:ShowTextUI(label .. ' (' .. Config.Label .. ')')
                 if IsControlJustPressed(0, 38) then
-                    onDuty = not onDuty
-                    TriggerServerEvent('job_mechanic:setDuty', onDuty)
+                    TriggerServerEvent('job_mechanic:setDuty', not onDuty)
                 end
             end
         end
