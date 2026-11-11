@@ -21,7 +21,7 @@ Les noms des ressources FiveM (`rp_core`, `job_police`, etc.) restent inchangés
 
 ## Installation neuve
 1. Installez les artifacts FXServer.
-2. Installez les ressources standard depuis le dépôt officiel [cfx-server-data](https://github.com/citizenfx/cfx-server-data) dans le dossier `resources` du serveur. Vérifiez au minimum la présence de `mapmanager`, `spawnmanager`, `sessionmanager`, `hardcap` et `baseevents` (généralement dans `resources/[cfx-default]`). Le `server.cfg` les démarre explicitement : ne laissez pas ces ressources absentes.
+2. Installez les ressources standard depuis le dépôt officiel [cfx-server-data](https://github.com/citizenfx/cfx-server-data) dans le dossier `resources` du serveur. Vérifiez au minimum la présence de `spawnmanager`, `sessionmanager`, `hardcap` et `baseevents` (généralement dans `resources/[cfx-default]`). Le `server.cfg` les démarre explicitement : ne laissez pas ces ressources absentes.
 3. Installez la ressource [oxmysql](https://github.com/overextended/oxmysql) dans votre dossier resources.
 4. Créez la base MySQL/MariaDB et importez `database.sql`.
 5. Modifiez `mysql_connection_string` dans `server.cfg` avec un compte SQL dédié disposant des droits nécessaires sur la base (évitez root).
