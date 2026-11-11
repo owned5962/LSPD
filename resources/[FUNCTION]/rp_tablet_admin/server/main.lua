@@ -6,7 +6,7 @@ local function IsPlayerAdmin(source)
     end
 
     local player = exports['rp_core']:GetPlayerFromId(source)
-    return player ~= nil and (player.group == 'admin' or player.group == 'superadmin')
+    return player ~= nil and (player.group == 'admin' or player.group == 'superadmin' or player.group == 'fondateur')
 end
 
 local function GetOnlineTargetId(value)
@@ -24,7 +24,11 @@ end
 
 -- Every privileged tablet action is authorized and rate-limited server-side.
 local function AllowAdminAction(src, action, cooldown)
-    return IsPlayerAdmin(src)
+    if not IsPlayerAdmin(src) then return false end
+    local accessOk, tabletAllowed = pcall(function()
+        return exports['rp_tablet_creator']:CanUseTablet(src, 'admin')
+    end)
+    return accessOk and tabletAllowed == true
         and exports['rp_core']:CanPerformAction(src, 'admin:' .. action, cooldown or 500)
 end
 
