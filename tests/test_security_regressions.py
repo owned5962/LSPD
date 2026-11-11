@@ -574,3 +574,12 @@ if __name__ == "__main__":
     for name, check in checks:
         check()
     print(f"All {len(checks)} security and persistence regression checks passed.")
+
+
+def test_police_armory_requests_are_rate_limited_server_side():
+    source = read("resources/[JOB]/job_police/server/main.lua")
+    handler_start = source.index("RegisterNetEvent('job_police:getArmoryWeapons'")
+    handler_end = source.index("exports('IsOnDuty'", handler_start)
+    handler = source[handler_start:handler_end]
+    assert "CanPerformAction(src, 'job_police:armory', 5000)" in handler
+    assert handler.index("CanPerformAction") < handler.index("GiveWeaponToPed")
