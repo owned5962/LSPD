@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Location de véhicules</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <main id="tablet" class="hidden">
+        <header>
+            <div class="brand"><span class="mark">LS</span><div><small>LOS SANTOS</small><h1>Mobilité</h1></div></div>
+            <button id="close" class="icon-button" aria-label="Fermer">×</button>
+        </header>
+        <section class="intro">
+            <p class="eyebrow">SERVICE DE LOCATION</p>
+            <h2 id="heading">Prenez la route.</h2>
+            <p id="subtitle">Choisissez votre véhicule et la durée de location.</p>
+        </section>
+        <section id="vehicle-section">
+            <h3>Choisir un véhicule</h3>
+            <div id="vehicles" class="vehicles"></div>
+        </section>
+        <section class="duration">
+            <div><h3>Durée de location</h3><p>100 $ par tranche de 10 minutes</p></div>
+            <div class="duration-control">
+                <button id="minus" aria-label="Diminuer">−</button>
+                <strong><span id="hours">1</span> h</strong>
+                <button id="plus" aria-label="Augmenter">+</button>
+            </div>
+            <div class="summary"><span>Montant à régler</span><strong id="price">600 $</strong></div>
+        </section>
+        <section id="renewal-note" class="renewal-note hidden">
+            <strong>Votre temps de location est écoulé.</strong>
+            <span>Prolongez maintenant ou rendez le véhicule. Sans réponse, il sera verrouillé.</span>
+            <span id="grace">Vous avez 60 secondes.</span>
+        </section>
+        <footer>
+            <button id="decline" class="secondary hidden">Rendre le véhicule</button>
+            <button id="confirm" class="primary">Confirmer la location</button>
+        </footer>
+        <p class="fineprint">Le véhicule doit être restitué à la fin de la période payée.</p>
+    </main>
+    <script src="js/app.js"></script>
+</body>
+</html>
