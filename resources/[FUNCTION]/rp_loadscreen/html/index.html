@@ -3,124 +3,114 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Los Santos Roleplay — Créé par GAutier</title>
+    <meta name="theme-color" content="#08111f">
+    <title>Los Santos Stories — GAutier</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="video-overlay"></div>
-    <div class="city-art" aria-hidden="true"><img src="images/los_santos_skyline.svg" alt=""></div>
+    <div class="city-art" aria-hidden="true">
+        <img class="scene scene-one" src="images/los_santos_skyline.svg" alt="">
+        <img class="scene scene-two" src="images/los_santos_police.svg" alt="">
+        <img class="scene scene-three" src="images/los_santos_downtown.svg" alt="">
+    </div>
     <div class="bg-gradient"></div>
+    <div class="ambient ambient-one"></div>
+    <div class="ambient ambient-two"></div>
 
     <div class="loadscreen-container">
-        <!-- Topbar -->
         <header class="topbar">
             <div class="server-branding">
-                <span class="badge">SERVEUR ROLEPLAY FR</span>
-                <span class="creator-credit">UNIVERS CONÇU PAR <strong>GAUTIER</strong></span>
-                <h1>LOS SANTOS STORIES</h1>
-                <p class="subtitle">50 Métiers | Économie Dynamique | Expérience Immersive</p>
+                <div class="brand-line">
+                    <span class="badge"><i class="fas fa-circle"></i> SERVEUR ROLEPLAY FR</span>
+                    <span class="creator-credit">UNIVERS CONÇU PAR <strong>GAUTIER</strong></span>
+                </div>
+                <h1>LOS SANTOS <span>STORIES</span></h1>
+                <p class="subtitle">Une ville. Des milliers d'histoires. La vôtre commence ici.</p>
             </div>
-            
             <div class="music-controller">
-                <button id="toggle-audio-btn" class="audio-btn">
+                <button id="toggle-audio-btn" class="audio-btn" aria-label="Activer ou couper la musique">
                     <i class="fas fa-volume-up" id="audio-icon"></i>
                 </button>
                 <div class="track-info">
-                    <span class="track-title">Ambiance Urbaine - San Andreas</span>
-                    <span class="track-state">Lecture en cours</span>
+                    <span class="track-title">AMBIANCE LOS SANTOS</span>
+                    <span class="track-state" id="track-state">Musique d'ambiance</span>
                 </div>
+                <div class="equalizer" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
             </div>
         </header>
 
         <section class="hero-banner">
-            <div>
-                <span class="hero-kicker">BIENVENUE À LOS SANTOS</span>
-                <h2>Votre histoire. Vos choix. Votre ville.</h2>
-                <p>Créez votre personnage, trouvez votre voie et construisez votre réputation.</p>
+            <div class="hero-copy">
+                <span class="hero-kicker"><i class="fas fa-location-dot"></i> BIENVENUE À LOS SANTOS</span>
+                <h2>Écrivez votre propre <em>légende.</em></h2>
+                <p>Créez votre personnage, choisissez votre destin et faites votre place dans la ville.</p>
+                <div class="hero-tags"><span><i class="fas fa-users"></i> Communauté RP</span><span><i class="fas fa-shield-halved"></i> Immersion & fair-play</span><span><i class="fas fa-briefcase"></i> 50 métiers</span></div>
             </div>
             <div class="hero-stats">
-                <span><strong>50</strong> métiers</span>
-                <span><strong>3</strong> personnages</span>
-                <span><strong>100%</strong> RP</span>
+                <div><strong>50</strong><span>MÉTIERS</span></div>
+                <div><strong>03</strong><span>PERSONNAGES</span></div>
+                <div><strong>100%</strong><span>ROLEPLAY</span></div>
             </div>
+            <div class="hero-watermark">LS</div>
         </section>
 
-        <!-- Main Info Center -->
+        <div class="section-heading"><span>VOTRE VILLE, VOS POSSIBILITÉS</span><i></i><small>PRENEZ VOS REPÈRES</small></div>
         <main class="content-grid">
             <div class="info-card rules-card">
-                <h2><i class="fas fa-scroll"></i> Règles Fondamentales</h2>
+                <div class="card-heading"><span class="card-icon"><i class="fas fa-scroll"></i></span><div><small>À RESPECTER</small><h2>Règles fondamentales</h2></div></div>
                 <ul>
-                    <li><strong>Fair-Play RP :</strong> Privilégiez toujours les scènes interactives avant les tirs.</li>
-                    <li><strong>PainRP & FearRP :</strong> Respectez la peur du danger et ressentez les blessures physiques.</li>
-                    <li><strong>Métiers & Économie :</strong> 50 métiers sont accessibles au Pôle Emploi ou sur concours.</li>
-                    <li><strong>Tablette Admin :</strong> Les modérateurs veillent en permanence au bon déroulement des scènes.</li>
+                    <li><strong>Fair-play RP :</strong> privilégiez toujours les scènes interactives avant les tirs.</li>
+                    <li><strong>PainRP & FearRP :</strong> respectez la peur du danger et ressentez les blessures physiques.</li>
+                    <li><strong>Métiers & économie :</strong> 50 métiers sont accessibles au Pôle Emploi ou sur concours.</li>
+                    <li><strong>Tablette Admin :</strong> les modérateurs veillent au bon déroulement des scènes.</li>
                 </ul>
             </div>
 
             <div class="info-card updates-card">
-                <h2><i class="fas fa-bolt"></i> Votre arrivée en ville</h2>
-                <div class="update-item">
-                    <span class="update-date">Mise à jour v2.4</span>
-                    <p>Choisissez un métier au Pôle Emploi, postulez et développez votre carrière. Certains postes sont accessibles sur concours.</p>
-                </div>
-                <div class="update-item">
-                    <span class="update-date">Économie & immersion</span>
-                    <p>Banques et distributeurs, stations-service, carburant, HUD embarqué, métiers, interactions et outils de modération.</p>
+                <div class="card-heading"><span class="card-icon"><i class="fas fa-bolt"></i></span><div><small>À LA UNE</small><h2>Votre arrivée en ville</h2></div></div>
+                <div class="update-item"><span class="update-date">MISE À JOUR V2.4</span><p>Choisissez un métier au Pôle Emploi, postulez et développez votre carrière. Certains postes sont accessibles sur concours.</p></div>
+                <div class="update-item"><span class="update-date">ÉCONOMIE & IMMERSION</span><p>Banques, distributeurs, stations-service, carburant, HUD embarqué, métiers et interactions.</p></div>
+            </div>
+
+            <div class="info-card keybinds-card">
+                <div class="card-heading"><span class="card-icon"><i class="fas fa-keyboard"></i></span><div><small>COMMANDES UTILES</small><h2>Raccourcis clés</h2></div></div>
+                <div class="keybind-list">
+                    <div class="key-item"><span class="key">F10</span> Tablette Admin (Staff)</div>
+                    <div class="key-item"><span class="key">F9</span> Tablette Créateur</div>
+                    <div class="key-item"><span class="key">/jobcenter</span> Menu des métiers</div>
+                    <div class="key-item"><span class="key">E</span> Banque / distributeur</div>
+                    <div class="key-item"><span class="key">/pay</span> Transfert d'argent</div>
                 </div>
             </div>
 
             <div class="info-card keybinds-card">
-                <h2><i class="fas fa-keyboard"></i> Raccourcis Clés</h2>
-                <div class="keybind-list">
-                    <div class="key-item"><span class="key">F10</span> Ouvrir la Tablette Admin (Staff)</div>
-                    <div class="key-item"><span class="key">F9 / /creator</span> Ouvrir la Tablette Créateur (Fondateur)</div>
-                    <div class="key-item"><span class="key">/jobcenter</span> Menu des 50 métiers</div>
-                    <div class="key-item"><span class="key">[E] devant une banque ou un distributeur</span> Accéder au compte bancaire</div>
-                    <div class="key-item"><span class="key">/pay [ID] [Montant]</span> Donner du cash</div>
-                </div>
-            </div>
-            <div class="info-card keybinds-card">
-                <h2><i class="fas fa-user-shield"></i> Fondateur & développement</h2>
-                <div class="keybind-list">
-                    <div class="key-item"><strong>Créateur du serveur : GAutier</strong></div>
-                    <div class="key-item">Framework RP personnalisé, personnages persistants et identité civile</div>
-                    <div class="key-item">Outils de création de mapping et de blips métiers en direct</div>
+                <div class="card-heading"><span class="card-icon"><i class="fas fa-user-shield"></i></span><div><small>À L'ORIGINE DU PROJET</small><h2>Fondateur & développement</h2></div></div>
+                <div class="keybind-list feature-list">
+                    <div class="key-item">Créateur du serveur : <strong>GAutier</strong></div>
+                    <div class="key-item">Framework RP personnalisé et personnages persistants</div>
+                    <div class="key-item">Outils de création de mapping et de blips métiers</div>
                     <div class="key-item">Surveillance, modération et sécurité dédiées</div>
                 </div>
             </div>
-            <div class="info-card keybinds-card">
-                <h2><i class="fas fa-city"></i> Les systèmes de Los Santos</h2>
-                <div class="keybind-list">
-                    <div class="key-item">Personnages persistants et personnalisation génétique en direct</div>
-                    <div class="key-item">50 métiers et grades avec progression professionnelle</div>
-                    <div class="key-item">Économie : espèces, comptes bancaires, virements et salaires</div>
-                    <div class="key-item">Stations-service, carburant et véhicules</div>
-                    <div class="key-item">Tablettes dédiées : administration, création et sécurité</div>
-                    <div class="key-item">Police ambiante désactivée et circulation PNJ allégée</div>
-                    <div class="key-item">Carte, blips métiers et interactions contextualisées</div>
-                </div>
+
+            <div class="info-card keybinds-card systems-card">
+                <div class="card-heading"><span class="card-icon"><i class="fas fa-city"></i></span><div><small>UN UNIVERS COMPLET</small><h2>Les systèmes de la ville</h2></div></div>
+                <div class="system-pills"><span>Personnages persistants</span><span>50 métiers & grades</span><span>Économie & banques</span><span>Véhicules & carburant</span><span>Tablettes dédiées</span><span>Interactions contextualisées</span></div>
             </div>
         </main>
 
-        <!-- Bottom Loading Status -->
         <footer class="bottom-bar">
-            <div class="progress-details">
-                <span id="load-status">Initialisation des ressources du serveur...</span>
-                <span id="load-percentage">15%</span>
-            </div>
-            <div class="progress-track">
-                <div class="progress-fill" id="progress-bar"></div>
-            </div>
+            <div class="progress-details"><div><span class="live-dot"></span><span id="load-status">Connexion à Los Santos...</span></div><strong id="load-percentage">0%</strong></div>
+            <div class="progress-track"><div class="progress-fill" id="progress-bar"></div><span class="progress-glow"></span></div>
+            <div class="footer-note"><span><i class="fas fa-headphones"></i> CONSEIL : PROFITEZ DE L'AMBIANCE</span><span>LOS SANTOS STORIES <b>•</b> BON JEU À TOUS</span></div>
         </footer>
     </div>
 
-    <!-- Background Audio Loop -->
-    <audio id="bg-music" loop>
+    <audio id="bg-music" loop preload="none">
         <source src="https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=cyberpunk-2099-10701.mp3" type="audio/mpeg">
     </audio>
-
     <script src="js/app.js"></script>
 </body>
 </html>
