@@ -23,7 +23,7 @@ end
 
 local function GetActiveTerritories()
     local rows = MySQL.query.await(
-        'SELECT sector_id, owner_name, color, expires_at FROM rp_territories WHERE expires_at > ?'
+        'SELECT sector_id, owner_name, color, expires_at FROM rp_territories WHERE expires_at > ?',
         { os.time() }
     )
     local result = {}
