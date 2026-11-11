@@ -37,10 +37,27 @@
         <div class="diagnostic-grid">
             <div><small>FPS</small><b id="diag-fps">--</b></div>
             <div><small>Ping</small><b id="diag-ping">-- ms</b></div>
-            <div><small>Joueurs</small><b id="diag-players">--</b></div>
-            <div><small>Position</small><b id="diag-coords">--</b></div>
+            <div><small>Joueurs en ligne</small><b id="diag-players">--</b></div>
+            <div><small>Temps image</small><b id="diag-frame-ms">-- ms</b></div>
         </div>
-        <p>Les températures et taux d'utilisation CPU/GPU ne sont pas accessibles aux scripts FiveM.</p>
+        <div class="diagnostic-section">
+            <div class="diagnostic-section-heading"><strong>COMMUNAUTÉ</strong><span id="diag-updated">Actualisation…</span></div>
+            <div class="diagnostic-total"><span>Comptes inscrits</span><b id="diag-registered">--</b></div>
+            <small class="diagnostic-caption">Nouvelles inscriptions par jour · 14 derniers jours</small>
+            <canvas id="diag-registration-chart" height="92"></canvas>
+        </div>
+        <div class="diagnostic-section">
+            <div class="diagnostic-section-heading"><strong>JOUEURS PAR MÉTIER</strong><span>En ligne</span></div>
+            <div id="diag-jobs-chart" class="diagnostic-jobs"><span class="diagnostic-empty">Chargement des métiers…</span></div>
+        </div>
+        <div class="diagnostic-section">
+            <div class="diagnostic-section-heading"><strong>PERFORMANCES</strong><span>Temps par image</span></div>
+            <div class="diagnostic-total"><span>Frame time client</span><b id="diag-frame-current">-- ms</b></div>
+            <canvas id="diag-frame-chart" height="82"></canvas>
+            <p class="diagnostic-note">Le temps CPU détaillé par ressource n'est pas exposé aux scripts NUI/Lua. Ouvre le moniteur natif FiveM pour voir les ms de chaque ressource.</p>
+            <button type="button" id="open-resource-monitor">OUVRIR RESMON (MS PAR RESSOURCE)</button>
+        </div>
+        <div class="diagnostic-coordinates"><small>Position</small><b id="diag-coords">--</b></div>
         <footer>F12 pour fermer</footer>
     </section>
 
