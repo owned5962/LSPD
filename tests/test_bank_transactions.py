@@ -7,7 +7,7 @@ ECONOMY = ROOT / "resources/[FUNCTION]/rp_economy"
 def test_atm_server_validation_uses_fixed_map_locations():
     server = (ECONOMY / "server/main.lua").read_text(encoding="utf-8")
     assert "local ATM_POSITIONS = {" in server
-    assert "GetAllObjects()" not in server
+    assert "pcall(GetAllObjects)" not in server
     assert "for _, atmCoords in ipairs(ATM_POSITIONS)" in server
     assert "if #(coords - atmCoords) <= 4.0 then return true end" in server
 
