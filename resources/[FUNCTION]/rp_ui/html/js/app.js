@@ -39,8 +39,14 @@ window.addEventListener('message', function(event) {
         setDiag('diag-fps', Math.max(0, Number(data.fps) || 0));
         setDiag('diag-ping', Math.max(0, Number(data.ping) || 0) + ' ms');
         setDiag('diag-players', (Number(data.players) || 0) + ' / ' + (Number(data.maxPlayers) || 0));
+        const frameMs = Math.max(0, Number(data.frameMs) || 0);
+        setDiag('diag-frame-ms', frameMs.toFixed(2) + ' ms');
+        setDiag('diag-frame-current', frameMs.toFixed(2) + ' ms');
+        pushFrameSample(frameMs);
         const c = data.coords || {};
         setDiag('diag-coords', [c.x, c.y, c.z].join(' / '));
+    } else if (data.action === 'updateServerDiagnostics') {
+        renderServerDiagnostics(data.stats || {});
     } else if (data.action === 'showTextUI') {
         const textElement = document.getElementById('textui-text');
         if (textElement) textElement.textContent = String(data.text ?? '');
@@ -133,6 +139,90 @@ function showRPNotification(message, kind, duration) {
 
 document.getElementById('close-diagnostics')?.addEventListener('click', () => {
     fetch('https://' + (window.GetParentResourceName ? GetParentResourceName() : 'rp_ui') + '/closeDiagnostics', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}'
+    }).catch(() => {});
+});
+
+
+// Lightweight local charts for the F12 diagnostics panel.
+const frameSamples = [];
+function drawLineChart(canvasId, values, suffix, emptyLabel) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+    const width = Math.max(180, canvas.clientWidth || 320);
+    const height = Number(canvas.getAttribute('height')) || 90;
+    const ratio = window.devicePixelRatio || 1;
+    canvas.width = Math.round(width * ratio);
+    canvas.height = Math.round(height * ratio);
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+    ctx.clearRect(0, 0, width, height);
+    ctx.font = '10px Segoe UI';
+    ctx.fillStyle = '#94a3b8';
+    if (!values.length) { ctx.fillText(emptyLabel || 'Aucune donnée', 8, 18); return; }
+    const pad = { left: 8, right: 8, top: 10, bottom: 17 };
+    const plotW = width - pad.left - pad.right;
+    const plotH = height - pad.top - pad.bottom;
+    const max = Math.max(1, ...values.map(v => Number(v.value) || 0));
+    ctx.strokeStyle = 'rgba(148,163,184,.18)';
+    ctx.lineWidth = 1;
+    for (let i = 0; i < 3; i++) {
+        const y = pad.top + plotH * i / 2;
+        ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(width - pad.right, y); ctx.stroke();
+    }
+    ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 2; ctx.beginPath();
+    values.forEach((point, index) => {
+        const x = pad.left + (values.length === 1 ? plotW / 2 : plotW * index / (values.length - 1));
+        const y = pad.top + plotH - ((Number(point.value) || 0) / max) * plotH;
+        if (index === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+    values.forEach((point, index) => {
+        const x = pad.left + (values.length === 1 ? plotW / 2 : plotW * index / (values.length - 1));
+        const y = pad.top + plotH - ((Number(point.value) || 0) / max) * plotH;
+        ctx.fillStyle = '#7dd3fc'; ctx.beginPath(); ctx.arc(x, y, 2.5, 0, Math.PI * 2); ctx.fill();
+    });
+    ctx.fillStyle = '#94a3b8'; ctx.fillText(String(values[0].label || ''), pad.left, height - 3);
+    const last = values[values.length - 1];
+    const label = String(last.label || '') + ' · ' + Number(last.value || 0).toFixed(suffix === ' ms' ? 2 : 0) + suffix;
+    ctx.textAlign = 'right'; ctx.fillText(label, width - pad.right, height - 3); ctx.textAlign = 'left';
+}
+function pushFrameSample(value) {
+    if (!Number.isFinite(value)) return;
+    frameSamples.push({ label: new Date().toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit', second:'2-digit'}), value });
+    if (frameSamples.length > 30) frameSamples.shift();
+    drawLineChart('diag-frame-chart', frameSamples, ' ms', 'En attente de mesures…');
+}
+function renderServerDiagnostics(stats) {
+    const registered = document.getElementById('diag-registered');
+    if (registered) registered.textContent = stats.registered == null ? 'Indisponible' : Number(stats.registered).toLocaleString('fr-FR');
+    const online = document.getElementById('diag-players');
+    if (online && Number.isFinite(Number(stats.online))) online.textContent = Number(stats.online) + ' en ligne';
+    const updated = document.getElementById('diag-updated');
+    if (updated) updated.textContent = 'Mis à jour ' + new Date().toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'});
+    const history = Array.isArray(stats.registrationHistory) ? stats.registrationHistory.slice().reverse() : [];
+    drawLineChart('diag-registration-chart', history.map(row => ({ label: String(row.day || '').slice(5), value: Number(row.total) || 0 })), '', 'Aucune inscription sur la période');
+    const host = document.getElementById('diag-jobs-chart');
+    if (!host) return;
+    host.replaceChildren();
+    const jobs = Array.isArray(stats.jobs) ? stats.jobs : [];
+    if (!jobs.length) {
+        const empty = document.createElement('span'); empty.className = 'diagnostic-empty'; empty.textContent = 'Aucun joueur avec un métier chargé'; host.appendChild(empty); return;
+    }
+    const maxCount = Math.max(1, ...jobs.map(job => Number(job.count) || 0));
+    jobs.forEach(job => {
+        const row = document.createElement('div'); row.className = 'diagnostic-job-row';
+        const meta = document.createElement('div'); meta.className = 'diagnostic-job-meta';
+        const name = document.createElement('span'); name.textContent = String(job.label || job.name || 'Inconnu');
+        const count = document.createElement('b'); count.textContent = String(Number(job.count) || 0);
+        const track = document.createElement('div'); track.className = 'diagnostic-job-track';
+        const fill = document.createElement('span'); fill.style.width = ((Number(job.count) || 0) / maxCount * 100) + '%';
+        meta.append(name, count); track.appendChild(fill); row.append(meta, track); host.appendChild(row);
+    });
+}
+document.getElementById('open-resource-monitor')?.addEventListener('click', () => {
+    fetch('https://' + (window.GetParentResourceName ? GetParentResourceName() : 'rp_ui') + '/openResourceMonitor', {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}'
     }).catch(() => {});
 });
