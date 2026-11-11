@@ -1,0 +1,9 @@
+const post=(name,data={})=>fetch('https://rp_fuel/'+name,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)}).then(r=>r.json().catch(()=>({})));
+const panel=document.getElementById('fuel-panel'),litres=document.getElementById('litres'),status=document.getElementById('status');let price=6,busy=false;
+const money=n=>new Intl.NumberFormat('fr-FR').format(n)+' $';
+function update(){const n=Number(litres.value)||1;document.getElementById('litres-value').textContent=n;document.getElementById('total-price').textContent=money(n*price);}
+litres.addEventListener('input',update);
+window.addEventListener('message',e=>{const d=e.data||{};if(d.action==='openFuel'){price=Number(d.price)||6;litres.value=10;document.getElementById('unit-price').textContent=money(price);document.getElementById('fuel-current').textContent=Math.round(Number(d.fuel)||0)+'%';document.getElementById('vehicle-name').textContent=String(d.vehicle||'Véhicule');status.textContent='Le serveur vérifie votre solde avant tout débit.';panel.classList.remove('hidden');update();}else if(d.action==='closeFuel'){panel.classList.add('hidden');}else if(d.action==='fuelPurchased'){status.textContent=d.message||'Plein effectué.';panel.classList.add('hidden');}});
+function close(){panel.classList.add('hidden');post('close').catch(()=>{});}
+document.getElementById('close').addEventListener('click',close);document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!panel.classList.contains('hidden')){e.preventDefault();close();}});
+document.getElementById('pay').addEventListener('click',()=>{if(busy)return;busy=true;const btn=document.getElementById('pay');btn.disabled=true;status.textContent='Vérification du compte et paiement...';post('purchase',{litres:Number(litres.value),payment:document.getElementById('payment').value}).catch(()=>{status.textContent='Erreur de communication avec le serveur.';}).finally(()=>{busy=false;btn.disabled=false;});});
