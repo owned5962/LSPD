@@ -39,6 +39,11 @@ AddEventHandler('onClientResourceStart', function(resourceName)
     SendNUIMessage({ action = 'close' })
 end)
 
+AddEventHandler('onClientResourceStop', function(resourceName)
+    if resourceName ~= GetCurrentResourceName() then return end
+    SetNuiFocus(false, false)
+end)
+
 RegisterNUICallback('toggleProtection', function(data, cb)
     TriggerServerEvent('rp_anticheat:toggleProtection', data.protectionKey, data.state)
     cb('ok')
