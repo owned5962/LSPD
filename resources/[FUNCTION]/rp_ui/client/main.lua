@@ -103,6 +103,30 @@ AddEventHandler('onClientResourceStop', function(resourceName)
     SendNUIMessage({ action = 'hideHUD' })
 end)
 
+-- Vehicle dashboard: speed is displayed in km/h and fuel comes from the vehicle native.
+CreateThread(function()
+    local lastVehicle = 0
+    while true do
+        local ped = PlayerPedId()
+        local vehicle = GetVehiclePedIsIn(ped, false)
+        if vehicle ~= 0 and GetPedInVehicleSeat(vehicle, -1) == ped then
+            local speed = math.floor(GetEntitySpeed(vehicle) * 3.6 + 0.5)
+            local fuel = math.max(0, math.min(100, GetVehicleFuelLevel(vehicle)))
+            local gear = GetVehicleCurrentGear(vehicle)
+            SendNUIMessage({ action = 'updateVehicleHUD', visible = true, speed = speed, fuel = fuel, gear = gear })
+            lastVehicle = vehicle
+            Wait(100)
+        else
+            if lastVehicle ~= 0 then SendNUIMessage({ action = 'hideVehicleHUD' }); lastVehicle = 0 end
+            Wait(350)
+        end
+    end
+end)
+
+RegisterNetEvent('rp_ui:notify', function(message, kind, duration)
+    SendNUIMessage({ action = 'notify', message = tostring(message or ''), kind = kind or 'info', duration = tonumber(duration) or 4000 })
+end)
+
 CreateThread(function()
     local lastVisible = false
     while true do
