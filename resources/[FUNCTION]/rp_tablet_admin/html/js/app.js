@@ -213,6 +213,8 @@ function saveCurrentPermissions() {
 
 // Close the Lua/NUI tablet through the registered NUI callback.
 function closeAdminTablet(source = 'button') {
+    adminTabletOpen = false;
+    document.getElementById('tablet-wrapper')?.classList.remove('is-open');
     nuiPost('close', { source }).catch(() => {});
 }
 
@@ -587,7 +589,7 @@ function renderMapPlayerList() {
         name.textContent = (player.name || player.rawName || 'Joueur') + ' [' + player.id + ']';
         const meta = document.createElement('span');
         meta.textContent = player.position
-            ? (player.jobLabel || player.job || 'Inconnu') + ' · X ' + Number(player.position.x).toFixed(0) + ' / Y ' + Number(player.position.y).toFixed(0) + ' / Z ' + Number(player.position.z || 0).toFixed(0) + ' · ' + Number(player.ping || 0) + ' ms
+            ? (player.jobLabel || player.job || 'Inconnu') + ' · X ' + Number(player.position.x).toFixed(0) + ' / Y ' + Number(player.position.y).toFixed(0) + ' / Z ' + Number(player.position.z || 0).toFixed(0) + ' · ' + Number(player.ping || 0) + ' ms'
             : 'Position indisponible';
         button.append(name, meta);
         button.addEventListener('click', () => {
