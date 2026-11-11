@@ -100,6 +100,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupTabSwitching();
     setupAdminSubViews();
     setupPlayerMap();
+    document.getElementById('admin-job-name')?.addEventListener('change', renderJobGrades);
     renderPermissionsMatrix();
     setInterval(() => {
         const mapView = document.getElementById('admin-map-view');
@@ -370,25 +371,38 @@ function banSelectedPlayer() {
 }
 function setSelectedJob() {
     if (!Number.isInteger(selectedPlayerId) || selectedPlayerId < 1) return showToast('Sélectionnez un joueur connecté.');
-    const jobName = document.getElementById('admin-job-name')?.value.trim();
+    const jobName = document.getElementById('admin-job-name')?.value;
     const grade = Number(document.getElementById('admin-job-grade')?.value);
     if (!jobName || !Number.isInteger(grade) || grade < 0 || grade > 20) return showToast('Métier ou grade invalide.');
-    nuiPost('setJob', { playerId: selectedPlayerId, jobName: jobName, grade: grade })
-        .then(() => showToast('Modification du métier envoyée.'))
+    nuiPost('setJob', { playerId: selectedPlayerId, jobName, grade })
+        .then(() => showToast('Métier attribué : ' + jobName + ' (grade ' + grade + ').'))
         .catch(() => showToast('Impossible de modifier le métier.'));
 }
 
 function renderJobOptions() {
-    const datalist = document.getElementById('admin-job-options');
-    if (!datalist) return;
-    datalist.replaceChildren();
+    const select = document.getElementById('admin-job-name');
+    if (!select) return;
+    const previous = select.value;
+    select.replaceChildren(new Option('Choisir un métier…', ''));
     availableJobs.forEach(job => {
         if (!job || typeof job.name !== 'string') return;
-        const option = document.createElement('option');
-        option.value = job.name;
-        option.label = job.label || job.name;
-        datalist.append(option);
+        select.add(new Option(job.label || job.name, job.name));
     });
+    if (availableJobs.some(job => job.name === previous)) select.value = previous;
+    renderJobGrades();
+}
+
+function renderJobGrades() {
+    const jobName = document.getElementById('admin-job-name')?.value;
+    const gradeSelect = document.getElementById('admin-job-grade');
+    if (!gradeSelect) return;
+    gradeSelect.replaceChildren();
+    const job = availableJobs.find(item => item && item.name === jobName);
+    const grades = job && job.grades && typeof job.grades === 'object' ? Object.entries(job.grades) : [];
+    grades.sort((a, b) => Number(a[0]) - Number(b[0])).forEach(([grade, details]) => {
+        gradeSelect.add(new Option((details && details.label ? details.label : 'Grade ' + grade) + ' · ' + grade, String(grade)));
+    });
+    if (!grades.length) gradeSelect.add(new Option('Grade 0', '0'));
 }
 
 function setupAdminSubViews() {
@@ -510,58 +524,12 @@ function renderPlayerMap() {
     if (!width || !height) return;
     const ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, width, height);
-    const gradient = ctx.createLinearGradient(0, 0, width, height);
-    gradient.addColorStop(0, '#152735');
-    gradient.addColorStop(1, '#0a121c');
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, width, height);
-
-    // Fond tactique schématique : les marqueurs utilisent les coordonnées monde exactes reçues du serveur.
-    ctx.save();
-    ctx.translate(width / 2 + mapViewState.panX, height / 2 + mapViewState.panY);
-    ctx.scale(mapViewState.zoom, mapViewState.zoom);
-    ctx.translate(-width / 2, -height / 2);
-    ctx.strokeStyle = 'rgba(116, 153, 170, .16)';
-    ctx.lineWidth = 1;
-    for (let x = 0; x <= width; x += 48) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, height); ctx.stroke(); }
-    for (let y = 0; y <= height; y += 48) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(width, y); ctx.stroke(); }
-
-    ctx.fillStyle = 'rgba(13, 36, 48, .72)';
-    ctx.beginPath();
-    ctx.moveTo(0, height * .58);
-    ctx.bezierCurveTo(width * .10, height * .48, width * .18, height * .65, width * .29, height * .61);
-    ctx.lineTo(width * .28, height);
-    ctx.lineTo(0, height);
-    ctx.closePath();
-    ctx.fill();
-
-    const roads = [
-        [[.08,.78],[.24,.68],[.38,.70],[.52,.55],[.72,.50],[.92,.30]],
-        [[.12,.18],[.28,.31],[.43,.28],[.58,.40],[.76,.32],[.94,.12]],
-        [[.20,.05],[.27,.26],[.34,.47],[.48,.66],[.61,.86]],
-        [[.03,.45],[.22,.46],[.42,.49],[.65,.45],[.87,.55]],
-        [[.38,.08],[.45,.25],[.54,.42],[.70,.62],[.88,.84]]
-    ];
-    roads.forEach(points => {
-        ctx.beginPath();
-        points.forEach((point, index) => {
-            const x = point[0] * width;
-            const y = point[1] * height;
-            if (index === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-        });
-        ctx.strokeStyle = 'rgba(28, 42, 52, .95)';
-        ctx.lineWidth = 7;
-        ctx.stroke();
-        ctx.strokeStyle = 'rgba(72, 116, 137, .62)';
-        ctx.lineWidth = 3;
-        ctx.stroke();
-    });
-    ctx.fillStyle = 'rgba(190, 210, 220, .55)';
-    ctx.font = '700 10px sans-serif';
-    ctx.fillText('BLAINE COUNTY', width * .56, height * .12);
-    ctx.fillText('LOS SANTOS', width * .20, height * .82);
-    ctx.fillText('OCEAN PACIFIQUE', width * .04, height * .54);
-    ctx.restore();
+    const wrap = canvas.parentElement;
+    if (wrap) {
+        const scale = Math.round(mapViewState.zoom * 100);
+        wrap.style.backgroundSize = `${scale}% ${scale}%`;
+        wrap.style.backgroundPosition = `calc(50% + ${mapViewState.panX}px) calc(50% + ${mapViewState.panY}px)`;
+    }
 
     const markers = getMapMarkers(width, height);
     markers.forEach(marker => {
@@ -634,25 +602,38 @@ function manageSelectedMoney(operation) {
 
 function setSelectedJob() {
     if (!Number.isInteger(selectedPlayerId) || selectedPlayerId < 1) return showToast('Sélectionnez un joueur connecté.');
-    const jobName = document.getElementById('admin-job-name')?.value.trim();
+    const jobName = document.getElementById('admin-job-name')?.value;
     const grade = Number(document.getElementById('admin-job-grade')?.value);
     if (!jobName || !Number.isInteger(grade) || grade < 0 || grade > 20) return showToast('Métier ou grade invalide.');
-    nuiPost('setJob', { playerId: selectedPlayerId, jobName: jobName, grade: grade })
-        .then(() => showToast('Modification du métier envoyée.'))
+    nuiPost('setJob', { playerId: selectedPlayerId, jobName, grade })
+        .then(() => showToast('Métier attribué : ' + jobName + ' (grade ' + grade + ').'))
         .catch(() => showToast('Impossible de modifier le métier.'));
 }
 
 function renderJobOptions() {
-    const datalist = document.getElementById('admin-job-options');
-    if (!datalist) return;
-    datalist.replaceChildren();
+    const select = document.getElementById('admin-job-name');
+    if (!select) return;
+    const previous = select.value;
+    select.replaceChildren(new Option('Choisir un métier…', ''));
     availableJobs.forEach(job => {
         if (!job || typeof job.name !== 'string') return;
-        const option = document.createElement('option');
-        option.value = job.name;
-        option.label = job.label || job.name;
-        datalist.append(option);
+        select.add(new Option(job.label || job.name, job.name));
     });
+    if (availableJobs.some(job => job.name === previous)) select.value = previous;
+    renderJobGrades();
+}
+
+function renderJobGrades() {
+    const jobName = document.getElementById('admin-job-name')?.value;
+    const gradeSelect = document.getElementById('admin-job-grade');
+    if (!gradeSelect) return;
+    gradeSelect.replaceChildren();
+    const job = availableJobs.find(item => item && item.name === jobName);
+    const grades = job && job.grades && typeof job.grades === 'object' ? Object.entries(job.grades) : [];
+    grades.sort((a, b) => Number(a[0]) - Number(b[0])).forEach(([grade, details]) => {
+        gradeSelect.add(new Option((details && details.label ? details.label : 'Grade ' + grade) + ' · ' + grade, String(grade)));
+    });
+    if (!grades.length) gradeSelect.add(new Option('Grade 0', '0'));
 }
 
 function setupAdminSubViews() {
@@ -702,6 +683,36 @@ function spawnAdminVehicle() {
     if (!/^[a-zA-Z0-9_]{2,40}$/.test(model)) return showToast('Saisissez un modèle valide (ex. sultan).');
     nuiPost('spawnVehicle', { model }).then(() => showToast('Demande de création envoyée.')).catch(() => showToast('Création du véhicule impossible.'));
 }
+function giveAdminVehicle() {
+    if (!Number.isInteger(selectedPlayerId) || selectedPlayerId < 1) return showToast('Sélectionnez un joueur connecté.');
+    const model = (document.getElementById('admin-vehicle-model')?.value || '').trim();
+    if (!/^[a-zA-Z0-9_]{2,40}$/.test(model)) return showToast('Saisissez un modèle de véhicule valide.');
+    nuiPost('giveVehicle', { playerId: selectedPlayerId, model })
+        .then(() => showToast('Attribution du véhicule demandée au joueur.'))
+        .catch(() => showToast('Impossible d’attribuer le véhicule.'));
+}
+
+function giveAdminWeapon() {
+    if (!Number.isInteger(selectedPlayerId) || selectedPlayerId < 1) return showToast('Sélectionnez un joueur connecté.');
+    const weapon = document.getElementById('admin-weapon-name')?.value;
+    if (!weapon) return showToast('Sélectionnez une arme.');
+    nuiPost('giveWeapon', { playerId: selectedPlayerId, weapon })
+        .then(() => showToast('Attribution de l’arme demandée au joueur.'))
+        .catch(() => showToast('Impossible d’attribuer cette arme.'));
+}
+
+function applyAdminWorldTime() {
+    const weather = document.getElementById('admin-weather')?.value || '';
+    const hours = Number(document.getElementById('admin-world-hours')?.value);
+    const minutes = Number(document.getElementById('admin-world-minutes')?.value);
+    if (!Number.isInteger(hours) || hours < 0 || hours > 23 || !Number.isInteger(minutes) || minutes < 0 || minutes > 59) {
+        return showToast('Heure invalide : utilisez 0–23 heures et 0–59 minutes.');
+    }
+    nuiPost('setWeatherTime', { weather, hours, minutes })
+        .then(() => showToast('Heure et météo envoyées au serveur.'))
+        .catch(() => showToast('Impossible de modifier l’heure ou la météo.'));
+}
+
 function triggerAdminAction(act) {
     showToast('Cette action globale n’est pas encore disponible.');
 }
