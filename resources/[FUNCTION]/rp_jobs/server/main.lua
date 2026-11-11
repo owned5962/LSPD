@@ -61,9 +61,18 @@ RegisterNetEvent('rp_jobs:server:chooseJob', function(jobName)
         RespondToJobSelection(src, false, 'Nom de métier invalide.')
         return
     end
-    local player = exports['rp_core']:GetPlayerFromId(src)
+    -- Character selection and server-side player registration are asynchronous.
+    -- Wait briefly for rp_core to publish the active character instead of failing
+    -- immediately when the player clicks Apply just after entering the city.
+    local player
+    for attempt = 1, 24 do
+        player = exports['rp_core']:GetPlayerFromId(src)
+        if player and tonumber(player.charId) then break end
+        player = nil
+        Wait(250)
+    end
     if not player then
-        RespondToJobSelection(src, false, 'Votre personnage n’est pas chargé.')
+        RespondToJobSelection(src, false, 'Votre personnage est encore en cours de chargement. Réessayez dans quelques secondes.')
         return
     end
 
