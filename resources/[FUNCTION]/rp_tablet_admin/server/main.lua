@@ -214,6 +214,47 @@ RegisterNetEvent('rp_tablet_admin:server:healPlayer', function(targetId)
     NotifyAdmin(src, 'Joueur ' .. targetId .. ' soigné.', 'success')
 end)
 
+RegisterNetEvent('rp_tablet_admin:server:banPlayer', function(targetId, rawReason)
+    local src = source
+    if not AllowAdminAction(src, 'ban', 1500) then return end
+    targetId = GetOnlineTargetId(targetId)
+    if not targetId or targetId == src then
+        NotifyAdmin(src, 'Joueur cible invalide.')
+        return
+    end
+    local reason = type(rawReason) == 'string' and rawReason:gsub('[%c]', ' '):sub(1, 180) or ''
+    if reason == '' then
+        NotifyAdmin(src, 'Un motif de bannissement est obligatoire.')
+        return
+    end
+    local license = nil
+    for _, identifier in ipairs(GetPlayerIdentifiers(targetId)) do
+        if identifier:sub(1, 8) == 'license:' then license = identifier; break end
+    end
+    if not license then
+        NotifyAdmin(src, 'Identifiant license introuvable : bannissement annulé.')
+        return
+    end
+    local adminLicense = nil
+    for _, identifier in ipairs(GetPlayerIdentifiers(src)) do
+        if identifier:sub(1, 8) == 'license:' then adminLicense = identifier; break end
+    end
+    local ok, err = pcall(function()
+        MySQL.insert.await([[
+            INSERT INTO player_bans (identifier, reason, banned_by)
+            VALUES (?, ?, ?)
+            ON DUPLICATE KEY UPDATE reason = VALUES(reason), banned_by = VALUES(banned_by), created_at = CURRENT_TIMESTAMP
+        ]], { license, reason, adminLicense or ('server:' .. tostring(src)) })
+    end)
+    if not ok then
+        print(('[rp_tablet_admin] Persistent ban failed: %s'):format(tostring(err)))
+        NotifyAdmin(src, 'Erreur SQL : le bannissement n’a pas été appliqué.')
+        return
+    end
+    LogAdminAction(src, 'ban', targetId, reason)
+    DropPlayer(targetId, '[ADMINISTRATION - BAN PERMANENT] ' .. reason)
+    NotifyAdmin(src, 'Joueur ' .. targetId .. ' banni durablement.', 'success')
+end)
 RegisterNetEvent('rp_tablet_admin:server:manageEconomy', function(targetId, moneyType, amount, operation)
     local src = source
     if not AllowAdminAction(src, 'economy', 1000) then return end
