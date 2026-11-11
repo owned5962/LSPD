@@ -6,7 +6,7 @@ author 'GAutier'
 description 'Stations-service et gestion du carburant'
 version '1.0.0'
 
-dependencies { 'rp_core', 'rp_ui', 'oxmysql' }
+dependencies { 'rp_core', 'rp_ui', 'oxmysql', 'rp_businesses' }
 
 shared_scripts { 'shared/config.lua' }
 
