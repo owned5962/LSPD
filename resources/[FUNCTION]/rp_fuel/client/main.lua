@@ -34,6 +34,42 @@ local function nearestStation(coords, radius)
     return best, bestDistance
 end
 
+-- GTA V pump props used across the vanilla and older gas stations.
+local PumpModels = {
+    'prop_gas_pump_1a',
+    'prop_gas_pump_1b',
+    'prop_gas_pump_1c',
+    'prop_gas_pump_1d',
+    'prop_vintage_pump',
+    'prop_gas_pump_old2',
+    'prop_gas_pump_old3'
+}
+
+local PumpModelHashes = {}
+for _, model in ipairs(PumpModels) do
+    PumpModelHashes[#PumpModelHashes + 1] = joaat(model)
+end
+
+local function nearestPump(coords)
+    local best, bestDistance
+    for _, modelHash in ipairs(PumpModelHashes) do
+        local pump = GetClosestObjectOfType(
+            coords.x, coords.y, coords.z, 2.25, modelHash, false, false, false
+        )
+        if pump ~= 0 and DoesEntityExist(pump) then
+            local pumpCoords = GetEntityCoords(pump)
+            -- Ignore decorative or unrelated pump props outside registered stations.
+            if nearestStation(pumpCoords, FuelConfig.StationRadius) then
+                local distance = #(coords - pumpCoords)
+                if not bestDistance or distance < bestDistance then
+                    best, bestDistance = pump, distance
+                end
+            end
+        end
+    end
+    return best, bestDistance
+end
+
 local function findVehicle(ped)
     local vehicle = GetVehiclePedIsIn(ped, false)
     if vehicle == 0 then
@@ -205,12 +241,16 @@ CreateThread(function()
         if not isOpen and not isRefueling then
             local ped = PlayerPedId()
             local coords = GetEntityCoords(ped)
-            local station = nearestStation(coords, 18.0)
-            if station then
+            local pump, pumpDistance = nearestPump(coords)
+            if pump and pumpDistance and pumpDistance <= 2.0 then
                 local vehicle = findVehicle(ped)
-                if vehicle ~= 0 and #(GetEntityCoords(vehicle) - coords) <= 15.0 then
-                    waitTime = 250
-                    exports['rp_ui']:ShowTextUI('[E] Ouvrir la tablette de la station · '
+                local vehicleNearPump = vehicle ~= 0
+                    and #(GetEntityCoords(vehicle) - GetEntityCoords(pump)) <= 12.0
+                    and #(GetEntityCoords(vehicle) - coords) <= 15.0
+
+                if vehicleNearPump then
+                    waitTime = 0
+                    exports['rp_ui']:ShowTextUI('[E] Faire le plein · '
                         .. math.floor(GetVehicleFuelLevel(vehicle)) .. '%')
                     prompt = true
                     if IsControlJustReleased(0, 38) then
