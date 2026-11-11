@@ -1045,3 +1045,57 @@ def test_character_boot_resumes_only_when_core_already_has_a_loaded_player():
     assert "FinishCharacterBoot()" in client[client.index("RegisterNetEvent('rp_characters:client:resumeLoadedCharacter'"):client.index("RegisterNetEvent('rp_characters:client:bootError'")]
     assert "if exports['rp_core']:GetPlayerFromId(src) then" in server
     assert "TriggerClientEvent('rp_characters:client:resumeLoadedCharacter', src)" in server
+
+
+def test_fivem_server_icon_is_registered():
+    config = read("server.cfg")
+    assert "load_server_icon server-icon.png" in config
+
+
+def test_creator_console_server_and_player_management_is_server_authorized():
+    server = read("resources/[FUNCTION]/rp_tablet_creator/server/main.lua")
+    client = read("resources/[FUNCTION]/rp_tablet_creator/client/main.lua")
+    html = read("resources/[FUNCTION]/rp_tablet_creator/html/index.html")
+    ui = read("resources/[FUNCTION]/rp_tablet_creator/html/app.js")
+    assert "CanUseTablet" in server and "creatorAccessAllowed(src)" in server
+    assert "server:setServerSettings" in server
+    assert "server:setModuleState" in server
+    assert "server:updatePlayerIdentity" in server
+    assert "server:updatePlayerBalances" in server
+    assert "server:updatePlayerJob" in server
+    assert "server:updatePlayerInventory" in server
+    assert "server:updatePlayerAccess" in server
+    assert "server:requestAdminTools" in client
+    assert "creator-server-name" in html and "creator-server-slots" in html
+    assert "creator-access-anticheat" in html and "creator-access-admin" in html
+    assert "creatorAdminData" in ui
+
+
+def test_creator_player_inventory_api_validates_items_and_weight():
+    inventory = read("resources/[FUNCTION]/rp_inventory/server/main.lua")
+    assert "local function AdminSetItem" in inventory
+    assert "Config.DefaultItems[itemName]" in inventory
+    assert "getInventoryWeight(inventory) > Config.MaxWeight" in inventory
+    assert "exports('AdminSetItem', AdminSetItem)" in inventory
+    assert "exports('GetItemCatalog', GetItemCatalog)" in inventory
+
+
+def test_anticheat_surveillance_snapshot_is_shared_between_staff():
+    server = read("resources/[FUNCTION]/rp_anticheat/server/main.lua")
+    client = read("resources/[FUNCTION]/rp_anticheat/client/main.lua")
+    assert "Build the player snapshot once per second" in server
+    assert server.count("BuildSurveillanceSnapshot()") == 2
+    assert "markCurrentPlayer(playersList)" in client
+
+
+def test_staff_tablet_access_is_checked_server_side():
+    admin = read("resources/[FUNCTION]/rp_tablet_admin/server/main.lua")
+    anticheat = read("resources/[FUNCTION]/rp_anticheat/server/main.lua")
+    assert "CanUseTablet(src, 'admin')" in admin
+    assert "CanUseTablet(src, 'anticheat')" in anticheat
+
+
+def test_creator_skin_updates_use_existing_character_appearance_pipeline():
+    client = read("resources/[CORE]/rp_characters/client/main.lua")
+    assert "rp_characters:client:adminApplySkin" in client
+    assert "ApplyCharacterAppearance(gender, skin)" in client
