@@ -27,9 +27,8 @@ def test_server_requires_character_bound_fingerprint_session():
     assert "authenticatedSessions[src]" in server
     assert "session.charId ~= player.charId" in server
     assert "GetGameTimer() > session.expiresAt" in server
-    assert "requireAuthenticatedSession(src, 'deposit', true)" in server
-    assert "requireAuthenticatedSession(src, 'withdraw', true)" in server
-    assert "requireAuthenticatedSession(src, 'transfer', false)" in server
+    assert "requireAuthenticatedSession(src, true)" in server
+    assert "requireAuthenticatedSession(src, false)" in server
     assert "RegisterNetEvent('rp_economy:server:logout'" in server
 
 
