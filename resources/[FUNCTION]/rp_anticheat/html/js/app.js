@@ -5,7 +5,8 @@ const state = {
     bans: [],
     selectedPlayerId: null,
     spectatingId: null,
-    currentTab: 'dashboard'
+    currentTab: 'dashboard',
+    pendingAction: null
 };
 
 const $ = (id) => document.getElementById(id);
@@ -333,14 +334,34 @@ function startSpectate(targetId) {
         .catch(() => showToast('Impossible de lancer la surveillance.', true));
 }
 
+function openActionModal({ title, description, confirmLabel, showReason = true, run }) {
+    state.pendingAction = run;
+    $('action-modal-title').textContent = title;
+    $('action-modal-description').textContent = description;
+    $('action-confirm').textContent = confirmLabel || 'Confirmer';
+    $('action-reason-wrap').classList.toggle('hidden', !showReason);
+    $('action-modal').classList.remove('hidden');
+    if (showReason) $('action-reason').focus();
+}
+
+function closeActionModal() {
+    state.pendingAction = null;
+    $('action-modal').classList.add('hidden');
+}
+
 function punish(targetId, type) {
-    const label = type === 'ban' ? 'bannir définitivement' : 'expulser';
-    if (!window.confirm(`Confirmer : ${label} le joueur ID ${targetId} ?`)) return;
-    const reason = window.prompt('Motif de la sanction :', 'Triche / comportement interdit');
-    if (reason === null) return;
-    nui('punishPlayer', { targetId: Number(targetId), punishType: type, reason: reason.slice(0, 180) })
-        .then(() => showToast('Demande de sanction envoyée.'))
-        .catch(() => showToast('Échec de la demande de sanction.', true));
+    const isBan = type === 'ban';
+    openActionModal({
+        title: isBan ? 'Bannissement permanent' : 'Expulsion du joueur',
+        description: `Confirmer la sanction du joueur ID ${targetId} ? Cette action sera vérifiée par le serveur.`,
+        confirmLabel: isBan ? 'Bannir définitivement' : 'Expulser',
+        run: (reason) => nui('punishPlayer', {
+            targetId: Number(targetId),
+            punishType: type,
+            reason: reason.slice(0, 180)
+        }).then(() => showToast('Demande de sanction envoyée.'))
+          .catch(() => showToast('Échec de la demande de sanction.', true))
+    });
 }
 
 function renderLogs() {
@@ -411,12 +432,15 @@ function renderBans() {
         const button = document.createElement('button');
         button.className = 'small-action';
         button.textContent = 'Débannir';
-        button.addEventListener('click', () => {
-            if (!window.confirm(`Lever le bannissement de ${ban.identifier} ?`)) return;
-            nui('unban', { identifier: ban.identifier })
+        button.addEventListener('click', () => openActionModal({
+            title: 'Lever le bannissement',
+            description: `Confirmer la levée du bannissement pour ${ban.identifier} ?`,
+            confirmLabel: 'Lever le bannissement',
+            showReason: false,
+            run: () => nui('unban', { identifier: ban.identifier })
                 .then(() => showToast('Demande de débannissement envoyée.'))
-                .catch(() => showToast('Impossible de lever ce bannissement.', true));
-        });
+                .catch(() => showToast('Impossible de lever ce bannissement.', true))
+        }));
         action.appendChild(button);
         row.append(identifier, reason, by, date, action);
         body.appendChild(row);
@@ -486,6 +510,16 @@ window.addEventListener('message', (event) => {
 
 document.querySelectorAll('.nav-item').forEach((button) => button.addEventListener('click', () => setTab(button.dataset.tab)));
 document.querySelectorAll('[data-goto]').forEach((button) => button.addEventListener('click', () => setTab(button.dataset.goto)));
+$('action-form').addEventListener('submit', (event) => {
+    event.preventDefault();
+    if (typeof state.pendingAction !== 'function') return;
+    const run = state.pendingAction;
+    const reason = $('action-reason').value.trim() || 'Décision de modération.';
+    closeActionModal();
+    run(reason);
+});
+$('action-cancel').addEventListener('click', closeActionModal);
+$('action-cancel-x').addEventListener('click', closeActionModal);
 $('btn-close').addEventListener('click', closeUI);
 $('btn-refresh').addEventListener('click', refreshAll);
 $('btn-refresh-bans').addEventListener('click', () => nui('requestBans').catch(() => showToast('Erreur de chargement.', true)));
@@ -501,6 +535,11 @@ $('btn-stop-spectate').addEventListener('click', () => {
     $('cam-target-name').textContent = 'AUCUNE CIBLE';
 });
 document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && !$('action-modal').classList.contains('hidden')) {
+        event.preventDefault();
+        closeActionModal();
+        return;
+    }
     if (event.key === 'Escape' && !$('anticheat-window').classList.contains('hidden')) {
         event.preventDefault();
         closeUI();
