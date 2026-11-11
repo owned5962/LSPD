@@ -604,6 +604,18 @@ def test_admin_live_map_uses_authorized_server_world_positions():
     assert "function updateOnlinePlayerPositions(players)" in ui
 
 
+
+def test_admin_player_snapshot_always_includes_requesting_admin():
+    server = read("resources/[FUNCTION]/rp_tablet_admin/server/main.lua")
+    ui = read("resources/[FUNCTION]/rp_tablet_admin/html/js/app.js")
+    assert "local function BuildOnlinePlayers(requestingAdminId)" in server
+    assert "for _, rawId in pairs(GetPlayers()) do" in server
+    assert "AddOnlinePlayer(requestingAdminId)" in server
+    assert "isSelf = playerId == tonumber(requestingAdminId)" in server
+    assert "BuildOnlinePlayers(src)" in server
+    assert "player.isSelf ? ' (VOUS)' : ''" in ui
+
+
 def test_admin_tablet_exposes_working_heal_economy_and_job_actions():
     server = read("resources/[FUNCTION]/rp_tablet_admin/server/main.lua")
     client = read("resources/[FUNCTION]/rp_tablet_admin/client/main.lua")
