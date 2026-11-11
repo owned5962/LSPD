@@ -49,6 +49,7 @@ local function ensureDetectionStatsTable()
             detection_type VARCHAR(40) NOT NULL,
             reason VARCHAR(180) NOT NULL,
             severity VARCHAR(16) NOT NULL,
+            sanction VARCHAR(16) NOT NULL DEFAULT 'warn',
             created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
             PRIMARY KEY (id),
             INDEX idx_anticheat_event_created (created_at),
@@ -172,7 +173,7 @@ local function applyPrison(targetId, reason, adminId, minutes)
 end
 
 local function applyConfiguredSanction(targetId, alert)
-    local sanction = (Config.Sanctions and Config.Sanctions[alert.category]) or 'warn'
+    local sanction = alert.sanction or (Config.Sanctions and Config.Sanctions[alert.category]) or 'warn'
     local reason = 'AEGIS · ' .. tostring(alert.reason or 'Détection anticheat')
     if sanction == 'warn' then
         notify(targetId, 'warning', '[ANTICHEAT] Avertissement : ' .. reason)
@@ -192,7 +193,7 @@ local function loadDetectionHistory()
     local ok, rows = pcall(function()
         return MySQL.query.await([[
             SELECT id, player_id AS playerId, player_name AS playerName,
-                   detection_type AS category, reason, severity,
+                   detection_type AS category, reason, severity, sanction,
                    UNIX_TIMESTAMP(created_at) AS timestamp,
                    DATE_FORMAT(created_at, '%H:%i:%s') AS time
             FROM anticheat_event_log ORDER BY id DESC LIMIT 250
@@ -248,14 +249,15 @@ local function recordDetection(src, reason, trustedServerEvent)
         severity = 'high'
     }
     alert.category, alert.severity = detectionCategory(safe)
+    alert.sanction = (Config.Sanctions and Config.Sanctions[alert.category]) or 'warn'
     local persisted, persistError = pcall(function()
         MySQL.insert.await('INSERT INTO anticheat_detections (player_name, detection_type, reason, severity) VALUES (?, ?, ?, ?)',
             { alert.playerName, alert.category, alert.reason, alert.severity })
         alert.id = MySQL.insert.await([[
             INSERT INTO anticheat_event_log
-                (player_id, player_identifier, player_name, detection_type, reason, severity)
-            VALUES (?, ?, ?, ?, ?, ?)
-        ]], { src, getLicense(src), alert.playerName, alert.category, alert.reason, alert.severity })
+                (player_id, player_identifier, player_name, detection_type, reason, severity, sanction)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        ]], { src, getLicense(src), alert.playerName, alert.category, alert.reason, alert.severity, alert.sanction })
     end)
     if not persisted then
         print('[rp_anticheat][logs] Échec enregistrement du registre: ' .. tostring(persistError))
