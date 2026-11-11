@@ -638,6 +638,10 @@ RegisterNetEvent('rp_tablet_creator:server:updatePlayerAccess', function(data)
         reply(src, 'Joueur ou autorisations invalides.', false)
         return
     end
+    if targetId == src and data.creator == false then
+        reply(src, 'Vous ne pouvez pas désactiver votre propre tablette créateur depuis cette interface.', false)
+        return
+    end
     local ok, err = pcall(MySQL.insert.await, [[
         INSERT INTO rp_creator_player_access (identifier, admin_enabled, anticheat_enabled, creator_enabled, updated_by)
         VALUES (?, ?, ?, ?, ?)
@@ -647,4 +651,11 @@ RegisterNetEvent('rp_tablet_creator:server:updatePlayerAccess', function(data)
     if not ok then reply(src, 'Impossible de sauvegarder les accès aux tablettes.', false); return end
     reply(src, 'Autorisations des tablettes mises à jour.', true)
     LogCreatorAction(src, 'tablet_access', targetId, 'admin=' .. tostring(data.admin) .. ' anticheat=' .. tostring(data.anticheat) .. ' creator=' .. tostring(data.creator))
+end)
+
+
+-- Re-apply persisted module states after server.cfg has finished starting its resources.
+CreateThread(function()
+    Wait(15000)
+    ApplyStoredCreatorSettings()
 end)
