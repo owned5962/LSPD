@@ -50,12 +50,15 @@ local function openFuelUI(vehicle)
         TriggerEvent('rp_core:client:notify', 'Véhicule non synchronisé. Réessayez.', 'error')
         return
     end
+    local currentFuel = math.max(0, math.min(100, GetVehicleFuelLevel(vehicle)))
+    Entity(vehicle).state:set('rpFuel', currentFuel, true)
     isOpen = true
     exports['rp_ui']:HideTextUI()
     SetNuiFocus(true, true)
     SendNUIMessage({
         action = 'openFuel',
-        fuel = math.floor(GetVehicleFuelLevel(vehicle) + 0.5),
+        fuel = math.floor(currentFuel + 0.5),
+        maxLitres = math.max(0, math.floor(100 - currentFuel)),
         price = PRICE_PER_LITRE,
         vehicle = GetDisplayNameFromVehicleModel(GetEntityModel(vehicle))
     })
