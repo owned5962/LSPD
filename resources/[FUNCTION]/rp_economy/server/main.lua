@@ -1,5 +1,31 @@
 local MAX_TRANSACTION = 1000000
 
+local BANK_POSITIONS = {
+    vector3(149.9, -1040.5, 29.3), vector3(-1212.9, -330.8, 37.7),
+    vector3(-2962.6, 482.1, 15.7), vector3(1175.0, 2706.8, 38.0),
+    vector3(236.4, 217.4, 106.2)
+}
+local ATM_MODELS = {
+    [GetHashKey('prop_atm_01')] = true, [GetHashKey('prop_atm_02')] = true,
+    [GetHashKey('prop_atm_03')] = true, [GetHashKey('prop_fleeca_atm')] = true
+}
+local function IsNearBankOrATM(src, allowATM)
+    local ped = GetPlayerPed(src)
+    if not ped or ped == 0 or not DoesEntityExist(ped) then return false end
+    local coords = GetEntityCoords(ped)
+    for _, bankCoords in ipairs(BANK_POSITIONS) do
+        if #(coords - bankCoords) <= 3.5 then return true end
+    end
+    if allowATM then
+        for _, object in ipairs(GetAllObjects()) do
+            if DoesEntityExist(object) and ATM_MODELS[GetEntityModel(object)] and #(coords - GetEntityCoords(object)) <= 2.5 then
+                return true
+            end
+        end
+    end
+    return false
+end
+
 local function validAmount(value)
     local amount = tonumber(value)
     if not amount or amount ~= amount or amount % 1 ~= 0 or amount < 1 or amount > MAX_TRANSACTION then
@@ -46,6 +72,7 @@ end)
 
 RegisterNetEvent('rp_economy:server:deposit', function(rawAmount)
     local src = source
+    if not IsNearBankOrATM(src, true) then notify(src, 'Rendez-vous devant une banque ou un distributeur pour déposer.', 'error'); return end
     if not exports['rp_core']:CanPerformAction(src, 'economy:deposit', 1500) then return end
     local player = exports['rp_core']:GetPlayerFromId(src)
     local amount = validAmount(rawAmount)
@@ -75,6 +102,7 @@ end)
 
 RegisterNetEvent('rp_economy:server:withdraw', function(rawAmount)
     local src = source
+    if not IsNearBankOrATM(src, true) then notify(src, 'Rendez-vous devant une banque ou un distributeur pour retirer.', 'error'); return end
     if not exports['rp_core']:CanPerformAction(src, 'economy:withdraw', 1500) then return end
     local player = exports['rp_core']:GetPlayerFromId(src)
     local amount = validAmount(rawAmount)
@@ -104,6 +132,7 @@ end)
 
 RegisterNetEvent('rp_economy:server:transfer', function(rawTargetId, rawAmount)
     local src = source
+    if not IsNearBankOrATM(src, false) then notify(src, 'Les virements sont disponibles uniquement au guichet d’une banque.', 'error'); return end
     if not exports['rp_core']:CanPerformAction(src, 'economy:transfer', 2000) then return end
     local targetId = tonumber(rawTargetId)
     local amount = validAmount(rawAmount)
