@@ -132,6 +132,11 @@ RegisterNUICallback('broadcastAnnouncement', function(data, cb)
     cb('ok')
 end)
 
+RegisterNUICallback('requestPlayerPositions', function(data, cb)
+    TriggerServerEvent('rp_tablet_admin:server:requestPlayerPositions')
+    cb('ok')
+end)
+
 RegisterNUICallback('requestAuditLogs', function(data, cb)
     TriggerServerEvent('rp_tablet_admin:server:requestAuditLogs')
     cb('ok')
@@ -139,6 +144,16 @@ end)
 
 RegisterNetEvent('rp_tablet_admin:client:auditLogs', function(logs)
     SendNUIMessage({ action = 'auditLogs', logs = logs or {} })
+end)
+
+RegisterNetEvent('rp_tablet_admin:client:playerPositions', function(players)
+    SendNUIMessage({ action = 'playerPositions', players = players or {} })
+end)
+
+RegisterNetEvent('rp_tablet_admin:client:heal', function()
+    local ped = PlayerPedId()
+    SetEntityHealth(ped, GetEntityMaxHealth(ped))
+    ClearPedBloodDamage(ped)
 end)
 
 RegisterNetEvent('rp_tablet_admin:client:freezeToggle', function(freeze)
