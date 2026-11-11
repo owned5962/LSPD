@@ -6,7 +6,7 @@ author 'FiveM RP Team'
 description 'Modern Tablet-Style Admin Menu OS with Player Management, Economy, 50 Jobs, Weather & Vehicles'
 version '1.0.0'
 
-dependencies { 'oxmysql', 'rp_core', 'rp_jobs', 'rp_tablet_creator' }
+dependencies { 'oxmysql', 'rp_core', 'rp_jobs', 'rp_inventory', 'rp_tablet_creator' }
 
 
 ui_page 'html/index.html'
