@@ -26,3 +26,8 @@ jobs:
           python-version: "3.x"
       - name: Validate jobs and SQL seed
         run: python tests/test_job_catalog_seed.py
+      - name: Compile job catalog Lua
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y lua5.4
+          luac5.4 -p "resources/[FUNCTION]/rp_jobs/shared/jobs_list.lua"
