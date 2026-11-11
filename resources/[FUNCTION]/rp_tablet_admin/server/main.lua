@@ -247,45 +247,72 @@ RegisterNetEvent('rp_tablet_admin:server:manageEconomy', function(targetId, mone
     targetId = GetOnlineTargetId(targetId)
     amount = tonumber(amount)
     if not targetId or not amount or amount % 1 ~= 0 or amount < 1 or amount > 1000000 then
-        NotifyAdmin(src, 'Montant ou joueur invalide (montant maximum : 1 000 000).')
+        TriggerClientEvent('rp_tablet_admin:client:economyResult', src, {
+            success = false, message = 'Montant ou joueur invalide (maximum : 1 000 000 $).'
+        })
         return
     end
     if moneyType ~= 'cash' and moneyType ~= 'bank' then
-        NotifyAdmin(src, 'Type de compte invalide.')
+        TriggerClientEvent('rp_tablet_admin:client:economyResult', src, {
+            success = false, message = 'Compte invalide : choisissez le portefeuille ou la banque.'
+        })
         return
     end
     if operation ~= 'give' and operation ~= 'remove' then
-        NotifyAdmin(src, 'Opération économique invalide.')
+        TriggerClientEvent('rp_tablet_admin:client:economyResult', src, {
+            success = false, message = 'Opération invalide.'
+        })
         return
     end
 
     local target = exports['rp_core']:GetPlayerFromId(targetId)
     if not target then
-        NotifyAdmin(src, 'Joueur introuvable.')
+        TriggerClientEvent('rp_tablet_admin:client:economyResult', src, {
+            success = false, message = 'Le personnage du joueur cible n’est pas chargé.'
+        })
         return
     end
 
-    local succeeded = false
-    if operation == 'give' then
-        if moneyType == 'cash' then
-            target.addCash(amount)
-        else
-            target.addBank(amount, 'Donation Administrative')
+    -- Les méthodes du core sauvegardent characters.cash / characters.bank en SQL.
+    -- On ne confirme l'opération que si la méthode renvoie explicitement true.
+    local callOk, succeeded = pcall(function()
+        if operation == 'give' then
+            if moneyType == 'cash' then
+                return target.addCash(amount)
+            end
+            return target.addBank(amount, 'Ajout administrateur')
         end
-        succeeded = true
-    elseif moneyType == 'cash' then
-        succeeded = target.removeCash(amount)
-    else
-        succeeded = target.removeBank(amount, 'Saisie Administrative')
-    end
+        if moneyType == 'cash' then
+            return target.removeCash(amount)
+        end
+        return target.removeBank(amount, 'Retrait administrateur')
+    end)
 
-    if not succeeded then
-        NotifyAdmin(src, 'Fonds insuffisants : opération annulée.')
+    if not callOk or succeeded ~= true then
+        local message = operation == 'remove'
+            and 'Retrait impossible : fonds insuffisants ou erreur de sauvegarde MySQL.'
+            or 'Ajout annulé : la sauvegarde MySQL a échoué.'
+        TriggerClientEvent('rp_tablet_admin:client:economyResult', src, {
+            success = false, message = message, playerId = targetId
+        })
+        print(('[rp_tablet_admin] Economy operation failed for admin %s / player %s: %s'):format(
+            tostring(src), tostring(targetId), tostring(succeeded)))
         return
     end
 
+    local accountLabel = moneyType == 'cash' and 'portefeuille' or 'banque'
+    local operationLabel = operation == 'give' and 'Ajout' or 'Retrait'
+    local message = ('%s de %s $ sur le compte %s du joueur %s confirmé et sauvegardé.'):format(
+        operationLabel, amount, accountLabel, targetId)
     LogAdminAction(src, 'economy', targetId, operation .. ' ' .. amount .. ' ' .. moneyType)
-    NotifyAdmin(src, (operation == 'give' and 'Ajouté ' or 'Retiré ') .. amount .. ' $ (' .. moneyType .. ') au joueur ' .. targetId, 'success')
+
+    TriggerClientEvent('rp_tablet_admin:client:economyResult', src, {
+        success = true,
+        message = message,
+        playerId = targetId,
+        cash = tonumber(target.cash) or 0,
+        bank = tonumber(target.bank) or 0
+    })
 end)
 
 RegisterNetEvent('rp_tablet_admin:server:setJob', function(targetId, jobName, grade)
