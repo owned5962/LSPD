@@ -1,6 +1,7 @@
 local detectionsLog = {}
 local lastFlagAt = {}
 local adminActionAt = {}
+local openRequestAt = {}
 local openStaff = {}
 local adminInvulnerability = {}
 local explosionWindows = {}
@@ -142,6 +143,9 @@ end)
 
 RegisterNetEvent('rp_anticheat:requestOpen', function()
     local src = source
+    local now = os.time()
+    if openRequestAt[src] and now - openRequestAt[src] < 1 then return end
+    openRequestAt[src] = now
     if not isStaff(src) then
         notify(src, 'error', 'Accès réservé à l’équipe d’administration.')
         return
@@ -171,7 +175,8 @@ RegisterNetEvent('rp_anticheat:requestOpen', function()
             armor = ped ~= 0 and GetPedArmour(ped) or 0,
             cash = player and player.cash or 0,
             bank = player and player.bank or 0,
-            job = player and player.job or 'civilian'
+            job = player and player.job or 'civilian',
+            routingBucket = GetPlayerRoutingBucket(id)
         }
     end
     TriggerClientEvent('rp_anticheat:openUI', src, Config.Protections, playersList, detectionsLog)
@@ -193,13 +198,13 @@ end
 
 RegisterNetEvent('rp_anticheat:requestLogs', function()
     local src = source
-    if not isStaff(src) or not canUseAnticheatTablet(src) then return end
+    if not isStaff(src) or not canUseAnticheatTablet(src) or not allowStaffAction(src, 'request_logs', 1) then return end
     TriggerClientEvent('rp_anticheat:updateLogs', src, detectionsLog)
 end)
 
 RegisterNetEvent('rp_anticheat:requestBans', function()
     local src = source
-    if not isStaff(src) or not canUseAnticheatTablet(src) then return end
+    if not isStaff(src) or not canUseAnticheatTablet(src) or not allowStaffAction(src, 'request_bans', 2) then return end
     local ok, bans = pcall(function()
         return MySQL.query.await(
             'SELECT identifier, reason, banned_by, created_at FROM player_bans ORDER BY created_at DESC LIMIT 100'
@@ -419,4 +424,5 @@ AddEventHandler('playerDropped', function()
     spectateRequestAt[source] = nil
     entityWindows[source] = nil
     adminActionAt[source] = nil
+    openRequestAt[source] = nil
 end)
