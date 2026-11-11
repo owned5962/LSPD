@@ -7,6 +7,11 @@ AddEventHandler('onClientResourceStart', function(resourceName)
     SendNUIMessage({ action = 'close' })
 end)
 
+AddEventHandler('onClientResourceStop', function(resourceName)
+    if resourceName ~= GetCurrentResourceName() then return end
+    SetNuiFocus(false, false)
+end)
+
 RegisterKeyMapping('openinventory', 'Ouvrir l\'inventaire', 'keyboard', 'F2')
 
 RegisterCommand('openinventory', function()
