@@ -46,6 +46,64 @@
       <small id="blip-help">Sélectionnez un métier pour charger sa configuration.</small>
     </article>
   </section>
+  <section class="grid creator-admin-grid">
+    <article class="panel">
+      <h2><i class="fa-solid fa-server"></i> Configuration du serveur</h2>
+      <p class="panel-help">Le nom est appliqué immédiatement. Le nombre de slots est enregistré ; un redémarrage peut être nécessaire pour appliquer la capacité.</p>
+      <label for="creator-server-name">Nom affiché du serveur</label>
+      <input id="creator-server-name" type="text" maxlength="64" placeholder="Los Santos Stories">
+      <label for="creator-server-slots">Nombre maximal de joueurs</label>
+      <input id="creator-server-slots" type="number" min="1" max="1024" step="1" value="64">
+      <button id="creator-save-server" class="primary"><i class="fa-solid fa-floppy-disk"></i> Enregistrer la configuration</button>
+      <div class="module-heading"><strong>Modules activables</strong><button id="creator-refresh" type="button">Actualiser</button></div>
+      <div id="creator-module-list" class="module-list"><small>Chargement des modules…</small></div>
+      <p class="panel-help">Les modules essentiels, les tablettes staff, l'inventaire, l'économie et l'anticheat sont protégés contre l'arrêt depuis cette liste.</p>
+    </article>
+    <article class="panel">
+      <h2><i class="fa-solid fa-users-gear"></i> Gestion des joueurs connectés</h2>
+      <label for="creator-player">Joueur à modifier</label>
+      <select id="creator-player"><option value="">Chargement des joueurs…</option></select>
+      <div class="coord-grid">
+        <label>Prénom<input id="creator-firstname" type="text" maxlength="32"></label>
+        <label>Nom<input id="creator-lastname" type="text" maxlength="32"></label>
+        <label>Âge<input id="creator-age" type="number" min="18" max="90"></label>
+      </div>
+      <div class="coord-grid">
+        <label>Rôle<select id="creator-role">
+          <option value="user">Joueur</option><option value="moderator">Modérateur</option><option value="admin">Administrateur</option><option value="fondateur">Fondateur</option>
+        </select></label>
+        <label>Skin<select id="creator-skin">
+          <option value="keep">Conserver le skin actuel</option><option value="male">Homme par défaut</option><option value="female">Femme par défaut</option>
+        </select></label>
+        <label>Sexe<select id="creator-gender" disabled><option value="m">Homme</option><option value="f">Femme</option></select></label>
+      </div>
+      <button id="creator-save-identity" class="primary">Appliquer identité, âge, skin et rôle</button>
+      <div class="coord-grid">
+        <label>Argent sur lui ($)<input id="creator-cash" type="number" min="0" max="100000000" step="1"></label>
+        <label>Compte bancaire ($)<input id="creator-bank" type="number" min="0" max="100000000" step="1"></label>
+      </div>
+      <button id="creator-save-balances" class="primary">Enregistrer les soldes</button>
+      <div class="coord-grid">
+        <label>Métier<select id="creator-job"></select></label>
+        <label>Grade<select id="creator-job-grade"><option value="0">Grade 0</option></select></label>
+      </div>
+      <button id="creator-save-job" class="primary">Modifier le métier</button>
+      <div class="coord-grid">
+        <label>Objet<select id="creator-item"></select></label>
+        <label>Quantité<input id="creator-item-count" type="number" min="1" max="1000" value="1"></label>
+      </div>
+      <div class="buttons inventory-actions">
+        <button id="creator-item-add" type="button">Ajouter l'objet</button><button id="creator-item-remove" type="button">Retirer l'objet</button>
+      </div>
+      <h3 class="subheading">Autorisations des tablettes pour ce joueur</h3>
+      <div class="tablet-access">
+        <label><input id="creator-access-admin" type="checkbox" checked> Tablette Admin (F10)</label>
+        <label><input id="creator-access-anticheat" type="checkbox" checked> Anticheat (F9)</label>
+        <label><input id="creator-access-creator" type="checkbox" checked> Créateur (F11)</label>
+      </div>
+      <button id="creator-save-access" class="primary">Enregistrer les accès aux tablettes</button>
+    </article>
+  </section>
   <footer><span id="status">Prêt · Les actions sont contrôlées côté serveur.</span><kbd>ÉCHAP</kbd></footer>
 </main><script src="app.js"></script>
 </body></html>
