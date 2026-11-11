@@ -55,11 +55,13 @@ local function requireAuthenticatedSession(src, operation, allowATM)
     local player = exports['rp_core']:GetPlayerFromId(src)
     if not session or not player or session.charId ~= player.charId or GetGameTimer() > session.expiresAt then
         authenticatedSessions[src] = nil
-        notify(src, 'Veuillez d’abord vous identifier avec votre empreinte.', 'error')
+        TriggerClientEvent('rp_economy:client:sessionExpired', src)
+        notify(src, 'Votre session bancaire a expiré. Identifiez-vous à nouveau.', 'error')
         return false
     end
     if not IsNearBankOrATM(src, allowATM) then
         authenticatedSessions[src] = nil
+        TriggerClientEvent('rp_economy:client:sessionExpired', src)
         notify(src, 'Vous devez rester devant un guichet ou un distributeur.', 'error')
         return false
     end
