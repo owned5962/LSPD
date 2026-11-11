@@ -575,6 +575,12 @@ exports('SaveWeaponPolicy', function(src, rawPolicy)
     return true, getWeaponPolicyList()
 end)
 
+RegisterNetEvent('rp_anticheat:requestWeaponPolicy', function()
+    local src = source
+    if type(Config.WeaponPolicy) ~= 'table' then return end
+    TriggerClientEvent('rp_anticheat:syncWeaponPolicy', src, Config.WeaponPolicy)
+end)
+
 RegisterNetEvent('rp_anticheat:requestOpen', function()
     local src = source
     local now = os.time()
