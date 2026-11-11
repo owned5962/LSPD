@@ -9,11 +9,21 @@ document.getElementById('apply-time').addEventListener('click',()=>post('setWorl
 document.getElementById('send').addEventListener('click',()=>{const message=document.getElementById('announcement').value.trim();if(!message){status.textContent='Saisissez une annonce avant de diffuser.';return;}post('broadcast',{message}).then(()=>{document.getElementById('announcement').value='';}).catch(()=>{status.textContent='Erreur de communication';});});
 
 
-let creatorJobs = [], creatorBlips = [], creatorMapping = [];
+let creatorJobs = [], creatorBlips = [], creatorMapping = [], creatorProps = [];
 function fillSelect(select, items, valueKey, labelKey) {
     select.replaceChildren();
     items.forEach(item => { const option=document.createElement('option'); option.value=item[valueKey]; option.textContent=item[labelKey] || item[valueKey]; select.append(option); });
 }
+function renderPropOptions() {
+    const search=(document.getElementById('mapping-search')?.value||'').trim().toLowerCase();
+    const filtered=creatorProps.filter(item=>item.model.toLowerCase().includes(search));
+    const select=document.getElementById('mapping-prop');
+    const previous=select.value;
+    fillSelect(select,filtered,'model','label');
+    if(filtered.some(item=>item.model===previous))select.value=previous;
+    if(!filtered.length){const option=document.createElement('option');option.textContent='Aucun prop trouvé';option.value='';select.append(option);}
+}
+document.getElementById('mapping-search').addEventListener('input',renderPropOptions);
 function loadBlipForJob(jobName) {
     const item=creatorBlips.find(row=>row.job===jobName);
     const pos=window.creatorPosition||{x:0,y:0,z:0};
@@ -42,8 +52,8 @@ window.addEventListener('message',e=>{
     if(d.action==='toolsData'){
         creatorJobs=d.jobs||[];creatorBlips=d.blips||[];creatorMapping=d.mapping||[];window.creatorPosition=d.position||{x:0,y:0,z:0};
         const jobSelect=document.getElementById('blip-job');fillSelect(jobSelect,creatorJobs,'name','label');
-        const props=Object.keys(d.catalog||{}).sort().map(model=>({model,label:model}));
-        fillSelect(document.getElementById('mapping-prop'),props,'model','label');
+        creatorProps=Object.keys(d.catalog||{}).sort().map(model=>({model,label:model}));
+        renderPropOptions();
         if(jobSelect.value)loadBlipForJob(jobSelect.value);
         renderMapping();
     } else if(d.action==='mappingAdded'){
