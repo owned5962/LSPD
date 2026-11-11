@@ -73,6 +73,11 @@ window.addEventListener('message',e=>{
     busy=false;
     status.textContent=d.message||'Paiement refusé.';
     update();
+  }else if(d.action==='fuelingCancelled'){
+    resetProgress();
+    busy=false;
+    status.textContent=d.message||'Ravitaillement annulé. Le remboursement est lancé.';
+    update();
   }else if(d.action==='fuelPurchased'){
     isRefueling=false;
     cancelAnimationFrame(progressFrame);
