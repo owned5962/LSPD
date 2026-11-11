@@ -102,12 +102,14 @@ CreateThread(function()
             local atm = GetNearbyATM(2.0)
             if atm ~= 0 then
                 waitTime = 0
-                if activePrompt ~= 'atm' then exports['rp_ui']:ShowTextUI('[E] Utiliser le distributeur'); activePrompt = 'atm' end
+                exports['rp_ui']:ShowTextUI('[E] Utiliser le distributeur')
+                activePrompt = 'atm'
                 if IsControlJustReleased(0, 38) then OpenBankUI(true); activePrompt = nil end
             elseif nearbyBank then
                 waitTime = 0
                 if bankDistance < 2.2 then
-                    if activePrompt ~= 'bank' then exports['rp_ui']:ShowTextUI('[E] Accéder au guichet bancaire'); activePrompt = 'bank' end
+                    exports['rp_ui']:ShowTextUI('[E] Accéder au guichet bancaire')
+                    activePrompt = 'bank'
                     if IsControlJustReleased(0, 38) then OpenBankUI(false); activePrompt = nil end
                 else
                     if activePrompt then exports['rp_ui']:HideTextUI(); activePrompt = nil end
