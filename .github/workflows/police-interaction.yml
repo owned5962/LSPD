@@ -27,4 +27,6 @@ jobs:
           luac5.4 -p "resources/[FUNCTION]/rp_police_interaction/client/main.lua"
           luac5.4 -p "resources/[FUNCTION]/rp_police_interaction/server/main.lua"
       - name: Check police NUI JavaScript
-        run: node --check "resources/[FUNCTION]/rp_police_interaction/html/app.js"
+        run: |
+          node --check "resources/[FUNCTION]/rp_police_interaction/html/app.js"
+          node --check "resources/[FUNCTION]/rp_tablet_job/html/app.js"
