@@ -74,6 +74,7 @@ end
 RegisterCommand('jobcenter', function()
     OpenJobCenter()
 end, false)
+RegisterKeyMapping('jobcenter', 'Ouvrir le menu des métiers', 'keyboard', 'F5')
 
 RegisterNUICallback('close', function(data, cb)
     CloseJobCenter()
