@@ -234,6 +234,18 @@ function handleTabletMessage(event) {
         if (tabletWrapper) tabletWrapper.classList.remove('is-open');
         return;
     }
+    if (data.action === 'economyResult') {
+        const result = data.result || {};
+        const target = onlinePlayers.find(player => Number(player.id) === Number(result.playerId));
+        if (target && result.success === true) {
+            target.cash = Number(result.cash) || 0;
+            target.bank = Number(result.bank) || 0;
+            renderOnlinePlayers();
+            renderPlayerPickers();
+        }
+        showToast(String(result.message || 'Résultat de l’opération économique reçu.'));
+        return;
+    }
     if (data.action === 'playerPositions') {
         updateOnlinePlayerPositions(Array.isArray(data.players) ? data.players : []);
         return;
