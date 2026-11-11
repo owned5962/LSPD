@@ -1,6 +1,7 @@
 let allJobs = [];
 let currentCategory = 'all';
 let currentSearch = '';
+const NUI_RESOURCE = typeof window.GetParentResourceName === 'function' ? window.GetParentResourceName() : 'rp_jobs';
 
 window.addEventListener('message', (event) => {
     const data = event.data;
@@ -9,6 +10,14 @@ window.addEventListener('message', (event) => {
         document.getElementById('jobs-count').innerText = allJobs.length;
         document.getElementById('jobcenter-app').classList.remove('hidden');
         renderJobs();
+    } else if (data.action === 'jobSelectionResult') {
+        const status = document.getElementById('job-status');
+        if (status) status.textContent = data.message || (data.success ? 'Embauche confirmée.' : 'Candidature refusée.');
+        document.querySelectorAll('.select-job-btn:not(.disabled)').forEach(button => {
+            button.disabled = false;
+            if (button.dataset.originalLabel) button.textContent = button.dataset.originalLabel;
+        });
+        if (data.success) document.getElementById('jobcenter-app').classList.add('hidden');
     } else if (data.action === 'closeJobCenter') {
         document.getElementById('jobcenter-app').classList.add('hidden');
     }
@@ -20,8 +29,8 @@ function renderJobs() {
 
     const filtered = allJobs.filter(job => {
         const matchesCategory = (currentCategory === 'all' || job.category === currentCategory);
-        const matchesSearch = job.label.toLowerCase().includes(currentSearch.toLowerCase()) || 
-                              job.description.toLowerCase().includes(currentSearch.toLowerCase());
+        const matchesSearch = String(job.label || job.name || '').toLowerCase().includes(currentSearch.toLowerCase()) ||
+                              String(job.description || '').toLowerCase().includes(currentSearch.toLowerCase());
         return matchesCategory && matchesSearch;
     });
 
@@ -72,16 +81,27 @@ function renderJobs() {
 }
 
 function chooseJob(jobName) {
-    fetch(`https://${GetParentResourceName()}/selectJob`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+    const button = document.querySelector(`.select-job-btn[data-name="${CSS.escape(jobName)}"]`);
+    if (!button || button.disabled) return;
+    button.dataset.originalLabel = button.textContent;
+    button.disabled = true;
+    button.textContent = 'Envoi en cours…';
+    const status = document.getElementById('job-status');
+    if (status) status.textContent = 'Transmission de votre demande au serveur…';
+    fetch(`https://${NUI_RESOURCE}/selectJob`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ jobName })
-    }).catch(() => {});
-    document.getElementById('jobcenter-app').classList.add('hidden');
+    }).then(response => response.json()).then(result => {
+        if (!result || result.status !== 'submitted') throw new Error('Demande non transmise');
+    }).catch(() => {
+        button.disabled = false;
+        button.textContent = button.dataset.originalLabel || 'Postuler Immédiatement';
+        if (status) status.textContent = 'Erreur de communication avec le serveur. Réessayez.';
+    });
 }
 
 function closeJobCenter() {
-    fetch(`https://${GetParentResourceName()}/close`, {
+    fetch(`https://${NUI_RESOURCE}/close`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({})
@@ -92,7 +112,10 @@ function closeJobCenter() {
 document.getElementById('close-jobcenter').addEventListener('click', closeJobCenter);
 
 document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') closeJobCenter();
+    if (e.key === 'Escape') {
+        e.preventDefault();
+        closeJobCenter();
+    }
 });
 
 document.getElementById('job-search').addEventListener('input', (e) => {
@@ -108,7 +131,3 @@ document.querySelectorAll('.filter-btn').forEach(btn => {
         renderJobs();
     });
 });
-
-function GetParentResourceName() {
-    return window.GetParentResourceName ? window.GetParentResourceName() : 'rp_jobs';
-}
