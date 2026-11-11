@@ -1,11 +1,4 @@
 local AdminModes = {}
-local AllowedAdminWeapons = {
-    WEAPON_PISTOL = true, WEAPON_COMBATPISTOL = true, WEAPON_SNSPISTOL = true,
-    WEAPON_STUNGUN = true, WEAPON_FLASHLIGHT = true, WEAPON_KNIFE = true,
-    WEAPON_NIGHTSTICK = true, WEAPON_SMG = true, WEAPON_CARBINERIFLE = true,
-    WEAPON_PUMPSHOTGUN = true
-}
-
 local function IsExtendedAdmin(src)
     if IsPlayerAceAllowed(src, 'rp_admin') then return true end
     local player = exports['rp_core']:GetPlayerFromId(src)
@@ -192,7 +185,8 @@ RegisterNetEvent('rp_tablet_admin:server:giveWeapon', function(rawTargetId, rawW
     if not AllowExtendedAction(src, 'give_weapon', 750) then return end
     local targetId = TargetId(rawTargetId)
     local weapon = type(rawWeapon) == 'string' and rawWeapon:upper() or ''
-    if not targetId or not AllowedAdminWeapons[weapon] then
+    local policyOk, allowed = pcall(function() return exports['rp_anticheat']:IsWeaponAllowed(weapon) end)
+    if not targetId or not policyOk or allowed ~= true then
         NotifyExtended(src, 'Joueur ou arme non autorisée.')
         return
     end
