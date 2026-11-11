@@ -606,7 +606,7 @@ def test_admin_tablet_close_controls_and_keyboard_bindings_do_not_conflict():
     admin = read("resources/[FUNCTION]/rp_tablet_admin/client/main.lua")
     anticheat = read("resources/[FUNCTION]/rp_anticheat/client/main.lua")
     ui = read("resources/[FUNCTION]/rp_tablet_admin/html/js/app.js")
-    assert "RegisterKeyMapping('admin', 'Ouvrir la Tablette Admin', 'keyboard', 'F10')" in admin
+    assert "RegisterKeyMapping('rp_admin_tablet_toggle', 'Ouvrir la Tablette Admin', 'keyboard', 'F10')" in admin
     assert "RegisterKeyMapping('openanticheat', 'Ouvrir le menu Anticheat', 'keyboard', 'F9')" in anticheat
     assert "if isTabletOpen then" in admin and "CloseAdminTablet()" in admin
     assert "closeButton.addEventListener('click', closeAdminTablet)" in ui
