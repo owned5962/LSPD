@@ -16,7 +16,7 @@ end
 
 RegisterNetEvent('rp_tablet_creator:server:requestOpen', function()
     local src = source
-    if not isCreator(src) then
+    if not creatorAccessAllowed(src) then
         reply(src, 'Accès réservé aux créateurs et fondateurs.', false)
         return
     end
@@ -65,7 +65,7 @@ end)
 
 RegisterNetEvent('rp_tablet_creator:server:broadcast', function(rawMessage)
     local src = source
-    if not isCreator(src) then return end
+    if not creatorAccessAllowed(src) then return end
     if type(rawMessage) ~= 'string' then reply(src, 'Annonce invalide.', false); return end
     local message = rawMessage:gsub('[%c]', ' '):sub(1, 300)
     if message == '' then reply(src, 'Le message ne peut pas être vide.', false); return end
@@ -184,7 +184,7 @@ end)
 
 RegisterNetEvent('rp_tablet_creator:server:requestTools', function()
     local src = source
-    if not isCreator(src) then return end
+    if not creatorAccessAllowed(src) then return end
     local jobs = exports['rp_jobs']:GetAllJobs() or {}
     local jobList = {}
     for key, job in pairs(jobs) do local name = job.name or key; jobList[#jobList + 1] = { name = name, label = job.label or name } end
@@ -225,7 +225,7 @@ end)
 
 RegisterNetEvent('rp_tablet_creator:server:deleteProp', function(rawId)
     local src = source
-    if not isCreator(src) then return end
+    if not creatorAccessAllowed(src) then return end
     local id = tonumber(rawId)
     if not id or id % 1 ~= 0 or id < 1 then reply(src, 'ID de mapping invalide.', false); return end
     local ok, affected = pcall(MySQL.update.await, 'DELETE FROM rp_creator_mapping WHERE id = ?', { id })
@@ -239,7 +239,7 @@ end)
 
 RegisterNetEvent('rp_tablet_creator:server:saveJobBlip', function(data)
     local src = source
-    if not isCreator(src) then return end
+    if not creatorAccessAllowed(src) then return end
     if type(data) ~= 'table' then reply(src, 'Configuration de blip invalide.', false); return end
     local jobName = type(data.job) == 'string' and data.job:sub(1, 64) or ''
     local job = exports['rp_jobs']:GetJob(jobName)
@@ -453,7 +453,7 @@ end
 
 RegisterNetEvent('rp_tablet_creator:server:requestAdminTools', function()
     local src = source
-    if not isCreator(src) or not CanUseTablet(src, 'creator') then return end
+    if not creatorAccessAllowed(src) or not CanUseTablet(src, 'creator') then return end
     local ok, data = pcall(function()
         return {
             players = GetCreatorPlayers(),
@@ -473,7 +473,7 @@ end)
 
 RegisterNetEvent('rp_tablet_creator:server:setServerSettings', function(data)
     local src = source
-    if not isCreator(src) or not exports['rp_core']:CanPerformAction(src, 'creator:server_settings', 1000) or type(data) ~= 'table' then return end
+    if not creatorAccessAllowed(src) or not exports['rp_core']:CanPerformAction(src, 'creator:server_settings', 1000) or type(data) ~= 'table' then return end
     local name = type(data.name) == 'string' and data.name:gsub('[%c]', ' '):gsub('^%s*(.-)%s*$', '%1'):sub(1, 64) or ''
     local slots = tonumber(data.slots)
     if #name < 3 or not slots or slots % 1 ~= 0 or slots < 1 or slots > 1024 then
@@ -497,7 +497,7 @@ end)
 
 RegisterNetEvent('rp_tablet_creator:server:setModuleState', function(resourceName, enabled)
     local src = source
-    if not isCreator(src) or not exports['rp_core']:CanPerformAction(src, 'creator:module_state', 1500) then return end
+    if not creatorAccessAllowed(src) or not exports['rp_core']:CanPerformAction(src, 'creator:module_state', 1500) then return end
     if type(enabled) ~= 'boolean' or not IsManagedCreatorModule(resourceName) then
         reply(src, 'Module inconnu ou protégé.', false)
         return
@@ -531,7 +531,7 @@ end)
 
 RegisterNetEvent('rp_tablet_creator:server:updatePlayerIdentity', function(data)
     local src = source
-    if not isCreator(src) or not exports['rp_core']:CanPerformAction(src, 'creator:player_identity', 1000) or type(data) ~= 'table' then return end
+    if not creatorAccessAllowed(src) or not exports['rp_core']:CanPerformAction(src, 'creator:player_identity', 1000) or type(data) ~= 'table' then return end
     local targetId = tonumber(data.playerId)
     local target = targetId and exports['rp_core']:GetPlayerFromId(targetId)
     if not target or not GetPlayerName(targetId) then reply(src, 'Joueur introuvable ou personnage non chargé.', false); return end
@@ -580,7 +580,7 @@ end)
 
 RegisterNetEvent('rp_tablet_creator:server:updatePlayerBalances', function(data)
     local src = source
-    if not isCreator(src) or not exports['rp_core']:CanPerformAction(src, 'creator:player_balances', 1000) or type(data) ~= 'table' then return end
+    if not creatorAccessAllowed(src) or not exports['rp_core']:CanPerformAction(src, 'creator:player_balances', 1000) or type(data) ~= 'table' then return end
     local targetId = tonumber(data.playerId)
     local target = targetId and exports['rp_core']:GetPlayerFromId(targetId)
     local cash, bank = tonumber(data.cash), tonumber(data.bank)
@@ -604,7 +604,7 @@ end)
 
 RegisterNetEvent('rp_tablet_creator:server:updatePlayerJob', function(data)
     local src = source
-    if not isCreator(src) or not exports['rp_core']:CanPerformAction(src, 'creator:player_job', 800) or type(data) ~= 'table' then return end
+    if not creatorAccessAllowed(src) or not exports['rp_core']:CanPerformAction(src, 'creator:player_job', 800) or type(data) ~= 'table' then return end
     local targetId = tonumber(data.playerId)
     local target = targetId and exports['rp_core']:GetPlayerFromId(targetId)
     local grade = tonumber(data.grade)
@@ -619,7 +619,7 @@ end)
 
 RegisterNetEvent('rp_tablet_creator:server:updatePlayerInventory', function(data)
     local src = source
-    if not isCreator(src) or not exports['rp_core']:CanPerformAction(src, 'creator:player_inventory', 1000) or type(data) ~= 'table' then return end
+    if not creatorAccessAllowed(src) or not exports['rp_core']:CanPerformAction(src, 'creator:player_inventory', 1000) or type(data) ~= 'table' then return end
     local targetId = tonumber(data.playerId)
     local target = targetId and exports['rp_core']:GetPlayerFromId(targetId)
     if not target then reply(src, 'Joueur introuvable.', false); return end
@@ -633,7 +633,7 @@ end)
 
 RegisterNetEvent('rp_tablet_creator:server:updatePlayerAccess', function(data)
     local src = source
-    if not isCreator(src) or not exports['rp_core']:CanPerformAction(src, 'creator:player_access', 1000) or type(data) ~= 'table' then return end
+    if not creatorAccessAllowed(src) or not exports['rp_core']:CanPerformAction(src, 'creator:player_access', 1000) or type(data) ~= 'table' then return end
     local targetId = tonumber(data.playerId)
     local target = targetId and exports['rp_core']:GetPlayerFromId(targetId)
     if not target or type(data.admin) ~= 'boolean' or type(data.anticheat) ~= 'boolean' or type(data.creator) ~= 'boolean' then
