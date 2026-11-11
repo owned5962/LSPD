@@ -65,5 +65,21 @@ Les contrôles statiques et compilations sont automatisés dans GitHub Actions. 
 - Les sauvegardes automatiques réduisent la perte de données, mais une sauvegarde régulière de la base reste indispensable.
 - Les métadonnées d'apparence et les tenues sauvegardées sont stockées en SQL ; les variations de vêtements et accessoires peuvent être appliquées depuis le système de personnages et la boutique.
 
+
+## Console créateur F11
+
+La tablette créateur est réservée aux comptes autorisés (ACE `rp_creator`, groupe `fondateur` ou `superadmin`). Elle permet :
+- de modifier le nom du serveur et d'enregistrer le nombre de slots (un redémarrage peut être nécessaire pour appliquer la capacité) ;
+- de démarrer/arrêter les modules facultatifs et les ressources `job_*` ; les ressources essentielles, l'inventaire, l'économie, les tablettes staff et l'anticheat restent protégés ;
+- de changer la météo et l'heure, déjà disponibles dans la console ;
+- de gérer les joueurs connectés : prénom, nom, âge, rôle, métier/grade, soldes bancaires et argent liquide ;
+- d'ajouter ou retirer un objet de l'inventaire depuis le catalogue du serveur ;
+- d'appliquer un skin freemode par défaut homme/femme ou de conserver le skin actuel ;
+- d'activer/désactiver individuellement les tablettes Admin (F10), Anticheat (F9) et Créateur (F11) pour chaque compte.
+
+Les tables de configuration `rp_creator_settings`, `rp_creator_module_state` et `rp_creator_player_access` sont créées automatiquement par la ressource. La gestion de joueurs depuis cette interface concerne les personnages actuellement connectés. Le rôle modérateur est enregistrable, mais ne donne pas automatiquement tous les droits administrateur.
+
+Le fichier `server-icon.png` (96 × 96) est déclaré dans `server.cfg` via `load_server_icon server-icon.png` pour afficher le logo dans la liste FiveM.
+
 ## Permissions administrateur
-La tablette vérifie la permission ACE `rp_admin` ou le groupe serveur `admin` / `superadmin`. Aucun privilège n'est accordé selon le numéro de joueur.
+La tablette vérifie la permission ACE `rp_admin` ou le groupe serveur `admin`, `superadmin` ou `fondateur`. Les accès aux tablettes Admin, Anticheat et Créateur peuvent aussi être désactivés individuellement depuis la console créateur. Aucun privilège n'est accordé selon le numéro de joueur.
