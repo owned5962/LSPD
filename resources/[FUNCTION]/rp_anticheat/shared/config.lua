@@ -6,7 +6,9 @@ Config.Protections = {
     ['speedhack'] = { label = 'Détection SpeedHack / SuperVitesse', enabled = true },
     ['blacklisted_weapons'] = { label = 'Armes Blacklistées (RPG, Minigun)', enabled = true },
     ['thermal_night_vision'] = { label = 'Vision Thermique / Nocturne Illégale', enabled = true },
-    ['spectate_monitoring'] = { label = 'Surveillance Staff en Direct', enabled = true }
+    ['spectate_monitoring'] = { label = 'Surveillance Staff en Direct', enabled = true },
+    ['explosion_spam'] = { label = 'Protection anti-spam d’explosions (serveur)', enabled = true },
+    ['weapon_damage'] = { label = 'Blocage serveur des armes interdites', enabled = true }
 }
 
 Config.BlacklistedWeapons = {
@@ -20,3 +22,6 @@ Config.BlacklistedWeapons = {
 
 Config.MaxSpeed = 10.0 -- Max pedestrian speed (m/s) before flag
 Config.AlertStaffChat = true
+
+Config.MaxExplosionsPerWindow = 5
+Config.ExplosionWindowSeconds = 5
