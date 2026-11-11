@@ -380,8 +380,11 @@ def test_admin_tablet_controls_are_backed_by_server_authorization():
     assert "AllowExtendedAction(src, 'godmode', 500)" in extended
     assert "AllowExtendedAction(src, 'ban', 1500)" in extended
     assert "AllowAdminAction(src, 'revive', 500)" in server
-    assert "onclick=\"giveAdminMoney('cash')\"" in html
-    assert "onclick=\"giveAdminMoney('bank')\"" in html
+    assert 'id="economy-player-target"' in html
+    assert 'id="admin-economy-account"' in html
+    assert 'id="admin-economy-operation"' in html
+    assert 'id="admin-economy-amount"' in html
+    assert "function manageAdminMoney()" in read("resources/[FUNCTION]/rp_tablet_admin/html/js/app.js")
     assert "AllowAdminAction(src, 'economy', 750)" in server
     assert "onclick=\"giveAdminVehicle()\"" in html
     assert "AllowExtendedAction(src, 'spawn_vehicle', 1000)" in extended
@@ -660,10 +663,14 @@ def test_admin_tablet_exposes_working_heal_economy_and_job_actions():
     assert "RegisterServerCallback('manageEconomy'" in client
     assert "RegisterServerCallback('setJob'" in client
     assert 'onclick="playerAction(\'heal\')"' in html
-    assert 'onclick="giveAdminMoney(\'cash\')"' in html
-    assert 'onclick="giveAdminMoney(\'bank\')"' in html
+    assert 'id="economy-player-target"' in html
+    assert 'id="admin-economy-account"' in html
+    assert 'id="admin-economy-operation"' in html
+    assert 'id="admin-economy-amount"' in html
     assert 'onclick="setSelectedJob()"' in html
-    assert "function giveAdminMoney(type)" in ui
+    assert "function manageAdminMoney()" in ui
+    assert "getPanelTarget('economy')" in ui
+    assert "operation, amount" not in ui
     assert "function setSelectedJob()" in ui
 
 
@@ -1264,10 +1271,11 @@ def test_admin_tablet_has_separate_give_sanction_function_job_weather_and_audit_
     for tab in ("gives", "sanctions", "functions", "jobs", "weather", "map", "audit"):
         assert f'data-admin-view="{tab}"' in html
         assert f'id="admin-{tab}-view"' in html
-    for prefix in ("give", "sanction", "function", "job"):
+    for prefix in ("give", "economy", "sanction", "function", "job"):
         assert f'id="{prefix}-player-search"' in html
         assert f'id="{prefix}-player-target"' in html
-    for control in ("admin-vehicle-model", "admin-give-cash-amount", "admin-give-bank-amount",
+    for control in ("admin-vehicle-model", "admin-economy-account", "admin-economy-operation",
+                    "admin-economy-amount", "economy-player-search", "economy-player-target",
                     "admin-weapon-name", "admin-item-name", "admin-item-count",
                     "admin-job-name", "admin-job-grade", "admin-weather"):
         assert f'id="{control}"' in html
