@@ -20,7 +20,7 @@ def test_admin_tabs_and_page_controls_are_separated():
     parser = IdCollector()
     parser.feed(html)
     assert len(parser.ids) == len(set(parser.ids)), "duplicate HTML id"
-    for tab in ("players", "gives", "sanctions", "functions", "jobs", "weather", "map", "audit"):
+    for tab in ("players", "gives", "weapons", "sanctions", "functions", "jobs", "weather", "map", "audit"):
         assert f'data-admin-view="{tab}"' in html
         assert f'id="admin-{tab}-view"' in html
     for prefix in ("give", "sanction", "function", "job"):
@@ -41,6 +41,10 @@ def test_admin_ui_routes_each_tab_and_player_search_to_its_own_target():
     assert "function giveAdminMoney(type)" in ui
     assert "function giveAdminVehicle()" in ui
     assert "function giveAdminWeapon()" in ui
+    assert "function renderWeaponPolicy()" in ui
+    assert "function saveWeaponPolicy()" in ui
+    assert "data.weaponPolicy" in ui
+    assert "weaponPolicy.filter(weapon => weapon && weapon.enabled === true)" in ui
     assert "function giveAdminItem()" in ui
     assert "function sanctionPlayer(action)" in ui
     assert "function banSelectedPlayer()" in ui
@@ -97,3 +101,22 @@ if __name__ == "__main__":
         if name.startswith("test_") and callable(check):
             check()
     print("All focused admin tablet reorganization checks passed.")
+
+
+def test_admin_weapon_grants_use_anticheat_policy_and_persistent_admin_controls():
+    main = read("resources/[FUNCTION]/rp_tablet_admin/server/main.lua")
+    extended = read("resources/[FUNCTION]/rp_tablet_admin/server/extended.lua")
+    client = read("resources/[FUNCTION]/rp_tablet_admin/client/main.lua")
+    manifest = read("resources/[FUNCTION]/rp_tablet_admin/fxmanifest.lua")
+    html = read("resources/[FUNCTION]/rp_tablet_admin/html/index.html")
+    ui = read("resources/[FUNCTION]/rp_tablet_admin/html/js/app.js")
+    assert "exports['rp_anticheat']:GetWeaponPolicy()" in main
+    assert "exports['rp_anticheat']:SaveWeaponPolicy(src, rawPolicy)" in main
+    assert "exports['rp_anticheat']:IsWeaponAllowed(weapon)" in extended
+    assert "AllowedAdminWeapons" not in extended
+    assert "weaponPolicy = weaponPolicy or {}" in client
+    assert "RegisterServerCallback('saveWeaponPolicy'" in client
+    assert 'data-admin-view="weapons"' in html and 'id="admin-weapons-view"' in html
+    assert "function renderWeaponPolicy()" in ui and "function saveWeaponPolicy()" in ui
+    assert "weaponPolicy.filter(weapon => weapon && weapon.enabled === true)" in ui
+    assert "'rp_anticheat'" in manifest
