@@ -125,7 +125,7 @@ def test_admin_tablet_has_no_conflicting_handlers_and_all_tabs_switch():
     client = read("resources/[FUNCTION]/rp_tablet_admin/client/main.lua")
     css = read("resources/[FUNCTION]/rp_tablet_admin/html/css/style.css")
 
-    declarations = re.findall(r"^function\\s+([A-Za-z_$][\\w$]*)\\s*\\(", ui, re.MULTILINE)
+    declarations = re.findall(r"^function\s+([A-Za-z_$][\w$]*)\s*\(", ui, re.MULTILINE)
     for name in (
         "setupAdminSubViews", "banSelectedPlayer", "refreshPlayerMap",
         "updateOnlinePlayerPositions", "giveAdminVehicle", "giveAdminWeapon",
