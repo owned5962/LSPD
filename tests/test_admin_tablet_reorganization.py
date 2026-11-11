@@ -79,6 +79,19 @@ def test_admin_item_grants_are_server_validated_persisted_and_audited():
     assert "exports('AdminSetItem', AdminSetItem)" in inventory
     assert "'rp_inventory'" in manifest
 
+
+def test_admin_job_picker_excludes_unloaded_characters_and_server_waits_for_core_player():
+    ui = read("resources/[FUNCTION]/rp_tablet_admin/html/js/app.js")
+    main = read("resources/[FUNCTION]/rp_tablet_admin/server/main.lua")
+    extended = read("resources/[FUNCTION]/rp_tablet_admin/server/extended.lua")
+    assert "player.characterLoaded !== false" in ui
+    assert "characterLoaded = player ~= nil" in main
+    assert "characterLoaded = player ~= nil" in extended
+    assert "for attempt = 1, 10 do" in main
+    assert "Wait(200)" in main
+    assert "pcall(target.setJob, jobName, grade)" in main
+    assert "Votre métier a été défini sur " in main
+
 if __name__ == "__main__":
     for name, check in sorted(globals().items()):
         if name.startswith("test_") and callable(check):
