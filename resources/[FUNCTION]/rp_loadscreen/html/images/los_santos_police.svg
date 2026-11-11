@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+<defs><linearGradient id="sky" x2="0" y2="1"><stop stop-color="#101b35"/><stop offset="1" stop-color="#d04b5d"/></linearGradient><linearGradient id="road" x2="0" y2="1"><stop stop-color="#30384b"/><stop offset="1" stop-color="#080d18"/></linearGradient><filter id="glow"><feGaussianBlur stdDeviation="22"/></filter></defs>
+<rect width="1920" height="1080" fill="url(#sky)"/><circle cx="1480" cy="270" r="180" fill="#ffb1a5" opacity=".22"/>
+<path d="M0 600V420h150V300h130v300h150V390h170v210h160V260h150v340h170V390h170v210h160V330h180v270h150v480H0Z" fill="#101a2d"/>
+<g fill="#f9b8a7" opacity=".45"><path d="M180 350h15v22h-15zm35 0h15v22h-15zm220 80h15v22h-15zm35 0h15v22h-15zm390-130h15v22h-15zm35 0h15v22h-15zm380 100h15v22h-15zm35 0h15v22h-15zm260-50h15v22h-15zm35 0h15v22h-15z"/></g>
+<path d="M0 700Q480 620 960 700T1920 700v380H0Z" fill="url(#road)"/><path d="M0 860Q960 700 1920 860" stroke="#e2a5a0" stroke-width="8" opacity=".35" fill="none"/>
+<g transform="translate(560 610)"><ellipse cx="400" cy="330" rx="470" ry="60" fill="#02050c" opacity=".65"/>
+<path d="M40 220l95-130q28-38 82-38h420q55 0 90 44l100 124 28 110H10Z" fill="#111c2d" stroke="#8cb8e8" stroke-width="8"/>
+<path d="M235 65h350q44 0 75 37l68 88H145l57-88q12-37 33-37Z" fill="#8ab6d9" opacity=".72"/>
+<path d="M18 230h835v58H18z" fill="#162a43"/><path d="M300 230h270v58H300z" fill="#e9eef7"/><text x="435" y="270" fill="#17263b" font-family="Arial" font-size="28" font-weight="bold" text-anchor="middle">POLICE</text>
+<path d="M365 48h120v-25h-120z" fill="#dce8f8"/><rect x="350" y="14" width="65" height="24" rx="8" fill="#3b82f6" filter="url(#glow)"/><rect x="430" y="14" width="65" height="24" rx="8" fill="#ef4444" filter="url(#glow)"/><rect x="350" y="14" width="65" height="24" rx="8" fill="#3b82f6"/><rect x="430" y="14" width="65" height="24" rx="8" fill="#ef4444"/>
+<circle cx="180" cy="325" r="58" fill="#080d15" stroke="#8797ac" stroke-width="14"/><circle cx="700" cy="325" r="58" fill="#080d15" stroke="#8797ac" stroke-width="14"/><path d="M40 250h55M780 250h55" stroke="#dbeafe" stroke-width="20"/></g>
+<path d="M0 0h1920v1080H0z" fill="#07101f" opacity=".18"/></svg>
