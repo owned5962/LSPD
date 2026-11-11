@@ -33,6 +33,7 @@ jobs:
         run: |
           python tests/verify_server.py
           python tests/test_security_regressions.py
+          python tests/test_vehicle_rental.py
 
       - name: Compile every Lua file
         shell: bash
