@@ -48,6 +48,7 @@
                         <div class="admin-subnav">
                             <button type="button" class="admin-subnav-btn active" data-admin-view="players"><i class="fas fa-users"></i> Joueurs & Actions</button>
                             <button type="button" class="admin-subnav-btn" data-admin-view="map"><i class="fas fa-map-marked-alt"></i> Carte des joueurs <span id="map-player-count">0</span></button>
+                            <button type="button" class="admin-subnav-btn" data-admin-view="audit"><i class="fas fa-clipboard-list"></i> Journal d'audit</button>
                         </div>
                         <section id="admin-players-view" class="admin-subview active">
                         <div class="admin-grid-layout">
@@ -123,6 +124,18 @@
                                 </div>
                             </div>
                         </div>
+                        </section>
+                        <section id="admin-audit-view" class="admin-subview">
+                            <div class="audit-toolbar">
+                                <div>
+                                    <h3><i class="fas fa-clipboard-list"></i> Journal des actions administrateur</h3>
+                                    <p>50 dernières actions enregistrées sur le serveur</p>
+                                </div>
+                                <button type="button" class="action-btn-red" onclick="requestAuditLogs()"><i class="fas fa-sync-alt"></i> Actualiser</button>
+                            </div>
+                            <div id="admin-audit-logs" class="audit-log-list" aria-live="polite">
+                                <p>Ouvrez cet onglet pour charger les journaux.</p>
+                            </div>
                         </section>
                         <section id="admin-map-view" class="admin-subview">
                             <div class="map-toolbar">
