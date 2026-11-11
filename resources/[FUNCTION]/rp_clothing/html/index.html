@@ -2,32 +2,41 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Boutique de vêtements</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
     <div id="clothing-wrapper" class="hidden">
-        <div class="clothing-card">
-            <div class="clothing-header">
-                <div class="clothing-title"><i class="fa-solid fa-shirt"></i> Dressing & Prêt-à-porter</div>
-                <button id="close-btn"><i class="fa-solid fa-xmark"></i></button>
+        <main class="clothing-card">
+            <header class="clothing-header">
+                <div><span class="eyebrow">LOS SANTOS · STYLE</span><h1><i class="fa-solid fa-shirt"></i> Boutique</h1></div>
+                <button id="close-btn" aria-label="Fermer"><i class="fa-solid fa-xmark"></i></button>
+            </header>
+            <section class="intro"><div><strong>Compose ton look</strong><p>Chaque choix s'affiche directement sur ton personnage.</p></div><span class="live-dot">APERÇU LIVE</span></section>
+            <div class="shop-layout">
+                <nav id="category-list" aria-label="Catégories de vêtements"></nav>
+                <section class="catalog-panel">
+                    <div class="category-heading"><span id="category-icon"><i class="fa-solid fa-shirt"></i></span><div><h2 id="category-title">Hauts & vestes</h2><small id="item-count">Variantes disponibles</small></div></div>
+                    <div class="item-preview">
+                        <button id="prev-item" class="step-btn" aria-label="Article précédent"><i class="fa-solid fa-chevron-left"></i></button>
+                        <div class="item-number"><small>MODÈLE</small><strong id="drawable-value">0</strong><span id="drawable-total">/ 0</span></div>
+                        <button id="next-item" class="step-btn" aria-label="Article suivant"><i class="fa-solid fa-chevron-right"></i></button>
+                    </div>
+                    <div class="texture-control"><label for="texture-range">Couleur / texture <strong id="texture-value">0</strong></label><input id="texture-range" type="range" min="0" max="0" value="0"><div class="range-labels"><span>Variante 1</span><span id="texture-total">1 variante</span></div></div>
+                    <p class="hint"><i class="fa-solid fa-circle-info"></i> Le nombre de modèles dépend du personnage et des vêtements installés sur le serveur.</p>
+                </section>
             </div>
-            <div class="outfit-presets">
-                <button class="preset-btn" data-outfit="civil"><i class="fa-solid fa-person"></i> Tenue Civile</button>
-                <button class="preset-btn" data-outfit="suit"><i class="fa-solid fa-user-tie"></i> Costume Chic</button>
-                <button class="preset-btn" data-outfit="sport"><i class="fa-solid fa-person-running"></i> Sport & Détente</button>
-                <button class="preset-btn" data-outfit="work"><i class="fa-solid fa-hard-hat"></i> Uniforme de travail</button>
-            </div>
-            <div class="saved-outfits">
-                <h3>Mes tenues sauvegardées</h3>
-                <div id="outfit-list"><p class="empty-outfits">Chargement des tenues…</p></div>
-            </div>
-            <div class="save-box">
-                <input type="text" id="outfit-name" placeholder="Nom de la tenue (ex: Rendez-vous)" class="name-input">
-                <button class="save-btn" id="btn-save"><i class="fa-solid fa-floppy-disk"></i> Enregistrer (150 $)</button>
-            </div>
-        </div>
+            <section class="presets-section"><div class="section-title"><h3>Tenues rapides</h3><span>Looks prédéfinis</span></div><div class="outfit-presets">
+                <button class="preset-btn" data-outfit="civil"> <i class="fa-solid fa-person"></i><span>Civil</span></button>
+                <button class="preset-btn" data-outfit="suit"><i class="fa-solid fa-user-tie"></i><span>Costume</span></button>
+                <button class="preset-btn" data-outfit="sport"><i class="fa-solid fa-person-running"></i><span>Sport</span></button>
+                <button class="preset-btn" data-outfit="work"><i class="fa-solid fa-helmet-safety"></i><span>Travail</span></button>
+            </div></section>
+            <section class="saved-outfits"><div class="section-title"><h3>Mes tenues sauvegardées</h3><span>Jusqu'à 20 looks</span></div><div id="outfit-list"><p class="empty-outfits">Chargement des tenues…</p></div></section>
+            <footer class="save-box"><input type="text" id="outfit-name" maxlength="50" placeholder="Nommer cette tenue…"><button class="save-btn" id="btn-save"><i class="fa-solid fa-floppy-disk"></i> Enregistrer le look <small>150 $</small></button></footer>
+        </main>
     </div>
     <script src="js/app.js"></script>
 </body>
