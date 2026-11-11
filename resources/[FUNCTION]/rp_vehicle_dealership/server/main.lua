@@ -198,8 +198,7 @@ RegisterNetEvent('rp_vehicle_dealership:server:registerPurchasedVehicle', functi
     pendingPurchases[src] = nil
     plateLocks[purchase.plate] = nil
     TriggerClientEvent('rp_vehicle_dealership:client:purchaseConfirmed', src, purchase.plate)
-    TriggerEvent('rp_economy:server:logTransaction', purchase.charId, 'withdraw',
-        purchase.price, 'Concessionnaire', ('Achat %s (%s)'):format(purchase.label, purchase.plate))
+    -- removeBank() journalise déjà le débit dans rp_economy.
     print(('[rp_vehicle_dealership] %s purchased %s (%s), character %s'):format(
         GetPlayerName(src) or src, purchase.model, purchase.plate, purchase.charId))
 end)
