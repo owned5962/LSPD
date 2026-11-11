@@ -1,6 +1,13 @@
 local isMenuOpen = false
 local isHandcuffed = false
 
+AddEventHandler('onClientResourceStart', function(resourceName)
+    if resourceName ~= GetCurrentResourceName() then return end
+    isMenuOpen = false
+    SetNuiFocus(false, false)
+    SendNUIMessage({ action = 'close' })
+end)
+
 RegisterKeyMapping('openjobmenu', 'Ouvrir le menu métier (F6)', 'keyboard', 'F6')
 
 RegisterCommand('openjobmenu', function()
