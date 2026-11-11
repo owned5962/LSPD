@@ -20,6 +20,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.x"
+      - name: Install test dependency
+        run: python -m pip install pytest
       - name: Test clothing catalog
         run: python -m pytest -q tests/test_clothing_catalog.py
       - name: Install Lua and Node.js
