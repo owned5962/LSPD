@@ -227,6 +227,13 @@ AddEventHandler('playerDropped', function()
     TriggerEvent('rp_anticheat:setAdminInvulnerability', src, false)
 end)
 
+AddEventHandler('onResourceStart', function(resourceName)
+    if resourceName ~= 'rp_anticheat' then return end
+    for src, modes in pairs(AdminModes) do
+        TriggerEvent('rp_anticheat:setAdminInvulnerability', src, modes.noclip or modes.godmode)
+    end
+end)
+
 RegisterNetEvent('rp_tablet_admin:server:banPlayer', function(rawTargetId, rawReason)
     local src = source
     if not AllowExtendedAction(src, 'ban', 1500) then return end
