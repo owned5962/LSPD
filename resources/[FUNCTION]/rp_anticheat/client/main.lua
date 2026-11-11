@@ -51,14 +51,15 @@ RegisterNetEvent('rp_anticheat:syncProtections', function(protections)
     end
 end)
 
-RegisterNetEvent('rp_anticheat:openUI', function(protections, playersList, logsList)
+RegisterNetEvent('rp_anticheat:openUI', function(protections, playersList, logsList, detectionCount)
     isAnticheatUIOpen = true
     SetNuiFocus(true, true)
     SendNUIMessage({
         action = 'open',
         protections = protections,
         players = markCurrentPlayer(playersList),
-        logs = logsList or {}
+        logs = logsList or {},
+        detectionCount = tonumber(detectionCount) or #(logsList or {})
     })
 end)
 
