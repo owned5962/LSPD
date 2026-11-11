@@ -86,6 +86,18 @@ local function loadInventory(player)
     saveInventory(player)
 end
 
+-- Commande chat serveur : /openinventory (alias /inv).
+-- Elle déclenche le toggle sur le client concerné, sans dépendre de l'exécution
+-- des commandes locales par le chat.
+local function OpenInventoryCommand(src)
+    if src and src > 0 then
+        TriggerClientEvent('rp_inventory:client:toggle', src)
+    end
+end
+
+RegisterCommand('openinventory', OpenInventoryCommand, false)
+RegisterCommand('inv', OpenInventoryCommand, false)
+
 RegisterNetEvent('rp_inventory:requestData', function()
     local src = source
     if not exports['rp_core']:CanPerformAction(src, 'inventory:request_data', 1000) then
