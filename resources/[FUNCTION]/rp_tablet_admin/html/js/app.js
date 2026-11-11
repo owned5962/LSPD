@@ -337,7 +337,7 @@ function playerAction(action) {
             if (payload.freeze) frozenPlayers.add(selectedPlayerId);
             else frozenPlayers.delete(selectedPlayerId);
         }
-        showToast(action === 'freeze' ? (payload.freeze ? 'Demande de gel envoyée.' : 'Demande de dégel envoyée.') : action === 'heal' ? 'Soin envoyé au joueur.' : 'Demande envoyée au serveur.');
+        showToast(action === 'freeze' ? (payload.freeze ? 'Demande de gel envoyée.' : 'Demande de dégel envoyée.') : action === 'heal' ? 'Demande de soin envoyée au serveur.' : 'Demande envoyée au serveur.');
     }).catch(() => showToast('Impossible de contacter le serveur.'));
 }
 
@@ -587,7 +587,7 @@ function renderMapPlayerList() {
         name.textContent = (player.name || player.rawName || 'Joueur') + ' [' + player.id + ']';
         const meta = document.createElement('span');
         meta.textContent = player.position
-            ? (player.jobLabel || player.job || 'Inconnu') + ' · X ' + Number(player.position.x).toFixed(0) + ' / Y ' + Number(player.position.y).toFixed(0)
+            ? (player.jobLabel || player.job || 'Inconnu') + ' · X ' + Number(player.position.x).toFixed(0) + ' / Y ' + Number(player.position.y).toFixed(0) + ' / Z ' + Number(player.position.z || 0).toFixed(0) + ' · ' + Number(player.ping || 0) + ' ms
             : 'Position indisponible';
         button.append(name, meta);
         button.addEventListener('click', () => {
