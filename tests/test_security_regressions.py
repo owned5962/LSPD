@@ -1321,7 +1321,8 @@ def test_job_center_has_profession_illustrations_and_statistics_view():
     assert "function renderJobStats()" in ui
     assert "rp_jobs:server:requestJobStats" in client
     assert "rp_jobs:client:jobStats" in client
-    assert "CREATE TABLE IF NOT EXISTS rp_job_selection_stats" in server
+    assert "local JOB_STATS_TABLE = 'rp_job_selection_stats'" in server
+    assert "CREATE TABLE IF NOT EXISTS %s" in server
     assert "selection_count = selection_count + 1" in server
     assert "RecordJobSelection(jobName)" in server
     assert "'@oxmysql/lib/MySQL.lua'" in manifest
