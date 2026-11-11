@@ -54,7 +54,7 @@ end
 AddEventHandler('rp_economy:server:logTransaction', function(characterId, transactionType, amount, sender, reason)
     local validTypes = {
         deposit = true, withdraw = true, transfer_send = true,
-        transfer_receive = true, salary = true
+        transfer_receive = true, salary = true, fuel = true
     }
     characterId = tonumber(characterId)
     amount = validAmount(amount)
