@@ -117,6 +117,33 @@ def test_admin_weapon_grants_use_anticheat_policy_and_persistent_admin_controls(
     assert "weaponPolicy.filter(weapon => weapon && weapon.enabled === true)" in ui
     assert "'rp_anticheat'" in manifest
 
+
+def test_admin_tablet_has_no_conflicting_handlers_and_all_tabs_switch():
+    import re
+
+    ui = read("resources/[FUNCTION]/rp_tablet_admin/html/js/app.js")
+    client = read("resources/[FUNCTION]/rp_tablet_admin/client/main.lua")
+    css = read("resources/[FUNCTION]/rp_tablet_admin/html/css/style.css")
+
+    declarations = re.findall(r"^function\\s+([A-Za-z_$][\\w$]*)\\s*\\(", ui, re.MULTILINE)
+    for name in (
+        "setupAdminSubViews", "banSelectedPlayer", "refreshPlayerMap",
+        "updateOnlinePlayerPositions", "giveAdminVehicle", "giveAdminWeapon",
+    ):
+        assert declarations.count(name) == 1, f"conflicting duplicate {name} declaration"
+
+    assert "document.querySelectorAll('.admin-subview').forEach(view => view.classList.toggle('active'" in ui
+    assert "else if (target==='audit') requestAuditLogs()" in ui
+    assert "getPanelTarget('give')" in ui
+    assert "getPanelTarget('sanction')" in ui
+    assert "renderPlayerPickers();" in ui
+    assert "RegisterKeyMapping('rp_admin_tablet_toggle', 'Ouvrir la Tablette Admin', 'keyboard', 'F10')" in client
+    assert "RegisterNUICallback('close'" in client
+    assert "closeButton.addEventListener('click', closeAdminTablet)" in ui
+    assert "width: min(1200px, 96vw)" in css
+    assert "height: min(740px, 94vh)" in css
+
+
 if __name__ == "__main__":
     for name, check in sorted(globals().items()):
         if name.startswith("test_") and callable(check):
