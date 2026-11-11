@@ -838,7 +838,13 @@ def test_cfx_default_resources_are_documented_and_start_order_is_valid():
     assert "ensure sessionmanager" in config
     assert "ensure hardcap" in config
     assert "ensure baseevents" in config
+    assert "set onesync on" in config
+    assert "onesync on" not in config
     assert "cfx-server-data" in readme
+    assert "bash install-cfx-defaults.sh" in readme
+    installer = read("install-cfx-defaults.sh")
+    for resource in ("spawnmanager", "sessionmanager", "hardcap", "baseevents"):
+        assert resource in installer
     assert "spawnmanager" in readme and "baseevents" in readme
 
 
