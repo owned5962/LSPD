@@ -92,7 +92,7 @@ local function initializeLocations()
                 x = VALUES(x), y = VALUES(y), z = VALUES(z),
                 blip_enabled = VALUES(blip_enabled), blip_sprite = VALUES(blip_sprite),
                 blip_display = VALUES(blip_display), blip_scale = VALUES(blip_scale),
-                blip_colour = VALUES(blip_colour), short_range = VALUES(short_range), enabled = 1
+                blip_colour = VALUES(blip_colour), short_range = VALUES(short_range)
         ]]):format(LOCATION_TABLE), {
             location.location_key, location.location_type, location.name, location.shop_style,
             location.icon, location.x, location.y, location.z,
