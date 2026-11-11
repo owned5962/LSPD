@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+<defs>
+ <linearGradient id="sky" x2="0" y2="1"><stop stop-color="#152a48"/><stop offset=".55" stop-color="#6389a5"/><stop offset="1" stop-color="#15263a"/></linearGradient>
+ <linearGradient id="road" x2="0" y2="1"><stop stop-color="#37485b"/><stop offset="1" stop-color="#101a28"/></linearGradient>
+ <filter id="glow"><feGaussianBlur stdDeviation="18"/></filter>
+</defs>
+<rect width="1920" height="1080" fill="url(#sky)"/>
+<circle cx="1450" cy="210" r="170" fill="#d5e9ff" opacity=".18"/>
+<path d="M0 610h240V410h170v200h160V330h170v280h170V390h190v220h170V350h180v260h170V430h150v180h150v470H0Z" fill="#15283e"/>
+<g fill="#9bd2ef" opacity=".36"><path d="M275 440h20v28h-20zm42 0h20v28h-20zm250-55h20v28h-20zm42 0h20v28h-20zm470 80h20v28h-20zm42 0h20v28h-20zm330-90h20v28h-20zm42 0h20v28h-20z"/></g>
+<path d="M0 730q500-120 960 0t960 0v350H0Z" fill="url(#road)"/>
+<path d="M0 865q500-120 960 0t960 0" fill="none" stroke="#8bd3ff" stroke-width="7" opacity=".3"/>
+<g transform="translate(540 580)">
+ <ellipse cx="420" cy="370" rx="470" ry="48" fill="#050a12" opacity=".6"/>
+ <path d="M45 190l75-120q20-35 70-35h470q45 0 75 45l100 110 30 145H15Z" fill="#e8edf3" stroke="#9bc8e7" stroke-width="8"/>
+ <path d="M190 48h430q42 0 67 38l70 95H115l50-95q9-38 25-38Z" fill="#294760"/>
+ <path d="M205 58h185v112H140l45-82q7-30 20-30zm205 0h190q38 0 61 38l51 74H410Z" fill="#7fc3e8" opacity=".7"/>
+ <path d="M20 210h840v60H20z" fill="#d7e3ee"/><path d="M350 210h180v60H350z" fill="#e23d55"/>
+ <path d="M398 80h95v-35h-95z" fill="#f2f7fb"/><rect x="370" y="28" width="62" height="23" rx="7" fill="#e84961" filter="url(#glow)"/><rect x="455" y="28" width="62" height="23" rx="7" fill="#4db6ff" filter="url(#glow)"/><rect x="370" y="28" width="62" height="23" rx="7" fill="#e84961"/><rect x="455" y="28" width="62" height="23" rx="7" fill="#4db6ff"/>
+ <path d="M430 95v115m-55-58h110" stroke="#fff" stroke-width="20" stroke-linecap="round"/>
+ <circle cx="170" cy="335" r="55" fill="#07101b" stroke="#9baabd" stroke-width="13"/><circle cx="710" cy="335" r="55" fill="#07101b" stroke="#9baabd" stroke-width="13"/>
+</g>
+<rect width="1920" height="1080" fill="#081321" opacity=".24"/>
+</svg>
