@@ -15,7 +15,7 @@ def test_business_map_categories_and_server_startup_are_registered():
     for category in ("barber", "beauty", "nightclub", "ammunation", "food"):
         assert f"id = '{category}'" in locations
     assert "ATMBlipLocations" in locations
-    assert "SetBlipSprite(blip,  277)" in client
+    assert "SetBlipSprite(blip, tonumber(location.blip_sprite)" in client
     assert "shared/locations.lua" in manifest
     assert "ensure rp_businesses" in server_cfg
     assert clothing.count("vector3(") >= 10
