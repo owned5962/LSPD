@@ -78,6 +78,8 @@ def test_nui_has_biometric_gate_close_button_and_transaction_callbacks():
     assert "Escape" in ui
     assert "TriggerServerEvent('rp_economy:server:logout')" in client
     assert "Aucune réponse du lecteur" in ui
+    assert "pendingInputs.set(name, inputs)" in ui
+    assert "pendingInputs.get(name)" in ui
 
 
 if __name__ == "__main__":
