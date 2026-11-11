@@ -11,8 +11,13 @@ window.addEventListener('message', function(event) {
         currentPlayers = data.players || [];
         document.getElementById('stat-players').innerText = currentPlayers.length;
         renderProtections(currentProtections);
+        updateProtectionStats(currentProtections);
         renderSurveillancePlayers(currentPlayers);
         document.getElementById('anticheat-window').classList.remove('hidden');
+    } else if (data.action === 'protections') {
+        currentProtections = data.protections || {};
+        renderProtections(currentProtections);
+        updateProtectionStats(currentProtections);
     } else if (data.action === 'updatePlayers') {
         currentPlayers = Array.isArray(data.players) ? data.players : [];
         document.getElementById('stat-players').innerText = currentPlayers.length;
@@ -38,6 +43,13 @@ document.querySelectorAll('.nav-item').forEach(btn => {
         document.getElementById(`pane-${tab}`).classList.add('active');
     });
 });
+
+function updateProtectionStats(protections) {
+    const modules = Object.values(protections || {});
+    const active = modules.filter(item => item && item.enabled === true).length;
+    const counter = document.getElementById('stat-modules');
+    if (counter) counter.textContent = `${active}/${modules.length}`;
+}
 
 function renderProtections(protections) {
     const grid = document.getElementById('protections-list');
