@@ -72,6 +72,7 @@ RegisterNetEvent('rp_tablet_admin:client:openAuthorized', function(adminData, pl
         admin = adminData or {},
         players = playersList or {},
         jobs = jobsList or {},
+        items = itemCatalog or {},
         frozenPlayers = frozenPlayers or {}
     })
 end)
@@ -120,6 +121,7 @@ RegisterServerCallback('toggleGodmode', 'rp_tablet_admin:server:toggleGodmode', 
 RegisterServerCallback('spawnVehicle', 'rp_tablet_admin:server:spawnVehicle', { 'model' })
 RegisterServerCallback('giveVehicle', 'rp_tablet_admin:server:giveVehicle', { 'playerId', 'model' })
 RegisterServerCallback('giveWeapon', 'rp_tablet_admin:server:giveWeapon', { 'playerId', 'weapon' })
+RegisterServerCallback('giveItem', 'rp_tablet_admin:server:giveItem', { 'playerId', 'item', 'count' })
 RegisterServerCallback('banPlayer', 'rp_tablet_admin:server:banPlayer', { 'playerId', 'reason' })
 RegisterServerCallback('kickPlayer', 'rp_tablet_admin:server:kickPlayer', { 'playerId', 'reason' })
 RegisterServerCallback('freezePlayer', 'rp_tablet_admin:server:freezePlayer', { 'playerId', 'freeze' })
