@@ -16,6 +16,12 @@ def test_rental_resource_is_registered_and_has_all_spawn_locations():
         assert (RESOURCE / path).is_file()
     for location in ("airport", "train", "hospital", "jobcenter"):
         assert f"{location} =" in config
+    assert "Config.MapBlip" in config
+    assert "sprite = 225" in config
+    assert "enabled = true" in config
+    assert "createRentalBlips()" in read("client/main.lua")
+    assert "AddBlipForCoord" in read("client/main.lua")
+    assert "RemoveBlip" in read("client/main.lua")
 
 
 def test_rental_price_and_server_side_validation():
