@@ -191,7 +191,7 @@ def test_player_reports_are_persisted_rate_limited_and_moderated_from_f10():
     server = read("resources/[FUNCTION]/rp_tablet_admin/server/extended.lua")
     sql = read("database.sql")
 
-    assert "CREATE TABLE IF NOT EXISTS \`player_reports\`" in sql
+    assert "CREATE TABLE IF NOT EXISTS `player_reports`" in sql
     assert "RegisterCommand('report'" in server
     assert "ReportCooldowns[src]" in server
     assert "60 secondes" in server
