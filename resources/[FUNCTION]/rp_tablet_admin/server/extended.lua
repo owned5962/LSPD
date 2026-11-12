@@ -6,7 +6,17 @@ local function IsExtendedAdmin(src)
 end
 
 local function AllowExtendedAction(src, action, cooldown)
-    return IsExtendedAdmin(src) and exports['rp_core']:CanPerformAction(src, 'admin:' .. action, cooldown or 500)
+    if not IsExtendedAdmin(src) then return false end
+
+    -- Keep the extended endpoints subject to the same per-player tablet
+    -- revocation as the main admin endpoints. Fail closed if the creator
+    -- access service is unavailable.
+    local accessOk, tabletAllowed = pcall(function()
+        return exports['rp_tablet_creator']:CanUseTablet(src, 'admin')
+    end)
+    if not accessOk or tabletAllowed ~= true then return false end
+
+    return exports['rp_core']:CanPerformAction(src, 'admin:' .. action, cooldown or 500)
 end
 
 local function NotifyExtended(src, message, kind)
