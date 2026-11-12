@@ -31,7 +31,7 @@ def test_client_receives_complete_authoritative_character_snapshot():
 
     for field in (
         "isLoaded", "source", "identifier", "charId", "characterSlot",
-        "firstname", "lastname", "name", "dateofbirth", "sex", "height",
+        "firstname", "lastname", "name", "dateofbirth", "sex", "height", "phoneNumber", "isDead",
         "cash", "bank", "job", "jobLabel", "jobGrade", "jobGradeLabel",
         "group", "duty", "hunger", "thirst", "metadata", "position", "skin",
     ):
