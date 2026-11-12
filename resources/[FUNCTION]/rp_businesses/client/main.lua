@@ -196,6 +196,19 @@ CreateThread(function()
     while true do
         local sleep = 700
         if ammunationTabletOpen then
+            local coords = GetEntityCoords(PlayerPedId())
+            local nearestDistance, nearestVertical
+            for _, shopCoords in ipairs(ammunationLocations) do
+                local dx, dy = coords.x - shopCoords.x, coords.y - shopCoords.y
+                local horizontal = math.sqrt(dx * dx + dy * dy)
+                local vertical = math.abs(coords.z - shopCoords.z)
+                if not nearestDistance or horizontal < nearestDistance then
+                    nearestDistance, nearestVertical = horizontal, vertical
+                end
+            end
+            if not nearestDistance or nearestDistance > 1.0 or nearestVertical > 2.0 then
+                closeAmmunationTablet()
+            end
             sleep = 250
         elseif #ammunationLocations > 0 and not IsPauseMenuActive() then
             local coords = GetEntityCoords(PlayerPedId())
@@ -377,7 +390,20 @@ end)
 CreateThread(function()
     while true do
         local sleep = 1000
-        if not groceryTabletOpen and not IsPauseMenuActive() then
+        if groceryTabletOpen then
+            local coords = GetEntityCoords(PlayerPedId())
+            local nearestDistance
+            for _, location in ipairs(groceryLocations) do
+                local distance = #(coords - vector3(location.x, location.y, location.z))
+                if not nearestDistance or distance < nearestDistance then nearestDistance = distance end
+            end
+            if not nearestDistance or nearestDistance > 1.0 then
+                groceryTabletOpen = false
+                SetNuiFocus(false, false)
+                SendNUIMessage({ action = 'closeStore' })
+            end
+            sleep = 250
+        elseif not IsPauseMenuActive() then
             local coords = GetEntityCoords(PlayerPedId())
             local nearest, nearestDistance
 
