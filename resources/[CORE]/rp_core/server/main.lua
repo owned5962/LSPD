@@ -160,7 +160,7 @@ end)
 -- more reliably than a disconnect-only save.
 CreateThread(function()
     while true do
-        Wait(60 * 1000)
+        Wait(5 * 60 * 1000)
         for _, player in pairs(Players) do
             if player and player.save then
                 player.save()
