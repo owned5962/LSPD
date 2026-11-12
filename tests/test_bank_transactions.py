@@ -94,3 +94,25 @@ if __name__ == "__main__":
     for check in checks:
         check()
     print(f"Banking regression checks passed ({len(checks)}).")
+
+
+def test_fingerprint_validates_location_before_rate_limit_and_prevents_duplicate_scans():
+    server = read("server/main.lua")
+    client = read("client/main.lua")
+    start = server.index("RegisterNetEvent('rp_economy:server:authenticate'")
+    end = server.index("RegisterNetEvent('rp_economy:server:logout'", start)
+    handler = server[start:end]
+    assert handler.index("IsNearBankOrATM(src, true)") < handler.index("CanPerformAction")
+    assert "Patientez une seconde avant de réessayer." in handler
+    assert "Lecteur temporairement indisponible" not in handler
+    assert "local isAuthenticating = false" in client
+    assert "if not isBankOpen or isAuthenticated or isAuthenticating then" in client
+    assert "Le lecteur ne répond pas. Vérifiez votre position et réessayez." in client
+
+
+def test_server_uses_real_terminal_proximity_and_atm_requires_registered_location():
+    server = read("server/main.lua")
+    assert "getLocationsByType('bank')" in server
+    assert "getLocationsByType('atm')" in server
+    assert "vector3(x, y, z)) <= 4.0" in server
+    assert "vector3(x, y, z)) <= 4.0" in server
