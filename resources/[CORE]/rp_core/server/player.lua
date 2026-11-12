@@ -32,11 +32,13 @@ function CreateRPPlayer(source, identifier, charData)
     local self = {}
     self.source = tonumber(source)
     self.identifier = identifier
+    self.isLoaded = true
     -- characters.id is the database primary key used by bank_transactions.
     self.charId = tonumber(charData.id) or 1
     self.slot = tonumber(charData.char_id) or 1
     self.firstname = charData.firstname or 'John'
     self.lastname = charData.lastname or 'Doe'
+    self.name = self.firstname .. ' ' .. self.lastname
     self.dateofbirth = charData.dateofbirth or '1995-01-01'
     self.sex = charData.sex or 'm'
     self.height = tonumber(charData.height) or 175
@@ -230,11 +232,17 @@ function CreateRPPlayer(source, identifier, charData)
         local jobObj = exports['rp_jobs']:GetJob(self.job) or { label = self.job }
         local gradeData = exports['rp_jobs']:GetJobGrade(self.job, self.jobGrade) or { label = 'Grade ' .. self.jobGrade }
         TriggerClientEvent('rp_core:client:setPlayerData', self.source, {
+            isLoaded = self.isLoaded == true,
+            source = self.source,
             identifier = self.identifier,
             charId = self.charId,
             characterSlot = self.slot,
             firstname = self.firstname,
             lastname = self.lastname,
+            name = self.name,
+            dateofbirth = self.dateofbirth,
+            sex = self.sex,
+            height = self.height,
             cash = self.cash,
             bank = self.bank,
             job = self.job,
@@ -242,8 +250,12 @@ function CreateRPPlayer(source, identifier, charData)
             jobGrade = self.jobGrade,
             jobGradeLabel = gradeData.label,
             group = self.group,
+            duty = self.duty == true,
             hunger = self.metadata.hunger,
-            thirst = self.metadata.thirst
+            thirst = self.metadata.thirst,
+            metadata = self.metadata,
+            position = self.position,
+            skin = self.skin
         })
     end
 
