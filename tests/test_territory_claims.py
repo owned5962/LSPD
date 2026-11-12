@@ -80,6 +80,7 @@ def test_claim_points_have_streamed_npcs_and_reliable_e_interaction():
 def test_free_territory_areas_are_persistently_visible_and_white():
     config = read("resources/[FUNCTION]/rp_territories/shared/config.lua")
     client = read("resources/[FUNCTION]/rp_territories/client/main.lua")
+    server = read("resources/[FUNCTION]/rp_territories/server/main.lua")
     assert "Config.AreaAlphaFree = 255" in config
     assert "Config.ServerValidationDistance = 1.5" in config
     assert "SetBlipColour(area, color)" in client
