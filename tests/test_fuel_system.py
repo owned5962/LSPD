@@ -67,6 +67,9 @@ def test_fuel_interaction_targets_individual_gas_pumps_with_e():
     assert "prop_vintage_pump" in client
     assert "nearestPump(playerCoords, 1.0)" in client
     assert "nearestPump(vehicleCoords, 1.0)" in client
+    assert "currentPumpCoords = GetEntityCoords(pump)" in client
+    assert "GetEntityCoords(vehicle) - currentPumpCoords) > 1.0" in client
+    assert "Tablette fermée : vous avez quitté la pompe." in client
     assert "vehicleNearPump" in client
     assert "prop_gas_pump_old4" in client
     assert "IsControlJustReleased(0, 38)" in client
