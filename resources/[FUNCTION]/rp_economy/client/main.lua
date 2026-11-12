@@ -71,7 +71,7 @@ local function OpenBankUI(isATM)
     if isBankOpen then return end
     local locationLabel
     if isATM then
-        local atm = GetNearbyATM(2.0)
+        local atm = GetNearbyATM(1.0)
         if atm == 0 then
             notify('Approchez-vous d’un distributeur automatique.', 'error')
             return
@@ -230,7 +230,7 @@ CreateThread(function()
     while true do
         local waitTime = 900
         if not isBankOpen then
-            local nearbyBank, bankDistance = GetNearbyBank(12.0)
+            local nearbyBank, bankDistance = GetNearbyBank(1.0)
             local atm = GetNearbyATM(2.0)
             if atm ~= 0 then
                 waitTime = 0
@@ -239,7 +239,7 @@ CreateThread(function()
                     activePrompt = 'atm'
                 end
                 if IsControlJustReleased(0, 38) then OpenBankUI(true) end
-            elseif nearbyBank and bankDistance < 2.2 then
+            elseif nearbyBank and bankDistance <= 1.0 then
                 waitTime = 0
                 if activePrompt ~= 'bank' then
                     exports['rp_ui']:ShowTextUI('[E] Accéder au guichet bancaire')
@@ -257,7 +257,7 @@ CreateThread(function()
         else
             waitTime = 250
             if activePrompt then exports['rp_ui']:HideTextUI(); activePrompt = nil end
-            if openedAt and #(GetEntityCoords(PlayerPedId()) - openedAt) > 8.0 then
+            if openedAt and #(GetEntityCoords(PlayerPedId()) - openedAt)  > 1.0 then
                 CloseBankUI()
                 notify('Session bancaire fermée : vous vous êtes éloigné du terminal.', 'warning')
             end
