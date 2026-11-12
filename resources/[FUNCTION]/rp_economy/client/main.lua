@@ -79,7 +79,7 @@ local function OpenBankUI(isATM)
         locationLabel = 'Distributeur automatique · 24/7'
         openedAt = GetEntityCoords(atm)
     else
-        local bank = GetNearbyBank(3.0)
+        local bank = GetNearbyBank(1.0)
         if not bank then
             notify('Approchez-vous du guichet d’une agence bancaire.', 'error')
             return
@@ -231,7 +231,7 @@ CreateThread(function()
         local waitTime = 900
         if not isBankOpen then
             local nearbyBank, bankDistance = GetNearbyBank(1.0)
-            local atm = GetNearbyATM(2.0)
+            local atm = GetNearbyATM(1.0)
             if atm ~= 0 then
                 waitTime = 0
                 if activePrompt ~= 'atm' then
