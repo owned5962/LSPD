@@ -1,7 +1,7 @@
 local stolen = {}
 local pendingSteals = {}
-local TIRE_ACTION_SECONDS = 7
-local TIRE_ACTION_TIMEOUT_SECONDS = 60
+local TIRE_ACTION_DURATION_MS = 6500
+local TIRE_ACTION_TIMEOUT_MS = 60000
 local MAX_PLAYER_DISTANCE = 4.0
 local MAX_VEHICLE_MOVEMENT = 2.0
 
@@ -98,7 +98,7 @@ RegisterNetEvent('rp_vehicle_loot:server:startTire', function(rawNetId, rawWheel
         wheel = wheel,
         charId = player.charId,
         vehicle = vehicle,
-        startedAt = os.time(),
+        startedAt = GetGameTimer(),
         vehicleStartCoords = GetEntityCoords(vehicle)
     }
 end)
@@ -122,8 +122,8 @@ RegisterNetEvent('rp_vehicle_loot:server:completeTire', function(rawNetId, rawWh
         return
     end
 
-    local elapsed = os.time() - pending.startedAt
-    if elapsed < TIRE_ACTION_SECONDS or elapsed > TIRE_ACTION_TIMEOUT_SECONDS then
+    local elapsed = GetGameTimer() - pending.startedAt
+    if elapsed < TIRE_ACTION_DURATION_MS or elapsed > TIRE_ACTION_TIMEOUT_MS then
         pendingSteals[src] = nil
         notify(src, 'Délai de démontage invalide. Recommencez.')
         return
