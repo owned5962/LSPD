@@ -17,6 +17,10 @@ def test_dealership_interaction_is_visible_and_server_reports_open_failures():
     assert "DrawMarker(2" in client
     assert "IsControlJustReleased(0, 38)" in client
     assert "Connexion au concessionnaire" in client
+    assert "dealerOpeningId = nearest.id" in client
+    assert "SetTimeout(5000" in client
+    assert "rp_vehicle_dealership:client:openDenied" in client
+    assert "Catalogue fermé : vous avez quitté la zone du concessionnaire." in client
     assert "Patientez avant de rouvrir le catalogue." in server
     assert "Vous devez être à moins de 1,5 mètre" in server
 
