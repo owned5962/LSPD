@@ -151,13 +151,17 @@ CreateThread(function()
 
             if nearest and distance <= Config.InteractionDistance then
                 sleep = 0
+                DrawMarker(2, nearest.coords.x, nearest.coords.y, nearest.coords.z + 0.15,
+                    0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.22, 0.22, 0.22,
+                    201, 164, 93, 190, false, true, 2, false, nil, nil, false)
                 if not promptVisible then
-                    exports['rp_ui']:ShowTextUI('[E] Consulter le catalogue du concessionnaire')
+                    exports['rp_ui']:ShowTextUI('[E] Ouvrir le catalogue véhicules')
                     promptVisible = true
                 end
                 if IsControlJustReleased(0, 38) then
+                    notify('Connexion au concessionnaire…', 'info')
                     TriggerServerEvent('rp_vehicle_dealership:server:open', nearest.id)
-                    Wait(350)
+                    Wait(500)
                 end
             else
                 hidePrompt()
