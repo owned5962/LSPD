@@ -26,3 +26,22 @@ h1{margin:4px 0 0;font-size:17px;letter-spacing:.2px}
 .empty{text-align:center;padding:30px 20px;border:1px dashed #34465f;border-radius:12px;color:#93a4ba}.empty div{font-size:35px;color:#60a5fa}.empty strong{display:block;color:#dbeafe;font-size:13px;margin-top:8px}.empty p{font-size:10px;max-width:380px;line-height:1.6;margin:7px auto 0}
 footer{border-top:1px solid rgba(148,163,184,.12);padding-top:14px;margin-top:21px;color:#5d718c;font-size:8px;letter-spacing:1.4px}
 @media(max-width:620px){#garage{padding:19px 16px}.hero{padding:18px}.hero h2{font-size:20px}.hero-icon{display:none}.vehicle-card{grid-template-columns:1fr}.vehicle-art{min-height:75px}.vehicle-art span{font-size:36px}}
+
+#tuning{width:min(620px,94vw);max-height:88vh;overflow:auto;padding:27px 30px 19px;background:linear-gradient(145deg,rgba(9,16,29,.985),rgba(18,31,49,.985));border:1px solid rgba(125,170,220,.22);border-radius:19px;box-shadow:0 28px 100px rgba(0,0,0,.65)}
+.tuning-hero{margin-top:25px}
+.tuning-hero p strong{color:#dbeafe;letter-spacing:1px}
+.tuning-card{padding:22px;border:1px solid rgba(148,163,184,.16);border-radius:14px;background:rgba(7,15,28,.55)}
+.tuning-card>label,.tuning-level label{display:block;font-size:9px;letter-spacing:1.5px;font-weight:800;color:#91a7c2;margin-bottom:9px}
+#tuning-category{width:100%;padding:13px;border:1px solid #354b67;border-radius:9px;background:#0b192b;color:#e7edf7;font-size:12px;outline:none}
+.tuning-level{display:flex;justify-content:space-between;align-items:center;margin-top:24px}
+.tuning-level label{margin:0}
+.tuning-level strong{font-size:12px;color:#7dd3fc}
+#tuning-level{width:100%;margin:20px 0 6px;accent-color:#0ea5e9;cursor:pointer}
+.range-labels{display:flex;justify-content:space-between;font-size:9px;color:#71849c}
+.price-preview{display:flex;justify-content:space-between;align-items:center;margin-top:24px;padding:16px;border:1px solid rgba(56,189,248,.18);border-radius:10px;background:rgba(14,116,144,.1)}
+.price-preview span{font-size:9px;letter-spacing:1.2px;color:#9bb2c9;font-weight:800}
+.price-preview strong{font-size:19px;color:#86efac}
+#tuning-status{min-height:32px;font-size:10px;line-height:1.6;color:#94a3b8;margin:14px 0}
+#tuning-buy{padding:13px 15px}
+#tuning-buy:disabled{opacity:.55;cursor:wait}
+@media(max-width:620px){#tuning{padding:19px 16px}}
