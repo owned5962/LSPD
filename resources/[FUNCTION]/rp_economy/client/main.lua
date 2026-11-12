@@ -86,12 +86,21 @@ local function OpenBankUI(isATM)
         openedAt = vector3(bank.x, bank.y, bank.z)
     end
 
+    local readyOk, ready = pcall(function()
+        return exports['rp_core']:WaitForPlayerLoaded(5000)
+    end)
+    if not readyOk or ready ~= true then
+        openedAt = nil
+        notify('Les données de votre personnage ne sont pas encore synchronisées. Réessayez dans quelques secondes.', 'warning')
+        return
+    end
+
     local ok, playerData = pcall(function()
         return exports['rp_core']:GetPlayerData()
     end)
     if not ok or type(playerData) ~= 'table' or not tonumber(playerData.charId) then
         openedAt = nil
-        notify('Votre personnage doit être chargé pour accéder à votre compte.', 'error')
+        notify('Les données du personnage sont indisponibles. Réessayez dans quelques secondes.', 'error')
         return
     end
 
