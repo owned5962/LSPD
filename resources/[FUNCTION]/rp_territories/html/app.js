@@ -73,7 +73,7 @@ function openPanel(info) {
     const territoryName = document.getElementById('territory-name');
     territoryName.value = String(info.territoryName || `Territoire ${info.sectorId || ''}`).slice(0, 64);
     document.getElementById('owner-name').textContent = String(info.ownerName || 'Aucun propriétaire');
-    document.getElementById('bank-balance').textContent = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(Number(info.bankBalance) || 0) + ' 
+    document.getElementById('bank-balance').textContent = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(Number(info.bankBalance) || 0) + ' ' + String.fromCharCode(36);
     const status = document.getElementById('status');
     const occupiedByOther = info.occupied && !info.isOwner;
     if (info.isOwner) {
