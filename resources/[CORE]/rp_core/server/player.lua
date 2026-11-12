@@ -49,7 +49,7 @@ function CreateRPPlayer(source, identifier, charData)
     self.job = charData.job or 'unemployed'
     self.jobGrade = tonumber(charData.job_grade) or 0
     self.group = charData.group or 'user'
-    self.duty = true
+    self.duty = false
 
     local savedMetadata = charData.metadata
     if type(savedMetadata) == 'string' and savedMetadata ~= '' then
