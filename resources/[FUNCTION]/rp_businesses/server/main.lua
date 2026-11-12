@@ -129,8 +129,8 @@ end)
 local AMMUNATION_PISTOL_PRICE = 500
 local AMMUNATION_PISTOL_WEAPON = 'WEAPON_PISTOL'
 
-local AMMUNATION_INTERACTION_RADIUS = 12.0
-local AMMUNATION_VERTICAL_TOLERANCE = 12.0
+local AMMUNATION_INTERACTION_RADIUS = 1.5
+local AMMUNATION_VERTICAL_TOLERANCE = 2.0
 
 local function getAmmunationLocations()
     local locations = {}
@@ -345,7 +345,7 @@ end
 RegisterNetEvent('rp_businesses:server:requestStore', function()
     local src = source
     if not exports['rp_core']:CanPerformAction(src, 'businesses:open_store', 1000) then return end
-    local player = getPlayerAtStore(src, 3.0)
+    local player = getPlayerAtStore(src, 1.5)
     if not player then
         TriggerClientEvent('rp_core:client:notify', src, 'Approchez-vous du vendeur de la supérette.', 'error')
         return
@@ -368,7 +368,7 @@ RegisterNetEvent('rp_businesses:server:buyStoreItem', function(itemName)
         return
     end
 
-    local player = getPlayerAtStore(src, 4.0)
+    local player = getPlayerAtStore(src, 1.5)
     if not player then
         TriggerClientEvent('rp_businesses:client:storePurchaseResult', src, {
             success = false, message = 'Achat refusé : vous êtes trop loin de la boutique.',
