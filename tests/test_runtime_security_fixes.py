@@ -19,6 +19,8 @@ class RuntimeSecurityFixTests(unittest.TestCase):
         self.assertIn("vehicleFuel[netId] = currentFuel", server)
         self.assertIn("currentFuel < 0 or currentFuel > 100", server)
         self.assertIn("GetAllVehicles()", server)
+        self.assertIn("initializeVehicleFuel(vehicle, true)", server)
+        self.assertIn("cancelRefuel(netId, pending, 'le véhicule a été supprimé')", server)
         self.assertNotIn("Entity(vehicle).state:set('rpFuel'", client)
         self.assertIn("TriggerServerEvent('rp_fuel:server:purchase', currentNetId, litres, payment)", client)
 
