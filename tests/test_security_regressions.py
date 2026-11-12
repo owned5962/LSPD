@@ -1218,7 +1218,7 @@ def test_inventory_and_admin_hotkeys_do_not_close_their_own_newly_opened_nui():
     inventory = read("resources/[FUNCTION]/rp_inventory/html/js/app.js")
     admin = read("resources/[FUNCTION]/rp_tablet_admin/html/js/app.js")
     assert "e.key === 'Escape' || e.key === 'F2'" not in inventory
-    assert "if (e.key === 'Escape')" in inventory
+    assert "if (event.key === 'Escape')" in inventory
     assert "event.key !== 'Escape' && event.key !== 'F10'" not in admin
     assert "if (event.key !== 'Escape') return;" in admin
 
