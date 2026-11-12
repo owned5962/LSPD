@@ -244,7 +244,7 @@ CreateThread(function()
             for key, location in pairs(Config.Locations) do
                 local p = location.ped
                 local distance = #(coords - vector3(p.x, p.y, p.z))
-                if distance < (nearestDistance or 2.0) then
+                if not nearestDistance or distance < nearestDistance then
                     nearestKey, nearestDistance = key, distance
                 end
             end
