@@ -1,3 +1,39 @@
+RegisterNetEvent('rp_clothing:purchaseHair', function(rawStyle, rawColor, rawHighlight)
+    local src = source
+    local player = exports['rp_core']:GetPlayerFromId(src)
+    local style, color, highlight = tonumber(rawStyle), tonumber(rawColor), tonumber(rawHighlight) or 0
+    if not player or not style or not color or style % 1 ~= 0 or color % 1 ~= 0
+        or highlight % 1 ~= 0 or style < 0 or style > 200 or color < 0 or color > 63
+        or highlight < 0 or highlight > 63 then
+        TriggerClientEvent('rp_clothing:barberPurchaseResult', src, { success = false, message = 'Choix de coiffure invalide.' })
+        return
+    end
+
+    local price = 100
+    if type(player.removeCash) ~= 'function' or not player.removeCash(price) then
+        TriggerClientEvent('rp_clothing:barberPurchaseResult', src, { success = false, message = 'Fonds insuffisants : 100 $ en liquide requis.' })
+        return
+    end
+
+    local skin = type(player.skin) == 'table' and player.skin or {}
+    local previousStyle, previousColor, previousHighlight = skin.hairStyle, skin.hairColor, skin.hairHighlight
+    skin.hairStyle, skin.hairColor, skin.hairHighlight = style, color, highlight
+    local ok, result = pcall(MySQL.update.await,
+        'UPDATE characters SET skin = ? WHERE id = ? AND identifier = ?',
+        { json.encode(skin), player.charId, player.identifier }
+    )
+    if not ok or type(result) ~= 'number' or result < 0 then
+        skin.hairStyle, skin.hairColor, skin.hairHighlight = previousStyle, previousColor, previousHighlight
+        player.addCash(price)
+        TriggerClientEvent('rp_clothing:barberPurchaseResult', src, { success = false, message = 'Sauvegarde impossible : paiement remboursé.' })
+        print(('[rp_clothing] Barber save failed for character %s: %s'):format(player.charId, tostring(result)))
+        return
+    end
+
+    player.skin = skin
+    TriggerClientEvent('rp_clothing:barberPurchaseResult', src, { success = true, message = 'Nouvelle coupe enregistrée pour 100 $.' })
+end)
+
 local function Notify(src, message, kind)
     TriggerClientEvent('rp_core:client:notify', src, message, kind or 'info')
 end
