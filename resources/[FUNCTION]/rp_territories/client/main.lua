@@ -94,7 +94,6 @@ RegisterNetEvent('rp_territories:client:openMenu', function(info)
     end
     DebugLog('info', 'OPEN_MENU_RECEIVED', ('secteur=%s'):format(tostring(info.sectorId)))
     uiOpen = true
-    HideTerritoryPrompt()
     activeSectorId = tostring(info.sectorId or '')
     SetNuiFocus(true, true)
     SendNUIMessage({ action = 'open', info = info })
