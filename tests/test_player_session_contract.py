@@ -18,8 +18,8 @@ def test_server_player_registry_only_exposes_fully_loaded_characters():
     assert "json.decode(json.encode(value))" in server
     assert "exports('RegisterPlayer', RegisterPlayer)" in server
     assert "exports('UnregisterPlayer', UnregisterPlayer)" in server
-    assert "TriggerEvent('rp_core:server:playerLoaded', src, player)" in server
-    assert "TriggerEvent('rp_core:server:playerUnloaded', src, player)" in server
+    assert "TriggerEvent('rp_core:server:playerLoaded', src, ClonePlayerRecord(player))" in server
+    assert "TriggerEvent('rp_core:server:playerUnloaded', src, ClonePlayerRecord(player))" in server
     assert "RegisterPlayer(src, createdPlayer)" in characters
     assert "UnregisterPlayer(src, identifier)" in characters
     assert "self.isLoaded = true" in player
