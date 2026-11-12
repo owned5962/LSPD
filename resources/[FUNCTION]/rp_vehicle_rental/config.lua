@@ -4,7 +4,7 @@ Config.PricePerTenMinutes = 100
 Config.MinMinutes = 10
 Config.MaxHours = 12
 Config.ExpiryGraceSeconds = 60
-Config.InteractionDistance = 2.0
+Config.InteractionDistance = 3.5
 Config.PedModel = 's_m_m_autoshop_02'
 
 -- Les points correspondent aux choix de première apparition du créateur.
@@ -12,22 +12,22 @@ Config.PedModel = 's_m_m_autoshop_02'
 Config.Locations = {
     airport = {
         label = 'Aéroport de Los Santos',
-        ped = vector4(-1037.7, -2745.0, 20.1, 330.0),
+        ped = vector4(-1035.45, -2741.10, 20.1, 330.0),
         vehicle = vector4(-1032.4, -2727.6, 20.1, 330.0)
     },
     train = {
         label = 'Gare Centrale',
-        ped = vector4(432.2, -626.8, 28.5, 220.0),
+        ped = vector4(435.09, -630.25, 28.5, 220.0),
         vehicle = vector4(439.0, -627.8, 28.5, 220.0)
     },
     hospital = {
         label = 'Hôpital',
-        ped = vector4(298.5, -584.5, 43.2, 70.0),
+        ped = vector4(294.27, -582.96, 43.2, 70.0),
         vehicle = vector4(307.0, -583.0, 43.2, 70.0)
     },
     jobcenter = {
         label = 'Pôle Emploi',
-        ped = vector4(-268.3, -956.8, 31.2, 205.0),
+        ped = vector4(-266.40, -960.88, 31.2, 205.0),
         vehicle = vector4(-260.5, -958.5, 31.2, 205.0)
     }
 }
