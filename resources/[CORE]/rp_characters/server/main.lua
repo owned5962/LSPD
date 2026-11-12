@@ -137,8 +137,9 @@ local function LoadCharacter(src, identifier, userGroup, char)
         return createdPlayer
     end)
     if not loadOk or not player then
-        local activePlayers = exports['rp_core']:GetAllPlayers()
-        if activePlayers then activePlayers[src] = nil end
+        pcall(function()
+            exports['rp_core']:UnregisterPlayer(src, identifier)
+        end)
         print(('[rp_characters] Failed to initialize character for player %s: %s')
             :format(tostring(src), tostring(player)))
         Notify(src, 'Impossible de finaliser le chargement du personnage. Consultez la console serveur.', 'error')
