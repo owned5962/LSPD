@@ -49,6 +49,7 @@ end)
 AddEventHandler('onClientResourceStop', function(resourceName)
     if resourceName ~= GetCurrentResourceName() then return end
     stopClothingCamera()
+    if clothingPromptVisible then exports['rp_ui']:HideTextUI(); clothingPromptVisible = false end
     SetNuiFocus(false, false)
 end)
 local clothingShops = {
