@@ -10,8 +10,8 @@ Config.PedDespawnDistance = 190.0
 Config.AreaSize = 500.0
 Config.AreaAlphaFree = 255
 Config.AreaAlphaOwned = 190
-Config.PointBlipSprite = 1
-Config.PointBlipScale = 0.42
+Config.PointBlipSprite = 38
+Config.PointBlipScale = 0.65
 
 Config.Colors = {
     { id = 1, name = 'Rouge', hex = '#ef4444' },
