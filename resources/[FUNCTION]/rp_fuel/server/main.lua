@@ -92,13 +92,16 @@ local function completeRefuel(netId, pending)
     end
 
     local player = exports['rp_core']:GetPlayerFromId(pending.source)
-    if player and player.charId == pending.charId then
-        local ped = GetPlayerPed(pending.source)
-        if ped == 0 or not DoesEntityExist(ped)
-            or #(GetEntityCoords(ped) - vehicleCoords) > FuelConfig.VehiclePlayerRadius then
-            cancelRefuel(netId, pending, 'vous vous êtes éloigné du véhicule')
-            return
-        end
+    if not player or player.charId ~= pending.charId then
+        cancelRefuel(netId, pending, 'le personnage a été déconnecté')
+        return
+    end
+
+    local ped = GetPlayerPed(pending.source)
+    if ped == 0 or not DoesEntityExist(ped)
+        or #(GetEntityCoords(ped) - vehicleCoords) > FuelConfig.VehiclePlayerRadius then
+        cancelRefuel(netId, pending, 'vous vous êtes éloigné du véhicule')
+        return
     end
 
     local serverFuel = vehicleFuel[netId]
