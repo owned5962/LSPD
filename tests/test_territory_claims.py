@@ -91,4 +91,6 @@ def test_free_territory_areas_are_persistently_visible_and_white():
     assert "local point = pointBlips[index]" in build_map
     assert "MENU_AUTO_CLOSED" in client
     assert "vector3(sector.x, sector.y, sector.z)) > 1.0" in client
+    assert "verticalDistance <= 2.0" in client
+    assert "local verticalNear = math.abs(coords.z - sector.z) <= 2.0" in server
 
