@@ -88,10 +88,13 @@ end)
 
 RegisterNetEvent('rp_vehicle_dealership:server:open', function(dealerId)
     local src = source
-    if not exports['rp_core']:CanPerformAction(src, 'vehicle_dealership:open', 1200) then return end
+    if not exports['rp_core']:CanPerformAction(src, 'vehicle_dealership:open', 1200) then
+        notify(src, 'Patientez avant de rouvrir le catalogue.', 'error')
+        return
+    end
     local dealer = findDealer(src)
     if not dealer or dealer.id ~= dealerId then
-        notify(src, 'Vous devez être devant le concessionnaire.', 'error')
+        notify(src, 'Vous devez être à moins de 1,5 mètre du point d’accueil du concessionnaire.', 'error')
         return
     end
     local player = exports['rp_core']:GetPlayerFromId(src)
