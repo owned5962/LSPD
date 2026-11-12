@@ -116,7 +116,7 @@ def test_core_rejects_invalid_character_identity_and_never_falls_back_to_id_one(
     assert "self.isDead == true and 1 or 0" in player
     assert "exports('GetPlayerSnapshot', GetPlayerSnapshot)" in server
     assert "charId = player.charId" in server
-    assert "activePlayer.identifier == player.identifier or tonumber(activePlayer.charId) == characterId" in server
+    assert "activePlayer.identifier == identifier or tonumber(activePlayer.charId) == characterId" in server
 
 
 def test_identifier_lookup_does_not_expose_the_live_player_record():
