@@ -411,6 +411,26 @@ RegisterNetEvent('rp_garages:server:purchaseUpgrade', function(rawNetId, rawModT
         return
     end
 
+    local savedProps = {}
+    if type(owned.vehicle_props) == 'string' and owned.vehicle_props ~= '' then
+        local decodedOk, decoded = pcall(json.decode, owned.vehicle_props)
+        if decodedOk and type(decoded) == 'table' then savedProps = decoded end
+    end
+    local savedIndex
+    if category.toggle then
+        savedIndex = savedProps[category.id] == true and 1 or 0
+    else
+        savedIndex = type(savedProps.mods) == 'table' and tonumber(savedProps.mods[tostring(modType)]) or -1
+    end
+    if originalIndex ~= savedIndex then
+        notify(src, 'État du véhicule modifié : ferme et rouvre l’atelier avant de payer.', 'warning')
+        return
+    end
+    if modIndex == savedIndex then
+        notify(src, 'Cette amélioration est déjà installée.', 'info')
+        return
+    end
+
     local price = category.basePrice * (category.toggle and 1 or (modIndex + 1))
     if price < 1 or price > 100000 then return end
     if (tonumber(player.bank) or 0) < price then
