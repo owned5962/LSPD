@@ -28,6 +28,12 @@ def test_all_confirmed_offences_have_server_owned_labels():
     assert "Config.Offences[offence]" in server
     assert "CanPerformAction" in server
 
+
+def test_server_position_validation_uses_server_supported_health_native():
+    server = read("resources/[FUNCTION]/rp_police_interaction/server/main.lua")
+    assert "GetEntityHealth(ped) <= 0" in server
+    assert "IsEntityDead(ped)" not in server
+
 def test_surrender_and_refusal_have_distinct_server_and_client_paths():
     client = read("resources/[FUNCTION]/rp_police_interaction/client/main.lua")
     server = read("resources/[FUNCTION]/rp_police_interaction/server/main.lua")
