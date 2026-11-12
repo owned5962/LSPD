@@ -15,8 +15,11 @@ class RuntimeSecurityFixTests(unittest.TestCase):
 
         self.assertIn("function(rawNetId, rawLitres, payment)", server)
         self.assertNotIn("rawCurrentFuel", server)
-        self.assertIn("tonumber(Entity(vehicle).state.rpFuel)", server)
+        self.assertIn("local currentFuel = vehicleFuel[netId]", server)
+        self.assertIn("vehicleFuel[netId] = currentFuel", server)
         self.assertIn("currentFuel < 0 or currentFuel > 100", server)
+        self.assertIn("GetAllVehicles()", server)
+        self.assertNotIn("Entity(vehicle).state:set('rpFuel'", client)
         self.assertIn("TriggerServerEvent('rp_fuel:server:purchase', currentNetId, litres, payment)", client)
 
     def test_tire_reward_requires_a_server_timed_session_and_revalidation(self):
@@ -32,6 +35,9 @@ class RuntimeSecurityFixTests(unittest.TestCase):
         self.assertIn("GetVehiclePedIsIn(ped, false) ~= 0", server)
         self.assertIn("GetEntitySpeed(vehicle) > 0.5", server)
         self.assertIn("pending.vehicleStartCoords", server)
+        self.assertIn("GetPlayerInventory(src)", server)
+        self.assertIn("item.name == 'repairkit'", server)
+        self.assertNotIn("IsPedArmed", client)
         self.assertIn("rp_vehicle_loot:server:startTire", client)
         self.assertIn("rp_vehicle_loot:server:completeTire", client)
         self.assertIn("rp_vehicle_loot:server:cancelTire", client)
