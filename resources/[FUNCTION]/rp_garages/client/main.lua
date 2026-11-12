@@ -4,6 +4,9 @@ local tabletOpen = false
 local currentGarage = nil
 local garageOpening = nil
 local pendingVehicle = nil
+local tuningOpen = false
+local tuningVehicle = nil
+local tuningOriginal = {}
 
 local function notify(message, kind)
     TriggerEvent('rp_core:client:notify', message, kind or 'info')
@@ -105,6 +108,112 @@ local function applyVehicleProperties(vehicle, props)
     if tonumber(props.livery) and tonumber(props.livery) >= 0 then SetVehicleLivery(vehicle, tonumber(props.livery)) end
     if tonumber(props.modLivery) then SetVehicleMod(vehicle, 48, tonumber(props.modLivery), false) end
 end
+
+local function applyTuningOption(vehicle, modType, modIndex)
+    local category = Config.TuningCategories[modType]
+    if not category then return false end
+    if category.toggle then
+        ToggleVehicleMod(vehicle, modType, modIndex == 1)
+    else
+        SetVehicleModKit(vehicle, 0)
+        SetVehicleMod(vehicle, modType, modIndex, false)
+    end
+    return true
+end
+
+local function restoreTuningPreview()
+    if tuningVehicle and DoesEntityExist(tuningVehicle) then
+        for modType, originalIndex in pairs(tuningOriginal) do
+            applyTuningOption(tuningVehicle, tonumber(modType), originalIndex)
+        end
+    end
+end
+
+local function closeTuning()
+    if not tuningOpen then return end
+    restoreTuningPreview()
+    tuningOpen = false
+    tuningVehicle = nil
+    tuningOriginal = {}
+    SetNuiFocus(false, false)
+    SendNUIMessage({ action = 'closeTuning' })
+end
+
+RegisterNetEvent('rp_garages:client:openTuning', function(data)
+    if type(data) ~= 'table' then return end
+    local ped = PlayerPedId()
+    local vehicle = GetVehiclePedIsIn(ped, false)
+    if vehicle == 0 or GetPedInVehicleSeat(vehicle, -1) ~= ped
+        or NetworkGetNetworkIdFromEntity(vehicle) ~= tonumber(data.netId) then
+        notify('Remonte au volant de ton véhicule pour le personnaliser.', 'error')
+        return
+    end
+
+    tuningVehicle = vehicle
+    tuningOriginal = {}
+    local categories = {}
+    SetVehicleModKit(vehicle, 0)
+    for modType, definition in pairs(Config.TuningCategories) do
+        local count = definition.toggle and 2 or GetNumVehicleMods(vehicle, modType)
+        if count and count > 0 then
+            local current = definition.toggle and (IsToggleModOn(vehicle, modType) and 1 or 0) or GetVehicleMod(vehicle, modType)
+            tuningOriginal[tostring(modType)] = current
+            categories[#categories + 1] = {
+                modType = modType,
+                id = definition.id,
+                label = definition.label,
+                basePrice = definition.basePrice,
+                maxIndex = definition.toggle and 1 or math.min(count - 1, definition.maxIndex),
+                current = definition.toggle and 0 or math.max(0, current),
+                toggle = definition.toggle == true
+            }
+        end
+    end
+    table.sort(categories, function(a, b) return a.modType < b.modType end)
+    if #categories == 0 then
+        notify('Aucune amélioration compatible sur ce véhicule.', 'warning')
+        return
+    end
+
+    tuningOpen = true
+    hidePrompt()
+    SetNuiFocus(true, true)
+    SendNUIMessage({
+        action = 'openTuning',
+        workshop = data.workshop or 'Atelier mécanique',
+        plate = data.plate or GetVehicleNumberPlateText(vehicle),
+        categories = categories
+    })
+end)
+
+RegisterNetEvent('rp_garages:client:applyPurchasedTune', function(modType, modIndex)
+    modType, modIndex = tonumber(modType), tonumber(modIndex)
+    if not tuningOpen or not tuningVehicle or not DoesEntityExist(tuningVehicle)
+        or not applyTuningOption(tuningVehicle, modType, modIndex) then
+        TriggerServerEvent('rp_garages:server:saveTune', 0, {})
+        return
+    end
+    local props = captureVehicleProperties(tuningVehicle)
+    TriggerServerEvent('rp_garages:server:saveTune',
+        NetworkGetNetworkIdFromEntity(tuningVehicle), props)
+end)
+
+RegisterNetEvent('rp_garages:client:tuneSaved', function(modType, modIndex, price)
+    modType, modIndex = tonumber(modType), tonumber(modIndex)
+    if modType then tuningOriginal[tostring(modType)] = modIndex end
+    SendNUIMessage({ action = 'tuneSaved', modType = modType, modIndex = modIndex })
+    notify(('Amélioration installée et sauvegardée : %s $.'):format(tonumber(price) or 0), 'success')
+end)
+
+RegisterNetEvent('rp_garages:client:tuneRollback', function(modType, originalIndex, message)
+    modType, originalIndex = tonumber(modType), tonumber(originalIndex) or -1
+    if tuningVehicle and DoesEntityExist(tuningVehicle) then
+        applyTuningOption(tuningVehicle, modType, originalIndex)
+    end
+    if modType then tuningOriginal[tostring(modType)] = originalIndex end
+    SendNUIMessage({ action = 'tuneRollback', modType = modType, modIndex = originalIndex })
+    notify(message or 'La personnalisation a été annulée.', 'error')
+end)
 
 local function createBlips()
     for _, garage in ipairs(Config.Garages) do
@@ -212,6 +321,35 @@ RegisterNUICallback('retrieveVehicle', function(data, cb)
     cb({ ok = true })
 end)
 
+RegisterNUICallback('previewTune', function(data, cb)
+    local modType = type(data) == 'table' and tonumber(data.modType)
+    local modIndex = type(data) == 'table' and tonumber(data.modIndex)
+    if tuningOpen and tuningVehicle and DoesEntityExist(tuningVehicle)
+        and modType and modIndex and Config.TuningCategories[modType] then
+        applyTuningOption(tuningVehicle, modType, modIndex)
+    end
+    cb({ ok = true })
+end)
+
+RegisterNUICallback('buyTune', function(data, cb)
+    local modType = type(data) == 'table' and tonumber(data.modType)
+    local modIndex = type(data) == 'table' and tonumber(data.modIndex)
+    local originalIndex = modType and tuningOriginal[tostring(modType)]
+    if tuningOpen and tuningVehicle and DoesEntityExist(tuningVehicle)
+        and modType and modIndex and originalIndex ~= nil then
+        TriggerServerEvent('rp_garages:server:purchaseUpgrade',
+            NetworkGetNetworkIdFromEntity(tuningVehicle), modType, modIndex, originalIndex)
+        cb({ ok = true })
+    else
+        cb({ ok = false })
+    end
+end)
+
+RegisterNUICallback('closeTuning', function(_, cb)
+    closeTuning()
+    cb({ ok = true })
+end)
+
 RegisterNUICallback('storeVehicle', function(_, cb)
     if not currentGarage then cb({ ok = false }); return end
     local ped = PlayerPedId()
@@ -227,10 +365,44 @@ RegisterNUICallback('storeVehicle', function(_, cb)
 end)
 
 CreateThread(function()
+    local visible = false
+    while true do
+        local sleep = 700
+        if not tuningOpen and not tabletOpen and not IsPauseMenuActive() then
+            local coords = GetEntityCoords(PlayerPedId())
+            local nearest, distance
+            for _, workshop in ipairs(Config.Workshops or {}) do
+                local current = #(coords - workshop.coords)
+                if current < (distance or Config.InteractionDistance + 1.0) then
+                    nearest, distance = workshop, current
+                end
+            end
+            if nearest and distance <= Config.InteractionDistance then
+                sleep = 0
+                if not visible then
+                    exports['rp_ui']:ShowTextUI('[E] Personnaliser mon véhicule')
+                    visible = true
+                end
+                if IsControlJustReleased(0, 38) then
+                    TriggerServerEvent('rp_garages:server:openWorkshop')
+                end
+            elseif visible then
+                exports['rp_ui']:HideTextUI()
+                visible = false
+            end
+        elseif visible then
+            exports['rp_ui']:HideTextUI()
+            visible = false
+        end
+        Wait(sleep)
+    end
+end)
+
+CreateThread(function()
     createBlips()
     while true do
         local sleep = 700
-        if tabletOpen then
+        if tabletOpen or tuningOpen then
             local activeGarage
             for _, garage in ipairs(Config.Garages) do
                 if garage.id == currentGarage then activeGarage = garage; break end
@@ -279,6 +451,7 @@ end)
 AddEventHandler('onClientResourceStop', function(resourceName)
     if resourceName ~= GetCurrentResourceName() then return end
     closeGarage()
+    closeTuning()
     hidePrompt()
     for _, blip in ipairs(garageBlips) do if DoesBlipExist(blip) then RemoveBlip(blip) end end
     if pendingVehicle and DoesEntityExist(pendingVehicle) then DeleteEntity(pendingVehicle) end
