@@ -2,7 +2,7 @@ fx_version 'cerulean'
 game 'gta5'
 lua54 'yes'
 
-author 'Gautier'
+author 'GAutier'
 description 'Los Santos Stories live loading screen'
 version '1.3.0'
 
