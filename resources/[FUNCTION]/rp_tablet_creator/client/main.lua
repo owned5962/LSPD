@@ -42,10 +42,21 @@ RegisterNetEvent('rp_tablet_creator:client:open', function(role)
     SendNUIMessage({ action = 'open', role = role or 'Créateur' })
     TriggerServerEvent('rp_tablet_creator:server:requestTools')
     TriggerServerEvent('rp_tablet_creator:server:requestAdminTools')
+    TriggerServerEvent('rp_tablet_creator:server:requestOrganizations')
 end)
 
 RegisterNUICallback('close', function(_, cb)
     closeTablet()
+    cb({ ok = true })
+end)
+
+RegisterNUICallback('createJob', function(data, cb)
+    TriggerServerEvent('rp_tablet_creator:server:createJob', data)
+    cb({ ok = true })
+end)
+
+RegisterNUICallback('createGang', function(data, cb)
+    TriggerServerEvent('rp_tablet_creator:server:createGang', data)
     cb({ ok = true })
 end)
 
@@ -132,6 +143,10 @@ RegisterNetEvent('rp_tablet_creator:client:toolsData', function(jobs, blips, map
         catalog = catalog or {}, position = { x = coords.x, y = coords.y, z = coords.z },
         players = players or {}, items = items or {}, settings = settings or {}, modules = modules or {}
     })
+end)
+
+RegisterNetEvent('rp_tablet_creator:client:organizationsData', function(gangs)
+    SendNUIMessage({ action = 'organizationsData', gangs = gangs or {} })
 end)
 
 RegisterNetEvent('rp_tablet_creator:client:adminToolsData', function(data)
