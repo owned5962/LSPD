@@ -1,7 +1,13 @@
 local FrozenPlayers = {}
+local FOUNDER_FIVEM_IDENTIFIER = 'fivem:12219878'
 
 local function IsPlayerFounder(source)
     if IsPlayerAceAllowed(source, 'rp_founder') then return true end
+
+    -- Keep founder identity distinct even when the account's SQL group is admin.
+    for _, identifier in ipairs(GetPlayerIdentifiers(source) or {}) do
+        if identifier == FOUNDER_FIVEM_IDENTIFIER then return true end
+    end
 
     local player = exports['rp_core']:GetPlayerFromId(source)
     local group = player and tostring(player.group or ''):lower() or ''
