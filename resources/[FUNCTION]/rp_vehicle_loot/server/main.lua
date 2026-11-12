@@ -88,6 +88,21 @@ RegisterNetEvent('rp_vehicle_loot:server:startTire', function(rawNetId, rawWheel
         return
     end
 
+    -- The repair kit is a reusable tool; its possession is verified from the
+    -- server inventory cache, never from a client-supplied item name.
+    local inventory = exports['rp_inventory']:GetPlayerInventory(src)
+    local hasRepairKit = false
+    for _, item in ipairs(type(inventory) == 'table' and inventory or {}) do
+        if item.name == 'repairkit' and (tonumber(item.count) or 0) > 0 then
+            hasRepairKit = true
+            break
+        end
+    end
+    if not hasRepairKit then
+        notify(src, 'Vous devez posséder un kit de réparation pour démonter un pneu.')
+        return
+    end
+
     if wheelAlreadyStolen(netId, wheel) then
         notify(src, 'Ce pneu a déjà été démonté.', 'warning')
         return
