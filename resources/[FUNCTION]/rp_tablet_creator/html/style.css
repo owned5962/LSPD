@@ -65,3 +65,19 @@
 [data-tab-panel][hidden]{display:none!important}
 .fuel-settings{margin-top:18px;padding-top:14px;border-top:1px solid #26354a}
 .fuel-settings small{display:block;color:#94a3b8;line-height:1.5;margin:8px 0}
+
+.creator-org-grid { flex:0 0 auto; align-items:start; }
+.creator-org-grid .panel { max-height:none; overflow:visible; }
+.creator-org-grid input:not([type=checkbox]),.creator-org-grid textarea {
+    width:100%; padding:10px 11px; border:1px solid #334761; border-radius:8px;
+    background:#0b1525; color:#e8eef8; font:inherit;
+}
+.creator-org-grid textarea { min-height:70px; resize:vertical; }
+.grade-editor { display:grid; grid-template-columns:minmax(0,1fr) 100px; gap:8px 12px; }
+.grade-editor label { margin:7px 0 0; }
+.grade-editor input { margin-top:5px; }
+.org-list { display:flex; flex-direction:column; gap:7px; max-height:180px; overflow:auto; }
+.org-row { display:flex; align-items:center; gap:10px; padding:9px; border:1px solid #293c56; border-radius:8px; background:#0b1525; font-size:11px; }
+.org-swatch { width:13px; height:13px; border-radius:4px; flex:none; }
+.creator-org-grid input[type=color] { min-height:38px; padding:4px; }
+@media(max-width:800px){.creator-org-grid{grid-template-columns:1fr}}
