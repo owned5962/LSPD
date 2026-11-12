@@ -1,6 +1,6 @@
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]  # Repository root for isolated garage checks; CI validates Lua and NUI syntax too.
+ROOT = Path(__file__).resolve().parents[1]  # Repository root for isolated garage and tuning checks.
 RESOURCE = ROOT / "resources" / "[FUNCTION]" / "rp_garages"
 
 
