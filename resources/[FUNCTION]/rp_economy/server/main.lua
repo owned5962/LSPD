@@ -286,10 +286,29 @@ CreateThread(function()
         Wait(10 * 60 * 1000)
         local allPlayers = exports['rp_core']:GetAllPlayers()
         for src, player in pairs(allPlayers) do
-            local gradeData = exports['rp_jobs']:GetJobGrade(player.job, player.jobGrade)
-            local salary = validAmount(gradeData and gradeData.salary or 150)
-            if salary and player.addBank(salary, 'Salaire - ' .. (player.job or 'Civil'), 'salary') then
-                notify(src, 'Salaire reçu : ' .. formatCurrency(salary), 'success')
+            if type(player) == 'table' and type(player.addBank) == 'function' then
+                local gradeOk, gradeData = pcall(function()
+                    return exports['rp_jobs']:GetJobGrade(player.job, player.jobGrade)
+                end)
+                if not gradeOk then
+                    print(('[rp_economy] Salary grade lookup failed for player %s: %s'):format(
+                        tostring(src), tostring(gradeData)))
+                    gradeData = nil
+                end
+
+                local salary = validAmount(type(gradeData) == 'table' and gradeData.salary or 150)
+                if salary then
+                    -- Isolate player-specific payment failures so one bad return/error object
+                    -- cannot terminate the recurring salary thread for every online player.
+                    local paidOk, paid = pcall(player.addBank, salary,
+                        'Salaire - ' .. tostring(player.job or 'Civil'), 'salary')
+                    if not paidOk then
+                        print(('[rp_economy] Salary payment failed for player %s: %s'):format(
+                            tostring(src), tostring(paid)))
+                    elseif paid == true then
+                        notify(src, 'Salaire reçu : ' .. formatCurrency(salary), 'success')
+                    end
+                end
             end
         end
     end
