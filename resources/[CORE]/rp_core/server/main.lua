@@ -47,6 +47,16 @@ exports('GetPlayerFromId', GetPlayerFromId)
 exports('GetPlayerByIdentifier', GetPlayerByIdentifier)
 exports('GetAllPlayers', GetAllPlayers)
 
+-- Re-send the authoritative character snapshot if rp_core was restarted client-side.
+-- The client cannot provide or override the character data.
+RegisterNetEvent('rp_core:server:requestPlayerDataSync', function()
+    local src = source
+    if not CanPerformAction(src, 'core:request_player_data_sync', 500) then return end
+    local player = Players[tonumber(src)]
+    if not player or not tonumber(player.charId) or type(player.syncClient) ~= 'function' then return end
+    player.syncClient()
+end)
+
 -- Save all connected characters regularly so economy/job changes survive crashes
 -- more reliably than a disconnect-only save.
 CreateThread(function()
