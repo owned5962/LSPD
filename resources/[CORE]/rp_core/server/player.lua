@@ -160,22 +160,33 @@ function CreateRPPlayer(source, identifier, charData)
     end
 
     function self.setJob(jobName, grade)
-        if not exports['rp_jobs']:IsValidJob(jobName) then
+        if GetResourceState('rp_jobs') ~= 'started' then
+            TriggerClientEvent('rp_core:client:notify', self.source, 'Le catalogue des métiers est indisponible. Réessayez plus tard.', 'error')
+            return false
+        end
+
+        local lookupOk, isValid, jobObj = pcall(function()
+            local valid = exports['rp_jobs']:IsValidJob(jobName)
+            return valid, valid and exports['rp_jobs']:GetJob(jobName) or nil
+        end)
+        if not lookupOk or not isValid or type(jobObj) ~= 'table' then
             TriggerClientEvent('rp_core:client:notify', self.source, 'Métier inconnu. Aucun changement appliqué.', 'error')
             return false
         end
-        local jobObj = exports['rp_jobs']:GetJob(jobName)
-        if not jobObj then
-            jobName = 'unemployed'
-            grade = 0
-            jobObj = exports['rp_jobs']:GetJob('unemployed')
-        end
+
         grade = tonumber(grade) or 0
-        if not jobObj.grades or not jobObj.grades[grade] then
+        if grade % 1 ~= 0 or type(jobObj.grades) ~= 'table' or not jobObj.grades[grade] then
             TriggerClientEvent('rp_core:client:notify', self.source, 'Grade invalide pour ce métier.', 'error')
             return false
         end
-        local gradeData = exports['rp_jobs']:GetJobGrade(jobName, grade)
+
+        local gradeOk, gradeData = pcall(function()
+            return exports['rp_jobs']:GetJobGrade(jobName, grade)
+        end)
+        if not gradeOk or type(gradeData) ~= 'table' then
+            TriggerClientEvent('rp_core:client:notify', self.source, 'Impossible de charger le grade du métier.', 'error')
+            return false
+        end
         local previousJob, previousGrade, previousDuty = self.job, self.jobGrade, self.duty
         self.job, self.jobGrade, self.duty = jobName, grade, false
         if not self.save() then
@@ -247,8 +258,20 @@ function CreateRPPlayer(source, identifier, charData)
     end
 
     function self.syncClient()
-        local jobObj = exports['rp_jobs']:GetJob(self.job) or { label = self.job }
-        local gradeData = exports['rp_jobs']:GetJobGrade(self.job, self.jobGrade) or { label = 'Grade ' .. self.jobGrade }
+        -- The core may restart before rp_jobs during maintenance. Keep the
+        -- character session synchronizable even while the job catalogue is offline.
+        local jobObj = { label = self.job }
+        local gradeData = { label = 'Grade ' .. tostring(self.jobGrade) }
+        if GetResourceState('rp_jobs') == 'started' then
+            local lookupOk, resolvedJob, resolvedGrade = pcall(function()
+                return exports['rp_jobs']:GetJob(self.job),
+                    exports['rp_jobs']:GetJobGrade(self.job, self.jobGrade)
+            end)
+            if lookupOk then
+                if type(resolvedJob) == 'table' then jobObj = resolvedJob end
+                if type(resolvedGrade) == 'table' then gradeData = resolvedGrade end
+            end
+        end
         TriggerClientEvent('rp_core:client:setPlayerData', self.source, {
             isLoaded = self.isLoaded == true,
             source = self.source,
