@@ -10,6 +10,14 @@ local function getPlayer(src)
     return exports['rp_core']:GetPlayerFromId(src)
 end
 
+local function lockAction(src, action)
+    local key = tostring(src) .. ':' .. action
+    local now = GetGameTimer()
+    if actionLocks[key] and now - actionLocks[key] < Config.ActionCooldown then return false end
+    actionLocks[key] = now
+    return true
+end
+
 local function getGarage(src, garageId)
     if type(garageId) ~= 'string' then return nil end
     local ped = GetPlayerPed(src)
@@ -21,6 +29,22 @@ local function getGarage(src, garageId)
         end
     end
     return nil
+end
+
+local function findWorkshop(src)
+    local ped = GetPlayerPed(src)
+    if ped == 0 or not DoesEntityExist(ped) then return nil end
+    local coords = GetEntityCoords(ped)
+    for _, workshop in ipairs(Config.Workshops or {}) do
+        if #(coords - workshop.coords) <= Config.ServerInteractionDistance then return workshop end
+    end
+    return nil
+end
+
+local function cleanPlate(value)
+    if type(value) ~= 'string' then return '' end
+    -- Dealership plates are seven characters (AAA 000); discard GTA's trailing padding.
+    return value:sub(1, 7)
 end
 
 local function validProps(rawProps, expectedModel, expectedPlate)
@@ -54,38 +78,71 @@ local function validProps(rawProps, expectedModel, expectedPlate)
     for _, key in ipairs({ 'turbo', 'xenon', 'tyreSmoke', 'bulletProofTyres' }) do
         if rawProps[key] ~= nil then props[key] = rawProps[key] == true end
     end
-
-    for _, key in ipairs({ 'neonEnabled' }) do
-        if type(rawProps[key]) == 'table' then
-            props[key] = {}
-            for i = 1, 4 do props[key][i] = rawProps[key][i] == true end
-        end
+    if type(rawProps.neonEnabled) == 'table' then
+        props.neonEnabled = {}
+        for i = 1, 4 do props.neonEnabled[i] = rawProps.neonEnabled[i] == true end
     end
-
     if type(rawProps.neonColor) == 'table' then
         props.neonColor = {}
-        for i = 1, 3 do props.neonColor[i] = math.max(0, math.min(255, math.floor(tonumber(rawProps.neonColor[i]) or 0))) end
+        for i = 1, 3 do
+            props.neonColor[i] = math.max(0, math.min(255, math.floor(tonumber(rawProps.neonColor[i]) or 0)))
+        end
     end
     if type(rawProps.customPrimaryColor) == 'table' and #rawProps.customPrimaryColor >= 3 then
         props.customPrimaryColor = {}
-        for i = 1, 3 do props.customPrimaryColor[i] = math.max(0, math.min(255, math.floor(tonumber(rawProps.customPrimaryColor[i]) or 0))) end
+        for i = 1, 3 do
+            props.customPrimaryColor[i] = math.max(0, math.min(255, math.floor(tonumber(rawProps.customPrimaryColor[i]) or 0)))
+        end
     end
     if type(rawProps.customSecondaryColor) == 'table' and #rawProps.customSecondaryColor >= 3 then
         props.customSecondaryColor = {}
-        for i = 1, 3 do props.customSecondaryColor[i] = math.max(0, math.min(255, math.floor(tonumber(rawProps.customSecondaryColor[i]) or 0))) end
+        for i = 1, 3 do
+            props.customSecondaryColor[i] = math.max(0, math.min(255, math.floor(tonumber(rawProps.customSecondaryColor[i]) or 0)))
+        end
     end
     if type(rawProps.livery) == 'number' then props.livery = math.max(-1, math.min(100, math.floor(rawProps.livery))) end
     if type(rawProps.modLivery) == 'number' then props.modLivery = math.max(-1, math.min(100, math.floor(rawProps.modLivery))) end
-
     return props
 end
 
-local function lockAction(src, action)
-    local key = ('%s:%s'):format(src, action)
-    local now = GetGameTimer()
-    if actionLocks[key] and now - actionLocks[key] < Config.ActionCooldown then return false end
-    actionLocks[key] = now
-    return true
+local function getOwnedDrivenVehicle(src, player, rawNetId)
+    local netId = tonumber(rawNetId)
+    if not netId or netId < 1 or netId % 1 ~= 0 then return nil end
+    local ped = GetPlayerPed(src)
+    local vehicle = NetworkGetEntityFromNetworkId(netId)
+    if ped == 0 or vehicle == 0 or not DoesEntityExist(vehicle) or GetEntityType(vehicle) ~= 2
+        or GetPedInVehicleSeat(vehicle, -1) ~= ped
+        or NetworkGetEntityOwner(vehicle) ~= src then return nil end
+
+    local plate = cleanPlate(GetVehicleNumberPlateText(vehicle))
+    local owned = MySQL.single.await([[
+        SELECT id, model, vehicle_props FROM rp_owned_vehicles
+        WHERE plate = ? AND character_id = ? AND identifier = ? AND stored = 0 LIMIT 1
+    ]], { plate, player.charId, player.identifier })
+    if not owned or GetEntityModel(vehicle) ~= GetHashKey(tostring(owned.model)) then return nil end
+    return vehicle, owned, plate, netId
+end
+
+local function refundPendingTune(src, pending, reason, notifyClient)
+    pendingTunes[src] = nil
+    local player = getPlayer(src)
+    local refunded = false
+    if player and type(player.addBank) == 'function' then
+        local ok, result = pcall(player.addBank, pending.price, 'Remboursement personnalisation véhicule', 'deposit')
+        refunded = ok and result == true
+    else
+        local ok, rows = pcall(MySQL.update.await,
+            'UPDATE characters SET bank = bank + ? WHERE id = ? AND identifier = ?',
+            { pending.price, pending.charId, pending.identifier })
+        refunded = ok and tonumber(rows) == 1
+    end
+    if not refunded then
+        print(('[rp_garages] Tuning refund failed for %s: %s'):format(src, tostring(reason)))
+    end
+    if notifyClient ~= false and player then
+        TriggerClientEvent('rp_garages:client:tuneRollback', src, pending.modType, pending.originalIndex,
+            reason or 'La sauvegarde a échoué. Le paiement a été remboursé.')
+    end
 end
 
 MySQL.ready(function()
@@ -133,29 +190,22 @@ RegisterNetEvent('rp_garages:server:open', function(garageId)
         WHERE character_id = ? AND identifier = ?
         ORDER BY id DESC
     ]], { player.charId, player.identifier }) or {}
-
     local vehicles = {}
     for _, row in ipairs(rows) do
         local props
         if type(row.vehicle_props) == 'string' and row.vehicle_props ~= '' then
-            local decodedOk, decoded = pcall(json.decode, row.vehicle_props)
-            if decodedOk and type(decoded) == 'table' then props = decoded end
+            local ok, decoded = pcall(json.decode, row.vehicle_props)
+            if ok and type(decoded) == 'table' then props = decoded end
         end
         vehicles[#vehicles + 1] = {
-            id = tonumber(row.id),
-            plate = tostring(row.plate),
-            model = tostring(row.model),
-            label = tostring(row.label),
-            stored = tonumber(row.stored) == 1,
+            id = tonumber(row.id), plate = tostring(row.plate), model = tostring(row.model),
+            label = tostring(row.label), stored = tonumber(row.stored) == 1,
             fuel = props and tonumber(props.fuelLevel) or 100,
             engine = props and tonumber(props.engineHealth) or 1000
         }
     end
-
     TriggerClientEvent('rp_garages:client:open', src, {
-        garage = garage.id,
-        label = garage.label,
-        vehicles = vehicles
+        garage = garage.id, label = garage.label, vehicles = vehicles
     })
 end)
 
@@ -174,14 +224,12 @@ RegisterNetEvent('rp_garages:server:store', function(garageId, rawNetId, rawProp
     local vehicle = NetworkGetEntityFromNetworkId(netId)
     if vehicle == 0 or not DoesEntityExist(vehicle) or GetEntityType(vehicle) ~= 2
         or GetPedInVehicleSeat(vehicle, -1) ~= ped
-        or #(GetEntityCoords(ped) - garage.coords) > Config.ServerInteractionDistance then
+        or NetworkGetEntityOwner(vehicle) ~= src then
         notify(src, 'Tu dois être conducteur du véhicule près du garage.', 'error')
         return
     end
 
-    local plate = GetVehicleNumberPlateText(vehicle)
-    if type(plate) ~= 'string' then return end
-    plate = plate:gsub('%s+$', '')
+    local plate = cleanPlate(GetVehicleNumberPlateText(vehicle))
     local owned = MySQL.single.await([[
         SELECT id, model, stored FROM rp_owned_vehicles
         WHERE plate = ? AND character_id = ? AND identifier = ? LIMIT 1
@@ -204,7 +252,6 @@ RegisterNetEvent('rp_garages:server:store', function(garageId, rawNetId, rawProp
         notify(src, 'Impossible de sauvegarder les caractéristiques du véhicule.', 'error')
         return
     end
-
     local ok, affected = pcall(MySQL.update.await,
         'UPDATE rp_owned_vehicles SET stored = 1, vehicle_props = ? WHERE id = ? AND character_id = ? AND stored = 0',
         { json.encode(props), owned.id, player.charId })
@@ -212,7 +259,6 @@ RegisterNetEvent('rp_garages:server:store', function(garageId, rawNetId, rawProp
         notify(src, 'Erreur SQL : le véhicule n’a pas été rangé.', 'error')
         return
     end
-
     DeleteEntity(vehicle)
     TriggerClientEvent('rp_garages:client:stored', src, plate)
 end)
@@ -243,7 +289,6 @@ RegisterNetEvent('rp_garages:server:retrieve', function(garageId, rawVehicleId)
     end
 
     local spawn = garage.spawn
-    local spawnCoords = vector3(spawn.x, spawn.y, spawn.z)
     if IsAnyVehicleNearPoint(spawn.x, spawn.y, spawn.z, Config.SpawnClearDistance) then
         notify(src, 'La sortie du garage est bloquée. Libère la place.', 'error')
         return
@@ -267,13 +312,13 @@ RegisterNetEvent('rp_garages:server:retrieve', function(garageId, rawVehicleId)
         return
     end
 
-    pendingSpawns[src] = { id = tonumber(row.id), charId = player.charId, plate = tostring(row.plate), model = tostring(row.model), spawn = spawnCoords, createdAt = os.time() }
+    pendingSpawns[src] = {
+        id = tonumber(row.id), charId = player.charId, plate = tostring(row.plate),
+        model = tostring(row.model), spawn = vector3(spawn.x, spawn.y, spawn.z), createdAt = os.time()
+    }
     TriggerClientEvent('rp_garages:client:spawn', src, {
-        garage = garage.id,
-        vehicleId = tonumber(row.id),
-        model = tostring(row.model),
-        plate = tostring(row.plate),
-        spawn = { x = spawn.x, y = spawn.y, z = spawn.z, w = spawn.w },
+        garage = garage.id, vehicleId = tonumber(row.id), model = tostring(row.model),
+        plate = tostring(row.plate), spawn = { x = spawn.x, y = spawn.y, z = spawn.z, w = spawn.w },
         props = props
     })
 end)
@@ -281,13 +326,13 @@ end)
 RegisterNetEvent('rp_garages:server:spawned', function(rawNetId, rawVehicleId)
     local src = source
     local pending = pendingSpawns[src]
-    local netId = tonumber(rawNetId)
-    local vehicleId = tonumber(rawVehicleId)
+    local netId, vehicleId = tonumber(rawNetId), tonumber(rawVehicleId)
     if not pending or pending.id ~= vehicleId or not netId or netId < 1 or netId % 1 ~= 0
         or os.time() - pending.createdAt > Config.SpawnTimeout then
         if pending then
             MySQL.update.await('UPDATE rp_owned_vehicles SET stored = 1 WHERE id = ? AND character_id = ?', { pending.id, pending.charId })
             pendingSpawns[src] = nil
+            TriggerClientEvent('rp_garages:client:spawnFailed', src, 'La validation de sortie a expiré.')
         end
         return
     end
@@ -295,7 +340,7 @@ RegisterNetEvent('rp_garages:server:spawned', function(rawNetId, rawVehicleId)
     local entity = NetworkGetEntityFromNetworkId(netId)
     if entity == 0 or not DoesEntityExist(entity) or GetEntityType(entity) ~= 2
         or NetworkGetEntityOwner(entity) ~= src
-        or GetVehicleNumberPlateText(entity):gsub('%s+$', '') ~= pending.plate
+        or cleanPlate(GetVehicleNumberPlateText(entity)) ~= pending.plate
         or GetEntityModel(entity) ~= GetHashKey(pending.model)
         or #(GetEntityCoords(entity) - pending.spawn) > 8.0 then
         MySQL.update.await('UPDATE rp_owned_vehicles SET stored = 1 WHERE id = ? AND character_id = ?', { pending.id, pending.charId })
@@ -303,7 +348,6 @@ RegisterNetEvent('rp_garages:server:spawned', function(rawNetId, rawVehicleId)
         TriggerClientEvent('rp_garages:client:spawnFailed', src, 'Le véhicule n’a pas été validé. Réessaie.')
         return
     end
-
     pendingSpawns[src] = nil
     TriggerClientEvent('rp_garages:client:spawnConfirmed', src, netId)
 end)
@@ -311,102 +355,10 @@ end)
 RegisterNetEvent('rp_garages:server:spawnFailed', function(rawVehicleId)
     local src = source
     local pending = pendingSpawns[src]
-    local vehicleId = tonumber(rawVehicleId)
-    if not pending or pending.id ~= vehicleId then return end
+    if not pending or pending.id ~= tonumber(rawVehicleId) then return end
     MySQL.update.await('UPDATE rp_owned_vehicles SET stored = 1 WHERE id = ? AND character_id = ?', { pending.id, pending.charId })
     pendingSpawns[src] = nil
 end)
-
-AddEventHandler('playerDropped', function()
-    local src = source
-    local tuning = pendingTunes[src]
-    if tuning then refundPendingTune(src, tuning, 'Personnalisation annulée après déconnexion.') end
-    local pending = pendingSpawns[src]
-    if pending then
-        MySQL.update.await('UPDATE rp_owned_vehicles SET stored = 1 WHERE id = ? AND character_id = ?', { pending.id, pending.charId })
-        pendingSpawns[src] = nil
-    end
-    for key in pairs(actionLocks) do
-        if key:match('^' .. src .. ':') then actionLocks[key] = nil end
-    end
-end)
-
-CreateThread(function()
-    while true do
-        Wait(5000)
-        local now = os.time()
-        for src, pending in pairs(pendingSpawns) do
-            if now - pending.createdAt > Config.SpawnTimeout then
-                MySQL.update.await('UPDATE rp_owned_vehicles SET stored = 1 WHERE id = ? AND character_id = ?', { pending.id, pending.charId })
-                pendingSpawns[src] = nil
-                notify(src, 'La sortie du véhicule a expiré. Il a été remis dans le garage.', 'error')
-            end
-        end
-        for src, pending in pairs(pendingTunes) do
-            if now - pending.createdAt > 30 then
-                refundPendingTune(src, pending, 'Délai de personnalisation dépassé. Paiement remboursé.')
-            end
-        end
-    end
-end)
-
-
-local function findWorkshop(src)
-    local ped = GetPlayerPed(src)
-    if ped == 0 or not DoesEntityExist(ped) then return nil end
-    local coords = GetEntityCoords(ped)
-    for _, workshop in ipairs(Config.Workshops or {}) do
-        if #(coords - workshop.coords) <= Config.ServerInteractionDistance then return workshop end
-    end
-    return nil
-end
-
-local function getOwnedDrivenVehicle(src, player, rawNetId)
-    local netId = tonumber(rawNetId)
-    if not netId or netId < 1 or netId % 1 ~= 0 then return nil end
-    local ped = GetPlayerPed(src)
-    local vehicle = NetworkGetEntityFromNetworkId(netId)
-    if ped == 0 or vehicle == 0 or not DoesEntityExist(vehicle) or GetEntityType(vehicle) ~= 2
-        or GetPedInVehicleSeat(vehicle, -1) ~= ped
-        or NetworkGetEntityOwner(vehicle) ~= src then return nil end
-
-    local plate = GetVehicleNumberPlateText(vehicle):gsub('%s+
-    characterId = tonumber(characterId)
-    if not characterId then return {} end
-    return MySQL.query.await(
-        'SELECT id, plate, model, label, stored FROM rp_owned_vehicles WHERE character_id = ? ORDER BY id DESC',
-        { characterId }
-    ) or {}
-end)
-, '')
-    local owned = MySQL.single.await([[
-        SELECT id, model, vehicle_props FROM rp_owned_vehicles
-        WHERE plate = ? AND character_id = ? AND identifier = ? AND stored = 0 LIMIT 1
-    ]], { plate, player.charId, player.identifier })
-    if not owned or GetEntityModel(vehicle) ~= GetHashKey(tostring(owned.model)) then return nil end
-    return vehicle, owned, plate, netId
-end
-
-local function refundPendingTune(src, pending, reason)
-    pendingTunes[src] = nil
-    local player = getPlayer(src)
-    local ok, refunded
-    if player and type(player.addBank) == 'function' then
-        ok, refunded = pcall(player.addBank, pending.price, 'Remboursement personnalisation véhicule', 'deposit')
-        ok = ok and refunded == true
-    else
-        local rows
-        ok, rows = pcall(MySQL.update.await,
-            'UPDATE characters SET bank = bank + ? WHERE id = ? AND identifier = ?',
-            { pending.price, pending.charId, pending.identifier })
-        ok = ok and tonumber(rows) == 1
-    end
-    if not ok then
-        print(('[rp_garages] Tuning refund failed for %s: %s'):format(src, tostring(reason)))
-    end
-    TriggerClientEvent('rp_garages:client:tuneRollback', src, pending.modType, pending.originalIndex,
-        reason or 'La sauvegarde a échoué. Le paiement a été remboursé.')
-end
 
 RegisterNetEvent('rp_garages:server:openWorkshop', function()
     local src = source
@@ -420,15 +372,8 @@ RegisterNetEvent('rp_garages:server:openWorkshop', function()
         notify(src, 'Place-toi au volant de ton véhicule dans un atelier.', 'error')
         return
     end
-    local plate = GetVehicleNumberPlateText(vehicle):gsub('%s+
-    characterId = tonumber(characterId)
-    if not characterId then return {} end
-    return MySQL.query.await(
-        'SELECT id, plate, model, label, stored FROM rp_owned_vehicles WHERE character_id = ? ORDER BY id DESC',
-        { characterId }
-    ) or {}
-end)
-, '')
+
+    local plate = cleanPlate(GetVehicleNumberPlateText(vehicle))
     local owned = MySQL.single.await([[
         SELECT id, model FROM rp_owned_vehicles
         WHERE plate = ? AND character_id = ? AND identifier = ? AND stored = 0 LIMIT 1
@@ -438,9 +383,7 @@ end)
         return
     end
     TriggerClientEvent('rp_garages:client:openTuning', src, {
-        workshop = workshop.label,
-        netId = NetworkGetNetworkIdFromEntity(vehicle),
-        plate = plate
+        workshop = workshop.label, netId = NetworkGetNetworkIdFromEntity(vehicle), plate = plate
     })
 end)
 
@@ -453,12 +396,13 @@ RegisterNetEvent('rp_garages:server:purchaseUpgrade', function(rawNetId, rawModT
     end
     local player = getPlayer(src)
     local workshop = findWorkshop(src)
-    local modType, modIndex, originalIndex = tonumber(rawModType), tonumber(rawModIndex), tonumber(rawOriginalIndex)
+    local modType, modIndex = tonumber(rawModType), tonumber(rawModIndex)
+    local originalIndex = tonumber(rawOriginalIndex) or -1
     local category = modType and Config.TuningCategories[modType]
     local vehicle, owned, plate, netId
     if player then vehicle, owned, plate, netId = getOwnedDrivenVehicle(src, player, rawNetId) end
-    if not player or not workshop or not category or not vehicle or not modIndex or modIndex % 1 ~= 0
-        or modIndex < 0 or modIndex > category.maxIndex then
+    if not player or not workshop or not category or not vehicle or not modIndex
+        or modIndex % 1 ~= 0 or modIndex < 0 or modIndex > category.maxIndex then
         notify(src, 'Modification refusée : véhicule, emplacement ou niveau invalide.', 'error')
         return
     end
@@ -483,8 +427,7 @@ RegisterNetEvent('rp_garages:server:purchaseUpgrade', function(rawNetId, rawModT
     pendingTunes[src] = {
         id = tonumber(owned.id), charId = player.charId, identifier = player.identifier,
         plate = plate, model = tostring(owned.model), netId = netId, price = price,
-        modType = modType, modIndex = modIndex,
-        originalIndex = tonumber(originalIndex) or -1, createdAt = os.time()
+        modType = modType, modIndex = modIndex, originalIndex = originalIndex, createdAt = os.time()
     }
     TriggerClientEvent('rp_garages:client:applyPurchasedTune', src, modType, modIndex)
 end)
@@ -493,7 +436,8 @@ RegisterNetEvent('rp_garages:server:saveTune', function(rawNetId, rawProps)
     local src = source
     local pending = pendingTunes[src]
     local player = getPlayer(src)
-    local vehicle, owned, plate, netId = player and getOwnedDrivenVehicle(src, player, rawNetId)
+    local vehicle, owned, plate, netId
+    if player then vehicle, owned, plate, netId = getOwnedDrivenVehicle(src, player, rawNetId) end
     if not pending or not vehicle or netId ~= pending.netId or plate ~= pending.plate
         or tonumber(owned.id) ~= pending.id or os.time() - pending.createdAt > 30 then
         if pending then refundPendingTune(src, pending, 'Validation du véhicule impossible. Paiement remboursé.') end
@@ -501,9 +445,11 @@ RegisterNetEvent('rp_garages:server:saveTune', function(rawNetId, rawProps)
     end
 
     local props = validProps(rawProps, pending.model, pending.plate)
-    if not props or tonumber(props.mods[tostring(pending.modType)]) ~= pending.modIndex
-        and not (pending.modType == 18 and props.turbo == true)
-        and not (pending.modType == 22 and props.xenon == true) then
+    local selectedValue = props and props.mods[tostring(pending.modType)]
+    local selected = selectedValue == pending.modIndex
+        or (pending.modType == 18 and props and props.turbo == true)
+        or (pending.modType == 22 and props and props.xenon == true)
+    if not props or not selected then
         refundPendingTune(src, pending, 'La modification n’a pas été confirmée. Paiement remboursé.')
         return
     end
@@ -515,9 +461,49 @@ RegisterNetEvent('rp_garages:server:saveTune', function(rawNetId, rawProps)
         refundPendingTune(src, pending, 'Enregistrement impossible. Paiement remboursé.')
         return
     end
-
     pendingTunes[src] = nil
     TriggerClientEvent('rp_garages:client:tuneSaved', src, pending.modType, pending.modIndex, pending.price)
+end)
+
+RegisterNetEvent('rp_garages:server:spawnFailed', function(rawVehicleId)
+    local src = source
+    local pending = pendingSpawns[src]
+    if not pending or pending.id ~= tonumber(rawVehicleId) then return end
+    MySQL.update.await('UPDATE rp_owned_vehicles SET stored = 1 WHERE id = ? AND character_id = ?', { pending.id, pending.charId })
+    pendingSpawns[src] = nil
+end)
+
+AddEventHandler('playerDropped', function()
+    local src = source
+    local tuning = pendingTunes[src]
+    if tuning then refundPendingTune(src, tuning, 'Personnalisation annulée après déconnexion.', false) end
+    local pending = pendingSpawns[src]
+    if pending then
+        MySQL.update.await('UPDATE rp_owned_vehicles SET stored = 1 WHERE id = ? AND character_id = ?', { pending.id, pending.charId })
+        pendingSpawns[src] = nil
+    end
+    for key in pairs(actionLocks) do
+        if key:sub(1, #tostring(src) + 1) == tostring(src) .. ':' then actionLocks[key] = nil end
+    end
+end)
+
+CreateThread(function()
+    while true do
+        Wait(5000)
+        local now = os.time()
+        for src, pending in pairs(pendingSpawns) do
+            if now - pending.createdAt > Config.SpawnTimeout then
+                MySQL.update.await('UPDATE rp_owned_vehicles SET stored = 1 WHERE id = ? AND character_id = ?', { pending.id, pending.charId })
+                pendingSpawns[src] = nil
+                notify(src, 'La sortie du véhicule a expiré. Il a été remis dans le garage.', 'error')
+            end
+        end
+        for src, pending in pairs(pendingTunes) do
+            if now - pending.createdAt > 30 then
+                refundPendingTune(src, pending, 'Délai de personnalisation dépassé. Paiement remboursé.')
+            end
+        end
+    end
 end)
 
 exports('GetStoredVehicles', function(characterId)
