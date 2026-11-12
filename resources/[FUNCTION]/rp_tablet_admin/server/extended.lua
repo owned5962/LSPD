@@ -150,290 +150,6 @@ RegisterNetEvent('rp_tablet_admin:server:spawnVehicle', function(rawModel)
     TriggerClientEvent('rp_tablet_admin:client:spawnVehicle', src, rawModel)
 end)
 
-RegisterNetEvent('rp_tablet_admin:server:giveWeapon', function(rawTargetId, rawWeapon)
-    local src = source
-    if not AllowExtendedAction(src, 'give_weapon', 1500) then return end
-
-    local targetId = TargetId(rawTargetId)
-    local weapon = type(rawWeapon) == 'string' and rawWeapon:upper() or ''
-    local policyOk, allowed = pcall(function()
-        return exports['rp_anticheat']:IsWeaponAllowed(weapon)
-    end)
-    if not targetId or not weapon:match('^WEAPON_[A-Z0-9_]+, function(rawTargetId, rawModel)
-    local src = source
-    if not AllowExtendedAction(src, 'give_vehicle', 1000) then return end
-
-    local targetId = TargetId(rawTargetId)
-    if not targetId or type(rawModel) ~= 'string' or #rawModel < 2 or #rawModel > 40 or not rawModel:match('^[%w_]+$') then
-        NotifyExtended(src, 'Joueur ou modèle de véhicule invalide.')
-        return
-    end
-
-    LogExtendedAction(src, 'give_vehicle', targetId, rawModel)
-    TriggerClientEvent('rp_tablet_admin:client:spawnVehicleForPlayer', targetId, rawModel:lower())
-    NotifyExtended(src, 'Création du véhicule demandée pour le joueur ' .. targetId .. '.', 'success')
-end)
-
-RegisterNetEvent('rp_tablet_admin:server:giveItem', function(rawTargetId, rawItem, rawCount)
-    local src = source
-    if not AllowExtendedAction(src, 'give_item', 750) then return end
-
-    local targetId = TargetId(rawTargetId)
-    local count = tonumber(rawCount)
-    local itemName = type(rawItem) == 'string' and rawItem or ''
-    if not targetId or #itemName < 1 or #itemName > 64 or not itemName:match('^[%w_]+$')
-        or not count or count % 1 ~= 0 or count < 1 or count > 1000 then
-        NotifyExtended(src, 'Joueur, item ou quantité invalide.')
-        return
-    end
-
-    local ok, granted = pcall(function()
-        return exports['rp_inventory']:AdminSetItem(targetId, itemName, 'add', count)
-    end)
-    if not ok or granted ~= true then
-        NotifyExtended(src, 'Attribution impossible : item inconnu, inventaire plein ou sauvegarde indisponible.')
-        return
-    end
-
-    LogExtendedAction(src, 'give_item', targetId, itemName .. ' x' .. count)
-    NotifyExtended(src, 'Item ' .. itemName .. ' x' .. count .. ' attribué au joueur ' .. targetId .. '.', 'success')
-end)
-
--- Weapon grants are handled by server/main.lua so metadata is saved before the client receives the weapon.
-
-AddEventHandler('playerDropped', function()
-    local src = source
-    AdminModes[src] = nil
-    TriggerEvent('rp_anticheat:setAdminInvulnerability', src, false)
-end)
-
-AddEventHandler('onResourceStart', function(resourceName)
-    if resourceName ~= 'rp_anticheat' then return end
-    for src, modes in pairs(AdminModes) do
-        TriggerEvent('rp_anticheat:setAdminInvulnerability', src, modes.noclip or modes.godmode)
-    end
-end)
-
-RegisterNetEvent('rp_tablet_admin:server:banPlayer', function(rawTargetId, rawReason)
-    local src = source
-    if not AllowExtendedAction(src, 'ban', 1500) then return end
-    local targetId = TargetId(rawTargetId)
-    if not targetId or targetId == src then
-        NotifyExtended(src, 'Joueur cible invalide.')
-        return
-    end
-
-    local reason = type(rawReason) == 'string' and rawReason:gsub('[%c]', ' '):sub(1, 180) or ''
-    if reason == '' then
-        NotifyExtended(src, 'Un motif de bannissement est obligatoire.')
-        return
-    end
-
-    local license
-    for _, identifier in ipairs(GetPlayerIdentifiers(targetId)) do
-        if identifier:sub(1, 8) == 'license:' then license = identifier; break end
-    end
-    if not license then
-        NotifyExtended(src, 'Identifiant license introuvable : bannissement annulé.')
-        return
-    end
-
-    local adminLicense
-    for _, identifier in ipairs(GetPlayerIdentifiers(src)) do
-        if identifier:sub(1, 8) == 'license:' then adminLicense = identifier; break end
-    end
-
-    local ok, err = pcall(MySQL.insert.await, [[
-        INSERT INTO player_bans (identifier, reason, banned_by)
-        VALUES (?, ?, ?)
-        ON DUPLICATE KEY UPDATE reason = VALUES(reason), banned_by = VALUES(banned_by), created_at = CURRENT_TIMESTAMP
-    ]], { license, reason, adminLicense or ('server:' .. tostring(src)) })
-    if not ok then
-        print('[rp_tablet_admin] Persistent ban failed: ' .. tostring(err))
-        NotifyExtended(src, 'Erreur SQL : bannissement annulé.')
-        return
-    end
-
-    LogExtendedAction(src, 'ban', targetId, reason)
-    DropPlayer(targetId, '[ADMINISTRATION - BAN PERMANENT] ' .. reason)
-    NotifyExtended(src, 'Joueur ' .. targetId .. ' banni durablement.', 'success')
-end)
-
-RegisterNetEvent('rp_tablet_admin:server:healPlayer', function(rawTargetId)
-    local src = source
-    if not AllowExtendedAction(src, 'heal', 500) then return end
-    local targetId = TargetId(rawTargetId)
-    if not targetId then
-        NotifyExtended(src, 'Joueur cible introuvable.')
-        return
-    end
-
-    LogExtendedAction(src, 'heal', targetId, 'Soin administrateur')
-    TriggerClientEvent('rp_tablet_admin:client:heal', targetId)
-    NotifyExtended(src, 'Joueur ' .. targetId .. ' soigné.', 'success')
-end)
-) or not policyOk or allowed ~= true then
-        NotifyExtended(src, 'Joueur ou arme non autorisée.')
-        return
-    end
-
-    local target = exports['rp_core']:GetPlayerFromId(targetId)
-    if not target or type(target.metadata) ~= 'table' then
-        NotifyExtended(src, 'Le personnage du joueur cible n’est pas chargé.')
-        return
-    end
-
-    local previous = target.metadata.weapons
-    local savedWeapons, found = {}, false
-    if type(previous) == 'table' then
-        for _, entry in ipairs(previous) do
-            if type(entry) == 'table' and type(entry.name) == 'string'
-                and entry.name:match('^WEAPON_[A-Z0-9_]+, function(rawTargetId, rawModel)
-    local src = source
-    if not AllowExtendedAction(src, 'give_vehicle', 1000) then return end
-
-    local targetId = TargetId(rawTargetId)
-    if not targetId or type(rawModel) ~= 'string' or #rawModel < 2 or #rawModel > 40 or not rawModel:match('^[%w_]+$') then
-        NotifyExtended(src, 'Joueur ou modèle de véhicule invalide.')
-        return
-    end
-
-    LogExtendedAction(src, 'give_vehicle', targetId, rawModel)
-    TriggerClientEvent('rp_tablet_admin:client:spawnVehicleForPlayer', targetId, rawModel:lower())
-    NotifyExtended(src, 'Création du véhicule demandée pour le joueur ' .. targetId .. '.', 'success')
-end)
-
-RegisterNetEvent('rp_tablet_admin:server:giveItem', function(rawTargetId, rawItem, rawCount)
-    local src = source
-    if not AllowExtendedAction(src, 'give_item', 750) then return end
-
-    local targetId = TargetId(rawTargetId)
-    local count = tonumber(rawCount)
-    local itemName = type(rawItem) == 'string' and rawItem or ''
-    if not targetId or #itemName < 1 or #itemName > 64 or not itemName:match('^[%w_]+$')
-        or not count or count % 1 ~= 0 or count < 1 or count > 1000 then
-        NotifyExtended(src, 'Joueur, item ou quantité invalide.')
-        return
-    end
-
-    local ok, granted = pcall(function()
-        return exports['rp_inventory']:AdminSetItem(targetId, itemName, 'add', count)
-    end)
-    if not ok or granted ~= true then
-        NotifyExtended(src, 'Attribution impossible : item inconnu, inventaire plein ou sauvegarde indisponible.')
-        return
-    end
-
-    LogExtendedAction(src, 'give_item', targetId, itemName .. ' x' .. count)
-    NotifyExtended(src, 'Item ' .. itemName .. ' x' .. count .. ' attribué au joueur ' .. targetId .. '.', 'success')
-end)
-
--- Weapon grants are handled by server/main.lua so metadata is saved before the client receives the weapon.
-
-AddEventHandler('playerDropped', function()
-    local src = source
-    AdminModes[src] = nil
-    TriggerEvent('rp_anticheat:setAdminInvulnerability', src, false)
-end)
-
-AddEventHandler('onResourceStart', function(resourceName)
-    if resourceName ~= 'rp_anticheat' then return end
-    for src, modes in pairs(AdminModes) do
-        TriggerEvent('rp_anticheat:setAdminInvulnerability', src, modes.noclip or modes.godmode)
-    end
-end)
-
-RegisterNetEvent('rp_tablet_admin:server:banPlayer', function(rawTargetId, rawReason)
-    local src = source
-    if not AllowExtendedAction(src, 'ban', 1500) then return end
-    local targetId = TargetId(rawTargetId)
-    if not targetId or targetId == src then
-        NotifyExtended(src, 'Joueur cible invalide.')
-        return
-    end
-
-    local reason = type(rawReason) == 'string' and rawReason:gsub('[%c]', ' '):sub(1, 180) or ''
-    if reason == '' then
-        NotifyExtended(src, 'Un motif de bannissement est obligatoire.')
-        return
-    end
-
-    local license
-    for _, identifier in ipairs(GetPlayerIdentifiers(targetId)) do
-        if identifier:sub(1, 8) == 'license:' then license = identifier; break end
-    end
-    if not license then
-        NotifyExtended(src, 'Identifiant license introuvable : bannissement annulé.')
-        return
-    end
-
-    local adminLicense
-    for _, identifier in ipairs(GetPlayerIdentifiers(src)) do
-        if identifier:sub(1, 8) == 'license:' then adminLicense = identifier; break end
-    end
-
-    local ok, err = pcall(MySQL.insert.await, [[
-        INSERT INTO player_bans (identifier, reason, banned_by)
-        VALUES (?, ?, ?)
-        ON DUPLICATE KEY UPDATE reason = VALUES(reason), banned_by = VALUES(banned_by), created_at = CURRENT_TIMESTAMP
-    ]], { license, reason, adminLicense or ('server:' .. tostring(src)) })
-    if not ok then
-        print('[rp_tablet_admin] Persistent ban failed: ' .. tostring(err))
-        NotifyExtended(src, 'Erreur SQL : bannissement annulé.')
-        return
-    end
-
-    LogExtendedAction(src, 'ban', targetId, reason)
-    DropPlayer(targetId, '[ADMINISTRATION - BAN PERMANENT] ' .. reason)
-    NotifyExtended(src, 'Joueur ' .. targetId .. ' banni durablement.', 'success')
-end)
-
-RegisterNetEvent('rp_tablet_admin:server:healPlayer', function(rawTargetId)
-    local src = source
-    if not AllowExtendedAction(src, 'heal', 500) then return end
-    local targetId = TargetId(rawTargetId)
-    if not targetId then
-        NotifyExtended(src, 'Joueur cible introuvable.')
-        return
-    end
-
-    LogExtendedAction(src, 'heal', targetId, 'Soin administrateur')
-    TriggerClientEvent('rp_tablet_admin:client:heal', targetId)
-    NotifyExtended(src, 'Joueur ' .. targetId .. ' soigné.', 'success')
-end)
-) then
-                if entry.name == weapon then
-                    savedWeapons[#savedWeapons + 1] = { name = weapon, ammo = 120 }
-                    found = true
-                else
-                    savedWeapons[#savedWeapons + 1] = {
-                        name = entry.name,
-                        ammo = math.max(0, math.min(9999, math.floor(tonumber(entry.ammo) or 0)))
-                    }
-                end
-            end
-        end
-    end
-    if not found then
-        savedWeapons[#savedWeapons + 1] = { name = weapon, ammo = 120 }
-    end
-
-    target.metadata.weapons = savedWeapons
-    local saveOk, saved = pcall(target.save, true)
-    if not saveOk or saved ~= true then
-        target.metadata.weapons = previous
-        print(('[rp_tablet_admin] Weapon save failed for player %s: %s'):format(targetId, tostring(saved)))
-        NotifyExtended(src, 'Impossible de sauvegarder cette arme. Attribution annulée.')
-        return
-    end
-
-    LogExtendedAction(src, 'give_weapon', targetId, weapon .. ' (120 munitions, sauvegardée)')
-    TriggerClientEvent('rp_tablet_admin:client:giveWeapon', targetId, weapon, 120)
-    NotifyExtended(src, 'Arme enregistrée et attribuée au joueur ' .. targetId .. '.', 'success')
-    TriggerClientEvent('rp_core:client:notify', targetId,
-        'Un administrateur vous a attribué : ' .. weapon:gsub('^WEAPON_', '') .. '.', 'success')
-end)
-
 RegisterNetEvent('rp_tablet_admin:server:giveVehicle', function(rawTargetId, rawModel)
     local src = source
     if not AllowExtendedAction(src, 'give_vehicle', 1000) then return end
@@ -474,7 +190,63 @@ RegisterNetEvent('rp_tablet_admin:server:giveItem', function(rawTargetId, rawIte
     NotifyExtended(src, 'Item ' .. itemName .. ' x' .. count .. ' attribué au joueur ' .. targetId .. '.', 'success')
 end)
 
--- Weapon grants are handled by server/main.lua so metadata is saved before the client receives the weapon.
+RegisterNetEvent('rp_tablet_admin:server:giveWeapon', function(rawTargetId, rawWeapon)
+    local src = source
+    if not AllowExtendedAction(src, 'give_weapon', 1500) then return end
+
+    local targetId = TargetId(rawTargetId)
+    local weapon = type(rawWeapon) == 'string' and rawWeapon:upper() or ''
+    local policyOk, allowed = pcall(function()
+        return exports['rp_anticheat']:IsWeaponAllowed(weapon)
+    end)
+    if not targetId or not weapon:match('^WEAPON_[A-Z0-9_]+$') or not policyOk or allowed ~= true then
+        NotifyExtended(src, 'Joueur ou arme non autorisée.')
+        return
+    end
+
+    local target = exports['rp_core']:GetPlayerFromId(targetId)
+    if not target or type(target.metadata) ~= 'table' then
+        NotifyExtended(src, 'Le personnage du joueur cible n’est pas chargé.')
+        return
+    end
+
+    local previous = target.metadata.weapons
+    local savedWeapons, found = {}, false
+    if type(previous) == 'table' then
+        for _, entry in ipairs(previous) do
+            if type(entry) == 'table' and type(entry.name) == 'string'
+                and entry.name:match('^WEAPON_[A-Z0-9_]+$') then
+                if entry.name == weapon then
+                    savedWeapons[#savedWeapons + 1] = { name = weapon, ammo = 120 }
+                    found = true
+                else
+                    savedWeapons[#savedWeapons + 1] = {
+                        name = entry.name,
+                        ammo = math.max(0, math.min(9999, math.floor(tonumber(entry.ammo) or 0)))
+                    }
+                end
+            end
+        end
+    end
+    if not found then
+        savedWeapons[#savedWeapons + 1] = { name = weapon, ammo = 120 }
+    end
+
+    target.metadata.weapons = savedWeapons
+    local saveOk, saved = pcall(target.save, true)
+    if not saveOk or saved ~= true then
+        target.metadata.weapons = previous
+        print(('[rp_tablet_admin] Weapon save failed for player %s: %s'):format(targetId, tostring(saved)))
+        NotifyExtended(src, 'Impossible de sauvegarder cette arme. Attribution annulée.')
+        return
+    end
+
+    LogExtendedAction(src, 'give_weapon', targetId, weapon .. ' (120 munitions, sauvegardée)')
+    TriggerClientEvent('rp_tablet_admin:client:giveWeapon', targetId, weapon, 120)
+    NotifyExtended(src, 'Arme enregistrée et attribuée au joueur ' .. targetId .. '.', 'success')
+    TriggerClientEvent('rp_core:client:notify', targetId,
+        'Un administrateur vous a attribué : ' .. weapon:gsub('^WEAPON_', '') .. '.', 'success')
+end)
 
 AddEventHandler('playerDropped', function()
     local src = source
