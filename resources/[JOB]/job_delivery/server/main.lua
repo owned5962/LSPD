@@ -1,5 +1,3 @@
-local dutyPlayers = {}
-
 local function isAt(coords, src, maxDistance)
     local ped = GetPlayerPed(src)
     if ped == 0 then return false end
@@ -10,13 +8,13 @@ RegisterNetEvent('job_delivery:setDuty', function(status)
     local src = source
     if not exports['rp_core']:CanPerformAction(src, 'job_delivery:setDuty', 2000) then
         TriggerClientEvent('rp_core:client:notify', src, 'Patientez avant de changer votre état de service.', 'warning')
-        TriggerClientEvent('job_delivery:dutyUpdated', src, dutyPlayers[src] == true)
+        TriggerClientEvent('job_delivery:dutyUpdated', src, (exports['rp_core']:GetPlayerFromId(src) or {}).duty == true)
         return
     end
     local player = exports['rp_core']:GetPlayerFromId(src)
     if not player or player.job ~= 'delivery' or type(status) ~= 'boolean' or not isAt(Config.DutyCoords, src, 5.0) then
         TriggerClientEvent('rp_core:client:notify', src, 'Accès refusé ou état de service invalide.', 'error')
-        TriggerClientEvent('job_delivery:dutyUpdated', src, dutyPlayers[src] == true)
+        TriggerClientEvent('job_delivery:dutyUpdated', src, (exports['rp_core']:GetPlayerFromId(src) or {}).duty == true)
         return
     end
 
@@ -24,16 +22,14 @@ RegisterNetEvent('job_delivery:setDuty', function(status)
         TriggerClientEvent('rp_core:client:notify', src, 'Impossible de synchroniser votre état de service. Réessayez.', 'error')
         return
     end
-    dutyPlayers[src] = status
     TriggerClientEvent('job_delivery:dutyUpdated', src, status)
     print(string.format('[JOB_DELIVERY] Player %s is now %s duty', player.name or src, status and 'ON' or 'OFF'))
 end)
 
 
 exports('IsOnDuty', function(src)
-    return dutyPlayers[tonumber(src)] == true
+    local player = exports['rp_core']:GetPlayerFromId(src)
+    return player ~= nil and player.job == Config.Job and player.duty == true
 end)
 
-AddEventHandler('playerDropped', function()
-    dutyPlayers[source] = nil
-end)
+-- Duty state is owned by rp_core and is cleared with the player session.
