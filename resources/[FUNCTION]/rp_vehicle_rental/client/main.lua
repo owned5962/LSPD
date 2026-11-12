@@ -4,6 +4,8 @@ local rentalBlips = {}
 local activeRental = nil
 local tabletOpen = false
 local tabletOpening = false
+local currentTabletLocation = nil
+local currentTabletRenewal = false
 local promptVisible = false
 
 
@@ -97,6 +99,8 @@ local function openTablet(isRenewal, vehicles, price, maxHours, label, locationK
     if tabletOpen then return end
     tabletOpening = false
     tabletOpen = true
+    currentTabletLocation = locationKey
+    currentTabletRenewal = isRenewal == true
     SetNuiFocus(true, true)
     SendNUIMessage({
         action = 'open',
@@ -146,6 +150,8 @@ RegisterNetEvent('rp_vehicle_rental:client:spawnRental', function(data)
     }
     tabletOpen = false
     tabletOpening = false
+    currentTabletLocation = nil
+    currentTabletRenewal = false
     SetNuiFocus(false, false)
     SendNUIMessage({ action = 'close' })
     TriggerServerEvent('rp_vehicle_rental:server:registerVehicle', netId)
@@ -238,7 +244,20 @@ CreateThread(function()
     local currentLocation = nil
     while true do
         local waitTime = 800
-        if not tabletOpen and not tabletOpening and not activeRental then
+        if tabletOpen and not currentTabletRenewal and currentTabletLocation then
+            local location = Config.Locations[currentTabletLocation]
+            local coords = GetEntityCoords(PlayerPedId())
+            local point = location and location.ped
+            if not point or #(coords - vector3(point.x, point.y, point.z)) > 1.0 then
+                tabletOpen = false
+                tabletOpening = false
+                currentTabletLocation = nil
+                SetNuiFocus(false, false)
+                SendNUIMessage({ action = 'close' })
+                notify('Tablette fermée : vous avez quitté le comptoir de location.', 'info')
+            end
+            waitTime = 250
+        elseif not tabletOpen and not tabletOpening and not activeRental then
             local coords = GetEntityCoords(PlayerPedId())
             local nearestKey, nearestDistance
             for key, location in pairs(Config.Locations) do
