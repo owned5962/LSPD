@@ -1,1 +1,44 @@
 *{box-sizing:border-box}body{margin:0;width:100vw;height:100vh;display:flex;align-items:center;justify-content:center;background:transparent;color:#f8fafc;font-family:Inter,"Segoe UI",Arial,sans-serif}.hidden{display:none!important}#territory-panel{width:min(420px,92vw);padding:26px;background:linear-gradient(150deg,rgba(12,20,35,.98),rgba(24,36,58,.98));border:1px solid #ffffff24;border-radius:18px;box-shadow:0 24px 90px #000a}header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px}.logo{font-weight:900;font-size:19px;letter-spacing:2px}.logo span{color:#38bdf8}#close{border:1px solid #ffffff25;background:#ffffff0c;color:#fff;width:34px;height:34px;border-radius:9px;font-size:22px;cursor:pointer}.eyebrow{font-size:10px;letter-spacing:2px;color:#38bdf8;font-weight:800}h1{font-size:27px;margin:7px 0}.status{margin:17px 0;padding:12px;border-radius:9px;background:#ffffff0b;color:#cbd5e1;font-size:12px;line-height:1.5}#sector-description{font-size:12px;color:#94a3b8;line-height:1.5}.section-heading{font-size:12px;font-weight:800;margin:19px 0 10px}.colors{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.color-option{border:1px solid #ffffff25;background:#ffffff0a;border-radius:9px;padding:9px 5px;color:#e2e8f0;font-size:10px;cursor:pointer;display:flex;align-items:center;gap:7px;justify-content:center}.color-option.selected{border-color:#38bdf8;background:#0ea5e922;box-shadow:0 0 0 1px #38bdf8}.swatch{width:13px;height:13px;border-radius:50%;display:inline-block;border:1px solid #ffffff50}.terms{display:flex;justify-content:space-between;margin:20px 0;padding:13px 0;border-top:1px solid #ffffff17;border-bottom:1px solid #ffffff17}.terms div{display:flex;flex-direction:column;gap:5px}.terms span{font-size:10px;color:#94a3b8}.terms strong{font-size:14px}.claim-button{width:100%;border:0;border-radius:9px;background:#0284c7;color:white;font-weight:800;font-size:12px;padding:14px;cursor:pointer}.claim-button:hover:not(:disabled){background:#0369a1}.claim-button:disabled{opacity:.4;cursor:not-allowed}.footnote{font-size:10px;line-height:1.5;color:#94a3b8;margin:12px 0 0}#feedback{min-height:16px;font-size:11px;color:#fca5a5;margin-top:9px}#feedback.success{color:#86efac}
+#territory-panel {
+    width:min(560px,94vw);
+    padding:30px;
+    background:linear-gradient(145deg,rgba(9,17,31,.985),rgba(20,34,56,.985));
+    border:1px solid rgba(96,165,250,.24);
+    border-radius:20px;
+    box-shadow:0 28px 100px rgba(0,0,0,.62),inset 0 1px rgba(255,255,255,.04);
+}
+.logo{font-size:21px}
+.eyebrow{font-size:9px;letter-spacing:2.2px;color:#7dd3fc}
+#sector-title{font-size:29px;letter-spacing:-.6px}
+#sector-description{margin:8px 0 16px}
+.identity-section{
+    margin-top:17px;padding:16px;border:1px solid rgba(148,163,184,.16);
+    border-radius:13px;background:rgba(2,8,23,.42)
+}
+.identity-section label{display:block;font-size:11px;font-weight:700;color:#cbd5e1;margin:10px 0 7px}
+#territory-name{
+    display:block;width:100%;padding:12px 13px;border:1px solid #334b68;border-radius:9px;
+    outline:none;background:#0a1526;color:#f8fafc;font:600 13px Inter,"Segoe UI",Arial,sans-serif;
+}
+#territory-name:focus{border-color:#38bdf8;box-shadow:0 0 0 3px rgba(56,189,248,.12)}
+.owner-card{
+    display:flex;align-items:center;gap:12px;margin-top:13px;padding:12px;
+    border:1px solid rgba(56,189,248,.2);border-radius:10px;background:rgba(14,165,233,.08)
+}
+.owner-icon{display:grid;place-items:center;width:34px;height:34px;border-radius:9px;background:#0ea5e926;color:#7dd3fc;font-size:20px}
+.owner-card div{display:flex;flex-direction:column;gap:4px;min-width:0}
+.owner-card small{font-size:9px;letter-spacing:1.2px;color:#7dd3fc;font-weight:800}
+.owner-card strong{font-size:13px;color:#f8fafc;overflow-wrap:anywhere}
+.bank-line{display:flex;justify-content:space-between;gap:10px;margin-top:13px;font-size:11px;color:#94a3b8}
+.bank-line strong{color:#86efac;font-size:12px}
+.status{background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.06)}
+.section-heading{font-size:10px;letter-spacing:1.4px;color:#cbd5e1}
+.colors{grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}
+.color-option{min-height:42px;border-radius:10px;font-size:11px}
+.swatch{width:15px;height:15px;flex:none}
+.terms{margin:17px 0}
+.claim-button{padding:15px;font-size:13px;letter-spacing:.2px;background:linear-gradient(100deg,#0284c7,#2563eb)}
+.claim-button:hover:not(:disabled){background:linear-gradient(100deg,#0369a1,#1d4ed8)}
+.footnote{font-size:10px;line-height:1.6;color:#94a3b8}
+#feedback{min-height:18px}
+@media(max-width:480px){#territory-panel{padding:20px}.colors{grid-template-columns:repeat(2,minmax(0,1fr))}}
