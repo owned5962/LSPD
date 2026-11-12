@@ -139,16 +139,16 @@ local function getAmmunationLocations()
             locations[#locations + 1] = location
         end
     end
-    if #locations == 0 then
-        for _, category in ipairs(BusinessLocations or {}) do
-            if category.id == 'ammunation' then
-                for index, point in ipairs(category.points or {}) do
-                    locations[#locations + 1] = {
-                        location_type = 'shop', shop_style = 'ammunation',
-                        location_key = ('shop:ammunation:%d'):format(index),
-                        x = point[1], y = point[2], z = point[3]
-                    }
-                end
+    -- The shared map points are always checked as well as SQL locations so
+    -- the same blips displayed client-side are accepted by server validation.
+    for _, category in ipairs(BusinessLocations or {}) do
+        if category.id == 'ammunation' then
+            for index, point in ipairs(category.points or {}) do
+                locations[#locations + 1] = {
+                    location_type = 'shop', shop_style = 'ammunation',
+                    location_key = ('shop:ammunation:%d'):format(index),
+                    x = point[1], y = point[2], z = point[3]
+                }
             end
         end
     end
@@ -262,18 +262,16 @@ local function getStoreLocations()
         end
     end
 
-    -- Fallback to the resource's shared coordinates if the SQL cache has not
-    -- populated yet. Server-side distance checks remain authoritative.
-    if #locations == 0 then
-        for _, category in ipairs(BusinessLocations or {}) do
-            if category.id == 'food' then
-                for index, point in ipairs(category.points or {}) do
-                    locations[#locations + 1] = {
-                        location_type = 'shop', shop_style = 'food',
-                        location_key = ('shop:food:%d'):format(index),
-                        x = point[1], y = point[2], z = point[3]
-                    }
-                end
+    -- Merge all shared base coordinates even when SQL has only partially
+    -- seeded the registry. Extra SQL-defined shop points remain supported.
+    for _, category in ipairs(BusinessLocations or {}) do
+        if category.id == 'food' then
+            for index, point in ipairs(category.points or {}) do
+                locations[#locations + 1] = {
+                    location_type = 'shop', shop_style = 'food',
+                    location_key = ('shop:food:%d'):format(index),
+                    x = point[1], y = point[2], z = point[3]
+                }
             end
         end
     end
