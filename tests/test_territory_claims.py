@@ -84,8 +84,8 @@ def test_free_territory_areas_are_persistently_visible_and_white():
     assert "Config.AreaAlphaFree = 255" in config
     assert "Config.ServerValidationDistance = 1.5" in config
     assert "SetBlipColour(area, color)" in client
-    assert "SetBlipDisplay(area, 2)" in client
-    assert "SetBlipDisplay(point, 2)" in client
+    assert "SetBlipDisplay(area, 3)" in client
+    assert "SetBlipDisplay(point, 3)" in client
     build_map = client.split("local function BuildMap()", 1)[1].split("RegisterNetEvent('rp_territories:client:sync'", 1)[0]
     assert "RemoveMapBlips()" not in build_map
     assert "local area = areaBlips[index]" in build_map
