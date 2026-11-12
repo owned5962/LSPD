@@ -139,7 +139,20 @@ CreateThread(function()
     createDealerBlips()
     while true do
         local sleep = 700
-        if not tabletOpen and not IsPauseMenuActive() then
+        if tabletOpen then
+            local coords = GetEntityCoords(PlayerPedId())
+            local activeDealer
+            for _, dealer in ipairs(Config.Dealerships) do
+                if dealer.id == currentDealer then activeDealer = dealer; break end
+            end
+            if not activeDealer or #(coords - activeDealer.coords) > 1.0 then
+                closeTablet()
+                currentDealer = nil
+                notify('Catalogue fermé : vous avez quitté la zone du concessionnaire.', 'info')
+            end
+            hidePrompt()
+            sleep = 250
+        elseif not IsPauseMenuActive() then
             local coords = GetEntityCoords(PlayerPedId())
             local nearest, distance
             for _, dealer in ipairs(Config.Dealerships) do
