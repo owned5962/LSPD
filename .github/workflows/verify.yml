@@ -33,6 +33,7 @@ jobs:
         run: |
           python tests/verify_server.py
           python tests/test_security_regressions.py
+          python tests/test_creator_organizations.py
           python tests/test_admin_f10_open.py
           python tests/test_anticheat_statistics.py
           python tests/test_auto_rescue.py
