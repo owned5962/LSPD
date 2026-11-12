@@ -1366,4 +1366,5 @@ def test_ui_uses_native_minimap_without_circlemap_texture_replacement():
     assert "HasStreamedTextureDictLoaded('circlemap')" not in ui
     assert "AddReplaceTexture(" not in ui
     assert "circlemap texture unavailable" not in ui
+    assert "GetPlayerPing(" not in ui
 
