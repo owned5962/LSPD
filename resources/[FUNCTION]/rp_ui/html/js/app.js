@@ -30,6 +30,7 @@ window.addEventListener('message', function(event) {
         updatePlayerHUD(data);
     } else if (data.action === 'hideHUD') {
         document.getElementById('player-hud')?.classList.add('hidden');
+        document.getElementById('hud-job-panel')?.classList.add('hidden');
     } else if (data.action === 'showDiagnostics') {
         document.getElementById('client-diagnostics')?.classList.remove('hidden');
     } else if (data.action === 'hideDiagnostics') {
