@@ -492,7 +492,7 @@ def test_character_database_reads_fail_gracefully():
 
 def test_inventory_item_use_cannot_be_overwritten_by_core_autosave():
     inventory = read("resources/[FUNCTION]/rp_inventory/server/main.lua")
-    assert "CanPerformAction(src, 'inventory:request_data', 2000)" in inventory
+    assert "CanPerformAction(src, 'inventory:request_data', 1000)" in inventory
     assert "CanPerformAction(src, 'inventory:use_item', 1000)" in inventory
     start = inventory.index("RegisterNetEvent('rp_inventory:useItem'")
     end = inventory.index("RegisterNetEvent('rp_inventory:giveItem'", start)
