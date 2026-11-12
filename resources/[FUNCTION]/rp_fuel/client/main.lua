@@ -149,8 +149,7 @@ RegisterNUICallback('purchase', function(data, cb)
         return
     end
     isPurchasePending = true
-    TriggerServerEvent('rp_fuel:server:purchase', currentNetId, litres, payment,
-        GetVehicleFuelLevel(currentVehicle))
+    TriggerServerEvent('rp_fuel:server:purchase', currentNetId, litres, payment)
     cb({ ok = true })
 end)
 
