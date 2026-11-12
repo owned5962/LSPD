@@ -343,13 +343,16 @@ RegisterNetEvent('rp_businesses:server:buyStoreItem', function(itemName)
 
     if not inventoryOk or added ~= true then
         local refundOk, refunded = pcall(player.addCash, price)
-        if not refundOk or refunded == false then
+        local refundSucceeded = refundOk and refunded == true
+        if not refundSucceeded then
             print(('[rp_businesses] ÉCHEC remboursement achat boutique joueur=%s item=%s prix=%s'):format(src, itemName, price))
         end
         storePurchaseLocks[src] = nil
         TriggerClientEvent('rp_businesses:client:storePurchaseResult', src, {
             success = false,
-            message = 'Inventaire plein ou sauvegarde impossible : paiement remboursé.',
+            message = refundSucceeded
+                and 'Inventaire plein ou sauvegarde impossible : paiement remboursé.'
+                or 'Échec de livraison et de remboursement. Contactez un administrateur.',
             cash = tonumber(player.cash) or 0
         })
         return
