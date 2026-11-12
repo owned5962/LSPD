@@ -1,4 +1,5 @@
 local pendingSpawns = {}
+local pendingTunes = {}
 local actionLocks = {}
 
 local function notify(src, message, kind)
@@ -318,6 +319,8 @@ end)
 
 AddEventHandler('playerDropped', function()
     local src = source
+    local tuning = pendingTunes[src]
+    if tuning then refundPendingTune(src, tuning, 'Personnalisation annulée après déconnexion.') end
     local pending = pendingSpawns[src]
     if pending then
         MySQL.update.await('UPDATE rp_owned_vehicles SET stored = 1 WHERE id = ? AND character_id = ?', { pending.id, pending.charId })
@@ -339,7 +342,181 @@ CreateThread(function()
                 notify(src, 'La sortie du véhicule a expiré. Il a été remis dans le garage.', 'error')
             end
         end
+        for src, pending in pairs(pendingTunes) do
+            if now - pending.createdAt > 30 then
+                refundPendingTune(src, pending, 'Délai de personnalisation dépassé. Paiement remboursé.')
+            end
+        end
     end
+end)
+
+
+local function findWorkshop(src)
+    local ped = GetPlayerPed(src)
+    if ped == 0 or not DoesEntityExist(ped) then return nil end
+    local coords = GetEntityCoords(ped)
+    for _, workshop in ipairs(Config.Workshops or {}) do
+        if #(coords - workshop.coords) <= Config.ServerInteractionDistance then return workshop end
+    end
+    return nil
+end
+
+local function getOwnedDrivenVehicle(src, player, rawNetId)
+    local netId = tonumber(rawNetId)
+    if not netId or netId < 1 or netId % 1 ~= 0 then return nil end
+    local ped = GetPlayerPed(src)
+    local vehicle = NetworkGetEntityFromNetworkId(netId)
+    if ped == 0 or vehicle == 0 or not DoesEntityExist(vehicle) or GetEntityType(vehicle) ~= 2
+        or GetPedInVehicleSeat(vehicle, -1) ~= ped
+        or NetworkGetEntityOwner(vehicle) ~= src then return nil end
+
+    local plate = GetVehicleNumberPlateText(vehicle):gsub('%s+
+    characterId = tonumber(characterId)
+    if not characterId then return {} end
+    return MySQL.query.await(
+        'SELECT id, plate, model, label, stored FROM rp_owned_vehicles WHERE character_id = ? ORDER BY id DESC',
+        { characterId }
+    ) or {}
+end)
+, '')
+    local owned = MySQL.single.await([[
+        SELECT id, model, vehicle_props FROM rp_owned_vehicles
+        WHERE plate = ? AND character_id = ? AND identifier = ? AND stored = 0 LIMIT 1
+    ]], { plate, player.charId, player.identifier })
+    if not owned or GetEntityModel(vehicle) ~= GetHashKey(tostring(owned.model)) then return nil end
+    return vehicle, owned, plate, netId
+end
+
+local function refundPendingTune(src, pending, reason)
+    pendingTunes[src] = nil
+    local player = getPlayer(src)
+    local ok, refunded
+    if player and type(player.addBank) == 'function' then
+        ok, refunded = pcall(player.addBank, pending.price, 'Remboursement personnalisation véhicule', 'deposit')
+        ok = ok and refunded == true
+    else
+        local rows
+        ok, rows = pcall(MySQL.update.await,
+            'UPDATE characters SET bank = bank + ? WHERE id = ? AND identifier = ?',
+            { pending.price, pending.charId, pending.identifier })
+        ok = ok and tonumber(rows) == 1
+    end
+    if not ok then
+        print(('[rp_garages] Tuning refund failed for %s: %s'):format(src, tostring(reason)))
+    end
+    TriggerClientEvent('rp_garages:client:tuneRollback', src, pending.modType, pending.originalIndex,
+        reason or 'La sauvegarde a échoué. Le paiement a été remboursé.')
+end
+
+RegisterNetEvent('rp_garages:server:openWorkshop', function()
+    local src = source
+    if not exports['rp_core']:CanPerformAction(src, 'garages:open_workshop', 900) then return end
+    local player = getPlayer(src)
+    local workshop = findWorkshop(src)
+    local ped = GetPlayerPed(src)
+    local vehicle = ped ~= 0 and GetVehiclePedIsIn(ped, false) or 0
+    if not player or not workshop or vehicle == 0 or GetPedInVehicleSeat(vehicle, -1) ~= ped
+        or NetworkGetEntityOwner(vehicle) ~= src then
+        notify(src, 'Place-toi au volant de ton véhicule dans un atelier.', 'error')
+        return
+    end
+    local plate = GetVehicleNumberPlateText(vehicle):gsub('%s+
+    characterId = tonumber(characterId)
+    if not characterId then return {} end
+    return MySQL.query.await(
+        'SELECT id, plate, model, label, stored FROM rp_owned_vehicles WHERE character_id = ? ORDER BY id DESC',
+        { characterId }
+    ) or {}
+end)
+, '')
+    local owned = MySQL.single.await([[
+        SELECT id, model FROM rp_owned_vehicles
+        WHERE plate = ? AND character_id = ? AND identifier = ? AND stored = 0 LIMIT 1
+    ]], { plate, player.charId, player.identifier })
+    if not owned or GetEntityModel(vehicle) ~= GetHashKey(tostring(owned.model)) then
+        notify(src, 'Seuls les véhicules enregistrés à ton nom peuvent être personnalisés.', 'error')
+        return
+    end
+    TriggerClientEvent('rp_garages:client:openTuning', src, {
+        workshop = workshop.label,
+        netId = NetworkGetNetworkIdFromEntity(vehicle),
+        plate = plate
+    })
+end)
+
+RegisterNetEvent('rp_garages:server:purchaseUpgrade', function(rawNetId, rawModType, rawModIndex, rawOriginalIndex)
+    local src = source
+    if not exports['rp_core']:CanPerformAction(src, 'garages:purchase_upgrade', 1500) then return end
+    if pendingTunes[src] then
+        notify(src, 'Une personnalisation est déjà en cours.', 'warning')
+        return
+    end
+    local player = getPlayer(src)
+    local workshop = findWorkshop(src)
+    local modType, modIndex, originalIndex = tonumber(rawModType), tonumber(rawModIndex), tonumber(rawOriginalIndex)
+    local category = modType and Config.TuningCategories[modType]
+    local vehicle, owned, plate, netId = player and getOwnedDrivenVehicle(src, player, rawNetId)
+    if not player or not workshop or not category or not vehicle or not modIndex or modIndex % 1 ~= 0
+        or modIndex < 0 or modIndex > category.maxIndex then
+        notify(src, 'Modification refusée : véhicule, emplacement ou niveau invalide.', 'error')
+        return
+    end
+    if category.toggle and modIndex ~= 1 then
+        notify(src, 'Cette option ne peut être achetée qu’en activation.', 'error')
+        return
+    end
+
+    local price = category.basePrice * (category.toggle and 1 or (modIndex + 1))
+    if price < 1 or price > 100000 then return end
+    if (tonumber(player.bank) or 0) < price then
+        notify(src, 'Solde bancaire insuffisant pour cette amélioration.', 'error')
+        return
+    end
+    local paidOk, paid = pcall(player.removeBank, price,
+        ('Personnalisation %s - %s'):format(category.label, plate), 'withdraw')
+    if not paidOk or paid ~= true then
+        notify(src, 'Le paiement bancaire a échoué. Aucun changement effectué.', 'error')
+        return
+    end
+
+    pendingTunes[src] = {
+        id = tonumber(owned.id), charId = player.charId, identifier = player.identifier,
+        plate = plate, model = tostring(owned.model), netId = netId, price = price,
+        modType = modType, modIndex = modIndex,
+        originalIndex = tonumber(originalIndex) or -1, createdAt = os.time()
+    }
+    TriggerClientEvent('rp_garages:client:applyPurchasedTune', src, modType, modIndex)
+end)
+
+RegisterNetEvent('rp_garages:server:saveTune', function(rawNetId, rawProps)
+    local src = source
+    local pending = pendingTunes[src]
+    local player = getPlayer(src)
+    local vehicle, owned, plate, netId = player and getOwnedDrivenVehicle(src, player, rawNetId)
+    if not pending or not vehicle or netId ~= pending.netId or plate ~= pending.plate
+        or tonumber(owned.id) ~= pending.id or os.time() - pending.createdAt > 30 then
+        if pending then refundPendingTune(src, pending, 'Validation du véhicule impossible. Paiement remboursé.') end
+        return
+    end
+
+    local props = validProps(rawProps, pending.model, pending.plate)
+    if not props or tonumber(props.mods[tostring(pending.modType)]) ~= pending.modIndex
+        and not (pending.modType == 18 and props.turbo == true)
+        and not (pending.modType == 22 and props.xenon == true) then
+        refundPendingTune(src, pending, 'La modification n’a pas été confirmée. Paiement remboursé.')
+        return
+    end
+
+    local ok, affected = pcall(MySQL.update.await,
+        'UPDATE rp_owned_vehicles SET vehicle_props = ? WHERE id = ? AND character_id = ? AND stored = 0',
+        { json.encode(props), pending.id, pending.charId })
+    if not ok or tonumber(affected) ~= 1 then
+        refundPendingTune(src, pending, 'Enregistrement impossible. Paiement remboursé.')
+        return
+    end
+
+    pendingTunes[src] = nil
+    TriggerClientEvent('rp_garages:client:tuneSaved', src, pending.modType, pending.modIndex, pending.price)
 end)
 
 exports('GetStoredVehicles', function(characterId)
