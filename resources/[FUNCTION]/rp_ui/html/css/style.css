@@ -578,3 +578,23 @@ body {
     .hud-vital-circle { width: 38px; height: 38px; }
     .hud-status-label { font-size: 6px; }
 }
+
+
+/* Separate occupation badge shown above the minimap. */
+.hud-job-text { min-width:0; flex:1; }
+.hud-job-text strong { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.hud-job-duty {
+    flex:0 0 auto;
+    padding:4px 6px;
+    border-radius:6px;
+    color:#fbbf24;
+    background:rgba(245,158,11,.12);
+    font-size:8px;
+    font-weight:800;
+    letter-spacing:.35px;
+}
+.hud-job-duty.on-duty { color:#86efac; background:rgba(34,197,94,.14); }
+@media (max-width:600px) {
+    #hud-job-panel { left:12px; top:2vh; min-width:160px; max-width:calc(100vw - 24px); }
+    #hud-job-panel strong { max-width:135px; }
+}
