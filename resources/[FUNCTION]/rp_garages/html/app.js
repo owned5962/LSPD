@@ -109,7 +109,7 @@ window.addEventListener('message', event => {
             category.installedIndex = Number(data.modIndex);
         }
         tuningPending = false;
-        tuningBuy.disabled = false;
+        tuningBuy.disabled = true;
         tuningBuy.textContent = 'Amélioration enregistrée ✓';
         document.getElementById('tuning-status').textContent = 'Amélioration payée et sauvegardée sur ton véhicule.';
     } else if (data.action === 'tuneRollback') {
