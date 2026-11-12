@@ -97,11 +97,13 @@ local function loadInventory(player)
         local row = MySQL.single.await(
             'SELECT items FROM player_inventories WHERE character_id = ?', { charId })
         local inventory
+        local restoredSavedInventory = false
 
         if row and row.items then
             local decodedOk, decoded = pcall(json.decode, row.items)
             if decodedOk and type(decoded) == 'table' then
                 inventory = normalizeInventory(decoded)
+                restoredSavedInventory = true
             else
                 print(('[rp_inventory] Invalid saved inventory for character %s; restoring defaults')
                     :format(charId))
@@ -116,7 +118,7 @@ local function loadInventory(player)
 
         playerInventories[src] = inventory
         inventoryCharacterIds[src] = charId
-        if not row or not row.items then
+        if not restoredSavedInventory then
             if not saveInventory(activePlayer) then
                 playerInventories[src] = nil
                 inventoryCharacterIds[src] = nil
