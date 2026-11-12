@@ -248,7 +248,10 @@ CreateThread(function()
                 end
             end
 
-            if nearestSector and nearestDistance <= (Config.InteractionDistance * Config.InteractionDistance) then
+            local verticalDistance = nearestSector and math.abs(coords.z - nearestSector.z) or math.huge
+            if nearestSector
+                and nearestDistance <= (Config.InteractionDistance * Config.InteractionDistance)
+                and verticalDistance <= 2.0 then
                 local groundZ = GetGroundLevel(nearestSector.x, nearestSector.y, nearestSector.z)
                 DrawMarker(1, nearestSector.x, nearestSector.y, groundZ + 0.15,
                     0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
