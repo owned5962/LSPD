@@ -65,11 +65,11 @@ local function validProps(rawProps, expectedModel, expectedPlate)
         props.neonColor = {}
         for i = 1, 3 do props.neonColor[i] = math.max(0, math.min(255, math.floor(tonumber(rawProps.neonColor[i]) or 0))) end
     end
-    if type(rawProps.customPrimaryColor) == 'table' then
+    if type(rawProps.customPrimaryColor) == 'table' and #rawProps.customPrimaryColor >= 3 then
         props.customPrimaryColor = {}
         for i = 1, 3 do props.customPrimaryColor[i] = math.max(0, math.min(255, math.floor(tonumber(rawProps.customPrimaryColor[i]) or 0))) end
     end
-    if type(rawProps.customSecondaryColor) == 'table' then
+    if type(rawProps.customSecondaryColor) == 'table' and #rawProps.customSecondaryColor >= 3 then
         props.customSecondaryColor = {}
         for i = 1, 3 do props.customSecondaryColor[i] = math.max(0, math.min(255, math.floor(tonumber(rawProps.customSecondaryColor[i]) or 0))) end
     end
