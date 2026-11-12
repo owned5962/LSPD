@@ -9,6 +9,10 @@ version '1.3.0'
 loadscreen 'html/index.html'
 loadscreen_manual_shutdown 'yes'
 
+shared_scripts {
+    'updates.lua'
+}
+
 client_scripts {
     'client/main.lua'
 }
