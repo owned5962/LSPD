@@ -70,6 +70,7 @@ end
 local function cancelRefuel(netId, pending, reason)
     if pendingRefuels[netId] ~= pending then return end
     pendingRefuels[netId] = nil
+    lastFuelUpdate[netId] = GetGameTimer()
     refundPayment(pending, reason)
     TriggerClientEvent('rp_fuel:client:purchaseResult', pending.source, false,
         'Ravitaillement annulé : ' .. reason .. '. Le remboursement est lancé.', netId)
