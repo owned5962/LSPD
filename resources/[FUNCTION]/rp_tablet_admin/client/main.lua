@@ -161,6 +161,8 @@ RegisterServerCallback('broadcastAnnouncement', 'rp_tablet_admin:server:broadcas
     { 'message' })
 RegisterServerCallback('requestPlayerPositions', 'rp_tablet_admin:server:requestPlayerPositions', {})
 RegisterServerCallback('requestAuditLogs', 'rp_tablet_admin:server:requestAuditLogs', {})
+RegisterServerCallback('requestReports', 'rp_tablet_admin:server:requestReports', {})
+RegisterServerCallback('updateReport', 'rp_tablet_admin:server:updateReport', { 'reportId', 'status' })
 
 RegisterNetEvent('rp_tablet_admin:client:weaponPolicySaveFailed', function(message)
     SendNUIMessage({ action = 'weaponPolicySaveFailed', message = tostring(message or 'Enregistrement impossible.') })
@@ -186,6 +188,14 @@ end)
 
 RegisterNetEvent('rp_tablet_admin:client:playerPositions', function(players)
     SendNUIMessage({ action = 'playerPositions', players = players or {} })
+end)
+
+RegisterNetEvent('rp_tablet_admin:client:reports', function(reports)
+    SendNUIMessage({ action = 'reports', reports = reports or {} })
+end)
+
+RegisterNetEvent('rp_tablet_admin:client:reportUpdated', function(reportId, status)
+    SendNUIMessage({ action = 'reportUpdated', reportId = reportId, status = status })
 end)
 
 RegisterNetEvent('rp_tablet_admin:client:startSpectate', function(targetId, targetCoords)
