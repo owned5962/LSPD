@@ -25,7 +25,7 @@ def test_admin_tablet_vehicle_spawn_is_server_authorized_and_has_no_delete_callb
     assert "RegisterNUICallback('deleteVehicle'" not in client
     assert "AllowExtendedAction(src, 'spawn_vehicle', 1000)" in server
     assert "type(rawModel) ~= 'string'" in server
-    assert "ADMINISTRATEUR</span>" in html
+    assert 'id="current-rank-label">STAFF</span>' in html
     assert '<span id="current-rank-label">FONDATEUR</span>' not in html
 
 
