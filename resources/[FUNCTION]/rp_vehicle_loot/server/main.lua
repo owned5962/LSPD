@@ -1,3 +1,4 @@
+local ENABLE_TIRE_REMOVAL = false -- Mise en veille serveur : bloque aussi les déclenchements d'événements falsifiés.
 local stolen = {}
 local pendingSteals = {}
 local TIRE_ACTION_DURATION_MS = 6500
@@ -77,6 +78,7 @@ local function wheelAlreadyStolen(netId, wheel)
 end
 
 RegisterNetEvent('rp_vehicle_loot:server:startTire', function(rawNetId, rawWheel)
+    if not ENABLE_TIRE_REMOVAL then return end
     local src = source
     if not exports['rp_core']:CanPerformAction(src, 'vehicle:steal_tire_start', 1000) then return end
 
@@ -133,6 +135,7 @@ RegisterNetEvent('rp_vehicle_loot:server:cancelTire', function(rawNetId, rawWhee
 end)
 
 RegisterNetEvent('rp_vehicle_loot:server:completeTire', function(rawNetId, rawWheel)
+    if not ENABLE_TIRE_REMOVAL then return end
     local src = source
     local netId, wheel = parseTarget(rawNetId, rawWheel)
     local pending = pendingSteals[src]
