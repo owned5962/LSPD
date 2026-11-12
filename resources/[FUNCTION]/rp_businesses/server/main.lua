@@ -204,27 +204,62 @@ RegisterNetEvent('rp_businesses:server:buyPistol', function()
         return
     end
 
-    if (tonumber(player.cash) or 0) < AMMUNATION_PISTOL_PRICE then
+    local cash = tonumber(player.cash) or 0
+    if cash < AMMUNATION_PISTOL_PRICE then
         TriggerClientEvent('rp_businesses:client:purchaseResult', src, {
-            success = false, message = 'Fonds insuffisants. Le pistolet coûte 500 $.',
-            cash = tonumber(player.cash) or 0
+            success = false, message = 'Fonds insuffisants. Le pistolet coûte 500 $.', cash = cash
         })
         return
     end
 
-    if type(player.removeCash) ~= 'function' or not player.removeCash(AMMUNATION_PISTOL_PRICE) then
+    -- Debit the character row atomically instead of relying on a cached player
+    -- save that can be temporarily locked by autosave or another transaction.
+    local locks = { player.charId }
+    if not exports['rp_core']:AcquireCharacterLock(locks) then
+        TriggerClientEvent('rp_businesses:client:purchaseResult', src, {
+            success = false, message = 'Votre compte est en cours de sauvegarde. Réessayez dans un instant.', cash = cash
+        })
+        return
+    end
+
+    local weaponName = AMMUNATION_PISTOL_WEAPON
+    local metadata = type(player.metadata) == 'table' and player.metadata or {}
+    metadata.weapons = type(metadata.weapons) == 'table' and metadata.weapons or {}
+    local hasWeapon = false
+    for _, entry in ipairs(metadata.weapons) do
+        if type(entry) == 'table' and entry.name == weaponName then
+            entry.ammo = math.max(tonumber(entry.ammo) or 0, 60)
+            hasWeapon = true
+            break
+        end
+    end
+    if not hasWeapon then metadata.weapons[#metadata.weapons + 1] = { name = weaponName, ammo = 60 } end
+
+    local ok, affected = pcall(MySQL.update.await, [[
+        UPDATE characters
+        SET cash = cash - ?, metadata = ?
+        WHERE id = ? AND identifier = ? AND cash >= ?
+    ]], { AMMUNATION_PISTOL_PRICE, json.encode(metadata), player.charId, player.identifier, AMMUNATION_PISTOL_PRICE })
+    exports['rp_core']:ReleaseCharacterLock(locks)
+
+    if not ok or tonumber(affected) ~= 1 then
         TriggerClientEvent('rp_businesses:client:purchaseResult', src, {
             success = false, message = 'Le paiement n’a pas pu être enregistré. Aucun achat effectué.',
-            cash = tonumber(player.cash) or 0
+            cash = tonumber(player.cash) or cash
         })
+        print(('[rp_businesses] Ammu-Nation payment failed for player %s / character %s: %s'):format(
+            src, tostring(player.charId), tostring(affected)))
         return
     end
 
-    TriggerClientEvent('rp_businesses:client:weaponPurchased', src, AMMUNATION_PISTOL_WEAPON)
+    player.cash = cash - AMMUNATION_PISTOL_PRICE
+    player.metadata = metadata
+    TriggerClientEvent('rp_core:client:updateCash', src, player.cash)
+    TriggerEvent('rp_economy:server:logTransaction', player.charId, 'ammunation',
+        AMMUNATION_PISTOL_PRICE, 'Ammu-Nation', 'Achat Pistolet standard')
+    TriggerClientEvent('rp_businesses:client:weaponPurchased', src, weaponName, 60)
     TriggerClientEvent('rp_businesses:client:purchaseResult', src, {
-        success = true,
-        message = 'Pistolet acheté pour 500 $.',
-        cash = tonumber(player.cash) or 0
+        success = true, message = 'Pistolet acheté pour 500 $.', cash = player.cash
     })
 end)
 
