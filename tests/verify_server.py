@@ -25,7 +25,7 @@ def test_database_schema():
     with open(sql_path) as f:
         sql = f.read()
 
-    tables = ['users', 'characters', 'bank_transactions', 'jobs', 'job_grades', 'admin_logs', 'items', 'billing', 'user_outfits']
+    tables = ['users', 'characters', 'bank_transactions', 'jobs', 'job_grades', 'admin_logs', 'items', 'billing', 'user_outfits', 'rp_driving_licenses']
     for table in tables:
         assert f"`{table}`" in sql or f"TABLE IF NOT EXISTS `{table}`" in sql, f"Table {table} missing!"
     print(f"✓ database.sql verified successfully with all {len(tables)} tables.")
@@ -59,7 +59,7 @@ def test_core_resources():
         res_dir = os.path.join(roleplay_dir, res)
         assert os.path.exists(res_dir), f"Missing core resource {res}"
         assert os.path.exists(os.path.join(res_dir, 'fxmanifest.lua')), f"Missing manifest for {res}"
-    expected_functions = ['rp_ui', 'rp_inventory', 'rp_interactions', 'rp_clothing', 'rp_economy', 'rp_jobs', 'rp_loadscreen', 'rp_tablet_admin', 'rp_anticheat']
+    expected_functions = ['rp_ui', 'rp_inventory', 'rp_interactions', 'rp_clothing', 'rp_economy', 'rp_jobs', 'rp_loadscreen', 'rp_tablet_admin', 'rp_anticheat', 'rp_drivingschool']
     for res in expected_functions:
         res_dir = os.path.join(function_dir, res)
         assert os.path.exists(res_dir), f"Missing function resource {res}"
