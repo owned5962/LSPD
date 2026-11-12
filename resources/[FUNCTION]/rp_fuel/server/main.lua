@@ -22,6 +22,24 @@ local function isAtStation(coords)
     return false
 end
 
+local function initializeVehicleFuel(vehicle, preserveExisting)
+    if not vehicle or vehicle == 0 or not DoesEntityExist(vehicle) then return nil end
+    local netId = NetworkGetNetworkIdFromEntity(vehicle)
+    if not netId or netId < 1 then return nil end
+
+    if vehicleFuel[netId] == nil then
+        local initialFuel = preserveExisting and tonumber(Entity(vehicle).state.rpFuel) or nil
+        if not initialFuel or initialFuel ~= initialFuel or initialFuel < 0 or initialFuel > 100 then
+            initialFuel = 100.0
+        end
+        vehicleFuel[netId] = initialFuel
+        lastFuelUpdate[netId] = GetGameTimer()
+        Entity(vehicle).state:set('rpFuel', initialFuel, true)
+    end
+
+    return vehicleFuel[netId]
+end
+
 local function validPayment(value)
     return value == 'cash' or value == 'bank' or value == 'auto'
 end
@@ -158,13 +176,7 @@ RegisterNetEvent('rp_fuel:server:purchase', function(rawNetId, rawLitres, paymen
 
     -- The authoritative fuel value is maintained by this server resource.
     -- Entity state bags are only replicated to clients; they are not trusted as input.
-    local currentFuel = vehicleFuel[netId]
-    if currentFuel == nil then
-        currentFuel = 100.0
-        vehicleFuel[netId] = currentFuel
-        lastFuelUpdate[netId] = GetGameTimer()
-        Entity(vehicle).state:set('rpFuel', currentFuel, true)
-    end
+    local currentFuel = initializeVehicleFuel(vehicle, true)
     if type(currentFuel) ~= 'number' or currentFuel ~= currentFuel
         or currentFuel < 0 or currentFuel > 100 then
         notify(src, 'Niveau de carburant serveur invalide. Réessayez plus tard.')
@@ -232,6 +244,12 @@ RegisterNetEvent('rp_fuel:server:purchase', function(rawNetId, rawLitres, paymen
 end)
 
 CreateThread(function()
+    -- Preserve existing replicated fuel when this resource is restarted; newly
+    -- created vehicles always begin with a full tank under server authority.
+    for _, vehicle in ipairs(GetAllVehicles()) do
+        initializeVehicleFuel(vehicle, true)
+    end
+
     -- Server-owned fuel simulation. Clients only receive the replicated value and
     -- can no longer raise their tank by writing an entity state bag.
     while true do
@@ -242,9 +260,7 @@ CreateThread(function()
                 local netId = NetworkGetNetworkIdFromEntity(vehicle)
                 if netId and netId > 0 then
                     if vehicleFuel[netId] == nil then
-                        vehicleFuel[netId] = 100.0
-                        lastFuelUpdate[netId] = now
-                        Entity(vehicle).state:set('rpFuel', 100.0, true)
+                        initializeVehicleFuel(vehicle, true)
                     elseif not pendingRefuels[netId] then
                         local previous = lastFuelUpdate[netId] or now
                         local elapsed = math.max(0, math.min(5000, now - previous)) / 1000.0
@@ -266,6 +282,15 @@ CreateThread(function()
             end
         end
     end
+end)
+
+AddEventHandler('entityCreated', function(entity)
+    CreateThread(function()
+        Wait(100)
+        if DoesEntityExist(entity) and GetEntityType(entity) == 2 then
+            initializeVehicleFuel(entity, false)
+        end
+    end)
 end)
 
 AddEventHandler('entityRemoved', function(entity)
