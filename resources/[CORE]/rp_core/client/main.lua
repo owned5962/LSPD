@@ -1,8 +1,19 @@
 PlayerData = {
+    isLoaded = false,
+    source = nil,
     identifier = nil,
     charId = nil,
+    characterSlot = nil,
     firstname = '',
     lastname = '',
+    name = '',
+    dateofbirth = '',
+    sex = 'm',
+    height = 175,
+    position = nil,
+    skin = {},
+    metadata = {},
+    duty = false,
     job = 'unemployed',
     jobLabel = 'Sans-emploi',
     jobGrade = 0,
@@ -18,7 +29,7 @@ local playerDataReady = false
 
 local function IsPlayerLoaded()
     local characterId = tonumber(PlayerData.charId)
-    return playerDataReady == true and characterId ~= nil and characterId > 0
+    return playerDataReady == true and PlayerData.isLoaded == true and characterId ~= nil and characterId > 0
 end
 
 RegisterNetEvent('rp_core:client:setPlayerData', function(data)
@@ -32,15 +43,18 @@ RegisterNetEvent('rp_core:client:setPlayerData', function(data)
     end
 
     local characterId = tonumber(PlayerData.charId)
-    playerDataReady = characterId ~= nil and characterId > 0
+    playerDataReady = data.isLoaded == true and characterId ~= nil and characterId > 0
+    PlayerData.isLoaded = playerDataReady
 end)
 
 RegisterNetEvent('rp_core:client:updateCash', function(amount)
-    PlayerData.cash = amount
+    amount = tonumber(amount)
+    if amount and amount >= 0 then PlayerData.cash = amount end
 end)
 
 RegisterNetEvent('rp_core:client:updateBank', function(amount)
-    PlayerData.bank = amount
+    amount = tonumber(amount)
+    if amount and amount >= 0 then PlayerData.bank = amount end
 end)
 
 RegisterNetEvent('rp_core:client:setJob', function(job, label, grade, gradeLabel)
