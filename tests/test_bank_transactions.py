@@ -116,3 +116,9 @@ def test_server_uses_real_terminal_proximity_and_atm_requires_registered_locatio
     assert "getLocationsByType('atm')" in server
     assert "vector3(x, y, z)) <= 4.0" in server
     assert "vector3(x, y, z)) <= 4.0" in server
+
+
+if __name__ == "__main__":
+    test_fingerprint_validates_location_before_rate_limit_and_prevents_duplicate_scans()
+    test_server_uses_real_terminal_proximity_and_atm_requires_registered_location()
+    print("Fingerprint and terminal regression checks passed.")
