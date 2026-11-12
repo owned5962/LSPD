@@ -130,6 +130,18 @@ def test_identifier_lookup_does_not_expose_the_live_player_record():
     assert "slot = player.slot" in lookup
 
 
+
+def test_core_job_exports_fail_soft_when_job_catalog_is_unavailable():
+    player = (CORE / "server/player.lua").read_text(encoding="utf-8")
+
+    assert "GetResourceState('rp_jobs') ~= 'started'" in player
+    assert "Le catalogue des métiers est indisponible" in player
+    assert "local lookupOk, isValid, jobObj = pcall(function()" in player
+    assert "local jobObj = { label = self.job }" in player
+    assert "local gradeData = { label = 'Grade ' .. tostring(self.jobGrade) }" in player
+    assert "local lookupOk, resolvedJob, resolvedGrade = pcall(function()" in player
+
+
 if __name__ == "__main__":
     test_server_player_registry_only_exposes_fully_loaded_characters()
     test_client_receives_complete_authoritative_character_snapshot()
@@ -140,4 +152,5 @@ if __name__ == "__main__":
     test_job_duty_is_shared_with_the_authoritative_player_record()
     test_core_rejects_invalid_character_identity_and_never_falls_back_to_id_one()
     test_identifier_lookup_does_not_expose_the_live_player_record()
+    test_core_job_exports_fail_soft_when_job_catalog_is_unavailable()
     print("Player session and SQL dependency checks passed.")
