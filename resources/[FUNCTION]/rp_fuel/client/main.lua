@@ -275,10 +275,12 @@ CreateThread(function()
             if pump and pumpDistance then
                 local pumpCoords = GetEntityCoords(pump)
                 local vehicleNearPump = vehicle ~= 0
-                    and #(GetEntityCoords(vehicle) - pumpCoords) <= 8.0
+                    and #(GetEntityCoords(vehicle) - pumpCoords) <= 1.0
                     and #(playerCoords - GetEntityCoords(vehicle)) <= FuelConfig.VehiclePlayerRadius
 
-                if vehicleNearPump and #(playerCoords - pumpCoords) <= 1.0 then
+                -- While seated, the player's ped is at the vehicle centre; only
+                -- the vehicle-to-pump distance must be within one metre.
+                if vehicleNearPump and (IsPedInAnyVehicle(ped, false) or #(playerCoords - pumpCoords) <= 1.0) then
                     waitTime = 0
                     if not prompt then
                         exports['rp_ui']:ShowTextUI('[E] Faire le plein · '
