@@ -89,7 +89,10 @@ local function UpdatePlayerHUD()
         hunger = math.floor(math.max(0, math.min(100, tonumber(data.hunger) or 100)) + 0.5),
         thirst = math.floor(math.max(0, math.min(100, tonumber(data.thirst) or 100)) + 0.5),
         stamina = math.floor(stamina + 0.5),
-        adminLevel = adminLevel
+        adminLevel = adminLevel,
+        jobLabel = tostring(data.jobLabel or data.job or 'Sans-emploi'),
+        jobGradeLabel = tostring(data.jobGradeLabel or 'Demandeur'),
+        duty = data.duty == true
     })
     DisplayRadar(true)
     return true
@@ -98,6 +101,8 @@ end
 RegisterNetEvent('rp_core:client:setPlayerData', function()
     CreateThread(function() Wait(100); UpdatePlayerHUD() end)
 end)
+RegisterNetEvent('rp_core:client:setJob', function() CreateThread(function() Wait(100); UpdatePlayerHUD() end) end)
+RegisterNetEvent('rp_core:client:setDuty', function() CreateThread(function() Wait(100); UpdatePlayerHUD() end) end)
 RegisterNetEvent('rp_core:client:updateCash', function() UpdatePlayerHUD() end)
 RegisterNetEvent('rp_core:client:updateBank', function() UpdatePlayerHUD() end)
 RegisterNetEvent('rp_core:client:updateNeeds', function() UpdatePlayerHUD() end)
