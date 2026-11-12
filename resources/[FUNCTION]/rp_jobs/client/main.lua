@@ -105,6 +105,20 @@ RegisterNetEvent('rp_jobs:client:jobSelectionResult', function(success, message)
     SendNUIMessage({ action = 'jobSelectionResult', success = success == true, message = tostring(message or '') })
 end)
 
+RegisterNetEvent('rp_jobs:client:syncCustomJobs', function(jobs)
+    for _, job in ipairs(type(jobs) == 'table' and jobs or {}) do
+        if type(job) == 'table' and type(job.name) == 'string' and type(job.grades) == 'table' then
+            JobsMap[job.name] = job
+            local exists = false
+            for _, current in ipairs(JobsList) do
+                if current.name == job.name then exists = true break end
+            end
+            if not exists then JobsList[#JobsList + 1] = job end
+        end
+    end
+    if isJobCenterOpen then SendNUIMessage({ action = 'updateJobs', jobs = JobsList }) end
+end)
+
 RegisterNetEvent('rp_jobs:client:jobStats', function(stats)
     SendNUIMessage({ action = 'jobStats', stats = type(stats) == 'table' and stats or {} })
 end)
