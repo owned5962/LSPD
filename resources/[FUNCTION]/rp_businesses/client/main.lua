@@ -203,7 +203,7 @@ CreateThread(function()
                 end
             end
 
-            if nearestHorizontal and nearestHorizontal <= 6.0 and nearestVertical <= 10.0 then
+            if nearestHorizontal and nearestHorizontal <= 1.0 and nearestVertical <= 10.0 then
                 sleep = 0
                 if not ammunationPromptVisible then
                     exports['rp_ui']:ShowTextUI('[E] Ouvrir la tablette Ammu-Nation')
@@ -386,7 +386,7 @@ CreateThread(function()
                 end
             end
 
-            if nearest and nearestDistance <= 2.8 then
+            if nearest and nearestDistance <= 1.0 then
                 sleep = 0
                 if not groceryPromptVisible then
                     exports['rp_ui']:ShowTextUI('[E] Ouvrir la boutique')
