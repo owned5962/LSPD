@@ -490,3 +490,91 @@ body {
     .speed-digital strong { font-size: 32px; }
     .vehicle-fuel { min-width: 88px; }
 }
+
+
+/* Barre noire de statut avec quatre indicateurs circulaires. */
+#player-hud {
+    position: absolute;
+    left: clamp(185px, 17vw, 330px) !important;
+    bottom: 3.5vh !important;
+    width: auto !important;
+    max-width: calc(100vw - clamp(185px, 17vw, 330px) - 20px) !important;
+    padding: 9px 13px !important;
+    border: 1px solid rgba(255,255,255,.12) !important;
+    border-radius: 17px !important;
+    background: rgba(0,0,0,.88) !important;
+    box-shadow: 0 8px 24px rgba(0,0,0,.48) !important;
+    backdrop-filter: blur(8px) !important;
+    pointer-events: none;
+    z-index: 1000;
+}
+#player-hud .hud-vitals {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+}
+.hud-status-item {
+    display: flex;
+    min-width: 48px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+}
+.hud-vital-circle {
+    --progress: 100%;
+    width: 46px;
+    height: 46px;
+    padding: 3px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: conic-gradient(var(--ring-color) var(--progress), rgba(255,255,255,.13) 0);
+    box-shadow: 0 2px 9px rgba(0,0,0,.5);
+}
+.hunger-circle { --ring-color: #fbbf24; }
+.thirst-circle { --ring-color: #38bdf8; }
+.stamina-circle { --ring-color: #a78bfa; }
+.hud-circle-inner {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius: 50%;
+    background: #080808;
+    color: #fff;
+}
+.hud-circle-inner i { color: var(--ring-color); font-size: 12px; }
+.hud-circle-inner b { color: #f8fafc; font-size: 8px; line-height: 1; font-weight: 900; }
+.hud-status-label {
+    color: #cbd5e1;
+    font-size: 7px;
+    font-weight: 800;
+    letter-spacing: .65px;
+    line-height: 1;
+    white-space: nowrap;
+}
+.admin-circle { --ring-color: #9ca3af; }
+.admin-circle .hud-circle-inner b { font-size: 18px; }
+.admin-circle[data-level="0"] { --ring-color: #9ca3af; }
+.admin-circle[data-level="1"] { --ring-color: #22c55e; }
+.admin-circle[data-level="2"] { --ring-color: #3b82f6; }
+.admin-circle[data-level="3"] { --ring-color: #ef4444; }
+.admin-circle[data-level="4"] { --ring-color: #f8fafc; }
+.admin-circle[data-level="4"] .hud-circle-inner b { color: #fff; text-shadow: 0 0 8px rgba(255,255,255,.45); }
+@media (max-width: 900px) {
+    #player-hud { left: 245px !important; max-width: calc(100vw - 260px) !important; padding: 8px 10px !important; }
+    #player-hud .hud-vitals { gap: 10px; }
+    .hud-vital-circle { width: 42px; height: 42px; }
+}
+@media (max-width: 600px) {
+    #player-hud { left: 150px !important; bottom: 3vh !important; max-width: calc(100vw - 160px) !important; padding: 7px 8px !important; }
+    #player-hud .hud-vitals { gap: 7px; }
+    .hud-vital-circle { width: 38px; height: 38px; }
+    .hud-status-label { font-size: 6px; }
+}
