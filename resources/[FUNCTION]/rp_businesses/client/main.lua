@@ -174,9 +174,7 @@ end)
 
 RegisterNetEvent('rp_businesses:client:weaponPurchased', function(weaponName, ammo)
     weaponName = type(weaponName) == 'string' and weaponName or 'WEAPON_PISTOL'
-    if not weaponName:match('^WEAPON_[A-Z0-9_]+
-
-RegisterNUICallback('closeAmmunation', function(_, cb)
+    if not weaponName:match('^WEAPON_[A-Z0-9_]+$'RegisterNUICallback('closeAmmunation', function(_, cb)
     closeAmmunationTablet()
     cb({ ok = true })
 end)
