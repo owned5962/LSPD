@@ -511,7 +511,12 @@ local function GetCreatorJobs()
 end
 
 local function GetCreatorSettings()
-    local settings = { name = GetConvar('sv_hostname', 'Los Santos Stories'), slots = GetConvarInt('sv_maxclients', 64) }
+    local settings = {
+        name = GetConvar('sv_hostname', 'Los Santos Stories'),
+        slots = GetConvarInt('sv_maxclients', 64),
+        fuelPrice = GetConvarInt('rp_fuel_price_per_litre', 6),
+        fuelConsumption = tonumber(GetConvar('rp_fuel_consumption_multiplier', '2.5')) or 2.5
+    }
     local ok, rows = pcall(MySQL.query.await, 'SELECT setting_key, setting_value FROM rp_creator_settings')
     if ok then
         for _, row in ipairs(rows or {}) do
@@ -531,6 +536,12 @@ function ApplyStoredCreatorSettings()
             elseif row.setting_key == 'max_slots' then
                 local slots = tonumber(row.setting_value)
                 if slots and slots >= 1 and slots <= 1024 then SetConvar('sv_maxclients', tostring(math.floor(slots))) end
+            elseif row.setting_key == 'fuel_price_per_litre' then
+                local price = tonumber(row.setting_value)
+                if price and price >= 1 and price <= 1000 then SetConvar('rp_fuel_price_per_litre', tostring(math.floor(price))) end
+            elseif row.setting_key == 'fuel_consumption_multiplier' then
+                local multiplier = tonumber(row.setting_value)
+                if multiplier and multiplier >= 0.1 and multiplier <= 20 then SetConvar('rp_fuel_consumption_multiplier', tostring(multiplier)) end
             end
         end
     end
@@ -603,6 +614,37 @@ RegisterNetEvent('rp_tablet_creator:server:setServerSettings', function(data)
     SetConvar('sv_maxclients', tostring(slots))
     reply(src, 'Nom du serveur appliqué. La capacité maximale nécessite un redémarrage du serveur.', true)
     LogCreatorAction(src, 'server_settings', nil, ('name=%s slots=%d'):format(name, slots))
+end)
+
+RegisterNetEvent('rp_tablet_creator:server:setFuelSettings', function(data)
+    local src = source
+    if not creatorAccessAllowed(src)
+        or not exports['rp_core']:CanPerformAction(src, 'creator:fuel_settings', 1200)
+        or type(data) ~= 'table' then return end
+
+    local price = tonumber(data.pricePerLitre)
+    local consumption = tonumber(data.consumptionMultiplier)
+    if not price or price % 1 ~= 0 or price < 1 or price > 1000
+        or not consumption or consumption ~= consumption or consumption < 0.1 or consumption > 20 then
+        reply(src, 'Prix ou multiplicateur de consommation invalide.', false)
+        return
+    end
+
+    local ok, result = pcall(MySQL.transaction.await, {
+        { query = 'INSERT INTO rp_creator_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)', values = { 'fuel_price_per_litre', tostring(math.floor(price)) } },
+        { query = 'INSERT INTO rp_creator_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)', values = { 'fuel_consumption_multiplier', tostring(consumption) } }
+    })
+    if not ok or result ~= true then
+        print('[rp_tablet_creator] Fuel settings save failed: ' .. tostring(result))
+        reply(src, 'Impossible de sauvegarder les réglages carburant.', false)
+        return
+    end
+
+    SetConvar('rp_fuel_price_per_litre', tostring(math.floor(price)))
+    SetConvar('rp_fuel_consumption_multiplier', tostring(consumption))
+    TriggerClientEvent('rp_fuel:client:settings', -1, math.floor(price), consumption)
+    reply(src, ('Carburant mis à jour : %d $/L · consommation x%.2f.'):format(math.floor(price), consumption), true)
+    LogCreatorAction(src, 'fuel_settings', nil, ('price=%d consumption=%.2f'):format(math.floor(price), consumption))
 end)
 
 RegisterNetEvent('rp_tablet_creator:server:setModuleState', function(resourceName, enabled)
