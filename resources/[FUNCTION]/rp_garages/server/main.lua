@@ -294,7 +294,9 @@ RegisterNetEvent('rp_garages:server:spawned', function(rawNetId, rawVehicleId)
     local entity = NetworkGetEntityFromNetworkId(netId)
     if entity == 0 or not DoesEntityExist(entity) or GetEntityType(entity) ~= 2
         or NetworkGetEntityOwner(entity) ~= src
-        or GetVehicleNumberPlateText(entity):gsub('%s+
+        or GetVehicleNumberPlateText(entity):gsub('%s+$', '') ~= pending.plate
+        or GetEntityModel(entity) ~= GetHashKey(pending.model)
+        or #(GetEntityCoords(entity) - pending.spawn) > 8.0 then
         MySQL.update.await('UPDATE rp_owned_vehicles SET stored = 1 WHERE id = ? AND character_id = ?', { pending.id, pending.charId })
         pendingSpawns[src] = nil
         TriggerClientEvent('rp_garages:client:spawnFailed', src, 'Le véhicule n’a pas été validé. Réessaie.')
