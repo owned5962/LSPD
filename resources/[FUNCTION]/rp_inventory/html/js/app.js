@@ -1,3 +1,4 @@
+const NUI_RESOURCE = 'rp_inventory';
 let selectedItem = null;
 let currentItems = [];
 
@@ -97,8 +98,7 @@ document.addEventListener('keydown', event => {
 });
 
 function nuiPost(endpoint, payload = {}) {
-    const resource = typeof GetParentResourceName === 'function' ? GetParentResourceName() : 'rp_inventory';
-    return fetch(`https://${resource}/${endpoint}`, {
+    return fetch(`https://${NUI_RESOURCE}/${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json; charset=UTF-8' },
         body: JSON.stringify(payload)
