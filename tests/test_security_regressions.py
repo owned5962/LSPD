@@ -428,7 +428,9 @@ def test_player_job_assignment_rejects_unknown_job_names():
     player = read("resources/[CORE]/rp_core/server/player.lua")
     assert "function IsValidJob(name)" in jobs
     assert "exports('IsValidJob', IsValidJob)" in jobs
-    assert "if not exports['rp_jobs']:IsValidJob(jobName) then" in player
+    assert "local lookupOk, isValid, jobObj = pcall(function()" in player
+    assert "local valid = exports['rp_jobs']:IsValidJob(jobName)" in player
+    assert "GetResourceState('rp_jobs') ~= 'started'" in player
     assert "Métier inconnu. Aucun changement appliqué." in player
 
 
