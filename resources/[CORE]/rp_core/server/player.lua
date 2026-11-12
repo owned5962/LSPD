@@ -161,10 +161,10 @@ function CreateRPPlayer(source, identifier, charData)
             return false
         end
         local gradeData = exports['rp_jobs']:GetJobGrade(jobName, grade)
-        local previousJob, previousGrade = self.job, self.jobGrade
-        self.job, self.jobGrade = jobName, grade
+        local previousJob, previousGrade, previousDuty = self.job, self.jobGrade, self.duty
+        self.job, self.jobGrade, self.duty = jobName, grade, false
         if not self.save() then
-            self.job, self.jobGrade = previousJob, previousGrade
+            self.job, self.jobGrade, self.duty = previousJob, previousGrade, previousDuty
             TriggerClientEvent('rp_core:client:notify', self.source, 'Impossible de sauvegarder votre métier. Aucun changement appliqué.', 'error')
             return false
         end
