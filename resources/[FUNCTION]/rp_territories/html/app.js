@@ -70,18 +70,22 @@ function openPanel(info) {
     document.getElementById('sector-title').textContent = `Secteur ${info.sectorId || ''}`;
     document.getElementById('price').textContent = `${info.price} $`;
     document.getElementById('duration').textContent = `${info.durationDays} jours`;
+    const territoryName = document.getElementById('territory-name');
+    territoryName.value = String(info.territoryName || `Territoire ${info.sectorId || ''}`).slice(0, 64);
+    document.getElementById('owner-name').textContent = String(info.ownerName || 'Aucun propriétaire');
+    document.getElementById('bank-balance').textContent = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(Number(info.bankBalance) || 0);
     const status = document.getElementById('status');
     const occupiedByOther = info.occupied && !info.isOwner;
     if (info.isOwner) {
         const remaining = Math.max(0, Number(info.expiresAt) - Math.floor(Date.now() / 1000));
         const days = Math.ceil(remaining / 86400);
-        status.textContent = `Tu possèdes ce secteur. Il te reste environ ${days} jour(s). Paie 100 $ pour renouveler et changer sa couleur.`;
+        status.textContent = `Tu possèdes ce secteur. Il te reste environ ${days} jour(s). Renouvelle pour 100 $ depuis ton compte bancaire pour conserver ou modifier son identité.`;
         claimButton.textContent = 'Renouveler 7 jours — 100 $';
     } else if (occupiedByOther) {
-        status.textContent = `Ce secteur est actuellement revendiqué par ${info.ownerName || 'un autre joueur'}. Il sera libéré à son expiration s'il ne renouvelle pas.`;
+        status.textContent = `Ce secteur appartient à ${info.ownerName || 'un autre joueur'} et ne peut pas être acheté actuellement. Il sera libéré à expiration s’il n’est pas renouvelé.`;
         claimButton.textContent = 'Secteur indisponible';
     } else {
-        status.textContent = 'Ce secteur est libre. Paie 100 $ pour le revendiquer pendant 7 jours.';
+        status.textContent = 'Ce secteur est libre. Débite 100 $ de ton compte bancaire pour le revendiquer pendant 7 jours.';
         claimButton.textContent = 'Revendiquer le secteur — 100 $';
     }
     claimButton.disabled = occupiedByOther;
@@ -106,12 +110,18 @@ window.addEventListener('message', event => {
 
 claimButton.addEventListener('click', async () => {
     if (!currentInfo || pending || claimButton.disabled || !selectedColor) return;
-    diag('info', 'CLAIM_CLICK', 'Secteur=' + currentInfo.sectorId + ' | couleur=' + selectedColor);
+    const territoryName = document.getElementById('territory-name').value.trim();
+    if (territoryName.length < 2 || territoryName.length > 64) {
+        feedback.textContent = 'Le nom du territoire doit contenir entre 2 et 64 caractères.';
+        feedback.className = '';
+        return;
+    }
+    diag('info', 'CLAIM_CLICK', 'Secteur=' + currentInfo.sectorId + ' | couleur=' + selectedColor + ' | nom=' + territoryName);
     pending = true;
     claimButton.disabled = true;
     feedback.textContent = 'Traitement du paiement…';
     try {
-        await post('claim', {sectorId: currentInfo.sectorId, colorId: selectedColor});
+        await post('claim', {sectorId: currentInfo.sectorId, colorId: selectedColor, territoryName});
         diag('info', 'CLAIM_CALLBACK_SENT', 'La demande NUI a été transmise au client Lua');
     } catch (error) {
         diag('error', 'CLAIM_SUBMIT_FAILED', String(error));
