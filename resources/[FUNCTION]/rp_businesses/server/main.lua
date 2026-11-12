@@ -228,6 +228,15 @@ local function purchaseAmmunationWeapon(src, itemName)
         })
         return
     end
+    local weaponAllowedOk, weaponAllowed = pcall(function()
+        return exports['rp_anticheat']:IsWeaponAllowed(definition.weapon)
+    end)
+    if not weaponAllowedOk or weaponAllowed ~= true then
+        TriggerClientEvent('rp_businesses:client:purchaseResult', src, {
+            success = false, message = 'Cette arme est désactivée par la politique du serveur.'
+        })
+        return
+    end
     if not exports['rp_core']:CanPerformAction(src, 'businesses:buy_ammunation_weapon', 1500) then
         TriggerClientEvent('rp_businesses:client:purchaseResult', src, {
             success = false, message = 'Veuillez patienter avant de renouveler votre achat.'
