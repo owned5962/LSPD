@@ -1,0 +1,54 @@
+name: Creator organizations verification
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "resources/[FUNCTION]/rp_jobs/server/main.lua"
+      - "resources/[FUNCTION]/rp_jobs/client/main.lua"
+      - "resources/[FUNCTION]/rp_jobs/html/js/app.js"
+      - "resources/[FUNCTION]/rp_tablet_creator/**"
+      - "resources/[FUNCTION]/rp_gangs/**"
+      - "server.cfg"
+      - "tests/test_creator_organizations.py"
+      - ".github/workflows/creator-organizations.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "resources/[FUNCTION]/rp_jobs/server/main.lua"
+      - "resources/[FUNCTION]/rp_jobs/client/main.lua"
+      - "resources/[FUNCTION]/rp_jobs/html/js/app.js"
+      - "resources/[FUNCTION]/rp_tablet_creator/**"
+      - "resources/[FUNCTION]/rp_gangs/**"
+      - "server.cfg"
+      - "tests/test_creator_organizations.py"
+      - ".github/workflows/creator-organizations.yml"
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install Lua 5.4
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y lua5.4
+      - name: Run Creator organization regression checks
+        run: python tests/test_creator_organizations.py
+      - name: Compile modified Lua resources
+        run: |
+          luac5.4 -p "resources/[FUNCTION]/rp_jobs/server/main.lua"
+          luac5.4 -p "resources/[FUNCTION]/rp_jobs/client/main.lua"
+          luac5.4 -p "resources/[FUNCTION]/rp_tablet_creator/server/main.lua"
+          luac5.4 -p "resources/[FUNCTION]/rp_tablet_creator/client/main.lua"
+          luac5.4 -p "resources/[FUNCTION]/rp_gangs/server/main.lua"
+      - name: Check modified NUI JavaScript
+        run: |
+          node --check "resources/[FUNCTION]/rp_jobs/html/js/app.js"
+          node --check "resources/[FUNCTION]/rp_tablet_creator/html/app.js"
