@@ -110,10 +110,27 @@ AddEventHandler('onClientResourceStop', function(resourceName)
 end)
 
 
--- Ammu-Nation: ouverture de la tablette d'achat au clavier E.
+-- Ammu-Nation : les points partagés sont disponibles immédiatement, sans attendre MySQL.
 local ammunationLocations = {}
 local ammunationPromptVisible = false
 local ammunationTabletOpen = false
+
+local function addAmmunationLocation(x, y, z)
+    x, y, z = tonumber(x), tonumber(y), tonumber(z)
+    if not x or not y or not z then return end
+    for _, existing in ipairs(ammunationLocations) do
+        if #(existing - vector3(x, y, z)) < 1.0 then return end
+    end
+    ammunationLocations[#ammunationLocations + 1] = vector3(x, y, z)
+end
+
+for _, category in ipairs(BusinessLocations or {}) do
+    if category.id == 'ammunation' then
+        for _, point in ipairs(category.points or {}) do
+            addAmmunationLocation(point[1], point[2], point[3])
+        end
+    end
+end
 
 local function closeAmmunationTablet()
     if not ammunationTabletOpen then return end
@@ -124,14 +141,9 @@ end
 
 RegisterNetEvent('rp_businesses:client:locations', function(locations)
     if type(locations) ~= 'table' then return end
-    ammunationLocations = {}
     for _, location in ipairs(locations) do
         if location.location_type == 'shop' and location.shop_style == 'ammunation' then
-            ammunationLocations[#ammunationLocations + 1] = vector3(
-                tonumber(location.x) or 0.0,
-                tonumber(location.y) or 0.0,
-                tonumber(location.z) or 0.0
-            )
+            addAmmunationLocation(location.x, location.y, location.z)
         end
     end
 end)
@@ -179,18 +191,22 @@ end)
 
 CreateThread(function()
     while true do
-        local sleep = 650
+        local sleep = 700
         if ammunationTabletOpen then
             sleep = 250
         elseif #ammunationLocations > 0 and not IsPauseMenuActive() then
             local coords = GetEntityCoords(PlayerPedId())
-            local nearestDistance = 999.0
+            local nearestHorizontal, nearestVertical
             for _, shopCoords in ipairs(ammunationLocations) do
-                local distance = #(coords - shopCoords)
-                if distance < nearestDistance then nearestDistance = distance end
+                local dx, dy = coords.x - shopCoords.x, coords.y - shopCoords.y
+                local horizontal = math.sqrt(dx * dx + dy * dy)
+                local vertical = math.abs(coords.z - shopCoords.z)
+                if not nearestHorizontal or horizontal < nearestHorizontal then
+                    nearestHorizontal, nearestVertical = horizontal, vertical
+                end
             end
 
-            if nearestDistance <= 1.8 then
+            if nearestHorizontal and nearestHorizontal <= 6.0 and nearestVertical <= 10.0 then
                 sleep = 0
                 if not ammunationPromptVisible then
                     exports['rp_ui']:ShowTextUI('[E] Ouvrir la tablette Ammu-Nation')
@@ -198,7 +214,7 @@ CreateThread(function()
                 end
                 if IsControlJustReleased(0, 38) then
                     TriggerServerEvent('rp_businesses:server:requestAmmunation')
-                    Wait(350)
+                    Wait(500)
                 end
             elseif ammunationPromptVisible then
                 exports['rp_ui']:HideTextUI()
@@ -217,7 +233,6 @@ AddEventHandler('onClientResourceStop', function(resourceName)
     closeAmmunationTablet()
     if ammunationPromptVisible then exports['rp_ui']:HideTextUI() end
 end)
-
 
 -- Supérettes : vendeurs PNJ et ouverture de la tablette avec E.
 local groceryPeds = {}
