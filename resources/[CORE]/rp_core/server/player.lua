@@ -42,6 +42,8 @@ function CreateRPPlayer(source, identifier, charData)
     self.dateofbirth = charData.dateofbirth or '1995-01-01'
     self.sex = charData.sex or 'm'
     self.height = tonumber(charData.height) or 175
+    self.phoneNumber = charData.phone_number
+    self.isDead = charData.is_dead == true or tonumber(charData.is_dead) == 1
     self.cash = tonumber(charData.cash) or Config.StartingCash
     self.bank = tonumber(charData.bank) or Config.StartingBank
     self.job = charData.job or 'unemployed'
@@ -243,6 +245,8 @@ function CreateRPPlayer(source, identifier, charData)
             dateofbirth = self.dateofbirth,
             sex = self.sex,
             height = self.height,
+            phoneNumber = self.phoneNumber,
+            isDead = self.isDead == true,
             cash = self.cash,
             bank = self.bank,
             job = self.job,
