@@ -43,9 +43,7 @@ local function captureVehicleProperties(vehicle)
         neonEnabled = {},
         turbo = IsToggleModOn(vehicle, 18),
         xenon = IsToggleModOn(vehicle, 22),
-        neonColor = {},
-        customPrimaryColor = {},
-        customSecondaryColor = {}
+        neonColor = {}
     }
 
     local primary, secondary = GetVehicleColours(vehicle)
