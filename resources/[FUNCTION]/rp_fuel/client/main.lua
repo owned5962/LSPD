@@ -42,7 +42,8 @@ local PumpModels = {
     'prop_gas_pump_1d',
     'prop_vintage_pump',
     'prop_gas_pump_old2',
-    'prop_gas_pump_old3'
+    'prop_gas_pump_old3',
+    'prop_gas_pump_old4'
 }
 
 local PumpModelHashes = {}
@@ -50,11 +51,12 @@ for _, model in ipairs(PumpModels) do
     PumpModelHashes[#PumpModelHashes + 1] = joaat(model)
 end
 
-local function nearestPump(coords)
+local function nearestPump(coords, searchRadius)
+    searchRadius = tonumber(searchRadius) or 4.5
     local best, bestDistance
     for _, modelHash in ipairs(PumpModelHashes) do
         local pump = GetClosestObjectOfType(
-            coords.x, coords.y, coords.z, 2.25, modelHash, false, false, false
+            coords.x, coords.y, coords.z, searchRadius, modelHash, false, false, false
         )
         if pump ~= 0 and DoesEntityExist(pump) then
             local pumpCoords = GetEntityCoords(pump)
@@ -228,19 +230,33 @@ CreateThread(function()
         local waitTime = 700
         if not isOpen and not isRefueling then
             local ped = PlayerPedId()
-            local coords = GetEntityCoords(ped)
-            local pump, pumpDistance = nearestPump(coords)
-            if pump and pumpDistance and pumpDistance <= 2.0 then
-                local vehicle = findVehicle(ped)
-                local vehicleNearPump = vehicle ~= 0
-                    and #(GetEntityCoords(vehicle) - GetEntityCoords(pump)) <= 12.0
-                    and #(GetEntityCoords(vehicle) - coords) <= 15.0
+            local playerCoords = GetEntityCoords(ped)
+            local vehicle = findVehicle(ped)
+            local pump, pumpDistance = nearestPump(playerCoords, 6.5)
 
-                if vehicleNearPump then
+            -- When the player is seated, the ped position is the vehicle centre.
+            -- Search from both positions so pumps on either side of the car work.
+            if vehicle ~= 0 then
+                local vehicleCoords = GetEntityCoords(vehicle)
+                local vehiclePump, vehiclePumpDistance = nearestPump(vehicleCoords, 7.5)
+                if vehiclePumpDistance and (not pumpDistance or vehiclePumpDistance < pumpDistance) then
+                    pump, pumpDistance = vehiclePump, vehiclePumpDistance
+                end
+            end
+
+            if pump and pumpDistance then
+                local pumpCoords = GetEntityCoords(pump)
+                local vehicleNearPump = vehicle ~= 0
+                    and #(GetEntityCoords(vehicle) - pumpCoords) <= 8.0
+                    and #(playerCoords - GetEntityCoords(vehicle)) <= FuelConfig.VehiclePlayerRadius
+
+                if vehicleNearPump and #(playerCoords - pumpCoords) <= 7.0 then
                     waitTime = 0
-                    exports['rp_ui']:ShowTextUI('[E] Faire le plein · '
-                        .. math.floor(GetVehicleFuelLevel(vehicle)) .. '%')
-                    prompt = true
+                    if not prompt then
+                        exports['rp_ui']:ShowTextUI('[E] Faire le plein · '
+                            .. math.floor(GetVehicleFuelLevel(vehicle)) .. '%')
+                        prompt = true
+                    end
                     if IsControlJustReleased(0, 38) then
                         openFuelUI(vehicle)
                         prompt = false
