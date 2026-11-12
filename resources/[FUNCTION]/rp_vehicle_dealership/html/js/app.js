@@ -105,6 +105,10 @@ function renderVehicles(vehicles) {
     allVehicles = Array.isArray(vehicles) ? vehicles : [];
     activeCategory = 'Tous';
     selectedVehicle = null;
+    buyButton.disabled = true;
+    selectedName.textContent = 'Aucun véhicule sélectionné';
+    selectedPrice.textContent = '—';
+    feedback.textContent = '';
     renderCategoryButtons();
     renderVehicleCards();
 }
