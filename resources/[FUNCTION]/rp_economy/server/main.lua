@@ -16,13 +16,13 @@ local function IsNearBankOrATM(src, allowATM)
 
     for _, location in ipairs(getLocationsByType('bank')) do
         local x, y, z = tonumber(location.x), tonumber(location.y), tonumber(location.z)
-        if x and y and z and #(coords - vector3(x, y, z)) <= 6.0 then return true end
+        if x and y and z and #(coords - vector3(x, y, z)) <= 4.0 then return true end
     end
 
     if allowATM then
         for _, location in ipairs(getLocationsByType('atm')) do
             local x, y, z = tonumber(location.x), tonumber(location.y), tonumber(location.z)
-            if x and y and z and #(coords - vector3(x, y, z)) <= 4.0 then return true end
+            if x and y and z and #(coords - vector3(x, y, z)) <= 2.5 then return true end
         end
     end
     return false
@@ -75,20 +75,31 @@ end
 
 RegisterNetEvent('rp_economy:server:authenticate', function()
     local src = source
-    if not exports['rp_core']:CanPerformAction(src, 'economy:fingerprint', 2500) then
+    -- Validate the actual terminal location before consuming the anti-spam cooldown.
+    -- Otherwise a failed proximity attempt can make the next valid scan look like a broken reader.
+    local player = exports['rp_core']:GetPlayerFromId(src)
+    if not player or not tonumber(player.charId) then
+        authenticatedSessions[src] = nil
         TriggerClientEvent('rp_economy:client:authenticationResult', src, {
             success = false,
-            message = 'Lecteur temporairement indisponible. Réessayez.'
+            message = 'Votre personnage n’est pas encore chargé. Réessayez.'
         })
         return
     end
 
-    local player = exports['rp_core']:GetPlayerFromId(src)
-    if not player or not tonumber(player.charId) or not IsNearBankOrATM(src, true) then
+    if not IsNearBankOrATM(src, true) then
         authenticatedSessions[src] = nil
         TriggerClientEvent('rp_economy:client:authenticationResult', src, {
             success = false,
-            message = 'Identification impossible : approchez-vous d’un guichet ou d’un distributeur.'
+            message = 'Identification impossible : approchez-vous du guichet ou placez-vous devant un véritable distributeur.'
+        })
+        return
+    end
+
+    if not exports['rp_core']:CanPerformAction(src, 'economy:fingerprint', 1200) then
+        TriggerClientEvent('rp_economy:client:authenticationResult', src, {
+            success = false,
+            message = 'Une lecture vient déjà d’être demandée. Patientez une seconde avant de réessayer.'
         })
         return
     end
