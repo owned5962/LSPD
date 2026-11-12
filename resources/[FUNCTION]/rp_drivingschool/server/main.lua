@@ -66,7 +66,11 @@ RegisterNetEvent('rp_drivingschool:server:startTheory', function(category)
         phase = 'theory',
         expiresAt = os.time() + Config.ExamTimeout
     }
-    TriggerClientEvent('rp_drivingschool:client:theory', src, category, definition.label, definition.questions)
+    local publicQuestions = {}
+    for index, question in ipairs(definition.questions) do
+        publicQuestions[index] = { q = question.q, a = question.a }
+    end
+    TriggerClientEvent('rp_drivingschool:client:theory', src, category, definition.label, publicQuestions)
 end)
 
 RegisterNetEvent('rp_drivingschool:server:submitTheory', function(rawAnswers)
@@ -124,6 +128,7 @@ RegisterNetEvent('rp_drivingschool:server:practicalStarted', function(netId)
         or not entity or entity == 0 or not DoesEntityExist(entity)
         or NetworkGetEntityOwner(entity) ~= src
         or GetEntityModel(entity) ~= GetHashKey(definition.model)
+        or #(GetEntityCoords(entity) - vector3(definition.spawn.x, definition.spawn.y, definition.spawn.z)) > 20.0
         or GetPedInVehicleSeat(entity, -1) ~= GetPlayerPed(src) then
         clearSession(src, 'Impossible de valider le véhicule d’examen.', 'error')
         TriggerClientEvent('rp_drivingschool:client:examFailed', src)
