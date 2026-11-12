@@ -6,7 +6,7 @@ author 'GAutier'
 description 'Tablette indépendante de gestion créateur, mapping et blips métiers'
 version '1.1.0'
 
-dependencies { 'rp_core', 'rp_jobs', 'rp_inventory', 'rp_characters', 'oxmysql' }
+dependencies { 'rp_core', 'rp_jobs', 'rp_inventory', 'rp_characters', 'rp_gangs', 'oxmysql' }
 
 ui_page 'html/index.html'
 files { 'html/index.html', 'html/style.css', 'html/app.js' }
