@@ -197,3 +197,127 @@ RegisterNetEvent('rp_businesses:server:buyPistol', function()
         cash = tonumber(player.cash) or 0
     })
 end)
+
+
+-- Catalogue des supérettes : prix et objets autorisés exclusivement côté serveur.
+local STORE_PRODUCTS = {
+    bread = 8, burger_bleeder = 18, pizza_pepperoni = 14,
+    sandwich_poulet = 12, tacos_viande = 16, hotdog = 10,
+    donut = 6, cookie_chocolat = 5, pomme = 4, salade_cesar = 15,
+    water = 5, soda_ecola = 7, soda_sprunk = 7, energy_drink = 12,
+    coffee = 8, the_glace = 9, jus_orange = 10, milkshake_vanille = 13
+}
+local STORE_LABELS = {
+    bread='Pain de campagne', burger_bleeder='Burger Bleeder', pizza_pepperoni='Pizza pepperoni',
+    sandwich_poulet='Sandwich poulet', tacos_viande='Tacos XL', hotdog='Hot-dog',
+    donut='Donut', cookie_chocolat='Cookie chocolat', pomme='Pomme rouge',
+    salade_cesar='Salade César', water='Eau minérale', soda_ecola='eCola',
+    soda_sprunk='Sprunk', energy_drink='Junk Energy', coffee='Café',
+    the_glace='Thé glacé', jus_orange='Jus d’orange', milkshake_vanille='Milkshake vanille'
+}
+local STORE_ICONS = {
+    bread='🥖', burger_bleeder='🍔', pizza_pepperoni='🍕', sandwich_poulet='🥪',
+    tacos_viande='🌮', hotdog='🌭', donut='🍩', cookie_chocolat='🍪',
+    pomme='🍎', salade_cesar='🥗', water='💧', soda_ecola='🥤',
+    soda_sprunk='🧃', energy_drink='⚡', coffee='☕', the_glace='🧋',
+    jus_orange='🍊', milkshake_vanille='🥛'
+}
+local storePurchaseLocks = {}
+
+local function getPlayerAtStore(src, maxDistance)
+    local player = exports['rp_core']:GetPlayerFromId(src)
+    local ped = GetPlayerPed(src)
+    if not player or ped == 0 or not DoesEntityExist(ped) then return nil end
+    local coords = GetEntityCoords(ped)
+    for _, location in ipairs(cachedLocations) do
+        if location.location_type == 'shop' and location.shop_style == 'food' then
+            local point = vector3(tonumber(location.x) or 0.0, tonumber(location.y) or 0.0, tonumber(location.z) or 0.0)
+            if #(coords - point) <= maxDistance then return player end
+        end
+    end
+    return nil
+end
+
+local function buildStoreCatalog()
+    local products = {}
+    for itemName, price in pairs(STORE_PRODUCTS) do
+        local definition = Config and Config.DefaultItems and Config.DefaultItems[itemName]
+        if definition then
+            products[#products + 1] = { item = itemName, label = STORE_LABELS[itemName] or definition.label,
+                price = price, image = STORE_ICONS[itemName] or '🛒' }
+        end
+    end
+    table.sort(products, function(a, b) return a.label < b.label end)
+    return products
+end
+
+RegisterNetEvent('rp_businesses:server:requestStore', function()
+    local src = source
+    if not exports['rp_core']:CanPerformAction(src, 'businesses:open_store', 1000) then return end
+    local player = getPlayerAtStore(src, 3.0)
+    if not player then
+        TriggerClientEvent('rp_core:client:notify', src, 'Approchez-vous du vendeur de la supérette.', 'error')
+        return
+    end
+    TriggerClientEvent('rp_businesses:client:openStore', src, {
+        cash = tonumber(player.cash) or 0, storeName = 'SUPÉRETTE LOS SANTOS',
+        products = buildStoreCatalog()
+    })
+end)
+
+RegisterNetEvent('rp_businesses:server:buyStoreItem', function(itemName)
+    local src = source
+    if type(itemName) ~= 'string' or #itemName > 48 or not STORE_PRODUCTS[itemName] then return end
+    if storePurchaseLocks[src] then return end
+    if not exports['rp_core']:CanPerformAction(src, 'businesses:buy_store_item', 900) then
+        TriggerClientEvent('rp_businesses:client:storePurchaseResult', src, {
+            success = false, message = 'Patientez avant un nouvel achat.'
+        })
+        return
+    end
+    local player = getPlayerAtStore(src, 4.0)
+    if not player then
+        TriggerClientEvent('rp_businesses:client:storePurchaseResult', src, {
+            success = false, message = 'Achat refusé : vous êtes trop loin de la boutique.',
+            cash = player and player.cash or 0
+        })
+        return
+    end
+    local price = STORE_PRODUCTS[itemName]
+    if (tonumber(player.cash) or 0) < price then
+        TriggerClientEvent('rp_businesses:client:storePurchaseResult', src, {
+            success = false, message = 'Vous n’avez pas assez d’argent en espèces.',
+            cash = tonumber(player.cash) or 0
+        })
+        return
+    end
+    if type(player.removeCash) ~= 'function' or not player.removeCash(price) then
+        TriggerClientEvent('rp_businesses:client:storePurchaseResult', src, {
+            success = false, message = 'Le paiement a échoué.',
+            cash = tonumber(player.cash) or 0
+        })
+        return
+    end
+    storePurchaseLocks[src] = true
+    local ok, added = pcall(function()
+        return exports['rp_inventory']:AddItem(src, itemName, 1)
+    end)
+    if not ok or added ~= true then
+        if type(player.addCash) == 'function' then player.addCash(price) end
+        storePurchaseLocks[src] = nil
+        TriggerClientEvent('rp_businesses:client:storePurchaseResult', src, {
+            success = false, message = 'Inventaire plein ou sauvegarde impossible : paiement remboursé.',
+            cash = tonumber(player.cash) or 0
+        })
+        return
+    end
+    storePurchaseLocks[src] = nil
+    TriggerClientEvent('rp_businesses:client:storePurchaseResult', src, {
+        success = true, message = (STORE_LABELS[itemName] or itemName) .. ' acheté.',
+        cash = tonumber(player.cash) or 0
+    })
+end)
+
+AddEventHandler('playerDropped', function()
+    storePurchaseLocks[source] = nil
+end)
