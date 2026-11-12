@@ -32,11 +32,6 @@ local function RemoveMapBlips()
     areaBlips, pointBlips = {}, {}
 end
 
-local function GetGroundLevel(x, y, fallback)
-    local found, groundZ = GetGroundZFor_3dCoord(x, y, 1000.0, false)
-    return found and groundZ or fallback
-end
-
 local function BuildMap()
     DebugLog('info', 'MAP_BUILD_START', ('Construction carte avec %d secteurs'):format(#Config.Sectors))
     AddTextEntry('BLIP_CAT_12', 'Territoires')
