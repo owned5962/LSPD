@@ -669,6 +669,272 @@ RegisterNetEvent('rp_inventory:server:requestWeapons', function()
     for _, entry in ipairs(type(player.metadata.weapons) == 'table' and player.metadata.weapons or {}) do
         if type(entry) == 'table' and type(entry.name) == 'string'
             and entry.name:match('^WEAPON_[A-Z0-9_]+
+    local player = exports['rp_core']:GetPlayerFromId(src)
+    local charId = inventoryCharacterIds[src]
+    if charId and playerInventories[src] then
+        local ok, err = pcall(MySQL.update.await,
+            'INSERT INTO player_inventories (character_id, items) VALUES (?, ?) ON DUPLICATE KEY UPDATE items = VALUES(items)',
+            { charId, json.encode(playerInventories[src]) }
+        )
+        if not ok then print(('[rp_inventory] Disconnect save failed for character %s: %s'):format(charId, tostring(err))) end
+    end
+    playerInventories[src] = nil
+    inventoryCharacterIds[src] = nil
+    transferLocks[src] = nil
+end)
+
+
+-- Server-only inventory grant API for trusted gameplay resources (e.g. vehicle salvage).
+local function AddItem(source, itemName, rawCount)
+    local src = tonumber(source)
+    local count = tonumber(rawCount)
+    local player = src and exports['rp_core']:GetPlayerFromId(src)
+    if not player or type(itemName) ~= 'string' or not count or count % 1 ~= 0 or count < 1 or count > 20 then return false end
+    local definition = Config.DefaultItems[itemName]
+    if not definition then return false end
+    if not playerInventories[src] or inventoryCharacterIds[src] ~= player.charId then
+        local ok = pcall(loadInventory, player)
+        if not ok then return false end
+    end
+    local current = normalizeInventory(playerInventories[src])
+    if getInventoryWeight(current) + definition.weight * count > Config.MaxWeight then
+        notify(src, 'error', 'Inventaire trop lourd : le butin a été laissé sur place.')
+        return false
+    end
+    local found = false
+    for _, item in ipairs(current) do
+        if item.name == itemName then item.count = item.count + count; found = true; break end
+    end
+    if not found then current[#current + 1] = { name = itemName, count = count, label = definition.label, weight = definition.weight } end
+    local ok = pcall(function()
+        MySQL.insert.await('INSERT INTO player_inventories (character_id, items) VALUES (?, ?) ON DUPLICATE KEY UPDATE items = VALUES(items)',
+            { player.charId, json.encode(current) })
+    end)
+    if not ok then return false end
+    playerInventories[src] = current
+    sendInventory(src, player)
+    return true
+end
+
+exports('AddItem', AddItem)
+
+
+-- Trusted staff API for the creator tablet. The caller must authorize the staff role
+-- before invoking this export; item names and quantities are validated here as well.
+local function AdminSetItem(source, itemName, operation, rawCount)
+    local src, count = tonumber(source), tonumber(rawCount)
+    local player = src and exports['rp_core']:GetPlayerFromId(src)
+    if not player or type(itemName) ~= 'string' or not Config.DefaultItems[itemName]
+        or (operation ~= 'add' and operation ~= 'remove')
+        or not count or count % 1 ~= 0 or count < 1 or count > 1000 then
+        return false
+    end
+
+    if not playerInventories[src] or inventoryCharacterIds[src] ~= player.charId then
+        local ok = pcall(loadInventory, player)
+        if not ok then return false end
+    end
+
+    local inventory = normalizeInventory(playerInventories[src])
+    local definition = Config.DefaultItems[itemName]
+    local foundIndex, currentCount
+    for index, item in ipairs(inventory) do
+        if item.name == itemName then foundIndex, currentCount = index, item.count; break end
+    end
+    currentCount = currentCount or 0
+    local nextCount = operation == 'add' and (currentCount + count) or (currentCount - count)
+    if nextCount < 0 or nextCount > 10000 then return false end
+
+    if nextCount == 0 then
+        if foundIndex then table.remove(inventory, foundIndex) end
+    elseif foundIndex then
+        inventory[foundIndex].count = nextCount
+    else
+        inventory[#inventory + 1] = { name = itemName, count = nextCount, label = definition.label, weight = definition.weight }
+    end
+
+    if getInventoryWeight(inventory) > Config.MaxWeight then return false end
+    local ok, err = pcall(function()
+        MySQL.update.await(
+            'INSERT INTO player_inventories (character_id, items) VALUES (?, ?) ON DUPLICATE KEY UPDATE items = VALUES(items)',
+            { player.charId, json.encode(inventory) }
+        )
+    end)
+    if not ok then
+        print(('[rp_inventory] Admin inventory update failed for character %s: %s'):format(player.charId, tostring(err)))
+        return false
+    end
+
+    playerInventories[src] = inventory
+    sendInventory(src, player)
+    notify(src, 'success', ('Inventaire modifié : %s x%d.'):format(definition.label, count))
+    return true
+end
+
+local function GetItemCatalog()
+    local catalog = {}
+    for name, definition in pairs(Config.DefaultItems) do
+        catalog[#catalog + 1] = {
+            name = name,
+            label = definition.label or name,
+            weight = tonumber(definition.weight) or 0
+        }
+    end
+    table.sort(catalog, function(a, b) return a.label < b.label end)
+    return catalog
+end
+
+exports('AdminSetItem', AdminSetItem)
+exports('GetItemCatalog', GetItemCatalog)
+) then
+            local allowedOk, allowed = pcall(function()
+                return exports['rp_anticheat']:IsWeaponAllowed(entry.name)
+            end)
+            if allowedOk and allowed == true then
+                weapons[#weapons + 1] = {
+                    name = entry.name,
+                    ammo = math.max(0, math.min(9999, math.floor(tonumber(entry.ammo) or 0)))
+                }
+            end
+        end
+    end
+    TriggerClientEvent('rp_inventory:client:restoreWeapons', src, weapons)
+end)
+
+AddEventHandler('playerDropped', function()
+    local src = source
+    local player = exports['rp_core']:GetPlayerFromId(src)
+    local charId = inventoryCharacterIds[src]
+    if charId and playerInventories[src] then
+        local ok, err = pcall(MySQL.update.await,
+            'INSERT INTO player_inventories (character_id, items) VALUES (?, ?) ON DUPLICATE KEY UPDATE items = VALUES(items)',
+            { charId, json.encode(playerInventories[src]) }
+        )
+        if not ok then print(('[rp_inventory] Disconnect save failed for character %s: %s'):format(charId, tostring(err))) end
+    end
+    playerInventories[src] = nil
+    inventoryCharacterIds[src] = nil
+    transferLocks[src] = nil
+end)
+
+
+-- Server-only inventory grant API for trusted gameplay resources (e.g. vehicle salvage).
+local function AddItem(source, itemName, rawCount)
+    local src = tonumber(source)
+    local count = tonumber(rawCount)
+    local player = src and exports['rp_core']:GetPlayerFromId(src)
+    if not player or type(itemName) ~= 'string' or not count or count % 1 ~= 0 or count < 1 or count > 20 then return false end
+    local definition = Config.DefaultItems[itemName]
+    if not definition then return false end
+    if not playerInventories[src] or inventoryCharacterIds[src] ~= player.charId then
+        local ok = pcall(loadInventory, player)
+        if not ok then return false end
+    end
+    local current = normalizeInventory(playerInventories[src])
+    if getInventoryWeight(current) + definition.weight * count > Config.MaxWeight then
+        notify(src, 'error', 'Inventaire trop lourd : le butin a été laissé sur place.')
+        return false
+    end
+    local found = false
+    for _, item in ipairs(current) do
+        if item.name == itemName then item.count = item.count + count; found = true; break end
+    end
+    if not found then current[#current + 1] = { name = itemName, count = count, label = definition.label, weight = definition.weight } end
+    local ok = pcall(function()
+        MySQL.insert.await('INSERT INTO player_inventories (character_id, items) VALUES (?, ?) ON DUPLICATE KEY UPDATE items = VALUES(items)',
+            { player.charId, json.encode(current) })
+    end)
+    if not ok then return false end
+    playerInventories[src] = current
+    sendInventory(src, player)
+    return true
+end
+
+exports('AddItem', AddItem)
+
+
+-- Trusted staff API for the creator tablet. The caller must authorize the staff role
+-- before invoking this export; item names and quantities are validated here as well.
+local function AdminSetItem(source, itemName, operation, rawCount)
+    local src, count = tonumber(source), tonumber(rawCount)
+    local player = src and exports['rp_core']:GetPlayerFromId(src)
+    if not player or type(itemName) ~= 'string' or not Config.DefaultItems[itemName]
+        or (operation ~= 'add' and operation ~= 'remove')
+        or not count or count % 1 ~= 0 or count < 1 or count > 1000 then
+        return false
+    end
+
+    if not playerInventories[src] or inventoryCharacterIds[src] ~= player.charId then
+        local ok = pcall(loadInventory, player)
+        if not ok then return false end
+    end
+
+    local inventory = normalizeInventory(playerInventories[src])
+    local definition = Config.DefaultItems[itemName]
+    local foundIndex, currentCount
+    for index, item in ipairs(inventory) do
+        if item.name == itemName then foundIndex, currentCount = index, item.count; break end
+    end
+    currentCount = currentCount or 0
+    local nextCount = operation == 'add' and (currentCount + count) or (currentCount - count)
+    if nextCount < 0 or nextCount > 10000 then return false end
+
+    if nextCount == 0 then
+        if foundIndex then table.remove(inventory, foundIndex) end
+    elseif foundIndex then
+        inventory[foundIndex].count = nextCount
+    else
+        inventory[#inventory + 1] = { name = itemName, count = nextCount, label = definition.label, weight = definition.weight }
+    end
+
+    if getInventoryWeight(inventory) > Config.MaxWeight then return false end
+    local ok, err = pcall(function()
+        MySQL.update.await(
+            'INSERT INTO player_inventories (character_id, items) VALUES (?, ?) ON DUPLICATE KEY UPDATE items = VALUES(items)',
+            { player.charId, json.encode(inventory) }
+        )
+    end)
+    if not ok then
+        print(('[rp_inventory] Admin inventory update failed for character %s: %s'):format(player.charId, tostring(err)))
+        return false
+    end
+
+    playerInventories[src] = inventory
+    sendInventory(src, player)
+    notify(src, 'success', ('Inventaire modifié : %s x%d.'):format(definition.label, count))
+    return true
+end
+
+local function GetItemCatalog()
+    local catalog = {}
+    for name, definition in pairs(Config.DefaultItems) do
+        catalog[#catalog + 1] = {
+            name = name,
+            label = definition.label or name,
+            weight = tonumber(definition.weight) or 0
+        }
+    end
+    table.sort(catalog, function(a, b) return a.label < b.label end)
+    return catalog
+end
+
+exports('AdminSetItem', AdminSetItem)
+exports('GetItemCatalog', GetItemCatalog)
+) then
+            local ammo = tonumber(entry.ammo) or 0
+            if ammo == ammo then
+                weapons[#weapons + 1] = {
+                    name = entry.name,
+                    ammo = math.max(0, math.min(9999, math.floor(ammo)))
+                }
+            end
+        end
+    end
+
+    TriggerClientEvent('rp_inventory:client:restoreWeapons', src, weapons)
+end)
+
+AddEventHandler('playerDropped', function()
     local src = source
     local player = exports['rp_core']:GetPlayerFromId(src)
     local charId = inventoryCharacterIds[src]
