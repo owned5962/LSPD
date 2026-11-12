@@ -6,7 +6,7 @@ author 'FiveM RP Team'
 description 'Character registration and character creator for FiveM'
 version '1.1.0'
 
-dependencies { 'oxmysql', 'rp_core' }
+dependencies { 'oxmysql', 'rp_core', 'rp_jobs' }
 
 
 ui_page 'html/index.html'
