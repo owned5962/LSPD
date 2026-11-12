@@ -89,16 +89,20 @@ end)
 RegisterNetEvent('rp_vehicle_dealership:server:open', function(dealerId)
     local src = source
     if not exports['rp_core']:CanPerformAction(src, 'vehicle_dealership:open', 1200) then
-        notify(src, 'Patientez avant de rouvrir le catalogue.', 'error')
+        TriggerClientEvent('rp_vehicle_dealership:client:openDenied', src, 'Patientez avant de rouvrir le catalogue.')
         return
     end
     local dealer = findDealer(src)
     if not dealer or dealer.id ~= dealerId then
-        notify(src, 'Vous devez être à moins de 1,5 mètre du point d’accueil du concessionnaire.', 'error')
+        TriggerClientEvent('rp_vehicle_dealership:client:openDenied', src,
+            'Vous devez être à moins de 1,5 mètre du point d’accueil du concessionnaire.')
         return
     end
     local player = exports['rp_core']:GetPlayerFromId(src)
-    if not player then return end
+    if not player then
+        TriggerClientEvent('rp_vehicle_dealership:client:openDenied', src, 'Votre personnage n’est pas encore chargé.')
+        return
+    end
     TriggerClientEvent('rp_vehicle_dealership:client:open', src, {
         dealer = dealer.id,
         label = dealer.label,
