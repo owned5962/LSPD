@@ -52,6 +52,8 @@ def test_admin_role_matching_is_case_insensitive_and_creator_tables_wait_for_mys
     creator = (CREATOR / "server/main.lua").read_text(encoding="utf-8")
     assert "tostring(player.group or ''):lower()" in server
     assert "IsPlayerAceAllowed(source, 'rp_founder')" in server
+    assert "local FOUNDER_FIVEM_IDENTIFIER = 'fivem:12219878'" in server
+    assert "if identifier == FOUNDER_FIVEM_IDENTIFIER then return true end" in server
     assert "role = GetStaffRole(src, adminPlayer)" in server
     assert "MySQL.ready(function()" in creator
     assert "for attempt = 1, 10 do" in creator
