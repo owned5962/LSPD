@@ -217,6 +217,7 @@ end)
 -- F12 client diagnostics. FiveM does not expose reliable CPU/GPU temperature or
 -- utilization to Lua; show only metrics the game client can actually measure.
 local diagnosticsOpen = false
+local currentServerPing = 0
 local function ToggleDiagnostics()
     if diagnosticsOpen then
         diagnosticsOpen = false
@@ -255,6 +256,7 @@ RegisterNetEvent('rp_ui:client:denyFounderDiagnostics', function()
 end)
 RegisterNetEvent('rp_ui:client:diagnosticsStats', function(stats)
     if diagnosticsOpen and type(stats) == 'table' then
+        currentServerPing = math.max(0, tonumber(stats.ping) or 0)
         SendNUIMessage({ action = 'updateServerDiagnostics', stats = stats })
     end
 end)
@@ -269,7 +271,7 @@ CreateThread(function()
                 action = 'updateDiagnostics',
                 fps = fps,
                 frameMs = math.floor(frameTime * 100000 + 0.5) / 100,
-                ping = GetPlayerPing(GetPlayerServerId(PlayerId())),
+                ping = currentServerPing,
                 players = #GetActivePlayers(),
                 maxPlayers = GetConvarInt('sv_maxclients', 0),
                 coords = { x = math.floor(coords.x), y = math.floor(coords.y), z = math.floor(coords.z) }
