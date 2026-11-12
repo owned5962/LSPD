@@ -797,12 +797,13 @@ def test_bank_requires_physical_proximity_and_e_interaction():
     client = read("resources/[FUNCTION]/rp_economy/client/main.lua")
     server = read("resources/[FUNCTION]/rp_economy/server/main.lua")
     ui = read("resources/[FUNCTION]/rp_economy/html/js/app.js")
-    assert "RegisterCommand('bank'" in client and "GetNearbyBank(3.0)" in client
-    assert "RegisterCommand('atm'" in client and "GetNearbyATM(2.0)" in client
+    assert "RegisterCommand('bank'" in client and "GetNearbyBank(1.0)" in client
+    assert "RegisterCommand('atm'" in client and "GetNearbyATM(1.0)" in client
     assert "IsControlJustReleased(0, 38)" in client
     assert "function GetParentResourceName()" not in ui
-    assert "IsNearBankOrATM(src, true)" in server
-    assert "IsNearBankOrATM(src, false)" in server
+    assert "if not IsNearBankOrATM(src, allowATM) then" in server
+    assert "requireAuthenticatedSession(src, true)" in server
+    assert "requireAuthenticatedSession(src, false)" in server
 
 
 def test_player_hud_is_updated_from_loaded_character_data():
