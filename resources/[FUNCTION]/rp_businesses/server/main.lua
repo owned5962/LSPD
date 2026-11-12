@@ -241,11 +241,10 @@ end
 local function buildStoreCatalog()
     local products = {}
     for itemName, price in pairs(STORE_PRODUCTS) do
-        local definition = Config and Config.DefaultItems and Config.DefaultItems[itemName]
-        if definition then
-            products[#products + 1] = { item = itemName, label = STORE_LABELS[itemName] or definition.label,
-                price = price, image = STORE_ICONS[itemName] or '🛒' }
-        end
+        products[#products + 1] = {
+            item = itemName, label = STORE_LABELS[itemName] or itemName,
+            price = price, image = STORE_ICONS[itemName] or '🛒'
+        }
     end
     table.sort(products, function(a, b) return a.label < b.label end)
     return products
