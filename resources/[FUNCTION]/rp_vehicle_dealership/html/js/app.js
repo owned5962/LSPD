@@ -22,19 +22,42 @@ function money(value) {
     return new Intl.NumberFormat('fr-FR').format(Number(value) || 0) + ' $';
 }
 
-function renderVehicles(vehicles) {
-    vehicleList.innerHTML = '';
-    selectedVehicle = null;
-    (vehicles || []).forEach(function(vehicle) {
+let allVehicles = [];
+let activeCategory = 'Tous';
+
+function renderCategoryButtons() {
+    const host = document.getElementById('vehicle-categories');
+    host.replaceChildren();
+    const categories = ['Tous', ...new Set(allVehicles.map(vehicle => vehicle.category || 'Autres'))];
+    categories.forEach(category => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'vehicle-category' + (activeCategory === category ? ' active' : '');
+        button.textContent = category;
+        button.addEventListener('click', () => {
+            activeCategory = category;
+            renderCategoryButtons();
+            renderVehicleCards();
+        });
+        host.appendChild(button);
+    });
+}
+
+function renderVehicleCards() {
+    vehicleList.replaceChildren();
+    const visibleVehicles = activeCategory === 'Tous'
+        ? allVehicles
+        : allVehicles.filter(vehicle => (vehicle.category || 'Autres') === activeCategory);
+    visibleVehicles.forEach(function(vehicle) {
         const card = document.createElement('button');
         card.type = 'button';
         card.className = 'vehicle';
         const art = document.createElement('div');
         art.className = 'vehicle-art';
         const image = document.createElement('img');
-        image.src = 'images/' + vehicle.image + '.svg';
+        image.src = 'images/' + (vehicle.image || 'compact') + '.svg';
         image.alt = vehicle.label;
-        image.onerror = function() { image.style.opacity = '0'; };
+        image.onerror = function() { image.src = 'images/compact.svg'; };
         art.appendChild(image);
 
         const info = document.createElement('div');
@@ -43,7 +66,7 @@ function renderVehicles(vehicles) {
         const name = document.createElement('strong');
         name.textContent = vehicle.label;
         const category = document.createElement('small');
-        category.textContent = vehicle.category;
+        category.textContent = vehicle.category || 'Autres';
         identity.append(name, category);
         const price = document.createElement('b');
         price.textContent = money(vehicle.price);
@@ -71,6 +94,14 @@ function renderVehicles(vehicles) {
         });
         vehicleList.appendChild(card);
     });
+}
+
+function renderVehicles(vehicles) {
+    allVehicles = Array.isArray(vehicles) ? vehicles : [];
+    activeCategory = 'Tous';
+    selectedVehicle = null;
+    renderCategoryButtons();
+    renderVehicleCards();
 }
 
 function closeTablet() {
