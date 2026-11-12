@@ -124,11 +124,10 @@ local function LoadCharacter(src, identifier, userGroup, char)
     -- leaving the client waiting after character selection.
     local loadOk, player = pcall(function()
         local createdPlayer = exports['rp_core']:CreateRPPlayer(src, identifier, char)
-        exports['rp_core']:GetAllPlayers()[src] = createdPlayer
-        createdPlayer.isLoaded = true
-        createdPlayer.name = tostring(createdPlayer.firstname or '') .. ' ' .. tostring(createdPlayer.lastname or '')
+        if not exports['rp_core']:RegisterPlayer(src, createdPlayer) then
+            error('Central player registration rejected')
+        end
         createdPlayer.syncClient()
-        TriggerEvent('rp_core:server:playerLoaded', src, createdPlayer)
         TriggerClientEvent('rp_core:client:playerLoaded', src, {
             source = src,
             charId = createdPlayer.charId,
