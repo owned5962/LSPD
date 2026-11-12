@@ -20,7 +20,7 @@ def test_admin_tabs_and_page_controls_are_separated():
     parser = IdCollector()
     parser.feed(html)
     assert len(parser.ids) == len(set(parser.ids)), "duplicate HTML id"
-    for tab in ("players", "gives", "weapons", "sanctions", "functions", "jobs", "weather", "map", "audit"):
+    for tab in ("players", "gives", "weapons", "sanctions", "functions", "jobs", "weather", "map", "reports", "audit"):
         assert f'data-admin-view="{tab}"' in html
         assert f'id="admin-{tab}-view"' in html
     for prefix in ("give", "economy", "sanction", "function", "job"):
@@ -138,6 +138,7 @@ def test_admin_tablet_has_no_conflicting_handlers_and_all_tabs_switch():
 
     assert "document.querySelectorAll('.admin-subview').forEach(view => view.classList.toggle('active'" in ui
     assert "else if (target==='audit') requestAuditLogs()" in ui
+    assert "else if (target==='reports') requestReports()" in ui
     assert "getPanelTarget('give')" in ui
     assert "getPanelTarget('sanction')" in ui
     assert "renderPlayerPickers();" in ui
@@ -181,6 +182,34 @@ def test_admin_economy_result_updates_nui_and_reports_only_server_confirmation()
     assert "data.action === 'economyResult'" in ui
     assert "result.cash" in ui and "result.bank" in ui
     assert "SendNUIMessage({ action = 'economyResult', result = result })" in client
+
+
+def test_player_reports_are_persisted_rate_limited_and_moderated_from_f10():
+    html = read("resources/[FUNCTION]/rp_tablet_admin/html/index.html")
+    ui = read("resources/[FUNCTION]/rp_tablet_admin/html/js/app.js")
+    client = read("resources/[FUNCTION]/rp_tablet_admin/client/main.lua")
+    server = read("resources/[FUNCTION]/rp_tablet_admin/server/extended.lua")
+    sql = read("database.sql")
+
+    assert "CREATE TABLE IF NOT EXISTS \`player_reports\`" in sql
+    assert "RegisterCommand('report'" in server
+    assert "ReportCooldowns[src]" in server
+    assert "60 secondes" in server
+    assert "INSERT INTO player_reports" in server
+    assert "RegisterNetEvent('rp_tablet_admin:server:requestReports'" in server
+    assert "AllowExtendedAction(src, 'reports_read', 1200)" in server
+    assert "RegisterNetEvent('rp_tablet_admin:server:updateReport'" in server
+    assert "AllowExtendedAction(src, 'reports_update', 700)" in server
+    assert "WHERE id = ? AND status = 'open'" in server
+    assert "LogExtendedAction(src, 'report_' .. status" in server
+    assert "RegisterServerCallback('requestReports'" in client
+    assert "RegisterServerCallback('updateReport'" in client
+    assert 'data-admin-view="reports"' in html
+    assert 'id="admin-reports-view"' in html
+    assert 'id="admin-reports-table-body"' in html
+    assert "function requestReports()" in ui
+    assert "function renderReports(reports)" in ui
+    assert "function updateReportStatus(reportId, status)" in ui
 
 
 if __name__ == "__main__":
