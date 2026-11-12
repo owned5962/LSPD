@@ -13,7 +13,7 @@ local function findLocation(src)
         local dx, dy = coords.x - point.x, coords.y - point.y
         local horizontalDistance = math.sqrt(dx * dx + dy * dy)
         local verticalDistance = math.abs(coords.z - point.z)
-        if horizontalDistance <= 10.0 and verticalDistance <= 8.0 then
+        if horizontalDistance <= 1.5 and verticalDistance <= 2.0 then
             return key
         end
     end
