@@ -230,6 +230,34 @@ RegisterNetEvent('rp_characters:client:spawnPlayer', function()
     end)
 end)
 
+RegisterNetEvent('rp_inventory:client:giveWeapon', function(weaponName, ammo)
+    if type(weaponName) ~= 'string' or not weaponName:match('^WEAPON_[A-Z0-9_]+    if type(weapons) ~= 'table' then return end
+    local ped = PlayerPedId()
+    if ped == 0 or not DoesEntityExist(ped) or IsEntityDead(ped) then return end
+
+    for _, entry in ipairs(weapons) do
+        if type(entry) == 'table' and type(entry.name) == 'string'
+            and entry.name:match('^WEAPON_[A-Z0-9_]+$') then
+            local hash = GetHashKey(entry.name)
+            if IsWeaponValid(hash) then
+                local ammo = math.max(0, math.min(9999, math.floor(tonumber(entry.ammo) or 0)))
+                GiveWeaponToPed(ped, hash, ammo, false, false)
+                SetPedAmmo(ped, hash, ammo)
+            end
+        end
+    end
+end)
+
+) then return end
+    local ped = PlayerPedId()
+    if ped == 0 or not DoesEntityExist(ped) or IsEntityDead(ped) then return end
+    local hash = GetHashKey(weaponName)
+    if not IsWeaponValid(hash) then return end
+    ammo = math.max(0, math.min(9999, math.floor(tonumber(ammo) or 0)))
+    GiveWeaponToPed(ped, hash, ammo, false, true)
+    SetPedAmmo(ped, hash, ammo)
+end)
+
 RegisterNetEvent('rp_inventory:client:restoreWeapons', function(weapons)
     if type(weapons) ~= 'table' then return end
     local ped = PlayerPedId()
