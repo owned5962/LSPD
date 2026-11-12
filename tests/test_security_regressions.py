@@ -1150,17 +1150,6 @@ def test_creator_skin_updates_use_existing_character_appearance_pipeline():
     assert "rp_characters:client:adminApplySkin" in client
     assert "ApplyCharacterAppearance(gender, skin)" in client
 
-if __name__ == "__main__":
-    checks = sorted(
-        (name, check)
-        for name, check in globals().items()
-        if name.startswith("test_") and callable(check)
-    )
-    for name, check in checks:
-        check()
-    print(f"All {len(checks)} security and persistence regression checks passed.")
-
-
 def test_character_creator_has_left_panel_french_birth_date_and_clothing_controls():
     html = read("resources/[CORE]/rp_characters/html/index.html")
     css = read("resources/[CORE]/rp_characters/html/css/style.css")
@@ -1257,14 +1246,6 @@ def test_anticheat_statistics_page_is_persistent_and_period_filterable():
     assert "severity-critical" in ui or "severity-critical" in read("resources/[FUNCTION]/rp_anticheat/html/css/style.css")
 
 
-if __name__ == "__main__":
-    checks = sorted((name, check) for name, check in globals().items()
-                    if name.startswith("test_") and callable(check))
-    for name, check in checks:
-        check()
-    print(f"All {len(checks)} security and persistence regression checks passed.")
-
-
 def test_admin_tablet_has_separate_give_sanction_function_job_weather_and_audit_pages():
     html = read("resources/[FUNCTION]/rp_tablet_admin/html/index.html")
     ui = read("resources/[FUNCTION]/rp_tablet_admin/html/js/app.js")
@@ -1335,3 +1316,19 @@ def test_job_center_has_profession_illustrations_and_statistics_view():
     assert "selection_count = selection_count + 1" in server
     assert "RecordJobSelection(jobName)" in server
     assert "'@oxmysql/lib/MySQL.lua'" in manifest
+
+def test_admin_extended_actions_respect_individual_tablet_revocation():
+    extended = read("resources/[FUNCTION]/rp_tablet_admin/server/extended.lua")
+    assert "CanUseTablet(src, 'admin')" in extended
+    assert "if not accessOk or tabletAllowed ~= true then return false end" in extended
+
+
+if __name__ == "__main__":
+    checks = sorted(
+        (name, check)
+        for name, check in globals().items()
+        if name.startswith("test_") and callable(check)
+    )
+    for name, check in checks:
+        check()
+    print(f"All {len(checks)} security and persistence regression checks passed.")
