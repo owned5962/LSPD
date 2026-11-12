@@ -74,7 +74,7 @@ def test_fuel_rejections_always_release_the_tablet_and_station_checks_have_a_fal
     config = (FUEL / "shared/config.lua").read_text(encoding="utf-8")
 
     assert "sendPurchaseFailure(src" in server
-    purchase_block = server.split("RegisterNetEvent('rp_fuel:server:purchase'", 1)[1].split("\\nCreateThread(function()", 1)[0]
+    purchase_block = server.split("RegisterNetEvent('rp_fuel:server:purchase'", 1)[1].split("CreateThread(function()", 1)[0]
     assert "notify(src," not in purchase_block
     assert "FuelConfig.Stations or {}" in server
     assert "GetLocationsByType('gas_station')" in server
