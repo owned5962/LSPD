@@ -1,14 +1,52 @@
+CreateThread(function()
+    while true do
+        if isShopOpen and clothingCamera and DoesCamExist(clothingCamera) then
+            local ped = PlayerPedId()
+            local cameraCoords = GetOffsetFromEntityInWorldCoords(ped, 0.0, 2.2, 0.65)
+            SetCamCoord(clothingCamera, cameraCoords.x, cameraCoords.y, cameraCoords.z)
+            PointCamAtEntity(clothingCamera, ped, 0.0, 0.0, 0.55, true)
+            Wait(0)
+        else
+            Wait(250)
+        end
+    end
+end)
+
 local isShopOpen = false
+local clothingCamera = nil
+
+local function stopClothingCamera()
+    if clothingCamera and DoesCamExist(clothingCamera) then
+        RenderScriptCams(false, true, 350, true, true)
+        DestroyCam(clothingCamera, false)
+    end
+    clothingCamera = nil
+end
+
+local function startClothingCamera()
+    stopClothingCamera()
+    local ped = PlayerPedId()
+    clothingCamera = CreateCam('DEFAULT_SCRIPTED_CAMERA', true)
+    if not clothingCamera or clothingCamera == 0 then clothingCamera = nil; return end
+    SetCamFov(clothingCamera, 38.0)
+    local cameraCoords = GetOffsetFromEntityInWorldCoords(ped, 0.0, 2.2, 0.65)
+    SetCamCoord(clothingCamera, cameraCoords.x, cameraCoords.y, cameraCoords.z)
+    PointCamAtEntity(clothingCamera, ped, 0.0, 0.0, 0.55, true)
+    SetCamActive(clothingCamera, true)
+    RenderScriptCams(true, true, 500, true, true)
+end
 
 AddEventHandler('onClientResourceStart', function(resourceName)
     if resourceName ~= GetCurrentResourceName() then return end
     isShopOpen = false
+    stopClothingCamera()
     SetNuiFocus(false, false)
     SendNUIMessage({ action = 'close' })
 end)
 
 AddEventHandler('onClientResourceStop', function(resourceName)
     if resourceName ~= GetCurrentResourceName() then return end
+    stopClothingCamera()
     SetNuiFocus(false, false)
 end)
 local clothingShops = {
@@ -177,6 +215,7 @@ CreateThread(function()
                     if IsControlJustPressed(0, 38) then
                         isShopOpen = true
                         SetNuiFocus(true, true)
+                        startClothingCamera()
                         SendNUIMessage({ action = 'open', catalog = GetClothingCatalog() })
                     end
                 end
@@ -184,6 +223,15 @@ CreateThread(function()
         end
         Wait(sleep)
     end
+end)
+
+RegisterNUICallback('rotatePlayer', function(data, cb)
+    if not isShopOpen then cb({ ok = false }); return end
+    local direction = type(data) == 'table' and tonumber(data.direction) or nil
+    if direction ~= -1 and direction ~= 1 then cb({ ok = false }); return end
+    local ped = PlayerPedId()
+    SetEntityHeading(ped, (GetEntityHeading(ped) + (direction * 12.0)) % 360.0)
+    cb({ ok = true })
 end)
 
 RegisterNUICallback('previewVariation', function(data, cb)
@@ -198,6 +246,7 @@ end)
 
 RegisterNUICallback('close', function(data, cb)
     isShopOpen = false
+    stopClothingCamera()
     SetNuiFocus(false, false)
     exports['rp_ui']:HideTextUI()
     SendNUIMessage({ action = 'close' })
@@ -208,6 +257,7 @@ RegisterNUICallback('saveOutfit', function(data, cb)
     if type(data) ~= 'table' then cb({ status = 'error' }); return end
     TriggerServerEvent('rp_clothing:saveOutfit', data.name, CaptureAppearance())
     isShopOpen = false
+    stopClothingCamera()
     SetNuiFocus(false, false)
     SendNUIMessage({ action = 'close' })
     cb({ status = 'submitted' })
