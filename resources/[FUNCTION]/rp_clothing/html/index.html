@@ -14,6 +14,15 @@
                 <div><span class="eyebrow">LOS SANTOS · STYLE</span><h1><i class="fa-solid fa-shirt"></i> Boutique</h1></div>
                 <button id="close-btn" aria-label="Fermer"><i class="fa-solid fa-xmark"></i></button>
             </header>
+            <section id="barber-panel" class="barber-panel hidden">
+                <div class="barber-title"><span class="barber-icon"><i class="fa-solid fa-scissors"></i></span><div><h2>COIFFEUR</h2><p>Prévisualise ta nouvelle coupe avant de confirmer.</p></div></div>
+                <div class="barber-preview-label"><i class="fa-solid fa-camera"></i> APERÇU TÊTE EN DIRECT</div>
+                <div class="barber-control"><label for="hair-style">Coupe <strong id="hair-style-value">0</strong></label><input id="hair-style" type="range" min="0" max="0" value="0"></div>
+                <div class="barber-control"><label for="hair-color">Couleur <strong id="hair-color-value">0</strong></label><input id="hair-color" type="range" min="0" max="63" value="0"></div>
+                <div class="barber-control"><label for="hair-highlight">Mèches <strong id="hair-highlight-value">0</strong></label><input id="hair-highlight" type="range" min="0" max="63" value="0"></div>
+                <div class="barber-actions"><button type="button" id="barber-cancel">Annuler</button><button type="button" id="barber-buy"><i class="fa-solid fa-check"></i> Valider la coupe <small>100 $</small></button></div>
+                <p id="barber-status" role="status"></p>
+            </section>
             <section class="intro"><div><strong>Compose ton look</strong><p>Chaque choix s'affiche directement sur ton personnage.</p></div><span class="live-dot">APERÇU LIVE</span></section>
             <div class="preview-controls" aria-label="Rotation du personnage">
                 <span>APERÇU PERSONNAGE</span>
