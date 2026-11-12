@@ -1,12 +1,11 @@
 local FrozenPlayers = {}
 
 local function IsPlayerAdmin(source)
-    if IsPlayerAceAllowed(source, "rp_admin") then
-        return true
-    end
+    if IsPlayerAceAllowed(source, 'rp_admin') then return true end
 
     local player = exports['rp_core']:GetPlayerFromId(source)
-    return player ~= nil and (player.group == 'admin' or player.group == 'superadmin' or player.group == 'fondateur')
+    local group = player and tostring(player.group or ''):lower() or ''
+    return group == 'admin' or group == 'superadmin' or group == 'fondateur'
 end
 
 local function GetOnlineTargetId(value)
@@ -66,72 +65,127 @@ end
 
 RegisterNetEvent('rp_tablet_admin:server:requestOpen', function()
     local src = source
-    if not IsPlayerAdmin(src) or not exports['rp_core']:CanPerformAction(src, 'admin:open', 1000) then
-        NotifyAdmin(src, "Accès refusé : permissions administrateur requises.")
+    local function deny(message, logReason)
+        if logReason then
+            print(('[rp_tablet_admin] F10 refusé pour %s (%s) : %s'):format(
+                GetPlayerName(src) or 'joueur inconnu', tostring(src), tostring(logReason)))
+        end
+        TriggerClientEvent('rp_tablet_admin:client:openDenied', src,
+            tostring(message or 'Ouverture de la tablette administrateur refusée.'))
+    end
+
+    if not IsPlayerAdmin(src) then
+        deny('Accès refusé : votre compte ne possède pas les permissions administrateur.', 'permission rp_admin absente')
+        return
+    end
+
+    local cooldownOk, canOpen = pcall(function()
+        return exports['rp_core']:CanPerformAction(src, 'admin:open', 1000)
+    end)
+    if not cooldownOk or canOpen ~= true then
+        deny('Patientez une seconde avant de rouvrir la tablette.', 'limitation de fréquence ou rp_core indisponible')
         return
     end
 
     local accessOk, tabletAllowed = pcall(function()
         return exports['rp_tablet_creator']:CanUseTablet(src, 'admin')
     end)
-    if not accessOk or tabletAllowed ~= true then
-        NotifyAdmin(src, "Votre accès à la tablette administrateur est désactivé.")
+    if not accessOk then
+        deny('Le service des autorisations est indisponible. Vérifiez rp_tablet_creator et MySQL.',
+            'export CanUseTablet indisponible')
+        return
+    end
+    if tabletAllowed ~= true then
+        deny('Votre accès à la tablette administrateur est désactivé dans la console Créateur.',
+            'admin_enabled désactivé')
         return
     end
 
-    local adminPlayer = exports['rp_core']:GetPlayerFromId(src)
-    local adminData = {
-        name = adminPlayer and ((adminPlayer.firstname or '') .. ' ' .. (adminPlayer.lastname or '')) or (GetPlayerName(src) or 'Administrateur'),
-        role = adminPlayer and adminPlayer.group or "Administrateur",
-        id = src
-    }
+    local buildOk, payload = pcall(function()
+        local adminPlayer = exports['rp_core']:GetPlayerFromId(src)
+        local adminData = {
+            name = adminPlayer and ((adminPlayer.firstname or '') .. ' ' .. (adminPlayer.lastname or ''))
+                or (GetPlayerName(src) or 'Administrateur'),
+            role = adminPlayer and adminPlayer.group or 'Administrateur',
+            id = src
+        }
 
-    local onlinePlayers, seen = {}, {}
-    for _, rawId in pairs(GetPlayers()) do
-        local pid = tonumber(rawId)
-        if pid and not seen[pid] then
-            local player = exports['rp_core']:GetPlayerFromId(pid)
-            local rawName = GetPlayerName(pid) or ('Joueur ' .. pid)
-            local first = player and tostring(player.firstname or '') or ''
-            local last = player and tostring(player.lastname or '') or ''
-            local name = first .. ' ' .. last
-            if name == ' ' then name = rawName end
-            local jobName = player and player.job or 'unemployed'
-            local job = exports['rp_jobs']:GetJob(jobName)
-            local ped = GetPlayerPed(pid)
-            local position
-            if ped and ped ~= 0 and DoesEntityExist(ped) then
-                local coords = GetEntityCoords(ped)
-                position = { x = coords.x, y = coords.y, z = coords.z }
+        local onlinePlayers, seen = {}, {}
+        for _, rawId in pairs(GetPlayers()) do
+            local pid = tonumber(rawId)
+            if pid and not seen[pid] then
+                local player = exports['rp_core']:GetPlayerFromId(pid)
+                local rawName = GetPlayerName(pid) or ('Joueur ' .. pid)
+                local first = player and tostring(player.firstname or '') or ''
+                local last = player and tostring(player.lastname or '') or ''
+                local name = first .. ' ' .. last
+                if name == ' ' then name = rawName end
+                local jobName = player and player.job or 'unemployed'
+                local job
+                pcall(function() job = exports['rp_jobs']:GetJob(jobName) end)
+                local ped = GetPlayerPed(pid)
+                local position
+                if ped and ped ~= 0 and DoesEntityExist(ped) then
+                    local coords = GetEntityCoords(ped)
+                    position = { x = coords.x, y = coords.y, z = coords.z }
+                end
+                onlinePlayers[#onlinePlayers + 1] = {
+                    id = pid, name = name, rawName = rawName, isSelf = pid == src, position = position,
+                    characterLoaded = player ~= nil,
+                    job = jobName, jobLabel = job and job.label or jobName,
+                    grade = player and player.jobGrade or 0, cash = player and player.cash or 0,
+                    bank = player and player.bank or 0, group = player and player.group or 'user',
+                    ping = GetPlayerPing(pid)
+                }
+                seen[pid] = true
             end
-            onlinePlayers[#onlinePlayers + 1] = {
-                id = pid, name = name, rawName = rawName, isSelf = pid == src, position = position,
-                characterLoaded = player ~= nil,
-                job = jobName, jobLabel = job and job.label or jobName,
-                grade = player and player.jobGrade or 0, cash = player and player.cash or 0,
-                bank = player and player.bank or 0, group = player and player.group or 'user',
-                ping = GetPlayerPing(pid)
-            }
-            seen[pid] = true
         end
-    end
-    if not seen[src] and GetPlayerName(src) then
-        onlinePlayers[#onlinePlayers + 1] = { id = src, name = GetPlayerName(src), rawName = GetPlayerName(src), isSelf = true }
-    end
-    table.sort(onlinePlayers, function(a, b) return a.id < b.id end)
+        if not seen[src] and GetPlayerName(src) then
+            onlinePlayers[#onlinePlayers + 1] = {
+                id = src, name = GetPlayerName(src), rawName = GetPlayerName(src), isSelf = true
+            }
+        end
+        table.sort(onlinePlayers, function(a, b) return a.id < b.id end)
 
-    local jobs = exports['rp_jobs']:GetAllJobs()
-    local itemCatalog = {}
-    local itemOk, catalog = pcall(function() return exports['rp_inventory']:GetItemCatalog() end)
-    if itemOk and type(catalog) == 'table' then itemCatalog = catalog end
-    local frozenPlayers = {}
-    for targetId, isFrozen in pairs(FrozenPlayers) do
-        if isFrozen and GetPlayerName(targetId) then frozenPlayers[#frozenPlayers + 1] = targetId end
+        local jobsOk, jobs = pcall(function() return exports['rp_jobs']:GetAllJobs() end)
+        if not jobsOk or type(jobs) ~= 'table' then
+            error('rp_jobs:GetAllJobs indisponible')
+        end
+
+        local itemCatalog = {}
+        local itemOk, catalog = pcall(function() return exports['rp_inventory']:GetItemCatalog() end)
+        if itemOk and type(catalog) == 'table' then itemCatalog = catalog end
+
+        local frozenPlayers = {}
+        for targetId, isFrozen in pairs(FrozenPlayers) do
+            if isFrozen and GetPlayerName(targetId) then frozenPlayers[#frozenPlayers + 1] = targetId end
+        end
+
+        local weaponPolicy = {}
+        local weaponsOk, weapons = pcall(function() return exports['rp_anticheat']:GetWeaponPolicy() end)
+        if weaponsOk and type(weapons) == 'table' then weaponPolicy = weapons end
+
+        return {
+            admin = adminData,
+            players = onlinePlayers,
+            jobs = jobs,
+            frozenPlayers = frozenPlayers,
+            items = itemCatalog,
+            weaponPolicy = weaponPolicy
+        }
+    end)
+
+    if not buildOk or type(payload) ~= 'table' then
+        print(('[rp_tablet_admin] Chargement F10 impossible pour %s (%s) : %s'):format(
+            GetPlayerName(src) or 'joueur inconnu', tostring(src), tostring(payload)))
+        deny('Impossible de charger les données administrateur. Vérifiez les ressources rp_jobs, rp_inventory et rp_anticheat.',
+            'construction des données impossible')
+        return
     end
-    local weaponPolicy = {}
-    local weaponsOk, weapons = pcall(function() return exports['rp_anticheat']:GetWeaponPolicy() end)
-    if weaponsOk and type(weapons) == 'table' then weaponPolicy = weapons end
-    TriggerClientEvent('rp_tablet_admin:client:openAuthorized', src, adminData, onlinePlayers, jobs, frozenPlayers, itemCatalog, weaponPolicy)
+
+    TriggerClientEvent('rp_tablet_admin:client:openAuthorized', src,
+        payload.admin, payload.players, payload.jobs, payload.frozenPlayers,
+        payload.items, payload.weaponPolicy)
 end)
 
 RegisterNetEvent('rp_tablet_admin:server:saveWeaponPolicy', function(rawPolicy)
