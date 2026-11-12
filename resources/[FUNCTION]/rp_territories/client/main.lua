@@ -36,26 +36,40 @@ end
 
 local function BuildMap()
     DebugLog('info', 'MAP_BUILD_START', ('Construction carte avec %d secteurs'):format(#Config.Sectors))
-    RemoveMapBlips()
-    for _, sector in ipairs(Config.Sectors) do
+    for index, sector in ipairs(Config.Sectors) do
         local owned = territories[sector.id]
         local color = owned and tonumber(owned.color) or 0
         local alpha = owned and Config.AreaAlphaOwned or Config.AreaAlphaFree
 
-        local area = AddBlipForArea(sector.x, sector.y, 0.0, Config.AreaSize, Config.AreaSize)
-        SetBlipColour(area, color) -- 0 = blanc pour tout secteur libre.
-        SetBlipAlpha(area, alpha)
-        SetBlipDisplay(area, 2) -- Toujours visible sur la carte et la minimap.
-        SetBlipAsShortRange(area, false)
-        if not area or area == 0 then DebugLog('error', 'AREA_BLIP_FAILED', ('secteur=%s'):format(sector.id)) end
-        areaBlips[#areaBlips + 1] = area
+        -- Create each map blip once, then only update its style on territory sync.
+        -- This prevents the 60 default white squares from flashing/disappearing.
+        local area = areaBlips[index]
+        if not area or not DoesBlipExist(area) then
+            area = AddBlipForArea(sector.x, sector.y, 0.0, Config.AreaSize, Config.AreaSize)
+            areaBlips[index] = area
+        end
+        if area and area ~= 0 then
+            SetBlipColour(area, color)
+            SetBlipAlpha(area, alpha)
+            SetBlipDisplay(area, 2)
+            SetBlipAsShortRange(area, false)
+            SetBlipHighDetail(area, true)
+        else
+            DebugLog('error', 'AREA_BLIP_FAILED', ('secteur=%s'):format(sector.id))
+        end
 
-        local point = AddBlipForCoord(sector.x, sector.y, sector.z)
-        SetBlipSprite(point, Config.PointBlipSprite)
-        SetBlipScale(point, Config.PointBlipScale)
-        SetBlipColour(point, color)
-        SetBlipDisplay(point, 2)
-        SetBlipAsShortRange(point, false)
+        local point = pointBlips[index]
+        if not point or not DoesBlipExist(point) then
+            point = AddBlipForCoord(sector.x, sector.y, sector.z)
+            pointBlips[index] = point
+        end
+        if point and point ~= 0 then
+            SetBlipSprite(point, Config.PointBlipSprite)
+            SetBlipScale(point, Config.PointBlipScale)
+            SetBlipColour(point, color)
+            SetBlipDisplay(point, 2)
+            SetBlipAsShortRange(point, false)
+        end
         BeginTextCommandSetBlipName('STRING')
         if owned then
             AddTextComponentString(('Secteur %s - %s'):format(sector.id, owned.ownerName or 'Occupé'))
@@ -66,7 +80,7 @@ local function BuildMap()
         if not point or point == 0 then DebugLog('error', 'POINT_BLIP_FAILED', ('secteur=%s'):format(sector.id)) end
         pointBlips[#pointBlips + 1] = point
     end
-    DebugLog('info', 'MAP_BUILD_DONE', ('%d zones et %d points créés'):format(#areaBlips, #pointBlips))
+    DebugLog('info', 'MAP_BUILD_DONE', ('%d zones et %d points conservés'):format(#areaBlips, #pointBlips))
 end
 
 RegisterNetEvent('rp_territories:client:sync', function(data)
