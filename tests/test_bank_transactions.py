@@ -15,10 +15,11 @@ def test_atm_and_bank_access_uses_registered_world_locations():
     assert "getLocationsByType('bank')" in server
     assert "getLocationsByType('atm')" in server
     assert "rp_businesses:server:requestLocations" in client
-    assert "GetNearbyATM(2.0)" in client
-    assert "GetNearbyBank(3.0)" in client
+    assert "GetNearbyATM(1.0)" in client
+    assert "GetNearbyBank(1.0)" in client
     assert "OpenBankUI(false)" in client
     assert "OpenBankUI(true)" in client
+    assert "openedAt)  > 1.0" in client or "openedAt) > 1.0" in client
 
 
 def test_server_requires_character_bound_fingerprint_session():
@@ -114,7 +115,7 @@ def test_server_uses_real_terminal_proximity_and_atm_requires_registered_locatio
     server = read("server/main.lua")
     assert "getLocationsByType('bank')" in server
     assert "getLocationsByType('atm')" in server
-    assert "vector3(x, y, z)) <= 4.0" in server
+    assert "vector3(x, y, z)) <= 1.5" in server
     assert "vector3(x, y, z)) <= 4.0" in server
 
 
