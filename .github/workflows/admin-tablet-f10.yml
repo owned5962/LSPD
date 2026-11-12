@@ -1,0 +1,35 @@
+name: Admin tablet F10 and Lua syntax
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  admin-tablet-f10:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Lua 5.4
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y lua5.4
+
+      - name: Verify F10, founder role and minimap regressions
+        run: python tests/test_admin_f10_open.py
+
+      - name: Compile affected Lua files
+        run: |
+          luac5.4 -p resources/'[FUNCTION]'/rp_tablet_admin/client/main.lua
+          luac5.4 -p resources/'[FUNCTION]'/rp_tablet_admin/server/main.lua
+          luac5.4 -p resources/'[FUNCTION]'/rp_ui/client/main.lua
+          luac5.4 -p resources/'[FUNCTION]'/rp_ui/server/main.lua
