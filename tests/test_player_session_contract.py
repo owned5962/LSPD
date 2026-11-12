@@ -61,10 +61,34 @@ def test_job_resources_do_not_load_unused_mysql_driver():
             source = (job / relative).read_text(encoding="utf-8")
             assert "MySQL." not in source, f"{job.name}/{relative} directly uses MySQL"
 
+def test_core_restart_requests_a_safe_character_bootstrap():
+    server = (CORE / "server/main.lua").read_text(encoding="utf-8")
+    client = (CORE / "client/main.lua").read_text(encoding="utf-8")
+    characters = (CHARACTERS / "server/main.lua").read_text(encoding="utf-8")
+
+    assert "rp_core:client:requestCharacterBootstrap" in server
+    assert "RegisterNetEvent('rp_core:client:requestCharacterBootstrap'" in client
+    assert "TriggerServerEvent('rp_characters:server:checkPlayer')" in client
+    assert "if IsPlayerLoaded() or bootstrapRequested then return end" in client
+    assert "Duplicate bootstrap requests are expected" in characters
+
+
+def test_inventory_is_preloaded_from_core_player_lifecycle_and_saved_on_unload():
+    inventory = (ROOT / "resources/[FUNCTION]/rp_inventory/server/main.lua").read_text(encoding="utf-8")
+
+    assert "AddEventHandler('rp_core:server:playerLoaded', WarmPlayerInventory)" in inventory
+    assert "AddEventHandler('rp_core:server:playerUnloaded'" in inventory
+    assert "inventoryLoadLocks[src] = charId" in inventory
+    assert "restoredSavedInventory" in inventory
+    assert "Default inventory could not be persisted" in inventory
+    assert "Disconnect save failed" not in inventory
+
 
 if __name__ == "__main__":
     test_server_player_registry_only_exposes_fully_loaded_characters()
     test_client_receives_complete_authoritative_character_snapshot()
     test_disconnect_final_save_retries_until_persisted()
     test_job_resources_do_not_load_unused_mysql_driver()
+    test_core_restart_requests_a_safe_character_bootstrap()
+    test_inventory_is_preloaded_from_core_player_lifecycle_and_saved_on_unload()
     print("Player session and SQL dependency checks passed.")
