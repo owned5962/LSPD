@@ -1,5 +1,3 @@
-local dutyPlayers = {}
-
 local function isAt(coords, src, maxDistance)
     local ped = GetPlayerPed(src)
     if ped == 0 then return false end
@@ -10,7 +8,7 @@ RegisterNetEvent('job_firefighter:setDuty', function(status)
     local src = source
     if not exports['rp_core']:CanPerformAction(src, 'job_firefighter:setDuty', 2000) then
         TriggerClientEvent('rp_core:client:notify', src, 'Patientez avant de changer votre état de service.', 'warning')
-        TriggerClientEvent('job_firefighter:dutyUpdated', src, dutyPlayers[src] == true)
+        TriggerClientEvent('job_firefighter:dutyUpdated', src, (exports['rp_core']:GetPlayerFromId(src) or {}).duty == true)
         return
     end
     local player = exports['rp_core']:GetPlayerFromId(src)
@@ -23,12 +21,9 @@ RegisterNetEvent('job_firefighter:setDuty', function(status)
         TriggerClientEvent('rp_core:client:notify', src, 'Impossible de synchroniser votre état de service. Réessayez.', 'error')
         return
     end
-    dutyPlayers[src] = status
     TriggerClientEvent('job_firefighter:dutyUpdated', src, status)
     print(string.format('[JOB_FIREFIGHTER] Player %s is now %s duty', player.name or src, status and 'ON' or 'OFF'))
 end)
 
 
-AddEventHandler('playerDropped', function()
-    dutyPlayers[source] = nil
-end)
+-- Duty state is owned by rp_core and is cleared with the player session.
