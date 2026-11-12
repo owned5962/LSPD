@@ -10,6 +10,16 @@ local function notify(message, kind)
     TriggerEvent('rp_core:client:notify', message, kind or 'info')
 end
 
+RegisterNetEvent('rp_fuel:client:settings', function(price, consumptionMultiplier)
+    FuelConfig.PricePerLitre = math.max(1, math.min(1000, tonumber(price) or FuelConfig.PricePerLitre or 6))
+    FuelConfig.ConsumptionMultiplier = math.max(0.1, math.min(20.0, tonumber(consumptionMultiplier) or FuelConfig.ConsumptionMultiplier or 2.5))
+end)
+
+CreateThread(function()
+    Wait(2000)
+    TriggerServerEvent('rp_fuel:server:requestSettings')
+end)
+
 RegisterNetEvent('rp_businesses:client:locations', function(locations)
     if type(locations) ~= 'table' then return end
     local stations = {}
