@@ -334,77 +334,13 @@ RegisterNetEvent('rp_tablet_admin:client:spawnVehicleForPlayer', function(model)
 end)
 
 RegisterNetEvent('rp_tablet_admin:client:giveWeapon', function(weaponName, ammo)
-    if type(weaponName) ~= 'string' or not weaponName:match('^WEAPON_[A-Z0-9_]+
-
-RegisterNetEvent('rp_tablet_admin:client:heal', function()
-    local ped = PlayerPedId()
-    SetEntityHealth(ped, GetEntityMaxHealth(ped))
-    ClearPedBloodDamage(ped)
-end)
-
-RegisterNetEvent('rp_tablet_admin:client:freezeToggle', function(freeze)
-    FreezeEntityPosition(PlayerPedId(), freeze == true)
-end)
-
-RegisterNetEvent('rp_tablet_admin:client:teleport', function(coords)
-    if type(coords) ~= 'table' or not tonumber(coords.x)
-        or not tonumber(coords.y) or not tonumber(coords.z) then return end
-    local ped = PlayerPedId()
-    SetEntityCoords(ped, tonumber(coords.x), tonumber(coords.y), tonumber(coords.z), false, false, false, true)
-end)
-
-RegisterNetEvent('rp_tablet_admin:client:revive', function()
-    local ped = PlayerPedId()
-    local coords = GetEntityCoords(ped)
-    NetworkResurrectLocalPlayer(coords.x, coords.y, coords.z, GetEntityHeading(ped), true, false)
-    SetEntityHealth(PlayerPedId(), 200)
-    ClearPedBloodDamage(PlayerPedId())
-end)
-
-RegisterNetEvent('rp_tablet_admin:client:syncWeather', function(weather)
-    if type(weather) ~= 'string' then return end
-    SetWeatherTypeOverTime(weather, 10.0)
-    Wait(1000)
-    ClearOverrideWeather()
-    SetWeatherTypePersist(weather)
-    SetWeatherTypeNow(weather)
-    SetWeatherTypeNowPersist(weather)
-end)
-
-RegisterNetEvent('rp_tablet_admin:client:syncTime', function(hours, minutes)
-    hours, minutes = tonumber(hours), tonumber(minutes)
-    if not hours or not minutes or hours < 0 or hours > 23 or minutes < 0 or minutes > 59 then return end
-    NetworkOverrideClockTime(hours, minutes, 0)
-end)
-
-AddEventHandler('onClientResourceStart', function(resourceName)
-    if resourceName ~= GetCurrentResourceName() then return end
-    isTabletOpen = false
-    isAdminOpening = false
-    SetNuiFocus(false, false)
-    SendNUIMessage({ action = 'closeTablet' })
-end)
-
-AddEventHandler('onClientResourceStop', function(resourceName)
-    if resourceName ~= GetCurrentResourceName() then return end
-    isAdminNoclip = false
-    if isAdminSpectating then
-        NetworkSetInSpectatorMode(false, spectateTargetPed or PlayerPedId())
-        ClearFocus()
+    if type(weaponName) ~= 'string' or not weaponName:match('^WEAPON_[A-Z0-9_]+$') then
+        return
     end
-    isAdminSpectating = false
-    spectateTargetPed = nil
-    local ped = PlayerPedId()
-    SetEntityCollision(ped, true, true)
-    SetEntityInvincible(ped, false)
-    SetPlayerInvincible(PlayerId(), false)
-    SetNuiFocus(false, false)
-    SendNUIMessage({ action = 'closeTablet' })
-    StopTabletAnimation()
-end)
-) then return end
+
     local hash = GetHashKey(weaponName)
     if not IsWeaponValid(hash) then return end
+
     ammo = math.max(0, math.min(9999, math.floor(tonumber(ammo) or 120)))
     GiveWeaponToPed(PlayerPedId(), hash, ammo, false, false)
     SetPedAmmo(PlayerPedId(), hash, ammo)
