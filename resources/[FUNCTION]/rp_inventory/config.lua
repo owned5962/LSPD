@@ -46,5 +46,26 @@ Config.DefaultItems = {
     ['rubber'] = { label = 'Caoutchouc usagé', weight = 0.5, type = 'item', icon = 'fas fa-circle' },
     ['copper_wire'] = { label = 'Fil de cuivre', weight = 0.3, type = 'item', icon = 'fas fa-bolt' },
     ['electronic_parts'] = { label = 'Composants électroniques', weight = 0.4, type = 'item', icon = 'fas fa-microchip' },
-    ['car_battery'] = { label = 'Batterie automobile', weight = 4.0, type = 'item', icon = 'fas fa-car-battery' }
+    ['car_battery'] = { label = 'Batterie automobile', weight = 4.0, type = 'item', icon = 'fas fa-car-battery' },
+
+    -- Armes de corps à corps : objets d'inventaire distincts des armes à feu.
+    ['weapon_knife'] = { label = 'Couteau', weight = 0.4, type = 'weapon', weapon = 'WEAPON_KNIFE', icon = 'fas fa-knife' },
+    ['weapon_bat'] = { label = 'Batte de baseball', weight = 1.2, type = 'weapon', weapon = 'WEAPON_BAT', icon = 'fas fa-baseball-bat-ball' },
+    ['weapon_crowbar'] = { label = 'Pied-de-biche', weight = 1.5, type = 'weapon', weapon = 'WEAPON_CROWBAR', icon = 'fas fa-toolbox' },
+    ['weapon_hammer'] = { label = 'Marteau', weight = 1.0, type = 'weapon', weapon = 'WEAPON_HAMMER', icon = 'fas fa-hammer' },
+    ['weapon_golfclub'] = { label = 'Club de golf', weight = 1.3, type = 'weapon', weapon = 'WEAPON_GOLFCLUB', icon = 'fas fa-golf-ball-tee' },
+    ['weapon_knuckle'] = { label = 'Poing américain', weight = 0.3, type = 'weapon', weapon = 'WEAPON_KNUCKLE', icon = 'fas fa-hand-fist' },
+    ['weapon_machete'] = { label = 'Machette', weight = 1.1, type = 'weapon', weapon = 'WEAPON_MACHETE', icon = 'fas fa-khanda' },
+    ['weapon_flashlight'] = { label = 'Lampe torche', weight = 0.5, type = 'weapon', weapon = 'WEAPON_FLASHLIGHT', icon = 'fas fa-flashlight' },
+    ['weapon_bottle'] = { label = 'Bouteille cassée', weight = 0.4, type = 'weapon', weapon = 'WEAPON_BOTTLE', icon = 'fas fa-wine-bottle' },
+    ['weapon_dagger'] = { label = 'Dague antique', weight = 0.5, type = 'weapon', weapon = 'WEAPON_DAGGER', icon = 'fas fa-khanda' },
+    ['weapon_hatchet'] = { label = 'Hachette', weight = 1.0, type = 'weapon', weapon = 'WEAPON_HATCHET', icon = 'fas fa-axe' },
+    ['weapon_switchblade'] = { label = 'Couteau à cran d’arrêt', weight = 0.4, type = 'weapon', weapon = 'WEAPON_SWITCHBLADE', icon = 'fas fa-knife' },
+    ['weapon_poolcue'] = { label = 'Queue de billard', weight = 1.2, type = 'weapon', weapon = 'WEAPON_POOLCUE', icon = 'fas fa-bowling-ball' },
+    ['weapon_wrench'] = { label = 'Clé à molette', weight = 1.0, type = 'weapon', weapon = 'WEAPON_WRENCH', icon = 'fas fa-wrench' },
+    ['weapon_battleaxe'] = { label = 'Hache de combat', weight = 1.8, type = 'weapon', weapon = 'WEAPON_BATTLEAXE', icon = 'fas fa-axe' },
+    ['weapon_stone_hatchet'] = { label = 'Hachette en pierre', weight = 1.4, type = 'weapon', weapon = 'WEAPON_STONE_HATCHET', icon = 'fas fa-axe' },
+
+    -- Arme à feu demandée pour le catalogue Ammu-Nation / inventaire.
+    ['weapon_mp5'] = { label = 'MP5', weight = 3.2, type = 'weapon', weapon = 'WEAPON_SMG', icon = 'fas fa-gun' }
 }
