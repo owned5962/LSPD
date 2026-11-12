@@ -513,3 +513,17 @@ CREATE TABLE IF NOT EXISTS `player_bans` (
     `banned_by` VARCHAR(64) NOT NULL,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+
+-- Auto-école : les permis sont attachés au personnage et à son identifiant de compte.
+CREATE TABLE IF NOT EXISTS `rp_driving_licenses` (
+    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `character_id` INT NOT NULL,
+    `identifier` VARCHAR(64) NOT NULL,
+    `category` ENUM('moto','voiture','avion','bateau','helicoptere') NOT NULL,
+    `issued_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uq_rp_driving_license_character_category` (`character_id`, `category`),
+    KEY `idx_rp_driving_license_identifier` (`identifier`),
+    CONSTRAINT `fk_rp_driving_license_character` FOREIGN KEY (`character_id`) REFERENCES `characters` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
