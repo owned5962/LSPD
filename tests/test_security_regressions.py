@@ -1339,3 +1339,31 @@ if __name__ == "__main__":
     for name, check in checks:
         check()
     print(f"All {len(checks)} security and persistence regression checks passed.")
+
+def test_admin_tablet_weapon_pattern_and_f10_keymap_are_lua_safe():
+    client = read("resources/[FUNCTION]/rp_tablet_admin/client/main.lua")
+    assert "local WEAPON_NAME_PATTERN = [[^WEAPON_[A-Z0-9_]+$]]" in client
+    assert "weaponName:match(WEAPON_NAME_PATTERN)" in client
+    assert "RegisterKeyMapping('rp_admin_tablet_toggle', 'Ouvrir la Tablette Admin', 'keyboard', 'F10')" in client
+    assert "RegisterNetEvent('rp_tablet_admin:client:openAuthorized'" in client
+
+
+def test_configured_founder_identifier_overrides_database_admin_group():
+    characters = read("resources/[CORE]/rp_characters/server/main.lua")
+    admin = read("resources/[FUNCTION]/rp_tablet_admin/server/main.lua")
+    config = read("server.cfg")
+    assert "local FOUNDER_FIVEM_IDENTIFIER = 'fivem:12219878'" in characters
+    assert "if IsFounderAccount(src) then return 'fondateur' end" in characters
+    assert "local FOUNDER_FIVEM_IDENTIFIER = 'fivem:12219878'" in admin
+    assert "if identifier == FOUNDER_FIVEM_IDENTIFIER then return true end" in admin
+    assert "add_principal identifier.fivem:12219878 group.fondateur" in config
+    assert "role = GetStaffRole(src, adminPlayer)" in admin
+
+
+def test_ui_uses_native_minimap_without_circlemap_texture_replacement():
+    ui = read("resources/[FUNCTION]/rp_ui/client/main.lua")
+    assert "SetMinimapClipType(0)" in ui
+    assert "HasStreamedTextureDictLoaded('circlemap')" not in ui
+    assert "AddReplaceTexture(" not in ui
+    assert "circlemap texture unavailable" not in ui
+
