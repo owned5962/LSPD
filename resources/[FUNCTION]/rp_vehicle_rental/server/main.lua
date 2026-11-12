@@ -9,8 +9,13 @@ local function findLocation(src)
     if not ped or ped == 0 or not DoesEntityExist(ped) then return nil end
     local coords = GetEntityCoords(ped)
     for key, location in pairs(Config.Locations) do
-        local point = vector3(location.ped.x, location.ped.y, location.ped.z)
-        if #(coords - point) <= 8.0 then return key end
+        local point = location.ped
+        local dx, dy = coords.x - point.x, coords.y - point.y
+        local horizontalDistance = math.sqrt(dx * dx + dy * dy)
+        local verticalDistance = math.abs(coords.z - point.z)
+        if horizontalDistance <= 10.0 and verticalDistance <= 8.0 then
+            return key
+        end
     end
     return nil
 end
@@ -58,14 +63,19 @@ end
 
 RegisterNetEvent('rp_vehicle_rental:server:openTablet', function(locationKey)
     local src = source
-    if not exports['rp_core']:CanPerformAction(src, 'vehicle_rental:open', 1500) then return end
+    if not exports['rp_core']:CanPerformAction(src, 'vehicle_rental:open', 1000) then
+        TriggerClientEvent('rp_vehicle_rental:client:openDenied', src, 'Patientez avant de rouvrir la location.')
+        return
+    end
     local actualLocation = findLocation(src)
     if not actualLocation or actualLocation ~= locationKey then
-        notify(src, 'Approchez-vous du comptoir de location.', 'error')
+        TriggerClientEvent('rp_vehicle_rental:client:openDenied', src,
+            'Approchez-vous du vendeur situé devant le bâtiment de location.')
         return
     end
     if rentals[src] then
-        notify(src, 'Vous avez déjà un véhicule en location.', 'warning')
+        TriggerClientEvent('rp_vehicle_rental:client:openDenied', src,
+            'Vous avez déjà un véhicule en location.')
         return
     end
     TriggerClientEvent('rp_vehicle_rental:client:openTablet', src, false, Config.Vehicles,
@@ -74,7 +84,10 @@ end)
 
 RegisterNetEvent('rp_vehicle_rental:server:rent', function(locationKey, model, rawMinutes)
     local src = source
-    if not exports['rp_core']:CanPerformAction(src, 'vehicle_rental:rent', 2500) then return end
+    if not exports['rp_core']:CanPerformAction(src, 'vehicle_rental:rent', 1500) then
+        notify(src, 'Patientez avant de confirmer une nouvelle location.', 'warning')
+        return
+    end
     local actualLocation = findLocation(src)
     local vehicle = getVehicle(model)
     local minutes = validDuration(rawMinutes)
@@ -147,7 +160,10 @@ end)
 
 RegisterNetEvent('rp_vehicle_rental:server:renew', function(rawMinutes)
     local src = source
-    if not exports['rp_core']:CanPerformAction(src, 'vehicle_rental:renew', 2500) then return end
+    if not exports['rp_core']:CanPerformAction(src, 'vehicle_rental:renew', 1500) then
+        notify(src, 'Patientez avant de confirmer la prolongation.', 'warning')
+        return
+    end
     local rental = rentals[src]
     local minutes = validDuration(rawMinutes)
     if not rental or not rental.graceUntil or os.time() > rental.graceUntil or not minutes then
