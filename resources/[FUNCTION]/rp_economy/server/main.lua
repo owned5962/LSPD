@@ -22,7 +22,7 @@ local function IsNearBankOrATM(src, allowATM)
     if allowATM then
         for _, location in ipairs(getLocationsByType('atm')) do
             local x, y, z = tonumber(location.x), tonumber(location.y), tonumber(location.z)
-            if x and y and z and #(coords - vector3(x, y, z)) <= 4.0 then return true end
+            if x and y and z and #(coords - vector3(x, y, z)) <= 1.5 then return true end
         end
     end
     return false
