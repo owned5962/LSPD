@@ -46,8 +46,10 @@ def test_fuel_interaction_targets_individual_gas_pumps_with_e():
     assert "prop_gas_pump_1a" in client
     assert "prop_gas_pump_1d" in client
     assert "prop_vintage_pump" in client
-    assert "nearestPump(coords)" in client
-    assert "pumpDistance <= 2.0" in client
+    assert "nearestPump(playerCoords, 6.5)" in client
+    assert "nearestPump(vehicleCoords, 7.5)" in client
+    assert "vehicleNearPump" in client
+    assert "prop_gas_pump_old4" in client
     assert "IsControlJustReleased(0, 38)" in client
     assert "Ouvrir la tablette de la station" not in client
     assert "'[E] Faire le plein · '" in client
@@ -64,3 +66,25 @@ if __name__ == "__main__":
     test_fuel_interaction_targets_individual_gas_pumps_with_e()
     test_fuel_refunds_are_supported_by_economy_transaction_log()
     print("Fuel system checks passed.")
+
+
+def test_fuel_rejections_always_release_the_tablet_and_station_checks_have_a_fallback():
+    server = (FUEL / "server/main.lua").read_text(encoding="utf-8")
+    client = (FUEL / "client/main.lua").read_text(encoding="utf-8")
+    config = (FUEL / "shared/config.lua").read_text(encoding="utf-8")
+
+    assert "sendPurchaseFailure(src" in server
+    purchase_block = server.split("RegisterNetEvent('rp_fuel:server:purchase'", 1)[1].split("\\nCreateThread(function()", 1)[0]
+    assert "notify(src," not in purchase_block
+    assert "FuelConfig.Stations or {}" in server
+    assert "GetLocationsByType('gas_station')" in server
+    assert "nearestPump(playerCoords, 6.5)" in client
+    assert "nearestPump(vehicleCoords, 7.5)" in client
+    assert "RegisterNetEvent('rp_fuel:client:purchaseResult'" in client
+    assert "isPurchasePending = false" in client
+    assert config.count("{ x = ") == 16
+
+
+if __name__ == "__main__":
+    test_fuel_rejections_always_release_the_tablet_and_station_checks_have_a_fallback()
+    print("Fuel failure recovery checks passed.")
