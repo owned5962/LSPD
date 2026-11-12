@@ -46,6 +46,88 @@ local function formatCurrency(amount)
     return formatted .. ' $'
 end
 
+local jobBankReady = false
+local jobBankLocks = {}
+
+local function ensureJobBankAccount(jobName)
+    if not jobBankReady or type(jobName) ~= 'string' or jobName == '' or #jobName > 64 then return false end
+    local ok = pcall(MySQL.insert.await,
+        'INSERT IGNORE INTO rp_job_bank_accounts (job, balance, allow_deposit, allow_withdraw) VALUES (?, 0, 1, 1)',
+        { jobName })
+    return ok
+end
+
+local function getJobBankSnapshot(jobName)
+    if not ensureJobBankAccount(jobName) then return nil end
+    local account = MySQL.single.await(
+        'SELECT job, balance, allow_deposit, allow_withdraw FROM rp_job_bank_accounts WHERE job = ?',
+        { jobName })
+    if not account then return nil end
+    local history = MySQL.query.await([[
+        SELECT id, character_id, player_name, transaction_type, amount, balance_after, created_at
+        FROM rp_job_bank_transactions WHERE job = ? ORDER BY id DESC LIMIT 12
+    ]], { jobName }) or {}
+    account.balance = tonumber(account.balance) or 0
+    account.allow_deposit = tonumber(account.allow_deposit) == 1
+    account.allow_withdraw = tonumber(account.allow_withdraw) == 1
+    local jobOk, job = pcall(function() return exports['rp_jobs']:GetJob(jobName) end)
+    account.label = jobOk and job and job.label or jobName
+    return { account = account, history = history }
+end
+
+local function sendJobBankData(src, player)
+    if not player or not player.job or player.job == 'unemployed' then
+        TriggerClientEvent('rp_economy:client:jobBankData', src, nil)
+        return
+    end
+    local ok, data = pcall(getJobBankSnapshot, tostring(player.job))
+    if not ok then
+        print(('[rp_economy] Job bank snapshot failed for %s: %s'):format(tostring(player.job), tostring(data)))
+        TriggerClientEvent('rp_economy:client:jobBankData', src, nil)
+        return
+    end
+    TriggerClientEvent('rp_economy:client:jobBankData', src, data)
+end
+
+MySQL.ready(function()
+    CreateThread(function()
+        local ok, err = pcall(function()
+            MySQL.query.await([[CREATE TABLE IF NOT EXISTS rp_job_bank_accounts (
+                job VARCHAR(64) NOT NULL PRIMARY KEY,
+                balance BIGINT UNSIGNED NOT NULL DEFAULT 0,
+                allow_deposit TINYINT(1) NOT NULL DEFAULT 1,
+                allow_withdraw TINYINT(1) NOT NULL DEFAULT 1,
+                updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4]])
+            MySQL.query.await([[CREATE TABLE IF NOT EXISTS rp_job_bank_transactions (
+                id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                job VARCHAR(64) NOT NULL,
+                character_id INT NOT NULL,
+                player_name VARCHAR(128) NOT NULL,
+                transaction_type ENUM('deposit','withdraw') NOT NULL,
+                amount BIGINT UNSIGNED NOT NULL,
+                balance_after BIGINT UNSIGNED NOT NULL,
+                created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                KEY idx_job_bank_history (job, id),
+                KEY idx_job_bank_character (character_id)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4]])
+        end)
+        if not ok then
+            print('[rp_economy] Job bank tables initialization failed: ' .. tostring(err))
+            return
+        end
+        jobBankReady = true
+        local jobsOk, jobs = pcall(function() return exports['rp_jobs']:GetAllJobs() end)
+        if jobsOk and type(jobs) == 'table' then
+            for key, job in pairs(jobs) do
+                local name = type(job) == 'table' and (job.name or key) or key
+                ensureJobBankAccount(tostring(name))
+            end
+        end
+        print('[rp_economy] Comptes bancaires des métiers initialisés.')
+    end)
+end)
+
 local function notify(src, message, kind)
     TriggerClientEvent('rp_core:client:notify', src, message, kind or 'info')
     TriggerClientEvent('rp_economy:client:bankNotice', src, message, kind or 'info')
