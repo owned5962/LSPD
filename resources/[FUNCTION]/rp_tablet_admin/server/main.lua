@@ -1,11 +1,28 @@
 local FrozenPlayers = {}
 
-local function IsPlayerAdmin(source)
-    if IsPlayerAceAllowed(source, 'rp_admin') then return true end
+local function IsPlayerFounder(source)
+    if IsPlayerAceAllowed(source, 'rp_founder') then return true end
 
     local player = exports['rp_core']:GetPlayerFromId(source)
     local group = player and tostring(player.group or ''):lower() or ''
-    return group == 'admin' or group == 'superadmin' or group == 'fondateur'
+    return group == 'fondateur' or group == 'founder'
+end
+
+local function GetStaffRole(source, player)
+    if IsPlayerFounder(source) then return 'Fondateur' end
+
+    local group = player and tostring(player.group or ''):lower() or ''
+    if group == 'superadmin' then return 'Superadministrateur' end
+    if group == 'admin' or IsPlayerAceAllowed(source, 'rp_admin') then return 'Administrateur' end
+    return group ~= '' and group or 'Utilisateur'
+end
+
+local function IsPlayerAdmin(source)
+    if IsPlayerFounder(source) or IsPlayerAceAllowed(source, 'rp_admin') then return true end
+
+    local player = exports['rp_core']:GetPlayerFromId(source)
+    local group = player and tostring(player.group or ''):lower() or ''
+    return group == 'admin' or group == 'superadmin'
 end
 
 local function GetOnlineTargetId(value)
@@ -106,7 +123,7 @@ RegisterNetEvent('rp_tablet_admin:server:requestOpen', function()
         local adminData = {
             name = adminPlayer and ((adminPlayer.firstname or '') .. ' ' .. (adminPlayer.lastname or ''))
                 or (GetPlayerName(src) or 'Administrateur'),
-            role = adminPlayer and adminPlayer.group or 'Administrateur',
+            role = GetStaffRole(src, adminPlayer),
             id = src
         }
 
@@ -134,8 +151,8 @@ RegisterNetEvent('rp_tablet_admin:server:requestOpen', function()
                     characterLoaded = player ~= nil,
                     job = jobName, jobLabel = job and job.label or jobName,
                     grade = player and player.jobGrade or 0, cash = player and player.cash or 0,
-                    bank = player and player.bank or 0, group = player and player.group or 'user',
-                    ping = GetPlayerPing(pid)
+                    bank = player and player.bank or 0, group = IsPlayerFounder(pid) and 'fondateur' or (player and player.group or 'user'),
+                    ping = (type(GetPlayerPing) == 'function' and tonumber(GetPlayerPing(pid))) or 0
                 }
                 seen[pid] = true
             end
