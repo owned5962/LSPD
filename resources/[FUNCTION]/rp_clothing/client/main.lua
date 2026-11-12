@@ -11,15 +11,27 @@ local function stopClothingCamera()
     clothingCamera = nil
 end
 
+local function updateClothingCamera()
+    if not clothingCamera or not DoesCamExist(clothingCamera) then return end
+    local ped = PlayerPedId()
+    local cameraCoords = GetOffsetFromEntityInWorldCoords(ped, 0.0, 2.2, 0.65)
+    SetCamCoord(clothingCamera, cameraCoords.x, cameraCoords.y, cameraCoords.z)
+    local pedCoords = GetEntityCoords(ped)
+    local right = GetEntityRightVector(ped)
+    -- Offset the camera's look-at point so the character sits in the left
+    -- preview area and is not hidden behind the tablet on the right.
+    PointCamAtCoord(clothingCamera,
+        pedCoords.x + right.x * 0.55,
+        pedCoords.y + right.y * 0.55,
+        pedCoords.z + 0.55)
+end
+
 local function startClothingCamera()
     stopClothingCamera()
-    local ped = PlayerPedId()
     clothingCamera = CreateCam('DEFAULT_SCRIPTED_CAMERA', true)
     if not clothingCamera or clothingCamera == 0 then clothingCamera = nil; return end
     SetCamFov(clothingCamera, 38.0)
-    local cameraCoords = GetOffsetFromEntityInWorldCoords(ped, 0.0, 2.2, 0.65)
-    SetCamCoord(clothingCamera, cameraCoords.x, cameraCoords.y, cameraCoords.z)
-    PointCamAtEntity(clothingCamera, ped, 0.0, 0.0, 0.55, true)
+    updateClothingCamera()
     SetCamActive(clothingCamera, true)
     RenderScriptCams(true, true, 500, true, true)
 end
@@ -37,11 +49,7 @@ CreateThread(function()
                 TriggerEvent('rp_core:client:notify', 'Boutique fermée : vous avez quitté la zone.', 'info')
                 Wait(250)
             else
-                if clothingCamera and DoesCamExist(clothingCamera) then
-                    local cameraCoords = GetOffsetFromEntityInWorldCoords(ped, 0.0, 2.2, 0.65)
-                    SetCamCoord(clothingCamera, cameraCoords.x, cameraCoords.y, cameraCoords.z)
-                    PointCamAtEntity(clothingCamera, ped, 0.0, 0.0, 0.55, true)
-                end
+                updateClothingCamera()
                 Wait(0)
             end
         else
