@@ -75,6 +75,13 @@ RegisterNetEvent('rp_core:client:setJob', function(job, label, grade, gradeLabel
     PlayerData.jobLabel = label
     PlayerData.jobGrade = grade
     PlayerData.jobGradeLabel = gradeLabel
+    PlayerData.duty = false
+end)
+
+RegisterNetEvent('rp_core:client:setDuty', function(status, jobName)
+    if type(status) ~= 'boolean' then return end
+    if jobName and PlayerData.job ~= jobName then return end
+    PlayerData.duty = status
 end)
 
 exports('GetPlayerData', function()
