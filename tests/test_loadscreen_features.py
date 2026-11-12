@@ -13,6 +13,7 @@ class LoadscreenFeatureTests(unittest.TestCase):
         manifest = self.read("fxmanifest.lua")
         self.assertIn("version '1.3.0'", manifest)
         self.assertIn("'server/main.lua'", manifest)
+        self.assertIn("'updates.lua'", manifest)
         self.assertIn("'html/images/los_santos_skyline.svg'", manifest)
 
     def test_four_life_objective_banners_are_present(self):
@@ -39,11 +40,13 @@ class LoadscreenFeatureTests(unittest.TestCase):
         app = self.read("html/js/app.js")
         self.assertIn("rp_loadscreen:requestUpdates", client)
         self.assertIn("rp_loadscreen:receiveUpdates", client)
-        self.assertIn("PerformHttpRequest", server)
-        self.assertIn("nouveaut%C3%A9s.txt", server)
-        self.assertIn("futur.txt", server)
-        self.assertIn("ParseLines(updatesText, 6)", server)
-        self.assertIn("ParseLines(futureText, 10)", server)
+        self.assertIn("BuildLoadscreenPayload", server)
+        self.assertIn("LoadscreenUpdates", server)
+        self.assertNotIn("PerformHttpRequest", server)
+        self.assertNotIn("nouveaut%C3%A9s.txt", server)
+        self.assertNotIn("futur.txt", server)
+        self.assertIn("data.updates.slice(0, 10)", app)
+        self.assertIn("data.future.slice(0, 10)", app)
         self.assertIn("data.eventName === 'lssUpdates'", app)
         self.assertIn("data.future", app)
         self.assertIn("future-list", self.read("html/index.html"))
@@ -51,9 +54,22 @@ class LoadscreenFeatureTests(unittest.TestCase):
 
     def test_server_feed_has_cache_and_per_player_cooldown(self):
         server = self.read("server/main.lua")
-        self.assertIn("CACHE_DURATION_MS", server)
+        self.assertIn("cachedPayload", server)
+        self.assertIn("BuildLoadscreenPayload", server)
         self.assertIn("REQUEST_COOLDOWN_MS", server)
         self.assertIn("lastRequestByPlayer", server)
+
+    def test_loadscreen_has_ten_local_examples_per_category_and_no_text_feeds(self):
+        updates = self.read("updates.lua")
+        manifest = self.read("fxmanifest.lua")
+        server = self.read("server/main.lua")
+        self.assertEqual(updates.count("{ title = "), 10)
+        future_block = updates.split("future = {", 1)[1].split("\n    }", 1)[0]
+        self.assertEqual(future_block.count("'"), 20)
+        self.assertIn("'updates.lua'", manifest)
+        self.assertNotIn("PerformHttpRequest", server)
+        self.assertNotIn("nouveaut", server)
+        self.assertNotIn("futur.txt", server)
 
 
 if __name__ == "__main__":
