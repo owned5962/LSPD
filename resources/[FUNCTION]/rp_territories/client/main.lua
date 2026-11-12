@@ -6,6 +6,8 @@ local uiOpen = false
 local activeSectorId = nil
 local nearestSector = nil
 local nearestDistance = nil
+local territoryPromptVisible = false
+local territoryPromptLabel = nil
 
 local function DebugLog(level, event, details)
     local caller = debug and debug.getinfo and debug.getinfo(2, 'Sl') or nil
@@ -37,6 +39,7 @@ end
 
 local function BuildMap()
     DebugLog('info', 'MAP_BUILD_START', ('Construction carte avec %d secteurs'):format(#Config.Sectors))
+    AddTextEntry('BLIP_CAT_12', 'Territoires')
     for index, sector in ipairs(Config.Sectors) do
         local owned = territories[sector.id]
         local color = owned and tonumber(owned.color) or 0
@@ -52,7 +55,7 @@ local function BuildMap()
         if area and area ~= 0 then
             SetBlipColour(area, color)
             SetBlipAlpha(area, alpha)
-            SetBlipDisplay(area, 2)
+            SetBlipDisplay(area, 3)
             SetBlipAsShortRange(area, false)
             SetBlipHighDetail(area, true)
         else
@@ -68,18 +71,14 @@ local function BuildMap()
             SetBlipSprite(point, Config.PointBlipSprite)
             SetBlipScale(point, Config.PointBlipScale)
             SetBlipColour(point, color)
-            SetBlipDisplay(point, 2)
+            SetBlipDisplay(point, 3)
+            SetBlipCategory(point, 12)
             SetBlipAsShortRange(point, false)
         end
         BeginTextCommandSetBlipName('STRING')
-        if owned then
-            AddTextComponentString(('Secteur %s - %s'):format(sector.id, owned.ownerName or 'Occupé'))
-        else
-            AddTextComponentString(('Secteur %s - À revendiquer'):format(sector.id))
-        end
+        AddTextComponentString('Territoires')
         EndTextCommandSetBlipName(point)
         if not point or point == 0 then DebugLog('error', 'POINT_BLIP_FAILED', ('secteur=%s'):format(sector.id)) end
-        pointBlips[#pointBlips + 1] = point
     end
     DebugLog('info', 'MAP_BUILD_DONE', ('%d zones et %d points conservés'):format(#areaBlips, #pointBlips))
 end
@@ -100,6 +99,7 @@ RegisterNetEvent('rp_territories:client:openMenu', function(info)
     end
     DebugLog('info', 'OPEN_MENU_RECEIVED', ('secteur=%s'):format(tostring(info.sectorId)))
     uiOpen = true
+    HideTerritoryPrompt()
     activeSectorId = tostring(info.sectorId or '')
     SetNuiFocus(true, true)
     SendNUIMessage({ action = 'open', info = info })
@@ -126,7 +126,7 @@ RegisterNUICallback('claim', function(data, cb)
         return
     end
     DebugLog('info', 'NUI_CLAIM_SUBMIT', ('secteur=%s | couleur=%s'):format(tostring(data.sectorId), tostring(data.colorId)))
-    TriggerServerEvent('rp_territories:server:claim', data.sectorId, data.colorId)
+    TriggerServerEvent('rp_territories:server:claim', data.sectorId, data.colorId, data.territoryName)
     cb({ ok = true })
 end)
 
@@ -137,10 +137,20 @@ RegisterNUICallback('close', function(_, cb)
     cb({ ok = true })
 end)
 
-local function DrawHelpText(message)
-    BeginTextCommandDisplayHelp('STRING')
-    AddTextComponentSubstringPlayerName(message)
-    EndTextCommandDisplayHelp(0, false, true, -1)
+local function HideTerritoryPrompt()
+    if territoryPromptVisible then
+        exports['rp_ui']:HideTextUI()
+        territoryPromptVisible = false
+        territoryPromptLabel = nil
+    end
+end
+
+local function ShowTerritoryPrompt(label)
+    if not territoryPromptVisible or territoryPromptLabel ~= label then
+        exports['rp_ui']:ShowTextUI(label)
+        territoryPromptVisible = true
+        territoryPromptLabel = label
+    end
 end
 
 local function LoadPedModel(modelName)
@@ -252,16 +262,14 @@ CreateThread(function()
             if nearestSector
                 and nearestDistance <= (Config.InteractionDistance * Config.InteractionDistance)
                 and verticalDistance <= 2.0 then
-                local groundZ = GetGroundLevel(nearestSector.x, nearestSector.y, nearestSector.z)
-                DrawMarker(1, nearestSector.x, nearestSector.y, groundZ + 0.15,
-                    0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-                    0.8, 0.8, 0.35, 255, 255, 255, 150,
-                    false, false, 2, false, nil, nil, false)
-                DrawHelpText(('Appuie sur ~INPUT_CONTEXT~ pour gérer le secteur ~b~%s~s~'):format(nearestSector.id))
+                ShowTerritoryPrompt(('[E] Gérer le territoire %s'):format(nearestSector.id))
                 if IsControlJustReleased(0, 38) or IsDisabledControlJustReleased(0, 38) then
+                    HideTerritoryPrompt()
                     DebugLog('info', 'CLAIM_POINT_INTERACT', ('secteur=%s'):format(nearestSector.id))
                     TriggerServerEvent('rp_territories:server:requestOpen', nearestSector.id)
                 end
+            else
+                HideTerritoryPrompt()
             end
         end
     end
@@ -271,6 +279,7 @@ AddEventHandler('onResourceStop', function(resourceName)
     if resourceName ~= GetCurrentResourceName() then return end
     DebugLog('info', 'RESOURCE_STOP', 'Nettoyage des blips et du focus NUI')
     RemoveMapBlips()
+    HideTerritoryPrompt()
     for sectorId in pairs(sectorPeds) do RemoveSectorPed(sectorId) end
     if uiOpen then SetNuiFocus(false, false); SendNUIMessage({ action = 'close' }) end
     activeSectorId = nil
