@@ -40,6 +40,13 @@ local function initializeVehicleFuel(vehicle, preserveExisting)
     return vehicleFuel[netId]
 end
 
+-- Seed existing vehicles immediately when the resource starts. This preserves
+-- their last server-replicated level across a resource restart before any client
+-- purchase event can be handled.
+for _, vehicle in ipairs(GetAllVehicles()) do
+    initializeVehicleFuel(vehicle, true)
+end
+
 local function validPayment(value)
     return value == 'cash' or value == 'bank' or value == 'auto'
 end
@@ -176,7 +183,7 @@ RegisterNetEvent('rp_fuel:server:purchase', function(rawNetId, rawLitres, paymen
 
     -- The authoritative fuel value is maintained by this server resource.
     -- Entity state bags are only replicated to clients; they are not trusted as input.
-    local currentFuel = initializeVehicleFuel(vehicle, true)
+    local currentFuel = initializeVehicleFuel(vehicle, false)
     if type(currentFuel) ~= 'number' or currentFuel ~= currentFuel
         or currentFuel < 0 or currentFuel > 100 then
         notify(src, 'Niveau de carburant serveur invalide. Réessayez plus tard.')
@@ -244,12 +251,6 @@ RegisterNetEvent('rp_fuel:server:purchase', function(rawNetId, rawLitres, paymen
 end)
 
 CreateThread(function()
-    -- Preserve existing replicated fuel when this resource is restarted; newly
-    -- created vehicles always begin with a full tank under server authority.
-    for _, vehicle in ipairs(GetAllVehicles()) do
-        initializeVehicleFuel(vehicle, true)
-    end
-
     -- Server-owned fuel simulation. Clients only receive the replicated value and
     -- can no longer raise their tank by writing an entity state bag.
     while true do
@@ -260,7 +261,7 @@ CreateThread(function()
                 local netId = NetworkGetNetworkIdFromEntity(vehicle)
                 if netId and netId > 0 then
                     if vehicleFuel[netId] == nil then
-                        initializeVehicleFuel(vehicle, true)
+                        initializeVehicleFuel(vehicle, false)
                     elseif not pendingRefuels[netId] then
                         local previous = lastFuelUpdate[netId] or now
                         local elapsed = math.max(0, math.min(5000, now - previous)) / 1000.0
