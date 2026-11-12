@@ -15,7 +15,8 @@ end
 
 local function isValidPosition(src)
     local ped = GetPlayerPed(src)
-    if ped == 0 or not DoesEntityExist(ped) or IsEntityDead(ped) then return false end
+    -- IsEntityDead is a client-side native; use the server-supported health native.
+    if ped == 0 or not DoesEntityExist(ped) or GetEntityHealth(ped) <= 0 then return false end
     local coords = GetEntityCoords(ped)
     return coords and coords.x == coords.x and coords.y == coords.y and coords.z == coords.z
 end
