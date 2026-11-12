@@ -192,16 +192,11 @@ CreateThread(function()
         return
     end
 
-    -- Use the round radar mask when the standard circlemap texture is available.
-    RequestStreamedTextureDict('circlemap', false)
-    local textureDeadline = GetGameTimer() + 5000
-    while not HasStreamedTextureDictLoaded('circlemap') and GetGameTimer() < textureDeadline do Wait(50) end
-    if HasStreamedTextureDictLoaded('circlemap') then
-        AddReplaceTexture('platform:/textures/graphics', 'radarmasksm', 'circlemap', 'radarmasksm')
-        SetMinimapClipType(1)
-    else
-        print('[rp_ui] circlemap texture unavailable; standard minimap retained.')
+    -- Restore the native square minimap. No external circlemap texture is required.
+    if type(RemoveReplaceTexture) == 'function' then
+        pcall(RemoveReplaceTexture, 'platform:/textures/graphics', 'radarmasksm')
     end
+    SetMinimapClipType(0)
 
     -- Rebuild the minimap once so the custom layout is applied immediately.
     SetBigmapActive(true, false)
