@@ -12,7 +12,7 @@ def test_ammunation_client_uses_shared_blip_points_without_waiting_for_mysql():
     assert "if category.id == 'ammunation' then" in client
     assert "addAmmunationLocation(point[1], point[2], point[3])" in client
     assert "IsControlJustReleased(0, 38)" in client
-    assert "nearestHorizontal <= 6.0" in client
+    assert "nearestHorizontal <= 1.0" in client
     assert "id = 'ammunation'" in locations
 
 
@@ -21,8 +21,8 @@ def test_ammunation_server_checks_same_shared_points_as_client_blips():
     assert "local function getAmmunationLocations()" in server
     assert "category.id == 'ammunation'" in server
     assert "locations[#locations + 1]" in server
-    assert "AMMUNATION_INTERACTION_RADIUS = 12.0" in server
-    assert "AMMUNATION_VERTICAL_TOLERANCE = 12.0" in server
+    assert "AMMUNATION_INTERACTION_RADIUS = 1.5" in server
+    assert "AMMUNATION_VERTICAL_TOLERANCE = 2.0" in server
     assert "getPlayerAtAmmunation(src)" in server
     assert "getPlayerAtAmmunation(src, 3.0)" not in server
     assert "getPlayerAtAmmunation(src, 4.0)" not in server
@@ -70,4 +70,16 @@ def test_weapon_items_can_be_equipped_and_persisted():
     assert "metadata.weapons[#metadata.weapons + 1]" in server
     assert "rp_inventory:client:giveWeapon" in server
     assert "RegisterNetEvent('rp_inventory:client:giveWeapon'" in client
+
+    businesses_client = (BUSINESSES / "client/main.lua").read_text(encoding="utf-8")
+    assert businesses_client.count("RegisterNetEvent('rp_businesses:client:weaponPurchased'") == 1
+    assert "if not weaponName:match('^WEAPON_[A-Z0-9_]+    print("Ammu-Nation interaction checks passed.")
+) then return end" in businesses_client
+    assert ") then return end" not in businesses_client
+    assert businesses_client.count("local groceryPeds = {}") == 1
     print("Ammu-Nation interaction checks passed.")
+
+
+if __name__ == "__main__":
+    test_weapon_items_can_be_equipped_and_persisted()
+    print("Weapon inventory checks passed.")
