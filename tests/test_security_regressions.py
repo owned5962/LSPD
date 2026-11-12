@@ -883,9 +883,11 @@ def test_bank_ui_is_only_opened_at_real_bank_or_atm_and_server_checks_distance()
     assert "RegisterCommand('bank'" in client and "OpenBankUI(false)" in client
     assert "RegisterCommand('atm'" in client and "OpenBankUI(true)" in client
     assert "IsControlJustReleased(0, 38)" in client
-    assert "if not GetNearbyBank(3.0)" in client
-    assert "IsNearBankOrATM(src, true)" in server
-    assert "IsNearBankOrATM(src, false)" in server
+    assert "GetNearbyBank(1.0)" in client
+    assert "GetNearbyATM(1.0)" in client
+    assert "if not IsNearBankOrATM(src, allowATM) then" in server
+    assert "requireAuthenticatedSession(src, true)" in server
+    assert "requireAuthenticatedSession(src, false)" in server
     assert "https://rp_economy/close" in ui
 
 
