@@ -66,6 +66,8 @@ function moveDrawable(delta) {
     preview();
 }
 document.getElementById('prev-item').addEventListener('click', () => moveDrawable(-1));
+document.getElementById('rotate-left').addEventListener('click', () => post('rotatePlayer', { direction: -1 }));
+document.getElementById('rotate-right').addEventListener('click', () => post('rotatePlayer', { direction: 1 }));
 document.getElementById('next-item').addEventListener('click', () => moveDrawable(1));
 document.getElementById('texture-range').addEventListener('input', event => {
     if (!activeCategory) return;
