@@ -29,6 +29,19 @@ def test_fuel_purchase_is_server_authoritative_and_time_based():
     assert "getFuelConsumptionMultiplier()" in server
     assert "rp_fuel:server:requestSettings" in server
     assert "ConsumptionMultiplier" in config
+    creator_server = (ROOT / "resources/[FUNCTION]/rp_tablet_creator/server/main.lua").read_text(encoding="utf-8")
+    creator_client = (ROOT / "resources/[FUNCTION]/rp_tablet_creator/client/main.lua").read_text(encoding="utf-8")
+    creator_html = (ROOT / "resources/[FUNCTION]/rp_tablet_creator/html/index.html").read_text(encoding="utf-8")
+    creator_ui = (ROOT / "resources/[FUNCTION]/rp_tablet_creator/html/app.js").read_text(encoding="utf-8")
+    assert "rp_tablet_creator:server:setFuelSettings" in creator_server
+    assert "'fuel_price_per_litre'" in creator_server
+    assert "'fuel_consumption_multiplier'" in creator_server
+    assert "SetConvar('rp_fuel_price_per_litre'" in creator_server
+    assert "RegisterNUICallback('setFuelSettings'" in creator_client
+    assert 'id="creator-fuel-price"' in creator_html
+    assert 'id="creator-fuel-consumption"' in creator_html
+    assert "data-tab-panel" in creator_html and "creator-tab" in creator_html
+    assert "renderCreatorAdminData" in creator_ui
 
 
 def test_fuel_tablet_displays_price_estimate_and_live_progress():
