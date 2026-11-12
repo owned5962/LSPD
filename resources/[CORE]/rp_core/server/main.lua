@@ -25,8 +25,31 @@ end
 exports('IsCharacterSavePending', IsCharacterSavePending)
 
 function GetPlayerFromId(source)
-    return Players[tonumber(source)]
+    local player = Players[tonumber(source)]
+    return player and player.isLoaded == true and player or nil
 end
+
+local function WaitForPlayerLoaded(source, timeoutMs)
+    local src = tonumber(source)
+    if not src or src < 1 then return nil end
+    local timeout = math.max(0, math.min(15000, tonumber(timeoutMs) or 5000))
+    local deadline = GetGameTimer() + timeout
+    repeat
+        local player = Players[src]
+        if player and player.isLoaded == true and tonumber(player.charId) then
+            return player
+        end
+        if not GetPlayerName(src) then return nil end
+        Wait(100)
+    until GetGameTimer() >= deadline
+    return nil
+end
+
+exports('WaitForPlayerLoaded', WaitForPlayerLoaded)
+exports('IsPlayerLoaded', function(source)
+    local player = Players[tonumber(source)]
+    return player ~= nil and player.isLoaded == true and tonumber(player.charId) ~= nil
+end)
 
 function GetPlayerByIdentifier(identifier)
     for _, player in pairs(Players) do
@@ -89,24 +112,25 @@ AddEventHandler('playerDropped', function(reason)
         CreateThread(function()
             -- The FiveM source ID may be reused after disconnect; never read a new player's ped.
             -- Retry briefly when an autosave or another character save currently owns the lock.
-            local saved = false
-            for attempt = 1, 20 do
+            local saved, attempt = false, 0
+            while not saved and characterId do
+                attempt = attempt + 1
                 local ok, result = pcall(player.save, true)
-                if ok and result == true then
-                    saved = true
-                    break
+                saved = ok and result == true
+                if not saved then
+                    if attempt == 1 or attempt % 6 == 0 then
+                        print(('[rp_core] Final save still pending for character %s (attempt %d); reconnect remains blocked.')
+                            :format(tostring(characterId), attempt))
+                    end
+                    -- Keep retrying after transient SQL outages. Never unlock a
+                    -- character while its last in-memory state has not been saved.
+                    Wait(math.min(30000, 1000 * attempt))
                 end
-                Wait(500)
-            end
-            if not saved then
-                print(('[rp_core] Final disconnect save failed for character %s after 20 attempts'):format(tostring(characterId)))
             end
             if saved and characterId then
                 pendingDisconnectSaves[characterId] = nil
                 pendingDisconnectPlayers[characterId] = nil
-            elseif characterId then
-                -- Keep reconnect blocked: loading stale SQL data is worse than requiring recovery.
-                print(('[rp_core] Character %s remains locked until its final save can be recovered'):format(tostring(characterId)))
+                print(('[rp_core] Final disconnect save completed for character %s.'):format(tostring(characterId)))
             end
         end)
     end
