@@ -471,11 +471,13 @@ def test_core_resources_declare_runtime_dependencies_explicitly():
     inventory = read("resources/[FUNCTION]/rp_inventory/fxmanifest.lua")
     characters = read("resources/[CORE]/rp_characters/fxmanifest.lua")
     admin = read("resources/[FUNCTION]/rp_tablet_admin/fxmanifest.lua")
-    assert "dependency 'rp_core'" in jobs
-    assert "'rp_core', 'rp_jobs'" in economy
-    assert "'oxmysql', 'rp_core'" in inventory
-    assert "'oxmysql', 'rp_core'" in characters
-    assert "'rp_core', 'rp_jobs'" in admin
+    for manifest in (jobs, economy, inventory, characters, admin):
+        assert "dependencies {" in manifest
+    assert "'rp_core'" in jobs
+    assert "'rp_core'" in economy and "'rp_jobs'" in economy
+    assert "'oxmysql'" in inventory and "'rp_core'" in inventory
+    assert "'oxmysql'" in characters and "'rp_core'" in characters
+    assert "'rp_core'" in admin and "'rp_jobs'" in admin
     assert "lua54 'yes'" in inventory
 
 
