@@ -48,6 +48,10 @@ def test_ammunation_payment_is_atomic_and_weapon_metadata_is_persistent():
     assert "AMMUNATION_WEAPONS" in server
     assert "weapon_mp5" in server and "weapon_battleaxe" in server and "weapon_knife" in server
     assert "buildAmmunationCatalog()" in open_block
+    ui = (ROOT / "resources/[FUNCTION]/rp_businesses/html/js/app.js").read_text(encoding="utf-8")
+    assert "currentMode === 'ammu' ? 'buyAmmunationWeapon'" in ui
+    assert "renderProducts(data.products)" in ui
+    assert "product.category" in ui
 
 
 def test_inventory_contains_equipable_melee_weapons_and_mp5():
