@@ -229,10 +229,10 @@ def test_followup_hardening_keeps_internal_logs_private_and_money_atomic():
     assert "isAt(Config.ArmoryCoords" in police
 
 
-def test_all_job_duty_events_are_rate_limited_and_reconcile_state():
+def test_all_job_duty_events_are_rate_limited_and_use_core_as_the_source_of_truth():
     job_root = ROOT / "resources" / "[JOB]"
     server_files = sorted(job_root.glob("job_*/server/main.lua"))
-    assert server_files, "No job server scripts found"
+    assert len(server_files) == 50, "Expected all 50 job server scripts"
     for path in server_files:
         source = path.read_text(encoding="utf-8")
         if "RegisterNetEvent(" not in source or ":setDuty" not in source:
@@ -241,7 +241,8 @@ def test_all_job_duty_events_are_rate_limited_and_reconcile_state():
         event_name = f"{job_name}:setDuty"
         assert f"CanPerformAction(src, '{event_name}', 2000)" in source, path
         assert f"{job_name}:dutyUpdated" in source, path
-        assert "dutyPlayers[src] == true" in source, path
+        assert "SetPlayerDuty(src, status, Config.Job)" in source, path
+        assert "dutyPlayers" not in source, path
 
 
 def test_job_center_hiring_requires_server_side_proximity():
@@ -257,8 +258,10 @@ def test_delivery_duty_is_rate_limited_and_server_authoritative():
     server = read("resources/[JOB]/job_delivery/server/main.lua")
     client = read("resources/[JOB]/job_delivery/client/main.lua")
     assert "CanPerformAction(src, 'job_delivery:setDuty', 2000)" in server
-    assert "TriggerClientEvent('job_delivery:dutyUpdated', src, dutyPlayers[src] == true)" in server
+    assert "SetPlayerDuty(src, status, Config.Job)" in server
     assert "exports('IsOnDuty'" in server
+    assert "player.duty == true" in server
+    assert "dutyPlayers" not in server
     assert "local dutyRequestPending = false" in client
     assert "if not dutyRequestPending then" in client
     assert "onDuty = status == true" in client
@@ -283,7 +286,8 @@ def test_job_duty_events_validate_job_and_boolean_status():
         assert f"player.job ~= '{job}'" in source, job
         assert "type(status) ~= 'boolean'" in source, job
         assert "isAt(Config.DutyCoords, src, 5.0)" in source, job
-        assert "AddEventHandler('playerDropped'" in source, job
+        assert "SetPlayerDuty(src, status, Config.Job)" in source, job
+        assert "dutyPlayers" not in source, job
 
 
 
