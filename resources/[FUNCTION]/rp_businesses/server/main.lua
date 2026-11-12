@@ -125,12 +125,31 @@ MySQL.ready(function()
 end)
 
 
--- Boutique Ammu-Nation : le prix et l'arme sont définis côté serveur.
-local AMMUNATION_PISTOL_PRICE = 500
-local AMMUNATION_PISTOL_WEAPON = 'WEAPON_PISTOL'
-
+-- Catalogue Ammu-Nation : prix, armes et munitions définis exclusivement côté serveur.
 local AMMUNATION_INTERACTION_RADIUS = 1.5
 local AMMUNATION_VERTICAL_TOLERANCE = 2.0
+local AMMUNATION_WEAPONS = {
+    weapon_pistol = { label = 'Pistolet standard', weapon = 'WEAPON_PISTOL', price = 500, ammo = 60, category = 'Pistolets', image = '🔫' },
+    weapon_mp5 = { label = 'MP5', weapon = 'WEAPON_SMG', price = 2500, ammo = 30, category = 'Mitraillettes', image = '🔫' },
+    weapon_knife = { label = 'Couteau', weapon = 'WEAPON_KNIFE', price = 250, ammo = 0, category = 'Corps-à-corps', image = '🔪' },
+    weapon_nightstick = { label = 'Matraque', weapon = 'WEAPON_NIGHTSTICK', price = 200, ammo = 0, category = 'Corps-à-corps', image = '🦯' },
+    weapon_bat = { label = 'Batte de baseball', weapon = 'WEAPON_BAT', price = 150, ammo = 0, category = 'Corps-à-corps', image = '🏏' },
+    weapon_crowbar = { label = 'Pied-de-biche', weapon = 'WEAPON_CROWBAR', price = 180, ammo = 0, category = 'Corps-à-corps', image = '🔧' },
+    weapon_hammer = { label = 'Marteau', weapon = 'WEAPON_HAMMER', price = 150, ammo = 0, category = 'Corps-à-corps', image = '🔨' },
+    weapon_golfclub = { label = 'Club de golf', weapon = 'WEAPON_GOLFCLUB', price = 220, ammo = 0, category = 'Corps-à-corps', image = '⛳' },
+    weapon_knuckle = { label = 'Poing américain', weapon = 'WEAPON_KNUCKLE', price = 300, ammo = 0, category = 'Corps-à-corps', image = '🥊' },
+    weapon_machete = { label = 'Machette', weapon = 'WEAPON_MACHETE', price = 350, ammo = 0, category = 'Corps-à-corps', image = '🗡️' },
+    weapon_flashlight = { label = 'Lampe torche', weapon = 'WEAPON_FLASHLIGHT', price = 100, ammo = 0, category = 'Corps-à-corps', image = '🔦' },
+    weapon_bottle = { label = 'Bouteille cassée', weapon = 'WEAPON_BOTTLE', price = 50, ammo = 0, category = 'Corps-à-corps', image = '🍾' },
+    weapon_dagger = { label = 'Dague antique', weapon = 'WEAPON_DAGGER', price = 400, ammo = 0, category = 'Corps-à-corps', image = '🗡️' },
+    weapon_hatchet = { label = 'Hachette', weapon = 'WEAPON_HATCHET', price = 300, ammo = 0, category = 'Corps-à-corps', image = '🪓' },
+    weapon_switchblade = { label = 'Couteau à cran d’arrêt', weapon = 'WEAPON_SWITCHBLADE', price = 350, ammo = 0, category = 'Corps-à-corps', image = '🔪' },
+    weapon_poolcue = { label = 'Queue de billard', weapon = 'WEAPON_POOLCUE', price = 150, ammo = 0, category = 'Corps-à-corps', image = '🎱' },
+    weapon_wrench = { label = 'Clé à molette', weapon = 'WEAPON_WRENCH', price = 180, ammo = 0, category = 'Corps-à-corps', image = '🔧' },
+    weapon_battleaxe = { label = 'Hache de combat', weapon = 'WEAPON_BATTLEAXE', price = 500, ammo = 0, category = 'Corps-à-corps', image = '🪓' },
+    weapon_stone_hatchet = { label = 'Hachette en pierre', weapon = 'WEAPON_STONE_HATCHET', price = 450, ammo = 0, category = 'Corps-à-corps', image = '🪓' },
+    weapon_candycane = { label = 'Canne en sucre', weapon = 'WEAPON_CANDYCANE', price = 100, ammo = 0, category = 'Corps-à-corps', image = '🍬' }
+}
 
 local function getAmmunationLocations()
     local locations = {}
@@ -139,8 +158,6 @@ local function getAmmunationLocations()
             locations[#locations + 1] = location
         end
     end
-    -- The shared map points are always checked as well as SQL locations so
-    -- the same blips displayed client-side are accepted by server validation.
     for _, category in ipairs(BusinessLocations or {}) do
         if category.id == 'ammunation' then
             for index, point in ipairs(category.points or {}) do
@@ -159,21 +176,33 @@ local function getPlayerAtAmmunation(src)
     local player = exports['rp_core']:GetPlayerFromId(src)
     local ped = GetPlayerPed(src)
     if not player or ped == 0 or not DoesEntityExist(ped) then return nil end
-
     local playerCoords = GetEntityCoords(ped)
     for _, location in ipairs(getAmmunationLocations()) do
         local x, y, z = tonumber(location.x), tonumber(location.y), tonumber(location.z)
         if x and y and z then
             local dx, dy = playerCoords.x - x, playerCoords.y - y
-            local horizontalDistance = math.sqrt(dx * dx + dy * dy)
-            local verticalDistance = math.abs(playerCoords.z - z)
-            if horizontalDistance <= AMMUNATION_INTERACTION_RADIUS
-                and verticalDistance <= AMMUNATION_VERTICAL_TOLERANCE then
+            if math.sqrt(dx * dx + dy * dy) <= AMMUNATION_INTERACTION_RADIUS
+                and math.abs(playerCoords.z - z) <= AMMUNATION_VERTICAL_TOLERANCE then
                 return player
             end
         end
     end
     return nil
+end
+
+local function buildAmmunationCatalog()
+    local products = {}
+    for itemName, weapon in pairs(AMMUNATION_WEAPONS) do
+        products[#products + 1] = {
+            item = itemName, label = weapon.label, price = weapon.price,
+            category = weapon.category, image = weapon.image
+        }
+    end
+    table.sort(products, function(a, b)
+        if a.category == b.category then return a.label < b.label end
+        return a.category < b.category
+    end)
+    return products
 end
 
 RegisterNetEvent('rp_businesses:server:requestAmmunation', function()
@@ -187,18 +216,24 @@ RegisterNetEvent('rp_businesses:server:requestAmmunation', function()
         TriggerClientEvent('rp_businesses:client:openDenied', src, 'Vous devez être à moins de 1,5 mètre du comptoir Ammu-Nation.')
         return
     end
-    TriggerClientEvent('rp_businesses:client:openAmmunation', src, tonumber(player.cash) or 0)
+    TriggerClientEvent('rp_businesses:client:openAmmunation', src,
+        tonumber(player.cash) or 0, buildAmmunationCatalog())
 end)
 
-RegisterNetEvent('rp_businesses:server:buyPistol', function()
-    local src = source
-    if not exports['rp_core']:CanPerformAction(src, 'businesses:buy_ammunation_pistol', 1800) then
+local function purchaseAmmunationWeapon(src, itemName)
+    local definition = type(itemName) == 'string' and AMMUNATION_WEAPONS[itemName] or nil
+    if not definition then
+        TriggerClientEvent('rp_businesses:client:purchaseResult', src, {
+            success = false, message = 'Arme inconnue dans le catalogue Ammu-Nation.'
+        })
+        return
+    end
+    if not exports['rp_core']:CanPerformAction(src, 'businesses:buy_ammunation_weapon', 1500) then
         TriggerClientEvent('rp_businesses:client:purchaseResult', src, {
             success = false, message = 'Veuillez patienter avant de renouveler votre achat.'
         })
         return
     end
-
     local player = getPlayerAtAmmunation(src)
     if not player then
         TriggerClientEvent('rp_businesses:client:purchaseResult', src, {
@@ -206,28 +241,25 @@ RegisterNetEvent('rp_businesses:server:buyPistol', function()
         })
         return
     end
-
     local cash = tonumber(player.cash) or 0
-    if cash < AMMUNATION_PISTOL_PRICE then
+    if cash < definition.price then
         TriggerClientEvent('rp_businesses:client:purchaseResult', src, {
-            success = false, message = 'Fonds insuffisants. Le pistolet coûte 500 $.', cash = cash
+            success = false, message = ('Fonds insuffisants. %s coûte %d $.'):format(definition.label, definition.price),
+            cash = cash
         })
         return
     end
 
-    -- Debit the character row atomically instead of relying on a cached player
-    -- save that can be temporarily locked by autosave or another transaction.
     local locks = { player.charId }
     if not exports['rp_core']:AcquireCharacterLock(locks) then
         TriggerClientEvent('rp_businesses:client:purchaseResult', src, {
-            success = false, message = 'Votre compte est en cours de sauvegarde. Réessayez dans un instant.', cash = cash
+            success = false, message = 'Votre compte est en cours de sauvegarde. Réessayez dans un instant.',
+            cash = cash
         })
         return
     end
 
-    local weaponName = AMMUNATION_PISTOL_WEAPON
-    -- Work on a detached metadata table: a failed SQL transaction must not leave
-    -- a free weapon in the in-memory player cache for a later autosave.
+    local weaponName = definition.weapon
     local metadata = {}
     for key, value in pairs(player.metadata or {}) do metadata[key] = value end
     metadata.weapons = {}
@@ -236,42 +268,60 @@ RegisterNetEvent('rp_businesses:server:buyPistol', function()
             metadata.weapons[#metadata.weapons + 1] = { name = entry.name, ammo = tonumber(entry.ammo) or 0 }
         end
     end
-    local hasWeapon = false
+
+    local existingWeapon
     for _, entry in ipairs(metadata.weapons) do
-        if type(entry) == 'table' and entry.name == weaponName then
-            entry.ammo = math.max(tonumber(entry.ammo) or 0, 60)
-            hasWeapon = true
-            break
-        end
+        if entry.name == weaponName then existingWeapon = entry; break end
     end
-    if not hasWeapon then metadata.weapons[#metadata.weapons + 1] = { name = weaponName, ammo = 60 } end
+    if existingWeapon and definition.ammo <= 0 then
+        exports['rp_core']:ReleaseCharacterLock(locks)
+        TriggerClientEvent('rp_businesses:client:purchaseResult', src, {
+            success = false, message = 'Vous possédez déjà cette arme.', cash = cash
+        })
+        return
+    end
+    local deliveredAmmo = definition.ammo
+    if existingWeapon then
+        existingWeapon.ammo = math.max(tonumber(existingWeapon.ammo) or 0, definition.ammo)
+        deliveredAmmo = existingWeapon.ammo
+    else
+        metadata.weapons[#metadata.weapons + 1] = { name = weaponName, ammo = definition.ammo }
+    end
 
     local ok, affected = pcall(MySQL.update.await, [[
         UPDATE characters
         SET cash = cash - ?, metadata = ?
         WHERE id = ? AND identifier = ? AND cash >= ?
-    ]], { AMMUNATION_PISTOL_PRICE, json.encode(metadata), player.charId, player.identifier, AMMUNATION_PISTOL_PRICE })
+    ]], { definition.price, json.encode(metadata), player.charId, player.identifier, definition.price })
     exports['rp_core']:ReleaseCharacterLock(locks)
-
     if not ok or tonumber(affected) ~= 1 then
         TriggerClientEvent('rp_businesses:client:purchaseResult', src, {
             success = false, message = 'Le paiement n’a pas pu être enregistré. Aucun achat effectué.',
-            cash = tonumber(player.cash) or cash
+            cash = cash
         })
-        print(('[rp_businesses] Ammu-Nation payment failed for player %s / character %s: %s'):format(
-            src, tostring(player.charId), tostring(affected)))
+        print(('[rp_businesses] Ammu-Nation purchase failed src=%s item=%s: %s'):format(src, itemName, tostring(affected)))
         return
     end
 
-    player.cash = cash - AMMUNATION_PISTOL_PRICE
+    player.cash = cash - definition.price
     player.metadata = metadata
     TriggerClientEvent('rp_core:client:updateCash', src, player.cash)
     TriggerEvent('rp_economy:server:logTransaction', player.charId, 'ammunation',
-        AMMUNATION_PISTOL_PRICE, 'Ammu-Nation', 'Achat Pistolet standard')
-    TriggerClientEvent('rp_businesses:client:weaponPurchased', src, weaponName, 60)
+        definition.price, 'Ammu-Nation', 'Achat ' .. definition.label)
+    TriggerClientEvent('rp_businesses:client:weaponPurchased', src, weaponName, deliveredAmmo)
     TriggerClientEvent('rp_businesses:client:purchaseResult', src, {
-        success = true, message = 'Pistolet acheté pour 500 $.', cash = player.cash
+        success = true, message = ('%s acheté pour %d $.'):format(definition.label, definition.price),
+        cash = player.cash
     })
+end
+
+RegisterNetEvent('rp_businesses:server:buyAmmunationWeapon', function(itemName)
+    purchaseAmmunationWeapon(source, itemName)
+end)
+
+-- Compatibilité avec les anciens clients qui achètent encore le pistolet.
+RegisterNetEvent('rp_businesses:server:buyPistol', function()
+    purchaseAmmunationWeapon(source, 'weapon_pistol')
 end)
 
 
