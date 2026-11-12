@@ -1,6 +1,6 @@
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]  # Repository root for isolated garage and tuning checks.
+ROOT = Path(__file__).resolve().parents[1]  # Repository root for isolated garage, ownership and tuning checks.
 RESOURCE = ROOT / "resources" / "[FUNCTION]" / "rp_garages"
 
 
