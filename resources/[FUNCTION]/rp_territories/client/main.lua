@@ -1,6 +1,7 @@
 local territories = {}
 local areaBlips = {}
 local pointBlips = {}
+local sectorPeds = {}
 local uiOpen = false
 local nearestSector = nil
 local nearestDistance = nil
@@ -42,8 +43,9 @@ local function BuildMap()
         local alpha = owned and Config.AreaAlphaOwned or Config.AreaAlphaFree
 
         local area = AddBlipForArea(sector.x, sector.y, 0.0, Config.AreaSize, Config.AreaSize)
-        SetBlipColour(area, color)
+        SetBlipColour(area, color) -- 0 = blanc pour tout secteur libre.
         SetBlipAlpha(area, alpha)
+        SetBlipDisplay(area, 2) -- Toujours visible sur la carte et la minimap.
         SetBlipAsShortRange(area, false)
         if not area or area == 0 then DebugLog('error', 'AREA_BLIP_FAILED', ('secteur=%s'):format(sector.id)) end
         areaBlips[#areaBlips + 1] = area
@@ -52,6 +54,7 @@ local function BuildMap()
         SetBlipSprite(point, Config.PointBlipSprite)
         SetBlipScale(point, Config.PointBlipScale)
         SetBlipColour(point, color)
+        SetBlipDisplay(point, 2)
         SetBlipAsShortRange(point, false)
         BeginTextCommandSetBlipName('STRING')
         if owned then
@@ -122,6 +125,82 @@ local function DrawHelpText(message)
     EndTextCommandDisplayHelp(0, false, true, -1)
 end
 
+local function LoadPedModel(modelName)
+    local model = joaat(modelName)
+    if not IsModelInCdimage(model) or not IsModelValid(model) then
+        DebugLog('error', 'PED_MODEL_INVALID', tostring(modelName))
+        return nil
+    end
+    RequestModel(model)
+    local deadline = GetGameTimer() + 5000
+    while not HasModelLoaded(model) and GetGameTimer() < deadline do Wait(50) end
+    if not HasModelLoaded(model) then
+        DebugLog('warn', 'PED_MODEL_TIMEOUT', tostring(modelName))
+        return nil
+    end
+    return model
+end
+
+local function SpawnSectorPed(sector)
+    if sectorPeds[sector.id] and DoesEntityExist(sectorPeds[sector.id]) then return end
+    RequestCollisionAtCoord(sector.x, sector.y, sector.z)
+    local groundFound, groundZ = false, sector.z
+    for attempt = 1, 12 do
+        groundFound, groundZ = GetGroundZFor_3dCoord(sector.x, sector.y, 1000.0, false)
+        if groundFound then break end
+        Wait(100)
+    end
+    if not groundFound then
+        DebugLog('warn', 'PED_GROUND_NOT_FOUND', ('secteur=%s | x=%.1f | y=%.1f'):format(sector.id, sector.x, sector.y))
+        return
+    end
+
+    local model = LoadPedModel(Config.PedModel or 'a_m_m_business_01')
+    if not model then return end
+    local ped = CreatePed(4, model, sector.x, sector.y, groundZ, 0.0, false, false)
+    SetModelAsNoLongerNeeded(model)
+    if not ped or ped == 0 or not DoesEntityExist(ped) then
+        DebugLog('error', 'PED_CREATE_FAILED', ('secteur=%s'):format(sector.id))
+        return
+    end
+
+    SetEntityAsMissionEntity(ped, true, true)
+    SetEntityInvincible(ped, true)
+    FreezeEntityPosition(ped, true)
+    SetBlockingOfNonTemporaryEvents(ped, true)
+    SetPedCanRagdoll(ped, false)
+    TaskStartScenarioInPlace(ped, 'WORLD_HUMAN_STAND_IMPATIENT', 0, true)
+    sectorPeds[sector.id] = ped
+    DebugLog('info', 'PED_SPAWNED', ('secteur=%s'):format(sector.id))
+end
+
+local function RemoveSectorPed(sectorId)
+    local ped = sectorPeds[sectorId]
+    if ped and DoesEntityExist(ped) then
+        SetEntityAsMissionEntity(ped, true, true)
+        DeletePed(ped)
+    end
+    sectorPeds[sectorId] = nil
+end
+
+-- Les PNJ sont créés localement uniquement près du joueur pour éviter
+-- de maintenir 60 entités chargées simultanément.
+CreateThread(function()
+    while true do
+        local coords = GetEntityCoords(PlayerPedId())
+        for _, sector in ipairs(Config.Sectors) do
+            local dx, dy = coords.x - sector.x, coords.y - sector.y
+            local distanceSquared = dx * dx + dy * dy
+            if distanceSquared <= (Config.PedSpawnDistance * Config.PedSpawnDistance) then
+                SpawnSectorPed(sector)
+            elseif distanceSquared >= (Config.PedDespawnDistance * Config.PedDespawnDistance) then
+                RemoveSectorPed(sector.id)
+            end
+        end
+        Wait(1500)
+    end
+end)
+
 CreateThread(function()
     Wait(1500)
     DebugLog('info', 'SYNC_REQUEST_SENT', 'Demande de synchronisation envoyée au serveur')
@@ -161,5 +240,6 @@ AddEventHandler('onResourceStop', function(resourceName)
     if resourceName ~= GetCurrentResourceName() then return end
     DebugLog('info', 'RESOURCE_STOP', 'Nettoyage des blips et du focus NUI')
     RemoveMapBlips()
+    for sectorId in pairs(sectorPeds) do RemoveSectorPed(sectorId) end
     if uiOpen then SetNuiFocus(false, false) end
 end)
