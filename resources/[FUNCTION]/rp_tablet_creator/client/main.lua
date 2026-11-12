@@ -60,16 +60,6 @@ RegisterNUICallback('createGang', function(data, cb)
     cb({ ok = true })
 end)
 
-RegisterNUICallback('createJob', function(data, cb)
-    TriggerServerEvent('rp_tablet_creator:server:createJob', data)
-    cb({ ok = true })
-end)
-
-RegisterNUICallback('createGang', function(data, cb)
-    TriggerServerEvent('rp_tablet_creator:server:createGang', data)
-    cb({ ok = true })
-end)
-
 RegisterNUICallback('setWorld', function(data, cb)
     TriggerServerEvent('rp_tablet_creator:server:setWorld', data.weather, data.hours, data.minutes)
     cb({ ok = true })
