@@ -34,10 +34,53 @@ exports('GetAllJobs', GetAllJobs)
 local function normalizeCustomJob(raw)
     if type(raw) ~= 'table' then return nil, 'Données invalides.' end
     local name = type(raw.name) == 'string' and raw.name:lower() or ''
-    local label = type(raw.label) == 'string' and raw.label:gsub('[%c<>]', ' '):sub(1, 64) or ''
+    local label = type(raw.label) == 'string' and raw.label:gsub('[%c<>]', ' '):gsub('^%s*(.-)%s*$', '%1'):sub(1, 64) or ''
     local description = type(raw.description) == 'string' and raw.description:gsub('[%c<>]', ' '):sub(1, 255) or ''
     local category = type(raw.category) == 'string' and raw.category:lower() or 'custom'
-    if not name:match('^[a-z][a-z0-9_]+
+    if #name < 3 or #name > 40 or name:match('^[a-z][a-z0-9_]+') ~= name or name == 'unemployed' or JobsMap[name] then
+        return nil, 'Identifiant invalide ou déjà utilisé.'
+    end
+    if #label < 2 or #description < 3 or #category > 32 or category:match('^[a-z][a-z0-9_]+') ~= category then
+        return nil, 'Nom, catégorie ou description invalide.'
+    end
+    if type(raw.grades) ~= 'table' then return nil, 'Les cinq grades sont obligatoires.' end
+    local grades = {}
+    for grade = 0, 4 do
+        local entry = raw.grades[grade] or raw.grades[tostring(grade)]
+        local gradeLabel = type(entry) == 'table' and tostring(entry.label or ''):gsub('[%c<>]', ' '):sub(1, 48) or ''
+        local salary = type(entry) == 'table' and tonumber(entry.salary) or nil
+        if #gradeLabel < 2 or not salary or salary % 1 ~= 0 or salary < 0 or salary > 100000 then
+            return nil, ('Grade %d invalide.'):format(grade)
+        end
+        grades[grade] = { label = gradeLabel, salary = salary }
+    end
+    return { name=name, label=label, description=description, category=category, icon='fas fa-briefcase',
+        whitelisted=raw.whitelisted == true, grades=grades }
+end
+
+local function RegisterRuntimeJob(job)
+    if type(job) ~= 'table' or type(job.name) ~= 'string' then return false end
+    JobsMap[job.name] = job
+    for _, current in ipairs(JobsList) do if current.name == job.name then return true end end
+    JobsList[#JobsList + 1] = job
+    return true
+end
+
+local function CreateCustomJob(raw, createdBy)
+    local job, validationError = normalizeCustomJob(raw)
+    if not job then return false, validationError end
+    local ok, id = pcall(MySQL.insert.await,
+        'INSERT INTO rp_custom_jobs (name, label, category, description, whitelisted, grades, created_by) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        { job.name, job.label, job.category, job.description, job.whitelisted and 1 or 0, json.encode(job.grades), tostring(createdBy or 'Creator'):sub(1, 80) })
+    if not ok or not id then
+        print(('[rp_jobs] Custom job save failed: %s'):format(tostring(id)))
+        return false, 'Erreur SQL : métier non enregistré.'
+    end
+    RegisterRuntimeJob(job)
+    TriggerClientEvent('rp_jobs:client:syncCustomJobs', -1, { job })
+    return true, job
+end
+exports('CreateCustomJob', CreateCustomJob)
 -- Persistent job-center choice statistics (one increment per successful application).
 local JOB_STATS_TABLE = 'rp_job_selection_stats'
 local jobStatsReady = false
