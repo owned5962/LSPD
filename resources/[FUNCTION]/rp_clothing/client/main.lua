@@ -210,7 +210,7 @@ CreateThread(function()
             if dist < 15.0 then
                 sleep = 0
                 DrawMarker(20, pos.x, pos.y, pos.z, 0, 0, 0, 0, 0, 0, 0.6, 0.6, 0.6, 56, 189, 248, 150, false, true, 2, false, nil, nil, false)
-                if dist < 1.8 then
+                if dist < 1.0 then
                     exports['rp_ui']:ShowTextUI('[E] Ouvrir la boutique de vêtements')
                     if IsControlJustPressed(0, 38) then
                         isShopOpen = true
