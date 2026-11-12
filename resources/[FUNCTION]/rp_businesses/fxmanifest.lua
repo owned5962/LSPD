@@ -3,7 +3,7 @@ game 'gta5'
 lua54 'yes'
 
 author 'FiveM RP Framework'
-description 'Los Santos business locations, map blips and Ammu-Nation purchase tablet'
+description 'Los Santos business locations, shopkeeper NPCs and purchase tablets'
 version '1.2.0'
 
 ui_page 'html/index.html'
@@ -28,4 +28,4 @@ files {
     'html/images/pistol.svg'
 }
 
-dependencies { 'oxmysql', 'rp_core', 'rp_ui' }
+dependencies { 'oxmysql', 'rp_core', 'rp_ui', 'rp_inventory' }
