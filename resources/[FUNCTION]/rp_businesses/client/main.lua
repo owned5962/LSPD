@@ -222,7 +222,7 @@ CreateThread(function()
                 end
             end
 
-            if nearestHorizontal and nearestHorizontal <= 1.0 and nearestVertical <= 10.0 then
+            if nearestHorizontal and nearestHorizontal <= 1.0 and nearestVertical <= 2.0 then
                 sleep = 0
                 if not ammunationPromptVisible then
                     exports['rp_ui']:ShowTextUI('[E] Ouvrir la tablette Ammu-Nation')
