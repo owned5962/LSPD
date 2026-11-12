@@ -10,6 +10,9 @@ local isAdminGodmode = false
 local isAdminSpectating = false
 local spectateTargetPed = nil
 
+-- Long-bracket pattern avoids quoting/line-break corruption in Lua weapon validation.
+local WEAPON_NAME_PATTERN = [[^WEAPON_[A-Z0-9_]+$]]
+
 local function Notify(message, kind)
     TriggerEvent('rp_core:client:notify', message, kind or 'info')
 end
@@ -334,7 +337,7 @@ RegisterNetEvent('rp_tablet_admin:client:spawnVehicleForPlayer', function(model)
 end)
 
 RegisterNetEvent('rp_tablet_admin:client:giveWeapon', function(weaponName, ammo)
-    if type(weaponName) ~= 'string' or not weaponName:match('^WEAPON_[A-Z0-9_]+$') then
+    if type(weaponName) ~= 'string' or not weaponName:match(WEAPON_NAME_PATTERN) then
         return
     end
 
