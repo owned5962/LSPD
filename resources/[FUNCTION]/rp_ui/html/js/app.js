@@ -113,6 +113,18 @@ function updatePlayerHUD(data) {
         setCircle('hud-' + key + '-circle', value);
     });
 
+    const jobPanel = document.getElementById('hud-job-panel');
+    const jobLabel = document.getElementById('hud-job-label');
+    const jobGrade = document.getElementById('hud-job-grade');
+    const jobDuty = document.getElementById('hud-job-duty');
+    if (jobLabel) jobLabel.textContent = String(data.jobLabel || 'Sans-emploi');
+    if (jobGrade) jobGrade.textContent = String(data.jobGradeLabel || 'Demandeur');
+    if (jobDuty) {
+        jobDuty.textContent = data.duty === true ? 'EN SERVICE' : 'HORS SERVICE';
+        jobDuty.classList.toggle('on-duty', data.duty === true);
+    }
+    jobPanel?.classList.toggle('hidden', data.visible !== true);
+
     const adminLevel = Math.max(0, Math.min(4, Math.floor(Number(data.adminLevel) || 0)));
     const adminCircle = document.getElementById('hud-admin-circle');
     setText('hud-admin-level', adminLevel);
