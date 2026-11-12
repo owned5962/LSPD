@@ -2,10 +2,13 @@ Config = {}
 
 Config.Price = 100
 Config.DurationDays = 7
-Config.InteractionDistance = 2.5
+Config.InteractionDistance = 3.5
 Config.ServerValidationDistance = 12.0
+Config.PedModel = 'a_m_m_business_01'
+Config.PedSpawnDistance = 140.0
+Config.PedDespawnDistance = 190.0
 Config.AreaSize = 500.0
-Config.AreaAlphaFree = 65
+Config.AreaAlphaFree = 180
 Config.AreaAlphaOwned = 90
 Config.PointBlipSprite = 1
 Config.PointBlipScale = 0.42
