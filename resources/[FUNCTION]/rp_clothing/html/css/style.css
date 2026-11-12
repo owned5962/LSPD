@@ -45,3 +45,25 @@ input[type=range]{width:100%;margin:13px 0;accent-color:#38bdf8;cursor:pointer}
 .preview-controls span{margin-right:auto}
 .preview-controls button{width:34px;height:30px;border:1px solid #38bdf855;border-radius:7px;background:#0ea5e91a;color:#e0f2fe;font-size:20px;cursor:pointer}
 .preview-controls button:hover{background:#0284c7;color:#fff}
+
+/* Dedicated barber mode: keep the compact panel while the scripted camera frames the head. */
+#clothing-wrapper.barber-mode{justify-content:flex-end}
+.barber-mode .clothing-card{width:min(430px,94vw);height:auto;max-height:82vh;padding:22px}
+.barber-mode .intro,.barber-mode .shop-layout,.barber-mode .presets-section,.barber-mode .saved-outfits,.barber-mode .save-box{display:none!important}
+.barber-mode .clothing-header{padding-bottom:12px}
+.barber-panel{display:block;padding-top:16px}
+.barber-title{display:flex;align-items:center;gap:12px;margin-bottom:20px}
+.barber-icon{width:44px;height:44px;display:grid;place-items:center;border-radius:12px;background:#0ea5e925;color:#7dd3fc;font-size:19px}
+.barber-title h2{font-size:18px;letter-spacing:1.5px}
+.barber-title p{font-size:11px;color:#94a3b8;margin-top:4px}
+.barber-preview-label{font-size:10px;letter-spacing:1.5px;color:#86efac;border:1px solid #22c55e44;border-radius:8px;padding:10px;margin-bottom:18px}
+.barber-preview-label i{margin-right:7px}
+.barber-control{margin:18px 0}
+.barber-control label{display:flex;justify-content:space-between;font-size:12px;color:#cbd5e1}
+.barber-control strong{color:#38bdf8}
+.barber-actions{display:flex;gap:9px;margin-top:22px}
+.barber-actions button{flex:1;border:1px solid #ffffff22;border-radius:9px;padding:12px;background:#ffffff0b;color:#e2e8f0;cursor:pointer;font-weight:700;font-size:11px}
+#barber-buy{background:#0284c7;border-color:#0284c7;color:white}
+#barber-buy small{display:block;font-size:10px;opacity:.8;margin-top:3px}
+.barber-actions button:disabled{opacity:.55;cursor:wait}
+#barber-status{min-height:18px;margin-top:12px;font-size:11px;color:#93c5fd}
