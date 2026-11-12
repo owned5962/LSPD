@@ -75,9 +75,64 @@ document.getElementById('texture-range').addEventListener('input', event => {
     document.getElementById('texture-value').textContent = String(activeCategory.texture);
     preview();
 });
+let barberActive = false;
+let barberState = { style:0, color:0, highlight:0 };
+function updateHairPreview() {
+    if (!barberActive) return;
+    document.getElementById('hair-style-value').textContent = String(barberState.style);
+    document.getElementById('hair-color-value').textContent = String(barberState.color);
+    document.getElementById('hair-highlight-value').textContent = String(barberState.highlight);
+    post('previewHair', barberState);
+}
+['hair-style','hair-color','hair-highlight'].forEach(id => {
+    document.getElementById(id).addEventListener('input', event => {
+        const key = id === 'hair-style' ? 'style' : id === 'hair-color' ? 'color' : 'highlight';
+        barberState[key] = Number(event.target.value) || 0;
+        updateHairPreview();
+    });
+});
+function closeBarber() {
+    if (!barberActive) return;
+    barberActive = false;
+    document.getElementById('clothing-wrapper').classList.add('hidden');
+    document.getElementById('clothing-wrapper').classList.remove('barber-mode');
+    post('closeBarber');
+}
+document.getElementById('barber-cancel').addEventListener('click', closeBarber);
+document.getElementById('barber-buy').addEventListener('click', () => {
+    if (!barberActive) return;
+    document.getElementById('barber-buy').disabled = true;
+    document.getElementById('barber-status').textContent = 'Enregistrement et paiement…';
+    post('purchaseHair');
+});
 window.addEventListener('message', event => {
     const data = event.data || {};
-    if (data.action === 'open') {
+    if (data.action === 'openBarber') {
+        barberActive = true;
+        barberState = { style:Number(data.style)||0, color:Number(data.color)||0, highlight:Number(data.highlight)||0 };
+        document.getElementById('clothing-wrapper').classList.remove('hidden');
+        document.getElementById('clothing-wrapper').classList.add('barber-mode');
+        document.getElementById('hair-style').max = Math.max(0, Number(data.styleCount)||0 - 1);
+        document.getElementById('hair-color').max = Math.max(0, Number(data.colorCount)||64 - 1);
+        document.getElementById('hair-highlight').max = Math.max(0, Number(data.colorCount)||64 - 1);
+        document.getElementById('hair-style').value = barberState.style;
+        document.getElementById('hair-color').value = barberState.color;
+        document.getElementById('hair-highlight').value = barberState.highlight;
+        document.getElementById('barber-buy').disabled = false;
+        document.getElementById('barber-status').textContent = '';
+        updateHairPreview();
+    } else if (data.action === 'closeBarber') {
+        barberActive = false;
+        document.getElementById('clothing-wrapper').classList.add('hidden');
+        document.getElementById('clothing-wrapper').classList.remove('barber-mode');
+    } else if (data.action === 'barberPurchaseResult') {
+        document.getElementById('barber-status').textContent = data.message || '';
+        if (data.success) {
+            barberActive = false;
+            document.getElementById('clothing-wrapper').classList.add('hidden');
+            document.getElementById('clothing-wrapper').classList.remove('barber-mode');
+        } else document.getElementById('barber-buy').disabled = false;
+    } else if (data.action === 'open') {
         document.getElementById('clothing-wrapper').classList.remove('hidden');
         catalog = Array.isArray(data.catalog) ? data.catalog : [];
         activeCategory = null;
@@ -120,5 +175,5 @@ function closeShop() {
 }
 document.getElementById('close-btn').addEventListener('click', closeShop);
 document.addEventListener('keydown', event => {
-    if (event.key === 'Escape') { event.preventDefault(); closeShop(); }
+    if (event.key === 'Escape') { event.preventDefault(); if (barberActive) closeBarber(); else closeShop(); }
 });
