@@ -14,7 +14,7 @@ def test_custom_jobs_are_persisted_validated_and_loaded_with_numeric_grades():
     core = read("resources/[CORE]/rp_core/server/player.lua")
     assert "CREATE TABLE IF NOT EXISTS rp_custom_jobs" in jobs
     assert "exports('CreateCustomJob', CreateCustomJob)" in jobs
-    assert "name:match('^[a-z][a-z0-9_]+$')" in jobs
+    assert "name:match('^[a-z][a-z0-9_]+') ~= name" in jobs
     assert "for grade = 0, 4 do" in jobs
     assert "numericGrades[grade]" in jobs
     assert "exports['rp_jobs']:IsValidJob(jobName)" in core
