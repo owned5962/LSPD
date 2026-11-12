@@ -282,7 +282,7 @@ local function purchaseAmmunationWeapon(src, itemName)
     end
     local deliveredAmmo = definition.ammo
     if existingWeapon then
-        existingWeapon.ammo = math.max(tonumber(existingWeapon.ammo) or 0, definition.ammo)
+        existingWeapon.ammo = math.min(9999, (tonumber(existingWeapon.ammo) or 0) + definition.ammo)
         deliveredAmmo = existingWeapon.ammo
     else
         metadata.weapons[#metadata.weapons + 1] = { name = weaponName, ammo = definition.ammo }
