@@ -1,5 +1,6 @@
 local isBankOpen = false
 local isAuthenticated = false
+local isAuthenticating = false
 local openedAt = nil
 local openedAsATM = false
 local openedLocationLabel = 'Agence bancaire'
@@ -58,6 +59,7 @@ local function CloseBankUI()
     if not isBankOpen then return end
     isBankOpen = false
     isAuthenticated = false
+    isAuthenticating = false
     openedAt = nil
     TriggerServerEvent('rp_economy:server:logout')
     SetNuiFocus(false, false)
@@ -107,6 +109,7 @@ local function OpenBankUI(isATM)
     exports['rp_ui']:HideTextUI()
     isBankOpen = true
     isAuthenticated = false
+    isAuthenticating = false
     openedAsATM = isATM == true
     openedLocationLabel = locationLabel
     SetNuiFocus(true, true)
@@ -134,8 +137,17 @@ RegisterNUICallback('close', function(_, cb)
 end)
 
 RegisterNUICallback('authenticate', function(_, cb)
-    if not isBankOpen then cb({ ok = false }); return end
+    if not isBankOpen or isAuthenticated or isAuthenticating then cb({ ok = false }); return end
+    isAuthenticating = true
     TriggerServerEvent('rp_economy:server:authenticate')
+    SetTimeout(10000, function()
+        if isAuthenticating then
+            isAuthenticating = false
+            if isBankOpen then
+                SendNUIMessage({ action = 'authenticationFailed', message = 'Le lecteur ne répond pas. Vérifiez votre position et réessayez.' })
+            end
+        end
+    end)
     cb({ ok = true })
 end)
 
@@ -158,6 +170,7 @@ RegisterNUICallback('transfer', function(data, cb)
 end)
 
 RegisterNetEvent('rp_economy:client:authenticationResult', function(result)
+    isAuthenticating = false
     if not isBankOpen then return end
     if type(result) ~= 'table' or result.success ~= true then
         SendNUIMessage({ action = 'authenticationFailed', message = result and result.message or 'Empreinte non reconnue.' })
@@ -193,6 +206,7 @@ AddEventHandler('onClientResourceStart', function(resourceName)
     if resourceName ~= GetCurrentResourceName() then return end
     isBankOpen = false
     isAuthenticated = false
+    isAuthenticating = false
     SetNuiFocus(false, false)
     SendNUIMessage({ action = 'closeBank' })
     SetTimeout(2000, function()
@@ -204,6 +218,7 @@ AddEventHandler('onClientResourceStop', function(resourceName)
     if resourceName ~= GetCurrentResourceName() then return end
     isBankOpen = false
     isAuthenticated = false
+    isAuthenticating = false
     TriggerServerEvent('rp_economy:server:logout')
     SetNuiFocus(false, false)
     SetNuiFocusKeepInput(false)
