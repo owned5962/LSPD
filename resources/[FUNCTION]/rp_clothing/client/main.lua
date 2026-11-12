@@ -1,4 +1,5 @@
 local isShopOpen = false
+local activeShopPosition = nil
 local clothingPromptVisible = false
 local clothingCamera = nil
 
@@ -25,12 +26,24 @@ end
 
 CreateThread(function()
     while true do
-        if isShopOpen and clothingCamera and DoesCamExist(clothingCamera) then
+        if isShopOpen then
             local ped = PlayerPedId()
-            local cameraCoords = GetOffsetFromEntityInWorldCoords(ped, 0.0, 2.2, 0.65)
-            SetCamCoord(clothingCamera, cameraCoords.x, cameraCoords.y, cameraCoords.z)
-            PointCamAtEntity(clothingCamera, ped, 0.0, 0.0, 0.55, true)
-            Wait(0)
+            if not activeShopPosition or #(GetEntityCoords(ped) - activeShopPosition) > 1.0 then
+                isShopOpen = false
+                activeShopPosition = nil
+                stopClothingCamera()
+                SetNuiFocus(false, false)
+                SendNUIMessage({ action = 'close' })
+                TriggerEvent('rp_core:client:notify', 'Boutique fermée : vous avez quitté la zone.', 'info')
+                Wait(250)
+            else
+                if clothingCamera and DoesCamExist(clothingCamera) then
+                    local cameraCoords = GetOffsetFromEntityInWorldCoords(ped, 0.0, 2.2, 0.65)
+                    SetCamCoord(clothingCamera, cameraCoords.x, cameraCoords.y, cameraCoords.z)
+                    PointCamAtEntity(clothingCamera, ped, 0.0, 0.0, 0.55, true)
+                end
+                Wait(0)
+            end
         else
             Wait(250)
         end
@@ -222,6 +235,7 @@ CreateThread(function()
                     sleep = 0
                     if IsControlJustReleased(0, 38) then
                         isShopOpen = true
+                        activeShopPosition = pos
                         if clothingPromptVisible then
                             exports['rp_ui']:HideTextUI()
                             clothingPromptVisible = false
@@ -267,6 +281,7 @@ end)
 
 RegisterNUICallback('close', function(data, cb)
     isShopOpen = false
+    activeShopPosition = nil
     stopClothingCamera()
     if clothingPromptVisible then exports['rp_ui']:HideTextUI(); clothingPromptVisible = false end
     SetNuiFocus(false, false)
@@ -279,6 +294,7 @@ RegisterNUICallback('saveOutfit', function(data, cb)
     if type(data) ~= 'table' then cb({ status = 'error' }); return end
     TriggerServerEvent('rp_clothing:saveOutfit', data.name, CaptureAppearance())
     isShopOpen = false
+    activeShopPosition = nil
     stopClothingCamera()
     SetNuiFocus(false, false)
     SendNUIMessage({ action = 'close' })
