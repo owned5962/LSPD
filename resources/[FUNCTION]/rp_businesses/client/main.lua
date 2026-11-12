@@ -217,3 +217,127 @@ AddEventHandler('onClientResourceStop', function(resourceName)
     closeAmmunationTablet()
     if ammunationPromptVisible then exports['rp_ui']:HideTextUI() end
 end)
+
+
+-- Supérettes : vendeurs PNJ persistants à proximité et ouverture avec E.
+local groceryPeds = {}
+local groceryLocations = {}
+local groceryTabletOpen = false
+local groceryPromptVisible = false
+local groceryPedModel = joaat('mp_m_shopkeep_01')
+
+local function loadGroceryPed(location)
+    local point = vector3(location.x, location.y, location.z)
+    if #(GetEntityCoords(PlayerPedId()) - point) > 85.0 then return end
+    if groceryPeds[location.key] and DoesEntityExist(groceryPeds[location.key]) then return end
+    RequestModel(groceryPedModel)
+    local timeout = GetGameTimer() + 5000
+    while not HasModelLoaded(groceryPedModel) and GetGameTimer() < timeout do Wait(50) end
+    if not HasModelLoaded(groceryPedModel) then return end
+    local found, groundZ = GetGroundZFor_3dCoord(location.x, location.y, location.z + 2.0, false)
+    local z = found and groundZ or location.z
+    local ped = CreatePed(4, groceryPedModel, location.x, location.y, z, 0.0, false, true)
+    if ped and ped ~= 0 then
+        SetEntityAsMissionEntity(ped, true, true)
+        SetEntityInvincible(ped, true)
+        FreezeEntityPosition(ped, true)
+        SetBlockingOfNonTemporaryEvents(ped, true)
+        SetPedCanRagdoll(ped, false)
+        TaskStartScenarioInPlace(ped, 'WORLD_HUMAN_STAND_IMPATIENT', 0, true)
+        groceryPeds[location.key] = ped
+    end
+    SetModelAsNoLongerNeeded(groceryPedModel)
+end
+
+RegisterNetEvent('rp_businesses:client:locations', function(locations)
+    if type(locations) ~= 'table' then return end
+    groceryLocations = {}
+    for _, location in ipairs(locations) do
+        if location.location_type == 'shop' and location.shop_style == 'food' then
+            groceryLocations[#groceryLocations + 1] = {
+                key = tostring(location.location_key or (#groceryLocations + 1)),
+                x = tonumber(location.x), y = tonumber(location.y), z = tonumber(location.z)
+            }
+        end
+    end
+end)
+
+RegisterNetEvent('rp_businesses:client:openStore', function(payload)
+    if type(payload) ~= 'table' then return end
+    if groceryPromptVisible then exports['rp_ui']:HideTextUI(); groceryPromptVisible = false end
+    groceryTabletOpen = true
+    SetNuiFocus(true, true)
+    SendNUIMessage({ action = 'openStore', cash = tonumber(payload.cash) or 0,
+        storeName = tostring(payload.storeName or 'SUPÉRETTE'), products = payload.products or {} })
+end)
+
+RegisterNetEvent('rp_businesses:client:storePurchaseResult', function(result)
+    if type(result) ~= 'table' then return end
+    SendNUIMessage({ action = 'storePurchaseResult', success = result.success == true,
+        message = tostring(result.message or ''), cash = tonumber(result.cash) or 0 })
+end)
+
+RegisterNUICallback('closeStore', function(_, cb)
+    groceryTabletOpen = false
+    SetNuiFocus(false, false)
+    SendNUIMessage({ action = 'closeStore' })
+    cb({ ok = true })
+end)
+
+RegisterNUICallback('buyStoreItem', function(data, cb)
+    if type(data) ~= 'table' or type(data.item) ~= 'string' then cb({ ok = false }); return end
+    TriggerServerEvent('rp_businesses:server:buyStoreItem', data.item)
+    cb({ ok = true })
+end)
+
+CreateThread(function()
+    while true do
+        local sleep = 1200
+        if not groceryTabletOpen and #groceryLocations > 0 and not IsPauseMenuActive() then
+            local coords = GetEntityCoords(PlayerPedId())
+            local nearest, nearestDistance
+            for _, location in ipairs(groceryLocations) do
+                local distance = #(coords - vector3(location.x, location.y, location.z))
+                if not nearestDistance or distance < nearestDistance then nearest, nearestDistance = location, distance end
+            end
+            if nearest and nearestDistance <= 85.0 then
+                sleep = 500
+                loadGroceryPed(nearest)
+            end
+            if nearest and nearestDistance <= 2.2 then
+                sleep = 0
+                if not groceryPromptVisible then
+                    exports['rp_ui']:ShowTextUI('[E] Ouvrir la boutique')
+                    groceryPromptVisible = true
+                end
+                if IsControlJustReleased(0, 38) then
+                    TriggerServerEvent('rp_businesses:server:requestStore')
+                    Wait(400)
+                end
+            elseif groceryPromptVisible then
+                exports['rp_ui']:HideTextUI()
+                groceryPromptVisible = false
+            end
+        elseif groceryPromptVisible then
+            exports['rp_ui']:HideTextUI()
+            groceryPromptVisible = false
+        end
+        Wait(sleep)
+    end
+end)
+
+CreateThread(function()
+    while true do
+        Wait(30000)
+        for key, ped in pairs(groceryPeds) do
+            if not DoesEntityExist(ped) then groceryPeds[key] = nil end
+        end
+    end
+end)
+
+AddEventHandler('onClientResourceStop', function(resourceName)
+    if resourceName ~= GetCurrentResourceName() then return end
+    for _, ped in pairs(groceryPeds) do
+        if DoesEntityExist(ped) then DeleteEntity(ped) end
+    end
+end)
