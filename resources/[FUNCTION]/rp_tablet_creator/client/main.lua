@@ -86,6 +86,11 @@ RegisterNUICallback('setServerSettings', function(data, cb)
     cb({ ok = true })
 end)
 
+RegisterNUICallback('setFuelSettings', function(data, cb)
+    TriggerServerEvent('rp_tablet_creator:server:setFuelSettings', data)
+    cb({ ok = true })
+end)
+
 RegisterNUICallback('setModuleState', function(data, cb)
     TriggerServerEvent('rp_tablet_creator:server:setModuleState', data.name, data.enabled)
     cb({ ok = true })
