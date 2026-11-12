@@ -1018,7 +1018,7 @@ def test_admin_give_actions_are_server_authorized_and_audited():
     server = read("resources/[FUNCTION]/rp_tablet_admin/server/extended.lua")
     client = read("resources/[FUNCTION]/rp_tablet_admin/client/main.lua")
     assert "AllowExtendedAction(src, 'give_vehicle', 1000)" in server
-    assert "AllowExtendedAction(src, 'give_weapon', 750)" in server
+    assert "AllowExtendedAction(src, 'give_weapon', 1500)" in server
     assert "exports['rp_anticheat']:IsWeaponAllowed(weapon)" in server
     assert "AllowedAdminWeapons" not in server
     assert "RegisterServerCallback('giveVehicle'" in client
@@ -1192,7 +1192,9 @@ def test_hud_has_separate_job_panel_and_no_money_display():
     assert "#hud-job-panel" in css
     assert "hud-job-panel" in ui
     assert "cash = tonumber(data.cash)" not in client
-    assert "SetMinimapClipType(1)" in client
+    assert "SetMinimapClipType(0)" in client
+    assert "RequestStreamedTextureDict('circlemap'" not in client
+    assert "circlemap texture unavailable" not in client
 
 
 def test_f12_client_diagnostics_are_registered_and_rendered():
