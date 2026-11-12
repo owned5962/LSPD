@@ -59,7 +59,7 @@ function setStage(stage, detail, jobCount) {
 
 function renderUpdates(data) {
     if (!updatesList) return;
-    const updates = Array.isArray(data.updates) ? data.updates.slice(0, 6) : [];
+    const updates = Array.isArray(data.updates) ? data.updates.slice(0, 10) : [];
     updatesList.replaceChildren();
 
     if (updates.length === 0) {
@@ -105,9 +105,9 @@ function renderUpdates(data) {
     }
 
     if (updatesRefresh) {
-        updatesRefresh.textContent = data.source === 'files'
-            ? 'Dernière synchronisation : ' + (data.fetchedAt || 'à l’instant') + ' • Fichiers du projet'
-            : 'Fichiers de nouveautés indisponibles • Réessayez à la prochaine connexion';
+        updatesRefresh.textContent = data.source === 'config'
+            ? 'Programme intégré au serveur • ' + (data.fetchedAt || 'à l’instant')
+            : 'Programme du serveur indisponible';
     }
 }
 
