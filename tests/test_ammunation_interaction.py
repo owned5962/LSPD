@@ -59,7 +59,7 @@ def test_inventory_contains_equipable_melee_weapons_and_mp5():
     server = (INVENTORY / "server/main.lua").read_text(encoding="utf-8")
     client = (INVENTORY / "client/main.lua").read_text(encoding="utf-8")
     for item in (
-        "weapon_knife", "weapon_nightstick", "weapon_bat", "weapon_crowbar",
+        "weapon_pistol", "weapon_knife", "weapon_nightstick", "weapon_bat", "weapon_crowbar",
         "weapon_hammer", "weapon_golfclub", "weapon_knuckle", "weapon_machete",
         "weapon_flashlight", "weapon_bottle", "weapon_dagger", "weapon_hatchet",
         "weapon_switchblade", "weapon_poolcue", "weapon_wrench", "weapon_battleaxe",
