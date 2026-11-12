@@ -95,3 +95,35 @@ def test_free_territory_areas_are_persistently_visible_and_white():
     assert "verticalDistance <= 2.0" in client
     assert "local verticalNear = math.abs(coords.z - sector.z) <= 2.0" in server
 
+
+
+def test_territory_tablet_uses_bank_payment_and_persists_custom_name():
+    server = read("resources/[FUNCTION]/rp_territories/server/main.lua")
+    html = read("resources/[FUNCTION]/rp_territories/html/index.html")
+    js = read("resources/[FUNCTION]/rp_territories/html/app.js")
+    assert "territory_name VARCHAR(64)" in server
+    assert "SHOW COLUMNS FROM rp_territories LIKE 'territory_name'" in server
+    assert "player.removeBank(Config.Price" in server
+    assert "player.addBank(Config.Price" in server
+    assert "territory_name = VALUES(territory_name)" in server
+    assert "ownerName = active" in server
+    assert "territoryName = active" in server
+    assert 'id="territory-name"' in html
+    assert 'id="owner-name"' in html
+    assert 'id="bank-balance"' in html
+    assert "post('claim', {sectorId: currentInfo.sectorId, colorId: selectedColor, territoryName})" in js
+
+
+def test_territories_are_pause_map_only_with_grouped_flag_icons_and_quiet_textui():
+    config = read("resources/[FUNCTION]/rp_territories/shared/config.lua")
+    client = read("resources/[FUNCTION]/rp_territories/client/main.lua")
+    assert "Config.PointBlipSprite = 38" in config
+    assert "SetBlipDisplay(area, 3)" in client
+    assert "SetBlipDisplay(point, 3)" in client
+    assert "SetBlipCategory(point, 12)" in client
+    assert "AddTextEntry('BLIP_CAT_12', 'Territoires')" in client
+    assert "AddTextComponentString('Territoires')" in client
+    assert "exports['rp_ui']:ShowTextUI" in client
+    assert "exports['rp_ui']:HideTextUI" in client
+    assert "DrawMarker(1, nearestSector" not in client
+    assert "EndTextCommandDisplayHelp(0, false, true" not in client
