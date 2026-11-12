@@ -813,3 +813,37 @@ CreateThread(function()
     Wait(15000)
     ApplyStoredCreatorSettings()
 end)
+
+RegisterNetEvent('rp_tablet_creator:server:createJob', function(data)
+    local src = source
+    if not creatorAccessAllowed(src) or not exports['rp_core']:CanPerformAction(src, 'creator:create_job', 1500) or type(data) ~= 'table' then return end
+    local callOk, created, result = pcall(function()
+        return exports['rp_jobs']:CreateCustomJob(data, GetPlayerName(src) or ('ID ' .. src))
+    end)
+    if not callOk then print(('[rp_tablet_creator] Custom job creation failed: %s'):format(tostring(created))); reply(src, 'Erreur interne pendant la création du métier.', false); return end
+    if created ~= true then reply(src, tostring(result or 'Création refusée.'), false); return end
+    reply(src, ('Métier %s créé et disponible immédiatement.'):format(result.label), true)
+    TriggerClientEvent('rp_tablet_creator:client:refreshTools', src)
+    LogCreatorAction(src, 'create_job', nil, result.name)
+end)
+
+RegisterNetEvent('rp_tablet_creator:server:createGang', function(data)
+    local src = source
+    if not creatorAccessAllowed(src) or not exports['rp_core']:CanPerformAction(src, 'creator:create_gang', 1500) or type(data) ~= 'table' then return end
+    local callOk, created, result = pcall(function()
+        return exports['rp_gangs']:CreateGang(data, GetPlayerName(src) or ('ID ' .. src))
+    end)
+    if not callOk then print(('[rp_tablet_creator] Gang creation failed: %s'):format(tostring(created))); reply(src, 'Erreur interne pendant la création du gang.', false); return end
+    if created ~= true then reply(src, tostring(result or 'Création refusée.'), false); return end
+    reply(src, ('Gang %s créé et enregistré.'):format(result.label), true)
+    TriggerClientEvent('rp_tablet_creator:client:organizationsData', src, exports['rp_gangs']:GetAllGangs())
+    LogCreatorAction(src, 'create_gang', nil, result.name)
+end)
+
+RegisterNetEvent('rp_tablet_creator:server:requestOrganizations', function()
+    local src = source
+    if not creatorAccessAllowed(src) then return end
+    local ok, gangs = pcall(function() return exports['rp_gangs']:GetAllGangs() end)
+    if not ok then print('[rp_tablet_creator] Gang list failed: ' .. tostring(gangs)); gangs = {} end
+    TriggerClientEvent('rp_tablet_creator:client:organizationsData', src, gangs or {})
+end)
