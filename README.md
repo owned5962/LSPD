@@ -97,3 +97,8 @@ Le fichier `server-icon.png` (96 × 96) est déclaré dans `server.cfg` via `loa
 
 ## Permissions administrateur
 La tablette vérifie la permission ACE `rp_admin` ou le groupe serveur `admin`, `superadmin` ou `fondateur`. Les accès aux tablettes Admin, Anticheat et Créateur peuvent aussi être désactivés individuellement depuis la console créateur. Aucun privilège n'est accordé selon le numéro de joueur.
+
+
+## Auto-école et permis
+
+La ressource `rp_drivingschool` propose cinq catégories : moto, voiture, avion, bateau et hélicoptère. Chaque permis possède un tarif configurable, un examen théorique de cinq questions (validation à 4/5) puis une épreuve pratique avec véhicule et checkpoints dédiés. Les réponses correctes restent côté serveur ; la progression pratique vérifie le personnage, le véhicule réseau, son modèle, le siège conducteur et la proximité des checkpoints. Les permis obtenus sont enregistrés dans `rp_driving_licenses`, par personnage et catégorie. Les tarifs, véhicules, lieux de départ et parcours sont configurés dans `resources/[FUNCTION]/rp_drivingschool/config.lua`. Importez `database.sql` pour créer la table de persistance.
