@@ -68,3 +68,8 @@ def test_atm_blips_are_only_created_after_a_real_gta_atm_prop_is_found():
     assert "BankLocations =" in locations
     assert "Fleeca Bank Legion Square" in locations
     assert "Pacific Standard Public Bank" in locations
+
+
+if __name__ == "__main__":
+    test_atm_blips_are_only_created_after_a_real_gta_atm_prop_is_found()
+    print("ATM prop verification checks passed.")
