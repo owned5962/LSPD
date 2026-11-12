@@ -824,6 +824,7 @@ RegisterNetEvent('rp_tablet_creator:server:createJob', function(data)
     if created ~= true then reply(src, tostring(result or 'Création refusée.'), false); return end
     reply(src, ('Métier %s créé et disponible immédiatement.'):format(result.label), true)
     TriggerClientEvent('rp_tablet_creator:client:refreshTools', src)
+    TriggerClientEvent('rp_tablet_creator:client:refreshAdminTools', src)
     LogCreatorAction(src, 'create_job', nil, result.name)
 end)
 
