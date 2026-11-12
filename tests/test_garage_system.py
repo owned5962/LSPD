@@ -65,3 +65,33 @@ if __name__ == "__main__":
     test_garage_retrieval_uses_stored_owner_record_and_spawn_ack()
     test_garage_ui_has_store_and_retrieve_controls()
     print("Garage regression checks passed.")
+
+
+def test_workshop_tuning_is_server_priced_and_persisted():
+    config = read("config.lua")
+    server = read("server/main.lua")
+    client = read("client/main.lua")
+    html = read("html/index.html")
+    js = read("html/app.js")
+    assert "Config.Workshops" in config
+    assert "[11] = { id = 'engine'" in config
+    assert "[18] = { id = 'turbo'" in config
+    assert "rp_garages:server:openWorkshop" in server
+    assert "getOwnedDrivenVehicle" in server
+    assert "Config.TuningCategories[modType]" in server
+    assert "player.removeBank, price" in server
+    assert "rp_garages:server:saveTune" in server
+    assert "UPDATE rp_owned_vehicles SET vehicle_props = ?" in server
+    assert "refundPendingTune" in server
+    assert "rp_garages:client:applyPurchasedTune" in client
+    assert "rp_garages:client:tuneRollback" in client
+    assert "GetNumVehicleMods(vehicle, modType)" in client
+    assert "id=\"tuning-category\"" in html
+    assert "id=\"tuning-level\"" in html
+    assert "post('previewTune'" in js
+    assert "post('buyTune'" in js
+    assert "alreadyInstalled" in js
+
+
+if __name__ == "__main__":
+    test_workshop_tuning_is_server_priced_and_persisted()
