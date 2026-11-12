@@ -240,6 +240,75 @@ RegisterNetEvent('rp_inventory:requestData', function()
     sendInventory(src, player, true)
 end)
 
+local WEAPON_ITEM_PATTERN = [[^WEAPON_[A-Z0-9_]+$]]
+
+local function useWeaponItem(src, player, inventory, itemName, itemDef)
+    local weaponName = tostring(itemDef.weapon or '')
+    if not weaponName:match(WEAPON_ITEM_PATTERN) then
+        notify(src, 'error', 'Définition d’arme invalide.')
+        return
+    end
+    local allowedOk, allowed = pcall(function()
+        return exports['rp_anticheat']:IsWeaponAllowed(weaponName)
+    end)
+    if not allowedOk or allowed ~= true then
+        notify(src, 'error', 'Cette arme est désactivée par la politique du serveur.')
+        return
+    end
+    local itemCount = 0
+    for _, entry in ipairs(inventory) do
+        if entry.name == itemName then itemCount = tonumber(entry.count) or 0; break end
+    end
+    if itemCount < 1 then notify(src, 'error', 'Cette arme n’est pas dans votre inventaire.'); return end
+    local ped = GetPlayerPed(src)
+    if ped == 0 or IsEntityDead(ped) then
+        notify(src, 'error', 'Vous ne pouvez pas équiper une arme dans cet état.')
+        return
+    end
+    local metadata = {}
+    for key, value in pairs(player.metadata or {}) do metadata[key] = value end
+    metadata.weapons = type(metadata.weapons) == 'table' and metadata.weapons or {}
+    for _, entry in ipairs(metadata.weapons) do
+        if type(entry) == 'table' and entry.name == weaponName then
+            notify(src, 'error', 'Vous possédez déjà cette arme.')
+            return
+        end
+    end
+    local ammo = weaponName == 'WEAPON_SMG' and 30 or 0
+    metadata.weapons[#metadata.weapons + 1] = { name = weaponName, ammo = ammo }
+    local updatedInventory = normalizeInventory(inventory)
+    for index, entry in ipairs(updatedInventory) do
+        if entry.name == itemName then
+            if entry.count <= 1 then table.remove(updatedInventory, index)
+            else entry.count = entry.count - 1 end
+            break
+        end
+    end
+    if not exports['rp_core']:AcquireCharacterLock({ player.charId }) then
+        notify(src, 'error', 'Une sauvegarde de votre personnage est en cours. Réessayez.')
+        return
+    end
+    transferLocks[src] = true
+    local persisted, persistError = pcall(function()
+        local ok = MySQL.transaction.await({
+            { query = 'INSERT INTO player_inventories (character_id, items) VALUES (?, ?) ON DUPLICATE KEY UPDATE items = VALUES(items)', values = { player.charId, json.encode(updatedInventory) } },
+            { query = 'UPDATE characters SET metadata = ? WHERE id = ? AND identifier = ?', values = { json.encode(metadata), player.charId, player.identifier } }
+        })
+        if not ok then error('Weapon item transaction rejected') end
+    end)
+    transferLocks[src] = nil
+    exports['rp_core']:ReleaseCharacterLock({ player.charId })
+    if not persisted then
+        print(('[rp_inventory] Weapon item use failed for character %s: %s'):format(player.charId, tostring(persistError)))
+        notify(src, 'error', 'Impossible d’équiper cette arme : sauvegarde indisponible.')
+        return
+    end
+    playerInventories[src] = updatedInventory
+    player.metadata = metadata
+    TriggerClientEvent('rp_inventory:client:giveWeapon', src, weaponName, ammo)
+    sendInventory(src, player)
+    notify(src, 'success', itemDef.label .. ' équipé et sauvegardé.')
+end
 RegisterNetEvent('rp_inventory:useItem', function(itemName)
     local src = source
     if not exports['rp_core']:CanPerformAction(src, 'inventory:use_item', 1000) then return end
@@ -258,713 +327,9 @@ RegisterNetEvent('rp_inventory:useItem', function(itemName)
 
     local itemDef = Config.DefaultItems[itemName]
     if itemDef and itemDef.type == 'weapon' then
-        local weaponName = tostring(itemDef.weapon or '')
-        if not weaponName:match('^WEAPON_[A-Z0-9_]+    if not itemDef or (itemDef.type ~= 'food' and itemDef.type ~= 'drink' and itemDef.type ~= 'medical') then
-        notify(src, 'error', 'Cet objet ne peut pas être utilisé.')
+        useWeaponItem(src, player, inventory, itemName, itemDef)
         return
     end
-
-    local itemIndex
-    for index, item in ipairs(inventory) do
-        if item.name == itemName and item.count > 0 then itemIndex = index break end
-    end
-    if not itemIndex then
-        notify(src, 'error', 'Cet objet n’est pas dans votre inventaire.')
-        return
-    end
-
-    local ped = GetPlayerPed(src)
-    if ped == 0 or IsEntityDead(ped) then
-        notify(src, 'error', 'Vous ne pouvez pas utiliser cet objet dans cet état.')
-        return
-    end
-    if itemDef.type == 'medical' then
-        local currentHealth, maxHealth = GetEntityHealth(ped), GetEntityMaxHealth(ped)
-        if not itemDef.heal or currentHealth >= maxHealth then
-            notify(src, 'error', 'Vous n’avez pas besoin de soins.')
-            return
-        end
-    end
-
-    local metadata = {}
-    for key, value in pairs(player.metadata or {}) do metadata[key] = value end
-    metadata.hunger = math.max(0, math.min(100, tonumber(metadata.hunger) or 100))
-    metadata.thirst = math.max(0, math.min(100, tonumber(metadata.thirst) or 100))
-    if itemDef.hunger then metadata.hunger = math.min(100, metadata.hunger + itemDef.hunger) end
-    if itemDef.thirst then metadata.thirst = math.min(100, metadata.thirst + itemDef.thirst) end
-    if itemDef.type ~= 'medical' and metadata.hunger == (player.metadata.hunger or 100)
-        and metadata.thirst == (player.metadata.thirst or 100) then
-        notify(src, 'error', 'Votre faim ou votre soif est déjà satisfaite.')
-        return
-    end
-
-    local updatedInventory = normalizeInventory(inventory)
-    local updatedIndex
-    for index, item in ipairs(updatedInventory) do
-        if item.name == itemName then updatedIndex = index break end
-    end
-    if not updatedIndex then return end
-    if updatedInventory[updatedIndex].count <= 1 then
-        table.remove(updatedInventory, updatedIndex)
-    else
-        updatedInventory[updatedIndex].count = updatedInventory[updatedIndex].count - 1
-    end
-
-    if not exports['rp_core']:AcquireCharacterLock({ player.charId }) then
-        notify(src, 'error', 'Une sauvegarde de votre personnage est en cours. Réessayez.')
-        return
-    end
-    transferLocks[src] = true
-    local persisted, persistError = pcall(function()
-        local ok = MySQL.transaction.await({
-            {
-                query = [[
-                    INSERT INTO player_inventories (character_id, items) VALUES (?, ?)
-                    ON DUPLICATE KEY UPDATE items = VALUES(items)
-                ]],
-                values = { player.charId, json.encode(updatedInventory) }
-            },
-            {
-                query = 'UPDATE characters SET metadata = ? WHERE id = ? AND identifier = ?',
-                values = { json.encode(metadata), player.charId, player.identifier }
-            }
-        })
-        if not ok then error('Item use transaction rejected') end
-    end)
-    transferLocks[src] = nil
-    exports['rp_core']:ReleaseCharacterLock({ player.charId })
-    if not persisted then
-        print(('[rp_inventory] Item use failed for character %s: %s'):format(player.charId, tostring(persistError)))
-        notify(src, 'error', 'Impossible d’utiliser cet objet : sauvegarde indisponible.')
-        return
-    end
-
-    playerInventories[src] = updatedInventory
-    player.metadata = metadata
-    TriggerClientEvent('rp_core:client:updateNeeds', src, metadata.hunger, metadata.thirst)
-    if itemDef.type == 'medical' then
-        TriggerClientEvent('rp_inventory:applyMedicalItem', src, itemDef.heal)
-    end
-    sendInventory(src, player)
-    notify(src, 'success', itemDef.label .. ' utilisé.')
-end)
-
-
-RegisterNetEvent('rp_inventory:giveItem', function(rawTargetId, itemName, rawCount)
-    local src = source
-    if not exports['rp_core']:CanPerformAction(src, 'inventory:give_item', 1500) then return end
-
-    local targetId, count = tonumber(rawTargetId), tonumber(rawCount)
-    local player = exports['rp_core']:GetPlayerFromId(src)
-    local target = targetId and exports['rp_core']:GetPlayerFromId(targetId)
-    if not player or not target or targetId == src or type(itemName) ~= 'string'
-        or not count or count % 1 ~= 0 or count < 1 or count > 100 then return end
-    if GetPlayerRoutingBucket(src) ~= GetPlayerRoutingBucket(targetId) then
-        notify(src, 'error', 'Ce joueur n’est pas dans votre instance.')
-        return
-    end
-
-    local function ensureInventory(targetSource, targetPlayer)
-        if not playerInventories[targetSource] or inventoryCharacterIds[targetSource] ~= targetPlayer.charId then
-            local ok, err = pcall(loadInventory, targetPlayer)
-            if not ok then
-                print(('[rp_inventory] Load failed for character %s: %s'):format(targetPlayer.charId, tostring(err)))
-                return false
-            end
-        end
-        return true
-    end
-    if not ensureInventory(src, player) or not ensureInventory(targetId, target) then
-        notify(src, 'error', 'Impossible de charger un des inventaires.')
-        return
-    end
-
-    local definition = Config.DefaultItems[itemName]
-    local sourceInventory, targetInventory = playerInventories[src], playerInventories[targetId]
-    if not definition or not sourceInventory or not targetInventory then
-        notify(src, 'error', 'Inventaire indisponible ou objet invalide.')
-        return
-    end
-
-    local sourceItem
-    for _, item in ipairs(sourceInventory) do
-        if item.name == itemName then sourceItem = item break end
-    end
-    if not sourceItem or sourceItem.count < count then
-        notify(src, 'error', 'Quantité insuffisante.')
-        return
-    end
-
-    local sourcePed, targetPed = GetPlayerPed(src), GetPlayerPed(targetId)
-    if sourcePed == 0 or targetPed == 0
-        or #(GetEntityCoords(sourcePed) - GetEntityCoords(targetPed)) > 3.0 then
-        notify(src, 'error', 'Le joueur est trop éloigné.')
-        return
-    end
-    if getInventoryWeight(targetInventory) + definition.weight * count > Config.MaxWeight then
-        notify(src, 'error', 'Le joueur ne peut pas porter cette charge.')
-        return
-    end
-    if transferLocks[src] or transferLocks[targetId] then
-        notify(src, 'error', 'Un transfert est déjà en cours.')
-        return
-    end
-    if not exports['rp_core']:AcquireCharacterLock({ player.charId, target.charId }) then
-        notify(src, 'error', 'Une sauvegarde est en cours. Réessayez.')
-        return
-    end
-
-    transferLocks[src], transferLocks[targetId] = true, true
-    local sourceNew = normalizeInventory(sourceInventory)
-    local targetNew = normalizeInventory(targetInventory)
-    for index, item in ipairs(sourceNew) do
-        if item.name == itemName then
-            if item.count <= count then table.remove(sourceNew, index)
-            else item.count = item.count - count end
-            break
-        end
-    end
-    local existing
-    for _, item in ipairs(targetNew) do
-        if item.name == itemName then existing = item break end
-    end
-    if existing then existing.count = existing.count + count
-    else
-        targetNew[#targetNew + 1] = {
-            name = itemName, count = count, label = definition.label, weight = definition.weight
-        }
-    end
-
-    local persisted, persistError = pcall(function()
-        local ok = MySQL.transaction.await({
-            {
-                query = [[
-                    INSERT INTO player_inventories (character_id, items) VALUES (?, ?)
-                    ON DUPLICATE KEY UPDATE items = VALUES(items)
-                ]],
-                values = { player.charId, json.encode(sourceNew) }
-            },
-            {
-                query = [[
-                    INSERT INTO player_inventories (character_id, items) VALUES (?, ?)
-                    ON DUPLICATE KEY UPDATE items = VALUES(items)
-                ]],
-                values = { target.charId, json.encode(targetNew) }
-            }
-        })
-        if not ok then error('Inventory transfer transaction rejected') end
-    end)
-
-    transferLocks[src], transferLocks[targetId] = nil, nil
-    exports['rp_core']:ReleaseCharacterLock({ player.charId, target.charId })
-    if not persisted then
-        print(('[rp_inventory] Atomic transfer failed (%s -> %s): %s'):format(player.charId, target.charId, tostring(persistError)))
-        notify(src, 'error', 'Le transfert a échoué. Aucun objet n’a été transféré.')
-        return
-    end
-
-    playerInventories[src], playerInventories[targetId] = sourceNew, targetNew
-    notify(src, 'success', ('Vous avez donné %dx %s.'):format(count, definition.label))
-    notify(targetId, 'success', ('Vous avez reçu %dx %s.'):format(count, definition.label))
-    sendInventory(src, player)
-    sendInventory(targetId, target)
-end)
-
--- Les objets au sol sont des entités réseau créées et contrôlées par le serveur.
-local groundDrops = {}
-local dropLocks = {}
-local nextDropId = 0
-local DROP_MODEL = GetHashKey('prop_cs_cardbox_01')
-
-local function buildDropSnapshot(bucket)
-    local snapshot = {}
-    for id, drop in pairs(groundDrops) do
-        if drop.bucket == bucket then
-            snapshot[#snapshot + 1] = {
-                id = id, x = drop.x, y = drop.y, z = drop.z,
-                label = drop.label, count = drop.count
-            }
-        end
-    end
-    return snapshot
-end
-
-local function syncDrops(target)
-    if target then
-        TriggerClientEvent('rp_inventory:client:syncDrops', target,
-            buildDropSnapshot(GetPlayerRoutingBucket(target)))
-        return
-    end
-    for _, rawSource in ipairs(GetPlayers()) do
-        local targetId = tonumber(rawSource)
-        TriggerClientEvent('rp_inventory:client:syncDrops', targetId,
-            buildDropSnapshot(GetPlayerRoutingBucket(targetId)))
-    end
-end
-
-local function spawnSavedDrop(row)
-    local id = tostring(row.id)
-    local object = CreateObjectNoOffset(DROP_MODEL, tonumber(row.x), tonumber(row.y), tonumber(row.z), true, true, false)
-    if not object or object == 0 or not DoesEntityExist(object) then
-        print(('[rp_inventory] Could not recreate ground drop %s; database row retained for retry.'):format(id))
-        return false
-    end
-    SetEntityHeading(object, tonumber(row.heading) or 0.0)
-    FreezeEntityPosition(object, true)
-    local definition = Config.DefaultItems[row.item_name]
-    if not definition then
-        DeleteEntity(object)
-        print(('[rp_inventory] Unknown item %s in ground drop %s; row retained.'):format(tostring(row.item_name), id))
-        return false
-    end
-    groundDrops[id] = {
-        entity = object,
-        x = tonumber(row.x), y = tonumber(row.y), z = tonumber(row.z),
-        heading = tonumber(row.heading) or 0.0,
-        label = definition.label, count = tonumber(row.count),
-        itemName = row.item_name, bucket = tonumber(row.routing_bucket) or 0
-    }
-    return true
-end
-
-CreateThread(function()
-    Wait(1000)
-    local ok, rows = pcall(MySQL.query.await,
-        'SELECT id, item_name, count, x, y, z, heading, routing_bucket FROM player_inventory_drops')
-    if not ok then
-        print(('[rp_inventory] Ground drop restoration failed: %s'):format(tostring(rows)))
-        return
-    end
-    for _, row in ipairs(rows or {}) do
-        spawnSavedDrop(row)
-    end
-    syncDrops()
-end)
-
-RegisterNetEvent('rp_inventory:server:requestDrops', function()
-    syncDrops(source)
-end)
-
-RegisterNetEvent('rp_inventory:dropItem', function(itemName, rawCount)
-    local src = source
-    if not exports['rp_core']:CanPerformAction(src, 'inventory:drop_item', 1000) then return end
-
-    local count = tonumber(rawCount)
-    local player = exports['rp_core']:GetPlayerFromId(src)
-    if not player or type(itemName) ~= 'string' or not count
-        or count % 1 ~= 0 or count < 1 or count > 100 then return end
-    if not playerInventories[src] or inventoryCharacterIds[src] ~= player.charId then
-        local ok, err = pcall(loadInventory, player)
-        if not ok then
-            print(('[rp_inventory] Drop inventory load failed for %s: %s'):format(player.charId, tostring(err)))
-            notify(src, 'error', 'Impossible de charger votre inventaire.')
-            return
-        end
-    end
-
-    local definition = Config.DefaultItems[itemName]
-    local inventory = playerInventories[src]
-    local itemIndex, item
-    for i, entry in ipairs(inventory or {}) do
-        if entry.name == itemName then itemIndex, item = i, entry break end
-    end
-    if not definition or not item or item.count < count then
-        notify(src, 'error', 'Vous ne possédez pas cette quantité.')
-        return
-    end
-    if transferLocks[src] then
-        notify(src, 'error', 'Une opération est déjà en cours.')
-        return
-    end
-
-    local ped = GetPlayerPed(src)
-    if ped == 0 then return end
-    local coords = GetEntityCoords(ped)
-    local forward = GetEntityForwardVector(ped)
-    local dropX, dropY, dropZ = coords.x + forward.x * 0.8, coords.y + forward.y * 0.8, coords.z - 0.85
-    local heading = GetEntityHeading(ped)
-    local object = CreateObjectNoOffset(DROP_MODEL, dropX, dropY, dropZ, true, true, false)
-    if not object or object == 0 or not DoesEntityExist(object) then
-        notify(src, 'error', 'Impossible de créer le paquet au sol. Aucun objet retiré.')
-        return
-    end
-    SetEntityHeading(object, heading)
-    FreezeEntityPosition(object, true)
-
-    local updated = normalizeInventory(inventory)
-    local updatedIndex
-    for i, entry in ipairs(updated) do
-        if entry.name == itemName then updatedIndex = i break end
-    end
-    if not updatedIndex then
-        DeleteEntity(object)
-        return
-    end
-    if updated[updatedIndex].count <= count then table.remove(updated, updatedIndex)
-    else updated[updatedIndex].count = updated[updatedIndex].count - count end
-
-    if not exports['rp_core']:AcquireCharacterLock({ player.charId }) then
-        DeleteEntity(object)
-        notify(src, 'error', 'Une sauvegarde de votre personnage est en cours. Réessayez.')
-        return
-    end
-    transferLocks[src] = true
-    nextDropId = nextDropId + 1
-    local dropId = ('%d-%d-%d-%d'):format(os.time(), GetGameTimer(), src, nextDropId)
-    local persisted, persistError = pcall(function()
-        local ok = MySQL.transaction.await({
-            {
-                query = [[
-                    INSERT INTO player_inventories (character_id, items) VALUES (?, ?)
-                    ON DUPLICATE KEY UPDATE items = VALUES(items)
-                ]],
-                values = { player.charId, json.encode(updated) }
-            },
-            {
-                query = [[
-                    INSERT INTO player_inventory_drops
-                        (id, item_name, count, x, y, z, heading, routing_bucket)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                ]],
-                values = {
-                    dropId, itemName, count, dropX, dropY, dropZ, heading,
-                    GetPlayerRoutingBucket(src)
-                }
-            }
-        })
-        if not ok then error('Ground drop transaction rejected') end
-    end)
-    transferLocks[src] = nil
-    exports['rp_core']:ReleaseCharacterLock({ player.charId })
-    if not persisted then
-        DeleteEntity(object)
-        print(('[rp_inventory] Drop transaction failed for character %s: %s'):format(player.charId, tostring(persistError)))
-        notify(src, 'error', 'Sauvegarde impossible : objet conservé dans votre inventaire.')
-        return
-    end
-
-    playerInventories[src] = updated
-    groundDrops[dropId] = {
-        entity = object, x = dropX, y = dropY, z = dropZ, heading = heading,
-        label = definition.label, count = count, itemName = itemName,
-        bucket = GetPlayerRoutingBucket(src)
-    }
-    sendInventory(src, player)
-    notify(src, 'success', ('Vous avez déposé %dx %s.'):format(count, definition.label))
-    syncDrops()
-end)
-
-RegisterNetEvent('rp_inventory:server:pickupDrop', function(rawDropId)
-    local src = source
-    if not exports['rp_core']:CanPerformAction(src, 'inventory:pickup_drop', 1000) then return end
-    local dropId = type(rawDropId) == 'string' and rawDropId or tostring(rawDropId or '')
-    local drop = dropId ~= '' and groundDrops[dropId]
-    local player = exports['rp_core']:GetPlayerFromId(src)
-    if not drop or not player then return end
-    if drop.bucket ~= GetPlayerRoutingBucket(src) then return end
-
-    local ped = GetPlayerPed(src)
-    if ped == 0 or not DoesEntityExist(drop.entity) then
-        groundDrops[dropId] = nil
-        syncDrops()
-        return
-    end
-    if #(GetEntityCoords(ped) - GetEntityCoords(drop.entity)) > 2.2 then
-        notify(src, 'error', 'Vous êtes trop loin de cet objet.')
-        return
-    end
-    if transferLocks[src] or dropLocks[dropId] then
-        notify(src, 'error', 'Cet objet est déjà en cours de récupération.')
-        return
-    end
-    dropLocks[dropId] = true
-
-    if not playerInventories[src] or inventoryCharacterIds[src] ~= player.charId then
-        local ok = pcall(loadInventory, player)
-        if not ok then
-            dropLocks[dropId] = nil
-            notify(src, 'error', 'Impossible de charger votre inventaire.')
-            return
-        end
-    end
-    local definition = Config.DefaultItems[drop.itemName]
-    if not definition then dropLocks[dropId] = nil; return end
-    local updated = normalizeInventory(playerInventories[src])
-    if getInventoryWeight(updated) + definition.weight * drop.count > Config.MaxWeight then
-        dropLocks[dropId] = nil
-        notify(src, 'error', 'Votre inventaire est trop lourd.')
-        return
-    end
-    local found = false
-    for _, entry in ipairs(updated) do
-        if entry.name == drop.itemName then entry.count = entry.count + drop.count; found = true; break end
-    end
-    if not found then
-        updated[#updated + 1] = {
-            name = drop.itemName, count = drop.count,
-            label = definition.label, weight = definition.weight
-        }
-    end
-
-    if not exports['rp_core']:AcquireCharacterLock({ player.charId }) then
-        dropLocks[dropId] = nil
-        notify(src, 'error', 'Une sauvegarde de votre personnage est en cours. Réessayez.')
-        return
-    end
-    transferLocks[src] = true
-    local persisted, persistError = pcall(function()
-        local ok = MySQL.transaction.await({
-            {
-                query = [[
-                    INSERT INTO player_inventories (character_id, items) VALUES (?, ?)
-                    ON DUPLICATE KEY UPDATE items = VALUES(items)
-                ]],
-                values = { player.charId, json.encode(updated) }
-            },
-            {
-                query = 'DELETE FROM player_inventory_drops WHERE id = ?',
-                values = { dropId }
-            }
-        })
-        if not ok then error('Ground pickup transaction rejected') end
-    end)
-    transferLocks[src] = nil
-    exports['rp_core']:ReleaseCharacterLock({ player.charId })
-    dropLocks[dropId] = nil
-    if not persisted then
-        print(('[rp_inventory] Pickup save failed for character %s: %s'):format(player.charId, tostring(persistError)))
-        notify(src, 'error', 'Sauvegarde impossible : l’objet reste au sol.')
-        return
-    end
-
-    playerInventories[src] = updated
-    groundDrops[dropId] = nil
-    DeleteEntity(drop.entity)
-    TriggerClientEvent('rp_inventory:client:removeDrop', -1, dropId)
-    sendInventory(src, player)
-    notify(src, 'success', ('Vous avez récupéré %dx %s.'):format(drop.count, definition.label))
-end)
-
-RegisterNetEvent('rp_inventory:server:requestWeapons', function()
-    local src = source
-    if not exports['rp_core']:CanPerformAction(src, 'inventory:request_weapons', 2000) then return end
-    local player = exports['rp_core']:GetPlayerFromId(src)
-    if not player or type(player.metadata) ~= 'table' then return end
-
-    local weapons = {}
-    for _, entry in ipairs(type(player.metadata.weapons) == 'table' and player.metadata.weapons or {}) do
-        if type(entry) == 'table' and type(entry.name) == 'string'
-            and entry.name:match('^WEAPON_[A-Z0-9_]+$') then
-            local allowedOk, allowed = pcall(function()
-                return exports['rp_anticheat']:IsWeaponAllowed(entry.name)
-            end)
-            if allowedOk and allowed == true then
-                local ammo = tonumber(entry.ammo) or 0
-                if ammo == ammo then
-                    weapons[#weapons + 1] = {
-                        name = entry.name,
-                        ammo = math.max(0, math.min(9999, math.floor(ammo)))
-                    }
-                end
-            end
-        end
-    end
-    TriggerClientEvent('rp_inventory:client:restoreWeapons', src, weapons)
-end)
-
--- Cache cleanup and persistence are handled by rp_core:server:playerUnloaded.
-
-
--- Server-only inventory grant API for trusted gameplay resources (e.g. vehicle salvage).
-local function AddItem(source, itemName, rawCount)
-    local src = tonumber(source)
-    local count = tonumber(rawCount)
-    local player = src and exports['rp_core']:GetPlayerFromId(src)
-    if not player or type(itemName) ~= 'string' or not count or count % 1 ~= 0 or count < 1 or count > 20 then return false end
-    local definition = Config.DefaultItems[itemName]
-    if not definition then return false end
-    if not playerInventories[src] or inventoryCharacterIds[src] ~= player.charId then
-        local ok = pcall(loadInventory, player)
-        if not ok then return false end
-    end
-    local current = normalizeInventory(playerInventories[src])
-    if getInventoryWeight(current) + definition.weight * count > Config.MaxWeight then
-        notify(src, 'error', 'Inventaire trop lourd : le butin a été laissé sur place.')
-        return false
-    end
-    local found = false
-    for _, item in ipairs(current) do
-        if item.name == itemName then item.count = item.count + count; found = true; break end
-    end
-    if not found then current[#current + 1] = { name = itemName, count = count, label = definition.label, weight = definition.weight } end
-    local ok = pcall(function()
-        MySQL.insert.await('INSERT INTO player_inventories (character_id, items) VALUES (?, ?) ON DUPLICATE KEY UPDATE items = VALUES(items)',
-            { player.charId, json.encode(current) })
-    end)
-    if not ok then return false end
-    playerInventories[src] = current
-    sendInventory(src, player)
-    return true
-end
-
-exports('AddItem', AddItem)
-
-
--- Trusted staff API for the creator tablet. The caller must authorize the staff role
--- before invoking this export; item names and quantities are validated here as well.
-local function AdminSetItem(source, itemName, operation, rawCount)
-    local src, count = tonumber(source), tonumber(rawCount)
-    local player = src and exports['rp_core']:GetPlayerFromId(src)
-    if not player or type(itemName) ~= 'string' or not Config.DefaultItems[itemName]
-        or (operation ~= 'add' and operation ~= 'remove')
-        or not count or count % 1 ~= 0 or count < 1 or count > 1000 then
-        return false
-    end
-
-    if not playerInventories[src] or inventoryCharacterIds[src] ~= player.charId then
-        local ok = pcall(loadInventory, player)
-        if not ok then return false end
-    end
-
-    local inventory = normalizeInventory(playerInventories[src])
-    local definition = Config.DefaultItems[itemName]
-    local foundIndex, currentCount
-    for index, item in ipairs(inventory) do
-        if item.name == itemName then foundIndex, currentCount = index, item.count; break end
-    end
-    currentCount = currentCount or 0
-    local nextCount = operation == 'add' and (currentCount + count) or (currentCount - count)
-    if nextCount < 0 or nextCount > 10000 then return false end
-
-    if nextCount == 0 then
-        if foundIndex then table.remove(inventory, foundIndex) end
-    elseif foundIndex then
-        inventory[foundIndex].count = nextCount
-    else
-        inventory[#inventory + 1] = { name = itemName, count = nextCount, label = definition.label, weight = definition.weight }
-    end
-
-    if getInventoryWeight(inventory) > Config.MaxWeight then return false end
-    local ok, err = pcall(function()
-        MySQL.update.await(
-            'INSERT INTO player_inventories (character_id, items) VALUES (?, ?) ON DUPLICATE KEY UPDATE items = VALUES(items)',
-            { player.charId, json.encode(inventory) }
-        )
-    end)
-    if not ok then
-        print(('[rp_inventory] Admin inventory update failed for character %s: %s'):format(player.charId, tostring(err)))
-        return false
-    end
-
-    playerInventories[src] = inventory
-    sendInventory(src, player)
-    notify(src, 'success', ('Inventaire modifié : %s x%d.'):format(definition.label, count))
-    return true
-end
-
-local function GetItemCatalog()
-    local catalog = {}
-    for name, definition in pairs(Config.DefaultItems) do
-        catalog[#catalog + 1] = {
-            name = name,
-            label = definition.label or name,
-            weight = tonumber(definition.weight) or 0
-        }
-    end
-    table.sort(catalog, function(a, b) return a.label < b.label end)
-    return catalog
-end
-
-exports('AdminSetItem', AdminSetItem)
-exports('GetItemCatalog', GetItemCatalog)
-) then
-            notify(src, 'error', 'Définition d’arme invalide.')
-            return
-        end
-        local allowedOk, allowed = pcall(function()
-            return exports['rp_anticheat']:IsWeaponAllowed(weaponName)
-        end)
-        if not allowedOk or allowed ~= true then
-            notify(src, 'error', 'Cette arme est désactivée par la politique du serveur.')
-            return
-        end
-
-        local itemIndex
-        for index, item in ipairs(inventory) do
-            if item.name == itemName and item.count > 0 then itemIndex = index break end
-        end
-        if not itemIndex then
-            notify(src, 'error', 'Cette arme n’est pas dans votre inventaire.')
-            return
-        end
-
-        local ped = GetPlayerPed(src)
-        if ped == 0 or IsEntityDead(ped) then
-            notify(src, 'error', 'Vous ne pouvez pas équiper une arme dans cet état.')
-            return
-        end
-
-        local metadata = {}
-        for key, value in pairs(player.metadata or {}) do metadata[key] = value end
-        metadata.weapons = type(metadata.weapons) == 'table' and metadata.weapons or {}
-        for _, entry in ipairs(metadata.weapons) do
-            if type(entry) == 'table' and entry.name == weaponName then
-                notify(src, 'error', 'Vous possédez déjà cette arme.')
-                return
-            end
-        end
-        local ammo = weaponName == 'WEAPON_SMG' and 30 or 0
-        metadata.weapons[#metadata.weapons + 1] = { name = weaponName, ammo = ammo }
-
-        local updatedInventory = normalizeInventory(inventory)
-        local updatedIndex
-        for index, item in ipairs(updatedInventory) do
-            if item.name == itemName then updatedIndex = index break end
-        end
-        if not updatedIndex then return end
-        if updatedInventory[updatedIndex].count <= 1 then
-            table.remove(updatedInventory, updatedIndex)
-        else
-            updatedInventory[updatedIndex].count = updatedInventory[updatedIndex].count - 1
-        end
-
-        if not exports['rp_core']:AcquireCharacterLock({ player.charId }) then
-            notify(src, 'error', 'Une sauvegarde de votre personnage est en cours. Réessayez.')
-            return
-        end
-        transferLocks[src] = true
-        local persisted, persistError = pcall(function()
-            local ok = MySQL.transaction.await({
-                {
-                    query = [[
-                        INSERT INTO player_inventories (character_id, items) VALUES (?, ?)
-                        ON DUPLICATE KEY UPDATE items = VALUES(items)
-                    ]],
-                    values = { player.charId, json.encode(updatedInventory) }
-                },
-                {
-                    query = 'UPDATE characters SET metadata = ? WHERE id = ? AND identifier = ?',
-                    values = { json.encode(metadata), player.charId, player.identifier }
-                }
-            })
-            if not ok then error('Weapon item transaction rejected') end
-        end)
-        transferLocks[src] = nil
-        exports['rp_core']:ReleaseCharacterLock({ player.charId })
-        if not persisted then
-            print(('[rp_inventory] Weapon item use failed for character %s: %s'):format(player.charId, tostring(persistError)))
-            notify(src, 'error', 'Impossible d’équiper cette arme : sauvegarde indisponible.')
-            return
-        end
-
-        playerInventories[src] = updatedInventory
-        player.metadata = metadata
-        TriggerClientEvent('rp_inventory:client:giveWeapon', src, weaponName, ammo)
-        sendInventory(src, player)
-        notify(src, 'success', itemDef.label .. ' équipé et sauvegardé.')
-        return
-    end
-
     if not itemDef or (itemDef.type ~= 'food' and itemDef.type ~= 'drink' and itemDef.type ~= 'medical') then
         notify(src, 'error', 'Cet objet ne peut pas être utilisé.')
         return
