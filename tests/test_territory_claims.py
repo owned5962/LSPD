@@ -15,7 +15,7 @@ def test_territories_are_individual_weekly_claims():
     assert "owner_identifier" in server
     assert "owner_character_id" in server
     assert "expires_at" in server
-    assert "player.removeCash(Config.Price)" in server
+    assert "player.removeBank(Config.Price" in server
     assert "DELETE FROM rp_territories WHERE expires_at <= ?" in server
     assert "sameOwner" in server
 
