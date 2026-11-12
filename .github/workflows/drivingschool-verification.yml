@@ -1,0 +1,47 @@
+name: Driving school verification
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'resources/[FUNCTION]/rp_drivingschool/**'
+      - 'tests/test_drivingschool.py'
+      - 'database.sql'
+      - 'server.cfg'
+      - '.github/workflows/drivingschool-verification.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'resources/[FUNCTION]/rp_drivingschool/**'
+      - 'tests/test_drivingschool.py'
+      - 'database.sql'
+      - 'server.cfg'
+      - '.github/workflows/drivingschool-verification.yml'
+  workflow_dispatch:
+
+jobs:
+  driving-school:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Lua 5.4
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y lua5.4
+      - name: Driving school regression tests
+        run: python tests/test_drivingschool.py
+      - name: Compile driving school Lua
+        run: |
+          luac5.4 -p 'resources/[FUNCTION]/rp_drivingschool/config.lua'
+          luac5.4 -p 'resources/[FUNCTION]/rp_drivingschool/client/main.lua'
+          luac5.4 -p 'resources/[FUNCTION]/rp_drivingschool/server/main.lua'
+      - name: Check driving school NUI JavaScript
+        run: node --check 'resources/[FUNCTION]/rp_drivingschool/html/app.js'
+      - name: Compile regression test
+        run: python -m py_compile tests/test_drivingschool.py
