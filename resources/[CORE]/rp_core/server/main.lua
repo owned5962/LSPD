@@ -51,6 +51,22 @@ exports('IsPlayerLoaded', function(source)
     return player ~= nil and player.isLoaded == true and tonumber(player.charId) ~= nil
 end)
 
+local function SetPlayerDuty(source, status, expectedJob)
+    local src = tonumber(source)
+    local player = src and Players[src]
+    if not player or player.isLoaded ~= true or type(status) ~= 'boolean'
+        or type(expectedJob) ~= 'string' or player.job ~= expectedJob then
+        return false
+    end
+
+    player.duty = status
+    TriggerClientEvent('rp_core:client:setDuty', src, status, expectedJob)
+    TriggerEvent('rp_core:server:dutyChanged', src, status, expectedJob)
+    return true
+end
+
+exports('SetPlayerDuty', SetPlayerDuty)
+
 function GetPlayerByIdentifier(identifier)
     for _, player in pairs(Players) do
         if player.identifier == identifier then
