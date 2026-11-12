@@ -28,7 +28,7 @@ class LoadscreenFeatureTests(unittest.TestCase):
 
     def test_creator_recruitment_and_versions_are_visible(self):
         html = self.read("html/index.html")
-        self.assertIn('id="creator-name">GAUTIER', html)
+        self.assertIn('id="creator-name">GAutier', html)
         self.assertIn("RECRUTEMENT OUVERT", html)
         self.assertIn('id="current-version">1.3.0', html)
         self.assertIn('id="previous-version">1.2.0', html)
