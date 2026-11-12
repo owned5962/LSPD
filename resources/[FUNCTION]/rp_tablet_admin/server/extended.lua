@@ -190,20 +190,7 @@ RegisterNetEvent('rp_tablet_admin:server:giveItem', function(rawTargetId, rawIte
     NotifyExtended(src, 'Item ' .. itemName .. ' x' .. count .. ' attribué au joueur ' .. targetId .. '.', 'success')
 end)
 
-RegisterNetEvent('rp_tablet_admin:server:giveWeapon', function(rawTargetId, rawWeapon)
-    local src = source
-    if not AllowExtendedAction(src, 'give_weapon', 750) then return end
-    local targetId = TargetId(rawTargetId)
-    local weapon = type(rawWeapon) == 'string' and rawWeapon:upper() or ''
-    local policyOk, allowed = pcall(function() return exports['rp_anticheat']:IsWeaponAllowed(weapon) end)
-    if not targetId or not policyOk or allowed ~= true then
-        NotifyExtended(src, 'Joueur ou arme non autorisée.')
-        return
-    end
-    LogExtendedAction(src, 'give_weapon', targetId, weapon)
-    TriggerClientEvent('rp_tablet_admin:client:giveWeapon', targetId, weapon)
-    NotifyExtended(src, 'Arme attribuée au joueur ' .. targetId .. '.', 'success')
-end)
+-- Weapon grants are handled by server/main.lua so metadata is saved before the client receives the weapon.
 
 AddEventHandler('playerDropped', function()
     local src = source
