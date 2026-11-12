@@ -2,6 +2,7 @@ local dealerships = {}
 local tabletOpen = false
 local promptVisible = false
 local currentDealer = nil
+local dealerOpeningId = nil
 local pendingSpawn = nil
 local dealerBlips = {}
 
@@ -52,6 +53,7 @@ local function createDealerBlips()
 end
 
 RegisterNetEvent('rp_vehicle_dealership:client:open', function(payload)
+    dealerOpeningId = nil
     if type(payload) ~= 'table' then return end
     hidePrompt()
     tabletOpen = true
@@ -63,6 +65,11 @@ RegisterNetEvent('rp_vehicle_dealership:client:open', function(payload)
         bank = tonumber(payload.bank) or 0,
         vehicles = payload.vehicles or {}
     })
+end)
+
+RegisterNetEvent('rp_vehicle_dealership:client:openDenied', function(message)
+    dealerOpeningId = nil
+    notify(message or 'Impossible de joindre le concessionnaire.', 'error')
 end)
 
 RegisterNetEvent('rp_vehicle_dealership:client:purchaseFailed', function(message)
@@ -171,10 +178,16 @@ CreateThread(function()
                     exports['rp_ui']:ShowTextUI('[E] Ouvrir le catalogue véhicules')
                     promptVisible = true
                 end
-                if IsControlJustReleased(0, 38) then
+                if IsControlJustReleased(0, 38) and not dealerOpeningId then
+                    dealerOpeningId = nearest.id
                     notify('Connexion au concessionnaire…', 'info')
                     TriggerServerEvent('rp_vehicle_dealership:server:open', nearest.id)
-                    Wait(500)
+                    SetTimeout(5000, function()
+                        if dealerOpeningId == nearest.id and not tabletOpen then
+                            dealerOpeningId = nil
+                            notify('Le concessionnaire ne répond pas. Vérifiez que sa ressource est démarrée.', 'error')
+                        end
+                    end)
                 end
             else
                 hidePrompt()
