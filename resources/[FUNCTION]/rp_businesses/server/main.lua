@@ -224,16 +224,45 @@ local STORE_ICONS = {
 }
 local storePurchaseLocks = {}
 
+local function getStoreLocations()
+    local locations = {}
+    for _, location in ipairs(cachedLocations) do
+        if location.location_type == 'shop' and location.shop_style == 'food' then
+            locations[#locations + 1] = location
+        end
+    end
+
+    -- Fallback to the resource's shared coordinates if the SQL cache has not
+    -- populated yet. Server-side distance checks remain authoritative.
+    if #locations == 0 then
+        for _, category in ipairs(BusinessLocations or {}) do
+            if category.id == 'food' then
+                for index, point in ipairs(category.points or {}) do
+                    locations[#locations + 1] = {
+                        location_type = 'shop', shop_style = 'food',
+                        location_key = ('shop:food:%d'):format(index),
+                        x = point[1], y = point[2], z = point[3]
+                    }
+                end
+            end
+        end
+    end
+    return locations
+end
+
 local function getPlayerAtStore(src, maxDistance)
     local player = exports['rp_core']:GetPlayerFromId(src)
     local ped = GetPlayerPed(src)
     if not player or ped == 0 or not DoesEntityExist(ped) then return nil end
+
     local coords = GetEntityCoords(ped)
-    for _, location in ipairs(cachedLocations) do
-        if location.location_type == 'shop' and location.shop_style == 'food' then
-            local point = vector3(tonumber(location.x) or 0.0, tonumber(location.y) or 0.0, tonumber(location.z) or 0.0)
-            if #(coords - point) <= maxDistance then return player end
-        end
+    for _, location in ipairs(getStoreLocations()) do
+        local point = vector3(
+            tonumber(location.x) or 0.0,
+            tonumber(location.y) or 0.0,
+            tonumber(location.z) or 0.0
+        )
+        if #(coords - point) <= maxDistance then return player end
     end
     return nil
 end
@@ -268,52 +297,69 @@ RegisterNetEvent('rp_businesses:server:buyStoreItem', function(itemName)
     local src = source
     if type(itemName) ~= 'string' or #itemName > 48 or not STORE_PRODUCTS[itemName] then return end
     if storePurchaseLocks[src] then return end
+
     if not exports['rp_core']:CanPerformAction(src, 'businesses:buy_store_item', 900) then
         TriggerClientEvent('rp_businesses:client:storePurchaseResult', src, {
             success = false, message = 'Patientez avant un nouvel achat.'
         })
         return
     end
+
     local player = getPlayerAtStore(src, 4.0)
     if not player then
         TriggerClientEvent('rp_businesses:client:storePurchaseResult', src, {
             success = false, message = 'Achat refusé : vous êtes trop loin de la boutique.',
-            cash = player and player.cash or 0
+            cash = 0
         })
         return
     end
+
     local price = STORE_PRODUCTS[itemName]
-    if (tonumber(player.cash) or 0) < price then
+    local cash = tonumber(player.cash) or 0
+    if cash < price then
         TriggerClientEvent('rp_businesses:client:storePurchaseResult', src, {
             success = false, message = 'Vous n’avez pas assez d’argent en espèces.',
-            cash = tonumber(player.cash) or 0
+            cash = cash
         })
         return
     end
-    if type(player.removeCash) ~= 'function' or not player.removeCash(price) then
-        TriggerClientEvent('rp_businesses:client:storePurchaseResult', src, {
-            success = false, message = 'Le paiement a échoué.',
-            cash = tonumber(player.cash) or 0
-        })
-        return
-    end
+
+    -- Lock before charging to prevent two simultaneous requests from spending
+    -- the same balance before the inventory write finishes.
     storePurchaseLocks[src] = true
-    local ok, added = pcall(function()
-        return exports['rp_inventory']:AddItem(src, itemName, 1)
-    end)
-    if not ok or added ~= true then
-        if type(player.addCash) == 'function' then player.addCash(price) end
+    local debitOk, debited = pcall(player.removeCash, price)
+    if not debitOk or debited ~= true then
         storePurchaseLocks[src] = nil
         TriggerClientEvent('rp_businesses:client:storePurchaseResult', src, {
-            success = false, message = 'Inventaire plein ou sauvegarde impossible : paiement remboursé.',
+            success = false, message = 'Le paiement a échoué. Aucun achat effectué.',
+            cash = tonumber(player.cash) or cash
+        })
+        return
+    end
+
+    local inventoryOk, added = pcall(function()
+        return exports['rp_inventory']:AddItem(src, itemName, 1)
+    end)
+
+    if not inventoryOk or added ~= true then
+        local refundOk, refunded = pcall(player.addCash, price)
+        if not refundOk or refunded == false then
+            print(('[rp_businesses] ÉCHEC remboursement achat boutique joueur=%s item=%s prix=%s'):format(src, itemName, price))
+        end
+        storePurchaseLocks[src] = nil
+        TriggerClientEvent('rp_businesses:client:storePurchaseResult', src, {
+            success = false,
+            message = 'Inventaire plein ou sauvegarde impossible : paiement remboursé.',
             cash = tonumber(player.cash) or 0
         })
         return
     end
+
     storePurchaseLocks[src] = nil
     TriggerClientEvent('rp_businesses:client:storePurchaseResult', src, {
-        success = true, message = (STORE_LABELS[itemName] or itemName) .. ' acheté.',
-        cash = tonumber(player.cash) or 0
+        success = true,
+        message = (STORE_LABELS[itemName] or itemName) .. ' acheté.',
+        cash = tonumber(player.cash) or math.max(0, cash - price)
     })
 end)
 
