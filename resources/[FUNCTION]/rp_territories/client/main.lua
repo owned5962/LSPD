@@ -3,6 +3,7 @@ local areaBlips = {}
 local pointBlips = {}
 local sectorPeds = {}
 local uiOpen = false
+local activeSectorId = nil
 local nearestSector = nil
 local nearestDistance = nil
 
@@ -99,6 +100,7 @@ RegisterNetEvent('rp_territories:client:openMenu', function(info)
     end
     DebugLog('info', 'OPEN_MENU_RECEIVED', ('secteur=%s'):format(tostring(info.sectorId)))
     uiOpen = true
+    activeSectorId = tostring(info.sectorId or '')
     SetNuiFocus(true, true)
     SendNUIMessage({ action = 'open', info = info })
 end)
@@ -112,6 +114,7 @@ RegisterNetEvent('rp_territories:client:claimResult', function(result)
     SendNUIMessage({ action = 'claimResult', result = result })
     if result.success then
         uiOpen = false
+        activeSectorId = nil
         SetNuiFocus(false, false)
     end
 end)
@@ -129,6 +132,7 @@ end)
 
 RegisterNUICallback('close', function(_, cb)
     uiOpen = false
+    activeSectorId = nil
     SetNuiFocus(false, false)
     cb({ ok = true })
 end)
@@ -221,7 +225,17 @@ CreateThread(function()
     TriggerServerEvent('rp_territories:server:requestSync')
     while true do
         Wait(350)
-        if not uiOpen then
+        if uiOpen then
+            local sector = Config.SectorById[activeSectorId]
+            local coords = GetEntityCoords(PlayerPedId())
+            if not sector or #(coords - vector3(sector.x, sector.y, sector.z)) > 1.0 then
+                uiOpen = false
+                activeSectorId = nil
+                SetNuiFocus(false, false)
+                SendNUIMessage({ action = 'close' })
+                DebugLog('info', 'MENU_AUTO_CLOSED', 'Joueur sorti de la zone du secteur')
+            end
+        else
             local ped = PlayerPedId()
             local coords = GetEntityCoords(ped)
             nearestSector, nearestDistance = nil, nil
@@ -255,5 +269,6 @@ AddEventHandler('onResourceStop', function(resourceName)
     DebugLog('info', 'RESOURCE_STOP', 'Nettoyage des blips et du focus NUI')
     RemoveMapBlips()
     for sectorId in pairs(sectorPeds) do RemoveSectorPed(sectorId) end
-    if uiOpen then SetNuiFocus(false, false) end
+    if uiOpen then SetNuiFocus(false, false); SendNUIMessage({ action = 'close' }) end
+    activeSectorId = nil
 end)
