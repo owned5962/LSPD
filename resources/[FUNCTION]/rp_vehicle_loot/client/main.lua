@@ -26,9 +26,15 @@ CreateThread(function()
                     prompted = true
                     if IsControlJustReleased(0, 38) then
                         activeVehicle, activeWheel = vehicle, wheel
+                        local netId = NetworkGetNetworkIdFromEntity(vehicle)
+                        TriggerServerEvent('rp_vehicle_loot:server:startTire', netId, wheel)
                         exports['rp_ui']:ProgressBar({ duration = 6500, label = 'Démontage du pneu...', canCancel = true }, function(completed)
-                            if completed and activeVehicle ~= 0 and DoesEntityExist(activeVehicle) then
-                                TriggerServerEvent('rp_vehicle_loot:server:stealTire', NetworkGetNetworkIdFromEntity(activeVehicle), activeWheel)
+                            if activeVehicle ~= 0 then
+                                if completed and DoesEntityExist(activeVehicle) then
+                                    TriggerServerEvent('rp_vehicle_loot:server:completeTire', netId, wheel)
+                                else
+                                    TriggerServerEvent('rp_vehicle_loot:server:cancelTire', netId, wheel)
+                                end
                             end
                             activeVehicle, activeWheel = 0, nil
                         end)
