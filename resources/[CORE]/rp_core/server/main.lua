@@ -148,6 +148,7 @@ AddEventHandler('playerDropped', function(reason)
             pendingDisconnectPlayers[characterId] = player
         end
         Players[src] = nil
+        TriggerEvent('rp_core:server:playerUnloaded', src, player)
 
         CreateThread(function()
             -- The FiveM source ID may be reused after disconnect; never read a new player's ped.
