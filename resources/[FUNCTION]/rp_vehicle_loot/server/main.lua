@@ -61,6 +61,16 @@ local function getValidScene(src, netId)
     return ped, vehicle
 end
 
+local function playerHasRepairKit(src)
+    local inventory = exports['rp_inventory']:GetPlayerInventory(src)
+    for _, item in ipairs(type(inventory) == 'table' and inventory or {}) do
+        if item.name == 'repairkit' and (tonumber(item.count) or 0) > 0 then
+            return true
+        end
+    end
+    return false
+end
+
 local function wheelAlreadyStolen(netId, wheel)
     local wheels = stolen[tostring(netId)]
     return wheels and wheels[wheel] == true
@@ -77,8 +87,12 @@ RegisterNetEvent('rp_vehicle_loot:server:startTire', function(rawNetId, rawWheel
     end
 
     if pendingSteals[src] then
-        notify(src, 'Vous avez déjà un démontage en cours.', 'warning')
-        return
+        if GetGameTimer() - pendingSteals[src].startedAt > TIRE_ACTION_TIMEOUT_MS then
+            pendingSteals[src] = nil
+        else
+            notify(src, 'Vous avez déjà un démontage en cours.', 'warning')
+            return
+        end
     end
 
     local player = exports['rp_core']:GetPlayerFromId(src)
@@ -88,17 +102,8 @@ RegisterNetEvent('rp_vehicle_loot:server:startTire', function(rawNetId, rawWheel
         return
     end
 
-    -- The repair kit is a reusable tool; its possession is verified from the
-    -- server inventory cache, never from a client-supplied item name.
-    local inventory = exports['rp_inventory']:GetPlayerInventory(src)
-    local hasRepairKit = false
-    for _, item in ipairs(type(inventory) == 'table' and inventory or {}) do
-        if item.name == 'repairkit' and (tonumber(item.count) or 0) > 0 then
-            hasRepairKit = true
-            break
-        end
-    end
-    if not hasRepairKit then
+    -- The repair kit is reusable and is checked against the server inventory.
+    if not playerHasRepairKit(src) then
         notify(src, 'Vous devez posséder un kit de réparation pour démonter un pneu.')
         return
     end
@@ -155,6 +160,12 @@ RegisterNetEvent('rp_vehicle_loot:server:completeTire', function(rawNetId, rawWh
         or #(GetEntityCoords(vehicle) - pending.vehicleStartCoords) > MAX_VEHICLE_MOVEMENT then
         pendingSteals[src] = nil
         notify(src, 'Le démontage a été interrompu : vous ou le véhicule avez bougé.')
+        return
+    end
+
+    if not playerHasRepairKit(src) then
+        pendingSteals[src] = nil
+        notify(src, 'Vous ne possédez plus de kit de réparation.')
         return
     end
 
