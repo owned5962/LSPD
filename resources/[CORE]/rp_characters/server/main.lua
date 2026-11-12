@@ -9,9 +9,21 @@ local function GetLicenseIdentifier(src)
     return nil
 end
 
+local FOUNDER_FIVEM_IDENTIFIER = 'fivem:12219878'
+
+local function IsFounderAccount(src)
+    -- ACE remains authoritative; the exact configured founder identifier is a
+    -- fallback for hosts where identifier-based ACE inheritance is delayed.
+    if IsPlayerAceAllowed(src, 'rp_founder') then return true end
+    for _, identifier in ipairs(GetPlayerIdentifiers(src) or {}) do
+        if identifier == FOUNDER_FIVEM_IDENTIFIER then return true end
+    end
+    return false
+end
+
 local function GetEffectiveUserGroup(src, databaseGroup)
-    -- ACE is the source of truth for the founder role; never trust client data.
-    if IsPlayerAceAllowed(src, 'rp_founder') then return 'fondateur' end
+    -- Never let the database's generic admin group downgrade the founder account.
+    if IsFounderAccount(src) then return 'fondateur' end
     return databaseGroup or 'user'
 end
 
