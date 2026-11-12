@@ -111,6 +111,15 @@ def test_fingerprint_validates_location_before_rate_limit_and_prevents_duplicate
     assert "Le lecteur ne répond pas. Vérifiez votre position et réessayez." in client
 
 
+def test_salary_loop_isolates_player_errors_and_non_table_grade_results():
+    server = read("server/main.lua")
+    assert "type(player) == 'table'" in server
+    assert "type(gradeData) == 'table' and gradeData.salary or 150" in server
+    assert "local paidOk, paid = pcall(player.addBank" in server
+    assert "tostring(paid)" in server
+    assert "elseif paid == true then" in server
+
+
 def test_server_uses_real_terminal_proximity_and_atm_requires_registered_location():
     server = read("server/main.lua")
     assert "getLocationsByType('bank')" in server
