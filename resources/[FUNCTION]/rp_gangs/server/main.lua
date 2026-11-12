@@ -40,7 +40,9 @@ MySQL.ready(function()
         GangReady = false
         print(('[rp_gangs] Database initialization failed: %s'):format(tostring(err)))
     else
-        print(('[rp_gangs] %d gangs loaded.'):format(#(MySQL.query.await('SELECT name FROM rp_gangs') or {})))
+        local count = 0
+        for _ in pairs(GangCache) do count = count + 1 end
+        print(('[rp_gangs] %d gangs loaded.'):format(count))
     end
 end)
 
