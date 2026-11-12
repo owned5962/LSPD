@@ -101,4 +101,7 @@ end)
 RegisterNetEvent('rp_core:client:updateNeeds', function(hunger, thirst)
     PlayerData.hunger = math.max(0, math.min(100, tonumber(hunger) or PlayerData.hunger or 100))
     PlayerData.thirst = math.max(0, math.min(100, tonumber(thirst) or PlayerData.thirst or 100))
+    PlayerData.metadata = type(PlayerData.metadata) == 'table' and PlayerData.metadata or {}
+    PlayerData.metadata.hunger = PlayerData.hunger
+    PlayerData.metadata.thirst = PlayerData.thirst
 end)
