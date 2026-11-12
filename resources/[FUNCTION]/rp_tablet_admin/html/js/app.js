@@ -254,6 +254,12 @@ function handleTabletMessage(event) {
         renderAuditLogs(data.logs);
         return;
     }
+    if (data.action === 'reports') { renderReports(data.reports); return; }
+    if (data.action === 'reportUpdated') {
+        requestReports();
+        showToast('Signalement mis à jour.');
+        return;
+    }
     if (data.action === 'weaponPolicySaveFailed') {
         const status = document.getElementById('weapon-policy-status');
         if (status) status.textContent = 'Échec : ' + String(data.message || 'enregistrement impossible');
@@ -298,6 +304,46 @@ function handleTabletMessage(event) {
 function requestAuditLogs() {
     nuiPost('requestAuditLogs').then(() => showToast('Demande de journaux envoyée.'))
         .catch(() => showToast('Impossible de demander les journaux.'));
+}
+
+
+function requestReports() {
+    nuiPost('requestReports').catch(() => showToast('Impossible de charger les signalements.'));
+}
+function renderReports(reports) {
+    const body = document.getElementById('admin-reports-table-body');
+    if (!body) return;
+    body.replaceChildren();
+    const rows = Array.isArray(reports) ? reports : [];
+    const counter = document.getElementById('report-open-count');
+    if (counter) counter.textContent = String(rows.filter(report => report.status === 'open').length);
+    if (!rows.length) {
+        const row = document.createElement('tr'), cell = document.createElement('td');
+        cell.colSpan = 6; cell.textContent = 'Aucun signalement enregistré.';
+        row.appendChild(cell); body.appendChild(row); return;
+    }
+    rows.forEach(report => {
+        const row = document.createElement('tr');
+        const values = [String(report.id || ''), String(report.player_name || 'Joueur'), String(report.message || ''),
+            report.status === 'open' ? 'En attente' : report.status === 'resolved' ? 'Traité' : 'Rejeté', String(report.created_at || '')];
+        values.forEach(value => { const cell = document.createElement('td'); cell.textContent = value; row.appendChild(cell); });
+        const actions = document.createElement('td');
+        if (report.status === 'open') {
+            const resolve = document.createElement('button');
+            resolve.type = 'button'; resolve.className = 'report-action report-resolve'; resolve.textContent = 'Traiter';
+            resolve.addEventListener('click', () => updateReportStatus(report.id, 'resolved'));
+            const reject = document.createElement('button');
+            reject.type = 'button'; reject.className = 'report-action report-reject'; reject.textContent = 'Rejeter';
+            reject.addEventListener('click', () => updateReportStatus(report.id, 'rejected'));
+            actions.append(resolve, reject);
+        } else actions.textContent = report.handled_by ? 'Par ' + String(report.handled_by) : 'Clôturé';
+        row.appendChild(actions); body.appendChild(row);
+    });
+}
+function updateReportStatus(reportId, status) {
+    if (!Number.isInteger(Number(reportId)) || !['resolved', 'rejected'].includes(status)) return;
+    nuiPost('updateReport', { reportId: Number(reportId), status })
+        .catch(() => showToast('Impossible de traiter ce signalement.'));
 }
 
 function renderAuditLogs(logs) {
@@ -411,6 +457,7 @@ function setupAdminSubViews() {
             document.querySelectorAll('.admin-subview').forEach(view => view.classList.toggle('active',view.id==='admin-'+target+'-view'));
             if (target==='map') { if (!mapInstance) setupPlayerMap(); setTimeout(()=>{mapInstance?.invalidateSize();mapInstance?.fitBounds([[0,0],[8192,8192]]);renderPlayerMap();},100); refreshPlayerMap(); }
             else if (target==='audit') requestAuditLogs();
+            else if (target==='reports') requestReports();
         });
     });
 }
