@@ -98,6 +98,10 @@ function renderCreatorAdminData(data) {
     const serverSlots = document.getElementById('creator-server-slots');
     if (serverName && data.settings) serverName.value = data.settings.name || 'Los Santos Stories';
     if (serverSlots && data.settings) serverSlots.value = Number(data.settings.slots || 64);
+    const fuelPrice = document.getElementById('creator-fuel-price');
+    const fuelConsumption = document.getElementById('creator-fuel-consumption');
+    if (fuelPrice && data.settings) fuelPrice.value = Number(data.settings.fuelPrice || 6);
+    if (fuelConsumption && data.settings) fuelConsumption.value = Number(data.settings.fuelConsumption || 2.5);
 
     const playerSelect = document.getElementById('creator-player');
     const selectedId = playerSelect.value;
@@ -194,6 +198,17 @@ document.getElementById('creator-save-server').addEventListener('click', () => {
     }
     post('setServerSettings', { name, slots }).catch(() => creatorMessage('Erreur lors de la sauvegarde du serveur.'));
 });
+document.getElementById('creator-save-fuel').addEventListener('click', () => {
+    const pricePerLitre = Number(document.getElementById('creator-fuel-price').value);
+    const consumptionMultiplier = Number(document.getElementById('creator-fuel-consumption').value);
+    if (!Number.isInteger(pricePerLitre) || pricePerLitre < 1 || pricePerLitre > 1000
+        || !Number.isFinite(consumptionMultiplier) || consumptionMultiplier < 0.1 || consumptionMultiplier > 20) {
+        creatorMessage('Prix du litre ou multiplicateur invalide.'); return;
+    }
+    post('setFuelSettings', { pricePerLitre, consumptionMultiplier })
+        .then(() => post('refreshTools'))
+        .catch(() => creatorMessage('Erreur lors de la sauvegarde des réglages carburant.'));
+});
 document.getElementById('creator-save-identity').addEventListener('click', () => {
     const player = getSelectedCreatorPlayer(); if (!player) { creatorMessage('Sélectionnez un joueur.'); return; }
     const data = {
@@ -230,6 +245,13 @@ function updateCreatorInventory(operation) {
 }
 document.getElementById('creator-item-add').addEventListener('click', () => updateCreatorInventory('add'));
 document.getElementById('creator-item-remove').addEventListener('click', () => updateCreatorInventory('remove'));
+document.querySelectorAll('.creator-tab').forEach(button => button.addEventListener('click', () => {
+    const tab = button.dataset.tab;
+    document.querySelectorAll('.creator-tab').forEach(item => item.classList.toggle('active', item === button));
+    document.querySelectorAll('[data-tab-panel]').forEach(panel => {
+        panel.hidden = panel.dataset.tabPanel !== tab;
+    });
+}));
 document.getElementById('creator-save-access').addEventListener('click', () => {
     const player = getSelectedCreatorPlayer(); if (!player) { creatorMessage('Sélectionnez un joueur.'); return; }
     post('updatePlayerAccess', {
