@@ -45,6 +45,7 @@ def test_ammunation_payment_is_atomic_and_weapon_metadata_is_persistent():
     assert "metadata.weapons" in buy_block
     assert "ReleaseCharacterLock(locks)" in buy_block
     assert "weaponPurchased" in buy_block
+    assert "exports['rp_anticheat']:IsWeaponAllowed(definition.weapon)" in buy_block
     assert "AMMUNATION_WEAPONS" in server
     assert "weapon_mp5" in server and "weapon_battleaxe" in server and "weapon_knife" in server
     assert "buildAmmunationCatalog()" in open_block
