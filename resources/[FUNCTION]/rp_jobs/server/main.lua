@@ -117,6 +117,18 @@ end
 
 RegisterNetEvent('rp_jobs:server:requestJobStats', function()
     local src = source
+    local customOk, customRows = pcall(MySQL.query.await, 'SELECT name, label, category, description, whitelisted, grades FROM rp_custom_jobs')
+    if customOk then
+        local customJobs = {}
+        for _, row in ipairs(customRows or {}) do
+            local decodedOk, grades = pcall(json.decode, row.grades or '{}')
+            if decodedOk and type(grades) == 'table' then
+                customJobs[#customJobs + 1] = { name=row.name, label=row.label, category=row.category, description=row.description,
+                    icon='fas fa-briefcase', whitelisted=tonumber(row.whitelisted)==1, grades=grades }
+            end
+        end
+        TriggerClientEvent('rp_jobs:client:syncCustomJobs', src, customJobs)
+    end
     if not exports['rp_core']:CanPerformAction(src, 'job_center_stats', 1000) then return end
     SendJobStats(src)
 end)
