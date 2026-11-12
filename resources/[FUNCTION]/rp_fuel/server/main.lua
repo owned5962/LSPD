@@ -17,12 +17,16 @@ local function sendPurchaseFailure(src, message, netId)
 end
 
 local function isAtStation(coords)
-    local ok, stations = pcall(function()
+    local stations = {}
+    local ok, registered = pcall(function()
         return exports['rp_businesses']:GetLocationsByType('gas_station')
     end)
-    if not ok or type(stations) ~= 'table' or #stations == 0 then
-        stations = FuelConfig.Stations or {}
+    if ok and type(registered) == 'table' then
+        for _, station in ipairs(registered) do stations[#stations + 1] = station end
     end
+    -- Always include the shared base coordinates: a partially seeded SQL table
+    -- must not disable otherwise valid vanilla stations.
+    for _, station in ipairs(FuelConfig.Stations or {}) do stations[#stations + 1] = station end
 
     for _, station in ipairs(stations) do
         local x, y, z = tonumber(station.x), tonumber(station.y), tonumber(station.z)
