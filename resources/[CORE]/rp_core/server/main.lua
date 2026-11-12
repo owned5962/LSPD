@@ -116,7 +116,12 @@ RegisterNetEvent('rp_core:server:requestPlayerDataSync', function()
     local src = source
     if not CanPerformAction(src, 'core:request_player_data_sync', 500) then return end
     local player = Players[tonumber(src)]
-    if not player or not tonumber(player.charId) or type(player.syncClient) ~= 'function' then return end
+    if not player or not tonumber(player.charId) or type(player.syncClient) ~= 'function' then
+        -- The server core may have restarted and lost its in-memory registry.
+        -- Ask the character resource to rebuild the authoritative session from SQL.
+        TriggerClientEvent('rp_core:client:requestCharacterBootstrap', src)
+        return
+    end
     player.syncClient()
 end)
 
