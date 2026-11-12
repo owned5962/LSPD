@@ -129,16 +129,46 @@ end)
 local AMMUNATION_PISTOL_PRICE = 500
 local AMMUNATION_PISTOL_WEAPON = 'WEAPON_PISTOL'
 
-local function getPlayerAtAmmunation(src, maxDistance)
+local AMMUNATION_INTERACTION_RADIUS = 12.0
+local AMMUNATION_VERTICAL_TOLERANCE = 12.0
+
+local function getAmmunationLocations()
+    local locations = {}
+    for _, location in ipairs(cachedLocations) do
+        if location.location_type == 'shop' and location.shop_style == 'ammunation' then
+            locations[#locations + 1] = location
+        end
+    end
+    if #locations == 0 then
+        for _, category in ipairs(BusinessLocations or {}) do
+            if category.id == 'ammunation' then
+                for index, point in ipairs(category.points or {}) do
+                    locations[#locations + 1] = {
+                        location_type = 'shop', shop_style = 'ammunation',
+                        location_key = ('shop:ammunation:%d'):format(index),
+                        x = point[1], y = point[2], z = point[3]
+                    }
+                end
+            end
+        end
+    end
+    return locations
+end
+
+local function getPlayerAtAmmunation(src)
     local player = exports['rp_core']:GetPlayerFromId(src)
     local ped = GetPlayerPed(src)
     if not player or ped == 0 or not DoesEntityExist(ped) then return nil end
 
     local playerCoords = GetEntityCoords(ped)
-    for _, location in ipairs(cachedLocations) do
-        if location.location_type == 'shop' and location.shop_style == 'ammunation' then
-            local shopCoords = vector3(tonumber(location.x) or 0.0, tonumber(location.y) or 0.0, tonumber(location.z) or 0.0)
-            if #(playerCoords - shopCoords) <= maxDistance then
+    for _, location in ipairs(getAmmunationLocations()) do
+        local x, y, z = tonumber(location.x), tonumber(location.y), tonumber(location.z)
+        if x and y and z then
+            local dx, dy = playerCoords.x - x, playerCoords.y - y
+            local horizontalDistance = math.sqrt(dx * dx + dy * dy)
+            local verticalDistance = math.abs(playerCoords.z - z)
+            if horizontalDistance <= AMMUNATION_INTERACTION_RADIUS
+                and verticalDistance <= AMMUNATION_VERTICAL_TOLERANCE then
                 return player
             end
         end
@@ -149,7 +179,7 @@ end
 RegisterNetEvent('rp_businesses:server:requestAmmunation', function()
     local src = source
     if not exports['rp_core']:CanPerformAction(src, 'businesses:open_ammunation', 1000) then return end
-    local player = getPlayerAtAmmunation(src, 3.0)
+    local player = getPlayerAtAmmunation(src)
     if not player then
         TriggerClientEvent('rp_core:client:notify', src, 'Vous devez être devant un comptoir Ammu-Nation.', 'error')
         return
@@ -166,7 +196,7 @@ RegisterNetEvent('rp_businesses:server:buyPistol', function()
         return
     end
 
-    local player = getPlayerAtAmmunation(src, 4.0)
+    local player = getPlayerAtAmmunation(src)
     if not player then
         TriggerClientEvent('rp_businesses:client:purchaseResult', src, {
             success = false, message = 'Achat refusé : vous êtes trop éloigné de l’armurerie.'
