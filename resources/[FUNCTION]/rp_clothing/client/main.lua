@@ -14,7 +14,7 @@ end
 local function updateClothingCamera()
     if not clothingCamera or not DoesCamExist(clothingCamera) then return end
     local ped = PlayerPedId()
-    local cameraCoords = GetOffsetFromEntityInWorldCoords(ped, 0.0, 2.2, 0.65)
+    local cameraCoords = GetOffsetFromEntityInWorldCoords(ped, 0.0, 2.8, 0.8)
     SetCamCoord(clothingCamera, cameraCoords.x, cameraCoords.y, cameraCoords.z)
     local pedCoords = GetEntityCoords(ped)
     local right = GetEntityRightVector(ped)
@@ -23,14 +23,14 @@ local function updateClothingCamera()
     PointCamAtCoord(clothingCamera,
         pedCoords.x + right.x * 0.55,
         pedCoords.y + right.y * 0.55,
-        pedCoords.z + 0.55)
+        pedCoords.z + 0.9)
 end
 
 local function startClothingCamera()
     stopClothingCamera()
     clothingCamera = CreateCam('DEFAULT_SCRIPTED_CAMERA', true)
     if not clothingCamera or clothingCamera == 0 then clothingCamera = nil; return end
-    SetCamFov(clothingCamera, 38.0)
+    SetCamFov(clothingCamera, 42.0)
     updateClothingCamera()
     SetCamActive(clothingCamera, true)
     RenderScriptCams(true, true, 500, true, true)
