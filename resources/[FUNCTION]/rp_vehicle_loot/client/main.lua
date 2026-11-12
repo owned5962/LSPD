@@ -1,3 +1,4 @@
+local ENABLE_TIRE_REMOVAL = false -- Mise en veille : passer à true pour réactiver le démontage des pneus.
 local activeVehicle, activeWheel = 0, nil
 local function nearestWheel(vehicle, coords)
     local wheels = { 0, 1, 2, 3 }
@@ -10,6 +11,7 @@ local function nearestWheel(vehicle, coords)
     return best, distance
 end
 
+if ENABLE_TIRE_REMOVAL then
 CreateThread(function()
     local prompted = false
     while true do
@@ -45,6 +47,8 @@ CreateThread(function()
         Wait(waitTime)
     end
 end)
+
+end -- ENABLE_TIRE_REMOVAL
 
 RegisterNetEvent('rp_vehicle_loot:client:success', function(netId, wheel, message)
     local vehicle = NetworkGetEntityFromNetworkId(tonumber(netId) or 0)
