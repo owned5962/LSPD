@@ -123,7 +123,7 @@ RegisterNetEvent('rp_drivingschool:server:practicalStarted', function(netId)
     local player = getPlayer(src)
     local entity = NetworkGetEntityFromNetworkId(tonumber(netId) or 0)
     local definition = session and Config.Categories[session.category]
-    if not session or session.phase ~= 'practical' or not player or not definition
+    if not session or session.phase ~= 'practical' or session.netId or not player or not definition
         or player.charId ~= session.characterId or player.identifier ~= session.identifier
         or not entity or entity == 0 or not DoesEntityExist(entity)
         or NetworkGetEntityOwner(entity) ~= src
