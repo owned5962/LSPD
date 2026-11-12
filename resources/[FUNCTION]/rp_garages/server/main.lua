@@ -465,13 +465,7 @@ RegisterNetEvent('rp_garages:server:saveTune', function(rawNetId, rawProps)
     TriggerClientEvent('rp_garages:client:tuneSaved', src, pending.modType, pending.modIndex, pending.price)
 end)
 
-RegisterNetEvent('rp_garages:server:spawnFailed', function(rawVehicleId)
-    local src = source
-    local pending = pendingSpawns[src]
-    if not pending or pending.id ~= tonumber(rawVehicleId) then return end
-    MySQL.update.await('UPDATE rp_owned_vehicles SET stored = 1 WHERE id = ? AND character_id = ?', { pending.id, pending.charId })
-    pendingSpawns[src] = nil
-end)
+
 
 AddEventHandler('playerDropped', function()
     local src = source
