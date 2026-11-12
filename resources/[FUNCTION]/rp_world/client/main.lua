@@ -1,11 +1,11 @@
 local DISABLE_POLICE = true
 
 -- Densités GTA : 0.0 = aucun spawn ambiant, 1.0 = densité normale.
--- Réduction marquée des PNJ et de la circulation sans vider totalement la ville.
-local PED_DENSITY = 0.35
-local SCENARIO_PED_DENSITY = 0.35
-local VEHICLE_DENSITY = 0.25
-local PARKED_VEHICLE_DENSITY = 0.40
+-- Réduction légère des PNJ ; la circulation reste proche de la densité normale.
+local PED_DENSITY = 0.75
+local SCENARIO_PED_DENSITY = 0.75
+local VEHICLE_DENSITY = 1.0
+local PARKED_VEHICLE_DENSITY = 0.85
 
 CreateThread(function()
     while true do
