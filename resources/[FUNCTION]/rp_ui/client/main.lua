@@ -75,15 +75,21 @@ local function UpdatePlayerHUD()
     end
     isCharacterLoaded = true
     local ped = PlayerPedId()
-    local maxHealth = math.max(1, GetEntityMaxHealth(ped) - 100)
-    local health = math.max(0, math.min(100, ((GetEntityHealth(ped) - 100) / maxHealth) * 100))
+    local stamina = math.max(0, math.min(100, GetPlayerSprintStaminaRemaining(PlayerId()) or 0))
+    local staffLevels = {
+        user = 0,
+        moderator = 1,
+        admin = 2,
+        superadmin = 3,
+        fondateur = 4
+    }
+    local adminLevel = staffLevels[tostring(data.group or 'user'):lower()] or 0
     SendNUIMessage({
         action = 'updateHUD', visible = true,
-        health = math.floor(health + 0.5),
         hunger = math.floor(math.max(0, math.min(100, tonumber(data.hunger) or 100)) + 0.5),
         thirst = math.floor(math.max(0, math.min(100, tonumber(data.thirst) or 100)) + 0.5),
-        job = tostring(data.jobLabel or data.job or 'Sans-emploi'),
-        grade = tostring(data.jobGradeLabel or '')
+        stamina = math.floor(stamina + 0.5),
+        adminLevel = adminLevel
     })
     DisplayRadar(true)
     return true
