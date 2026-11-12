@@ -228,7 +228,7 @@ RegisterNetEvent('rp_characters:server:checkPlayer', function()
 
     local charactersOk, characters = SafeDatabaseCall(src, 'character list query', function()
         return MySQL.query.await(
-            'SELECT id, char_id, firstname, lastname, dateofbirth, sex, height, cash, bank, job, job_grade, position, skin, metadata FROM characters WHERE identifier = ? ORDER BY char_id ASC',
+            'SELECT id, char_id, firstname, lastname, dateofbirth, sex, height, phone_number, cash, bank, job, job_grade, position, skin, metadata, is_dead FROM characters WHERE identifier = ? ORDER BY char_id ASC',
             { identifier }
         )
     end)
@@ -263,7 +263,7 @@ RegisterNetEvent('rp_characters:server:selectCharacter', function(slot)
 
     local charOk, char = SafeDatabaseCall(src, 'character selection query', function()
         return MySQL.single.await(
-            'SELECT id, char_id, firstname, lastname, dateofbirth, sex, height, cash, bank, job, job_grade, position, skin, metadata FROM characters WHERE identifier = ? AND char_id = ?',
+            'SELECT id, char_id, firstname, lastname, dateofbirth, sex, height, phone_number, cash, bank, job, job_grade, position, skin, metadata, is_dead FROM characters WHERE identifier = ? AND char_id = ?',
             { identifier, slot }
         )
     end)
@@ -411,6 +411,7 @@ RegisterNetEvent('rp_characters:server:createCharacter', function(data)
     local char = {
         id = charId, char_id = slot, firstname = firstname, lastname = lastname,
         dateofbirth = data.dateofbirth, sex = data.gender, height = height,
+        phone_number = nil, is_dead = 0,
         cash = 2500, bank = 10000, job = 'unemployed', job_grade = 0,
         position = spawn, skin = skin
     }
