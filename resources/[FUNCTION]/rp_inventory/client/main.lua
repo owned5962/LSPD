@@ -231,7 +231,10 @@ RegisterNetEvent('rp_characters:client:spawnPlayer', function()
 end)
 
 RegisterNetEvent('rp_inventory:client:giveWeapon', function(weaponName, ammo)
-    if type(weaponName) ~= 'string' or not weaponName:match('^WEAPON_[A-Z0-9_]+    if type(weapons) ~= 'table' then return end
+    if type(weaponName) ~= 'string' or not weaponName:match('^WEAPON_[A-Z0-9_]+
+
+RegisterNetEvent('rp_inventory:client:restoreWeapons', function(weapons)
+    if type(weapons) ~= 'table' then return end
     local ped = PlayerPedId()
     if ped == 0 or not DoesEntityExist(ped) or IsEntityDead(ped) then return end
 
