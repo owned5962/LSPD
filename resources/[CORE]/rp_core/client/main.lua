@@ -26,6 +26,7 @@ PlayerData = {
 }
 
 local playerDataReady = false
+local bootstrapRequested = false
 
 local function IsPlayerLoaded()
     local characterId = tonumber(PlayerData.charId)
@@ -45,6 +46,16 @@ RegisterNetEvent('rp_core:client:setPlayerData', function(data)
     local characterId = tonumber(PlayerData.charId)
     playerDataReady = data.isLoaded == true and characterId ~= nil and characterId > 0
     PlayerData.isLoaded = playerDataReady
+    if playerDataReady then bootstrapRequested = false end
+end)
+
+RegisterNetEvent('rp_core:client:requestCharacterBootstrap', function()
+    if IsPlayerLoaded() or bootstrapRequested then return end
+    bootstrapRequested = true
+    TriggerServerEvent('rp_characters:server:checkPlayer')
+    SetTimeout(20000, function()
+        if not IsPlayerLoaded() then bootstrapRequested = false end
+    end)
 end)
 
 RegisterNetEvent('rp_core:client:updateCash', function(amount)
