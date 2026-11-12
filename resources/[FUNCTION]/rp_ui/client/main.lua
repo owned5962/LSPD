@@ -192,10 +192,7 @@ CreateThread(function()
         return
     end
 
-    -- Restore the native square minimap. No external circlemap texture is required.
-    if type(RemoveReplaceTexture) == 'function' then
-        pcall(RemoveReplaceTexture, 'platform:/textures/graphics', 'radarmasksm')
-    end
+    -- Keep GTA's native square minimap. Do not load or replace circlemap textures.
     SetMinimapClipType(0)
 
     -- Rebuild the minimap once so the custom layout is applied immediately.
