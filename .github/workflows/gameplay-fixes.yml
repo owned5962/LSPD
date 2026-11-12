@@ -43,6 +43,7 @@ jobs:
           luac5.4 -p resources/'[FUNCTION]'/rp_businesses/client/main.lua
           luac5.4 -p resources/'[FUNCTION]'/rp_businesses/server/main.lua
           luac5.4 -p resources/'[FUNCTION]'/rp_inventory/client/main.lua
+          luac5.4 -p resources/'[FUNCTION]'/rp_inventory/config.lua
           luac5.4 -p resources/'[FUNCTION]'/rp_inventory/server/main.lua
           luac5.4 -p resources/'[FUNCTION]'/rp_anticheat/shared/config.lua
           luac5.4 -p resources/'[FUNCTION]'/rp_fuel/client/main.lua
@@ -65,6 +66,7 @@ jobs:
 
       - name: Check changed NUI JavaScript
         run: |
+          node --check resources/'[FUNCTION]'/rp_businesses/html/js/app.js
           node --check resources/'[FUNCTION]'/rp_vehicle_dealership/html/js/app.js
           node --check resources/'[FUNCTION]'/rp_tablet_creator/html/app.js
           node --check resources/'[FUNCTION]'/rp_clothing/html/js/app.js
