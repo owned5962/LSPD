@@ -62,6 +62,10 @@ function renderProducts(products) {
         const name = document.createElement('h2');
         name.textContent = product.label || product.item;
 
+        const category = document.createElement('small');
+        category.className = 'product-category';
+        category.textContent = product.category || '';
+
         const price = document.createElement('strong');
         price.className = 'product-price';
         price.textContent = formatCash(product.price);
@@ -77,8 +81,8 @@ function renderProducts(products) {
             feedback.className = 'feedback';
             feedback.textContent = 'Validation de l’achat…';
 
-            const endpoint = product.item === 'pistol' ? 'buyAmmunationPistol' : 'buyStoreItem';
-            const payload = product.item === 'pistol' ? {} : { item: product.item };
+            const endpoint = currentMode === 'ammu' ? 'buyAmmunationWeapon' : 'buyStoreItem';
+            const payload = { item: product.item };
             post(endpoint, payload).catch(() => {
                 purchasing.delete(product.item);
                 button.disabled = false;
@@ -87,7 +91,7 @@ function renderProducts(products) {
             });
         });
 
-        details.append(name, price, button);
+        details.append(name, category, price, button);
         card.append(visual, details);
         productsRoot.append(card);
     });
@@ -111,16 +115,7 @@ window.addEventListener('message', event => {
         document.getElementById('store-title').textContent =
             data.storeName || (currentMode === 'ammu' ? 'AMMU-NATION' : 'STORE');
 
-        if (currentMode === 'ammu') {
-            renderProducts([{
-                item: 'pistol',
-                label: 'Pistolet standard',
-                price: Number(data.price) || 500,
-                image: '🔫'
-            }]);
-        } else {
-            renderProducts(data.products);
-        }
+        renderProducts(data.products);
 
         feedback.className = 'feedback';
         feedback.textContent = 'Paiement en espèces uniquement.';
