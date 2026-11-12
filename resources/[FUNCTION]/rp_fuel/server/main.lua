@@ -296,9 +296,12 @@ end)
 AddEventHandler('entityRemoved', function(entity)
     local netId = NetworkGetNetworkIdFromEntity(entity)
     if netId and netId > 0 then
+        local pending = pendingRefuels[netId]
+        if pending then
+            cancelRefuel(netId, pending, 'le véhicule a été supprimé')
+        end
         vehicleFuel[netId] = nil
         lastFuelUpdate[netId] = nil
-        pendingRefuels[netId] = nil
     end
 end)
 
