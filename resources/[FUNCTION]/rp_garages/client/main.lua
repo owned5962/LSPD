@@ -164,7 +164,7 @@ RegisterNetEvent('rp_garages:client:openTuning', function(data)
                 label = definition.label,
                 basePrice = definition.basePrice,
                 maxIndex = definition.toggle and 1 or math.min(count - 1, definition.maxIndex),
-                current = definition.toggle and 0 or math.max(0, current),
+                current = definition.toggle and current or math.max(0, current),
                 toggle = definition.toggle == true
             }
         end
@@ -402,7 +402,7 @@ CreateThread(function()
     createBlips()
     while true do
         local sleep = 700
-        if tabletOpen or tuningOpen then
+        if tabletOpen then
             local activeGarage
             for _, garage in ipairs(Config.Garages) do
                 if garage.id == currentGarage then activeGarage = garage; break end
@@ -411,6 +411,9 @@ CreateThread(function()
                 closeGarage()
                 notify('Garage fermé : tu as quitté la zone.', 'info')
             end
+            hidePrompt()
+            sleep = 250
+        elseif tuningOpen then
             hidePrompt()
             sleep = 250
         elseif not IsPauseMenuActive() then
