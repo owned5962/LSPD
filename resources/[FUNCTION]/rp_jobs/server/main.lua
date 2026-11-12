@@ -66,8 +66,19 @@ MySQL.ready(function()
         for _, row in ipairs(rows) do
             local decodedOk, grades = pcall(json.decode, row.grades or '{}')
             if decodedOk and type(grades) == 'table' then
-                RegisterRuntimeJob({ name=row.name, label=row.label, category=row.category, description=row.description,
-                    icon='fas fa-briefcase', whitelisted=tonumber(row.whitelisted)==1, grades=grades })
+                local numericGrades = {}
+                local validGrades = true
+                for grade = 0, 4 do
+                    local entry = grades[grade] or grades[tostring(grade)]
+                    if type(entry) ~= 'table' then validGrades = false break end
+                    numericGrades[grade] = { label = tostring(entry.label or ('Grade ' .. grade)), salary = tonumber(entry.salary) or 0 }
+                end
+                if validGrades then
+                    RegisterRuntimeJob({ name=row.name, label=row.label, category=row.category, description=row.description,
+                        icon='fas fa-briefcase', whitelisted=tonumber(row.whitelisted)==1, grades=numericGrades })
+                else
+                    print(('[rp_jobs] Missing grades for custom job %s; ignored.'):format(tostring(row.name)))
+                end
             else
                 print(('[rp_jobs] Invalid grade JSON for custom job %s; ignored.'):format(tostring(row.name)))
             end
