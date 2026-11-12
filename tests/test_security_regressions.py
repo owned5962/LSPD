@@ -135,7 +135,7 @@ def test_clothing_presets_and_outfits_are_saved():
     assert "INSERT INTO user_outfits" in server
     assert "UPDATE characters SET skin" in server
     assert "@oxmysql/lib/MySQL.lua" in manifest
-    assert "/applyPreset" in ui
+    assert "post('applyPreset'" in ui
 
 
 
