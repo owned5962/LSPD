@@ -165,6 +165,7 @@ RegisterNetEvent('rp_garages:client:openTuning', function(data)
                 basePrice = definition.basePrice,
                 maxIndex = definition.toggle and 1 or math.min(count - 1, definition.maxIndex),
                 current = definition.toggle and current or math.max(0, current),
+                installedIndex = current,
                 toggle = definition.toggle == true
             }
         end
