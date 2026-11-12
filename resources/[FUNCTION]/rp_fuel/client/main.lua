@@ -13,14 +13,28 @@ end
 RegisterNetEvent('rp_businesses:client:locations', function(locations)
     if type(locations) ~= 'table' then return end
     local stations = {}
+    local function addStation(x, y, z)
+        x, y, z = tonumber(x), tonumber(y), tonumber(z)
+        if not x or not y or not z then return end
+        for _, existing in ipairs(stations) do
+            if #(vector3(existing.x, existing.y, existing.z) - vector3(x, y, z)) < 2.0 then
+                return
+            end
+        end
+        stations[#stations + 1] = { x = x, y = y, z = z }
+    end
+
+    -- Keep every configured vanilla station, then merge any additional SQL
+    -- locations without replacing the base list with a partial database result.
+    for _, station in ipairs(FuelConfig.Stations or {}) do
+        addStation(station.x, station.y, station.z)
+    end
     for _, location in ipairs(locations) do
         if location.location_type == 'gas_station' then
-            stations[#stations + 1] = {
-                x = tonumber(location.x), y = tonumber(location.y), z = tonumber(location.z)
-            }
+            addStation(location.x, location.y, location.z)
         end
     end
-    if #stations > 0 then FuelConfig.Stations = stations end
+    FuelConfig.Stations = stations
 end)
 
 local function nearestStation(coords, radius)
