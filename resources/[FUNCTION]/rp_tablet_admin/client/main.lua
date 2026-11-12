@@ -455,6 +455,7 @@ end)
 AddEventHandler('onClientResourceStart', function(resourceName)
     if resourceName ~= GetCurrentResourceName() then return end
     isTabletOpen = false
+    isAdminOpening = false
     SetNuiFocus(false, false)
     SendNUIMessage({ action = 'closeTablet' })
 end)
