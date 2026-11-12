@@ -37,6 +37,15 @@ def test_server_checks_admin_permissions_and_returns_explicit_open_result():
     assert "rp_jobs:GetAllJobs indisponible" in event
 
 
+def test_rp_ui_uses_native_minimap_and_safe_server_ping():
+    ui_client = (ROOT / "resources/[FUNCTION]/rp_ui/client/main.lua").read_text(encoding="utf-8")
+    ui_server = (ROOT / "resources/[FUNCTION]/rp_ui/server/main.lua").read_text(encoding="utf-8")
+    assert "SetMinimapClipType(0)" in ui_client
+    assert "RequestStreamedTextureDict('circlemap'" not in ui_client
+    assert "GetPlayerPing" not in ui_client
+    assert "GetSafePlayerPing(src)" in ui_server
+
+
 def test_admin_role_matching_is_case_insensitive_and_creator_tables_wait_for_mysql():
     server = (ADMIN / "server/main.lua").read_text(encoding="utf-8")
     creator = (CREATOR / "server/main.lua").read_text(encoding="utf-8")
@@ -53,4 +62,5 @@ if __name__ == "__main__":
     test_admin_open_waits_for_server_and_reports_denial_or_timeout()
     test_server_checks_admin_permissions_and_returns_explicit_open_result()
     test_admin_role_matching_is_case_insensitive_and_creator_tables_wait_for_mysql()
+    test_rp_ui_uses_native_minimap_and_safe_server_ping()
     print("Admin F10 workflow checks passed.")
