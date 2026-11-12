@@ -15,7 +15,7 @@ Serveur RP modulaire comprenant un système de personnages, une économie, 50 m�
 
 ## Contrat central des joueurs
 
-`rp_core` est l'unique registre serveur des personnages actifs. Un personnage est publié via l'export `RegisterPlayer` uniquement après validation de sa session et de son identifiant. Les ressources peuvent utiliser `GetPlayerFromId`, `IsPlayerLoaded` et `WaitForPlayerLoaded` ; les événements `rp_core:server:playerLoaded` et `rp_core:server:playerUnloaded` signalent les changements de session.
+`rp_core` est l'unique registre serveur des personnages actifs. Un personnage est publié via l'export `RegisterPlayer` uniquement après validation de la source FiveM, de l'identifiant `license:`, de la clé primaire SQL et du slot (1 à 3). Aucun identifiant de personnage de secours n'est généré en cas de donnée invalide. Les ressources peuvent utiliser `GetPlayerFromId`, `GetPlayerSnapshot`, `GetAllPlayers`, `IsPlayerLoaded` et `WaitForPlayerLoaded`. Pour une lecture sans risque de mutation, privilégiez `GetPlayerSnapshot` ; `GetPlayerByIdentifier` renvoie uniquement les informations de session nécessaires. Les événements `rp_core:server:playerLoaded` et `rp_core:server:playerUnloaded` transmettent des instantanés détachés, jamais l'objet joueur interne.
 
 Le client reçoit un instantané autoritaire `PlayerData` comprenant l'identité, le personnage, les soldes, le métier/grade, le groupe, l'état de service, les besoins, les métadonnées, la position, l'apparence, le téléphone et l'état de décès. Les ressources métiers partagent l'état de service avec `rp_core` au lieu d'avoir des copies indépendantes.
 
