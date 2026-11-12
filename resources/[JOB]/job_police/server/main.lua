@@ -1,5 +1,3 @@
-local dutyPlayers = {}
-
 local function isAt(coords, src, maxDistance)
     local ped = GetPlayerPed(src)
     if ped == 0 then return false end
@@ -10,7 +8,7 @@ RegisterNetEvent('job_police:setDuty', function(status)
     local src = source
     if not exports['rp_core']:CanPerformAction(src, 'job_police:setDuty', 2000) then
         TriggerClientEvent('rp_core:client:notify', src, 'Patientez avant de changer votre état de service.', 'warning')
-        TriggerClientEvent('job_police:dutyUpdated', src, dutyPlayers[src] == true)
+        TriggerClientEvent('job_police:dutyUpdated', src, (exports['rp_core']:GetPlayerFromId(src) or {}).duty == true)
         return
     end
     local player = exports['rp_core']:GetPlayerFromId(src)
@@ -23,7 +21,6 @@ RegisterNetEvent('job_police:setDuty', function(status)
         TriggerClientEvent('rp_core:client:notify', src, 'Impossible de synchroniser votre état de service. Réessayez.', 'error')
         return
     end
-    dutyPlayers[src] = status
     TriggerClientEvent('job_police:dutyUpdated', src, status)
     print(string.format('[LSPD] Officier %s est désormais %s service', player.name or src, status and 'EN' or 'HORS'))
 end)
@@ -31,7 +28,7 @@ end)
 RegisterNetEvent('job_police:getArmoryWeapons', function()
     local src = source
     local player = exports['rp_core']:GetPlayer(src)
-    if not player or player.job ~= 'police' or not dutyPlayers[src] or not isAt(Config.ArmoryCoords, src, 4.0) then
+    if not player or player.job ~= 'police' or player.duty ~= true or not isAt(Config.ArmoryCoords, src, 4.0) then
         TriggerClientEvent('rp_core:client:notify', src, 'Accès armurerie réservé aux agents en service présents à l’armurerie.', 'error')
         return
     end
@@ -45,10 +42,9 @@ end)
 
 
 exports('IsOnDuty', function(src)
-    return dutyPlayers[tonumber(src)] == true
+    local player = exports['rp_core']:GetPlayerFromId(src)
+    return player ~= nil and player.job == Config.Job and player.duty == true
 end)
 
 
-AddEventHandler('playerDropped', function()
-    dutyPlayers[source] = nil
-end)
+-- Duty state is owned by rp_core and is cleared with the player session.
