@@ -34,6 +34,30 @@
         </section>
         <footer><span>LSRP · SERVICE GARAGE</span><span>ESC POUR FERMER</span></footer>
     </main>
+    <main id="tuning" class="hidden">
+        <header class="topbar">
+            <div class="brand">
+                <div class="brand-mark">LS</div>
+                <div><span class="eyebrow">LOS SANTOS ROLEPLAY · ATELIER</span><h1 id="workshop-title">Atelier mécanique</h1></div>
+            </div>
+            <button id="tuning-close" class="close" aria-label="Fermer">×</button>
+        </header>
+        <section class="hero tuning-hero">
+            <div><span class="eyebrow">PERSONNALISATION HOMOLOGUÉE</span><h2>Optimise ton <em>véhicule.</em></h2><p>Plaque : <strong id="tuning-plate">—</strong> · Prévisualisation en direct avant achat.</p></div>
+            <div class="hero-icon">⚙</div>
+        </section>
+        <section class="tuning-card">
+            <label for="tuning-category">AMÉLIORATION</label>
+            <select id="tuning-category"></select>
+            <div class="tuning-level"><label for="tuning-level">NIVEAU / OPTION</label><strong id="tuning-level-label">Niveau 1</strong></div>
+            <input id="tuning-level" type="range" min="0" max="4" step="1" value="0">
+            <div class="range-labels"><span>Standard</span><span>Performance maximale</span></div>
+            <div class="price-preview"><span>PRIX DE L’INSTALLATION</span><strong id="tuning-price">0 $</strong></div>
+            <p id="tuning-status">Déplace le curseur pour prévisualiser une amélioration sur ton véhicule.</p>
+            <button id="tuning-buy" class="retrieve">Confirmer et payer <span>→</span></button>
+        </section>
+        <footer><span>LSRP · ATELIER MÉCANIQUE</span><span>ESC POUR FERMER</span></footer>
+    </main>
     <script src="app.js"></script>
 </body>
 </html>
