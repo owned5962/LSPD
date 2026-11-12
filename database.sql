@@ -527,3 +527,19 @@ CREATE TABLE IF NOT EXISTS `rp_driving_licenses` (
     KEY `idx_rp_driving_license_identifier` (`identifier`),
     CONSTRAINT `fk_rp_driving_license_character` FOREIGN KEY (`character_id`) REFERENCES `characters` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+
+-- Signalements joueurs consultables depuis la tablette F10.
+CREATE TABLE IF NOT EXISTS `player_reports` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `player_identifier` VARCHAR(80) NOT NULL,
+  `player_name` VARCHAR(64) NOT NULL,
+  `message` VARCHAR(500) NOT NULL,
+  `status` ENUM('open','resolved','rejected') NOT NULL DEFAULT 'open',
+  `handled_by` VARCHAR(64) DEFAULT NULL,
+  `handled_at` TIMESTAMP NULL DEFAULT NULL,
+  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_player_reports_status_created` (`status`, `created_at`),
+  KEY `idx_player_reports_identifier` (`player_identifier`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
