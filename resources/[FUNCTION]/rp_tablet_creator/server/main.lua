@@ -256,15 +256,36 @@ local function spawnSavedMapping()
     end
 end
 
-CreateThread(function()
-    Wait(1500)
-    if not ensureCreatorTables() then return end
-    ApplyStoredCreatorSettings()
-    Wait(500)
-    local ok, err = pcall(spawnSavedMapping)
-    if not ok then print('[rp_tablet_creator] Mapping restore failed: ' .. tostring(err)) end
-    local rowsOk, rows = pcall(MySQL.query.await, 'SELECT job, label, x, y, z, sprite, color, scale, enabled FROM rp_creator_job_blips')
-    if rowsOk then TriggerClientEvent('rp_tablet_creator:client:syncJobBlips', -1, rows or {}) end
+-- Create the access-control table only after oxmysql is ready. Retry transient
+-- database failures instead of leaving CanUseTablet permanently unavailable.
+MySQL.ready(function()
+    CreateThread(function()
+        local initialized = false
+        for attempt = 1, 10 do
+            if ensureCreatorTables() then
+                initialized = true
+                break
+            end
+            print(('[rp_tablet_creator] Initialisation des tables en attente (%d/10).'):format(attempt))
+            Wait(3000)
+        end
+        if not initialized then
+            print('[rp_tablet_creator] ERREUR : tables de contrôle non initialisées après 10 tentatives.')
+            return
+        end
+
+        ApplyStoredCreatorSettings()
+        Wait(500)
+        local ok, err = pcall(spawnSavedMapping)
+        if not ok then print('[rp_tablet_creator] Mapping restore failed: ' .. tostring(err)) end
+        local rowsOk, rows = pcall(MySQL.query.await,
+            'SELECT job, label, x, y, z, sprite, color, scale, enabled FROM rp_creator_job_blips')
+        if rowsOk then
+            TriggerClientEvent('rp_tablet_creator:client:syncJobBlips', -1, rows or {})
+        else
+            print('[rp_tablet_creator] Job blip restore failed: ' .. tostring(rows))
+        end
+    end)
 end)
 
 RegisterNetEvent('rp_tablet_creator:server:requestTools', function()
