@@ -30,7 +30,6 @@ window.addEventListener('message', function(event) {
         updatePlayerHUD(data);
     } else if (data.action === 'hideHUD') {
         document.getElementById('player-hud')?.classList.add('hidden');
-        document.getElementById('hud-job-panel')?.classList.add('hidden');
     } else if (data.action === 'showDiagnostics') {
         document.getElementById('client-diagnostics')?.classList.remove('hidden');
     } else if (data.action === 'hideDiagnostics') {
@@ -107,14 +106,18 @@ function updatePlayerHUD(data) {
         const el = document.getElementById(id);
         if (el) el.style.setProperty('--progress', Math.max(0, Math.min(100, Number(value) || 0)) + '%');
     };
-    setText('hud-job', data.job || 'Sans-emploi');
-    setText('hud-grade', data.grade || '');
-    document.getElementById('hud-job-panel')?.classList.toggle('hidden', data.visible !== true);
-    ['health', 'armor', 'hunger', 'thirst'].forEach(key => {
+
+    ['hunger', 'thirst', 'stamina'].forEach(key => {
         const value = Math.max(0, Math.min(100, Number(data[key]) || 0));
         setText('hud-' + key, Math.round(value) + '%');
-        if (key === 'hunger' || key === 'thirst') setCircle('hud-' + key + '-circle', value);
+        setCircle('hud-' + key + '-circle', value);
     });
+
+    const adminLevel = Math.max(0, Math.min(4, Math.floor(Number(data.adminLevel) || 0)));
+    const adminCircle = document.getElementById('hud-admin-circle');
+    setText('hud-admin-level', adminLevel);
+    if (adminCircle) adminCircle.dataset.level = String(adminLevel);
+
     hud.classList.toggle('hidden', data.visible !== true);
 }
 
