@@ -178,10 +178,13 @@ end
 
 RegisterNetEvent('rp_businesses:server:requestAmmunation', function()
     local src = source
-    if not exports['rp_core']:CanPerformAction(src, 'businesses:open_ammunation', 1000) then return end
+    if not exports['rp_core']:CanPerformAction(src, 'businesses:open_ammunation', 1000) then
+        TriggerClientEvent('rp_businesses:client:openDenied', src, 'Patientez avant de rouvrir Ammu-Nation.')
+        return
+    end
     local player = getPlayerAtAmmunation(src)
     if not player then
-        TriggerClientEvent('rp_core:client:notify', src, 'Vous devez être devant un comptoir Ammu-Nation.', 'error')
+        TriggerClientEvent('rp_businesses:client:openDenied', src, 'Vous devez être à moins de 1,5 mètre du comptoir Ammu-Nation.')
         return
     end
     TriggerClientEvent('rp_businesses:client:openAmmunation', src, tonumber(player.cash) or 0)
