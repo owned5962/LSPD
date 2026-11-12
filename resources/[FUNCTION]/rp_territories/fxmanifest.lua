@@ -27,4 +27,4 @@ files {
     'html/app.js'
 }
 
-dependency 'oxmysql'
+dependencies { 'oxmysql', 'rp_ui' }
