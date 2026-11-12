@@ -1,6 +1,0 @@
-Inventaire : raccourci F2 corrigé.
-Compteur : type et modèle du véhicule affichés.
-Anticheat : raccourci F9 séparé de la tablette admin F10.
-Location : agences visibles sur la carte.
-Anticheat : journal des détections avec la sanction appliquée.
-Anticheat : compteur de détections synchronisé.
