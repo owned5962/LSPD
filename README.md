@@ -9,6 +9,8 @@ Serveur RP modulaire comprenant un système de personnages, une économie, 50 m�
 - Sauvegarde automatique des joueurs toutes les 5 minutes et à la déconnexion.
 - Économie avec dépôts, retraits, virements et salaires.
 - 50 métiers RP et grades.
+- Garages personnels avec véhicules persistants, rangement/sortie sécurisés et sauvegarde des améliorations.
+- Ateliers mécaniques avec prévisualisation des upgrades et paiement bancaire contrôlé côté serveur.
 - Tablette admin protégée par ACE.
 
 ## Contrat central des joueurs
@@ -73,6 +75,10 @@ Les contrôles statiques et compilations sont automatisés dans GitHub Actions. 
 - Les sauvegardes automatiques réduisent la perte de données, mais une sauvegarde régulière de la base reste indispensable.
 - Les métadonnées d'apparence et les tenues sauvegardées sont stockées en SQL ; les variations de vêtements et accessoires peuvent être appliquées depuis le système de personnages et la boutique.
 
+
+## Garages et ateliers mécaniques
+
+La ressource `rp_garages` réutilise le registre `rp_owned_vehicles` créé par `rp_vehicle_dealership`. Elle permet de ranger et ressortir un véhicule uniquement si la plaque, le personnage et l'identifiant propriétaire correspondent. L'état du moteur, de la carrosserie, le carburant, les couleurs et les modifications sont sauvegardés en JSON dans `vehicle_props`. Les ateliers configurés dans `resources/[FUNCTION]/rp_garages/config.lua` proposent les améliorations moteur, freins, transmission, suspension, blindage, turbo et phares xénon. Les prix sont recalculés côté serveur, débités sur le compte bancaire, puis la sauvegarde SQL est confirmée avant validation définitive ; en cas d'échec, un remboursement est tenté.
 
 ## Console créateur F11
 
