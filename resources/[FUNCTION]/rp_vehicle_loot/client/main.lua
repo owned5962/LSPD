@@ -15,7 +15,7 @@ CreateThread(function()
     while true do
         local waitTime = 800
         local ped = PlayerPedId()
-        if not IsPedInAnyVehicle(ped, false) and IsPedArmed(ped, 1) then
+        if not IsPedInAnyVehicle(ped, false) then
             local coords = GetEntityCoords(ped)
             local vehicle = GetClosestVehicle(coords.x, coords.y, coords.z, 3.0, 0, 70)
             if vehicle ~= 0 and DoesEntityExist(vehicle) and GetEntitySpeed(vehicle) < 0.5 then
