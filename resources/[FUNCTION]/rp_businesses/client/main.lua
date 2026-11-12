@@ -114,6 +114,7 @@ end)
 local ammunationLocations = {}
 local ammunationPromptVisible = false
 local ammunationTabletOpen = false
+local ammunationOpening = false
 
 local function addAmmunationLocation(x, y, z)
     x, y, z = tonumber(x), tonumber(y), tonumber(z)
@@ -149,6 +150,7 @@ RegisterNetEvent('rp_businesses:client:locations', function(locations)
 end)
 
 RegisterNetEvent('rp_businesses:client:openAmmunation', function(cash)
+    ammunationOpening = false
     if ammunationPromptVisible then
         exports['rp_ui']:HideTextUI()
         ammunationPromptVisible = false
@@ -160,6 +162,11 @@ RegisterNetEvent('rp_businesses:client:openAmmunation', function(cash)
         cash = tonumber(cash) or 0,
         price = 500
     })
+end)
+
+RegisterNetEvent('rp_businesses:client:openDenied', function(message)
+    ammunationOpening = false
+    TriggerEvent('rp_core:client:notify', tostring(message or 'Impossible d’ouvrir Ammu-Nation.'), 'error')
 end)
 
 RegisterNetEvent('rp_businesses:client:purchaseResult', function(result)
@@ -228,9 +235,15 @@ CreateThread(function()
                     exports['rp_ui']:ShowTextUI('[E] Ouvrir la tablette Ammu-Nation')
                     ammunationPromptVisible = true
                 end
-                if IsControlJustReleased(0, 38) then
+                if IsControlJustReleased(0, 38) and not ammunationOpening then
+                    ammunationOpening = true
                     TriggerServerEvent('rp_businesses:server:requestAmmunation')
-                    Wait(500)
+                    SetTimeout(5000, function()
+                        if ammunationOpening and not ammunationTabletOpen then
+                            ammunationOpening = false
+                            TriggerEvent('rp_core:client:notify', 'Le serveur Ammu-Nation ne répond pas. Réessayez.', 'error')
+                        end
+                    end)
                 end
             elseif ammunationPromptVisible then
                 exports['rp_ui']:HideTextUI()
