@@ -14,6 +14,8 @@ def test_server_player_registry_only_exposes_fully_loaded_characters():
     assert "player.isLoaded == true and player or nil" in server
     assert "exports('WaitForPlayerLoaded', WaitForPlayerLoaded)" in server
     assert "exports('IsPlayerLoaded'" in server
+    assert "local copy = {}" in server
+    assert "json.decode(json.encode(value))" in server
     assert "exports('RegisterPlayer', RegisterPlayer)" in server
     assert "exports('UnregisterPlayer', UnregisterPlayer)" in server
     assert "TriggerEvent('rp_core:server:playerLoaded', src, player)" in server
