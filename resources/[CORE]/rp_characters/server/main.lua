@@ -125,7 +125,16 @@ local function LoadCharacter(src, identifier, userGroup, char)
     local loadOk, player = pcall(function()
         local createdPlayer = exports['rp_core']:CreateRPPlayer(src, identifier, char)
         exports['rp_core']:GetAllPlayers()[src] = createdPlayer
+        createdPlayer.isLoaded = true
+        createdPlayer.name = tostring(createdPlayer.firstname or '') .. ' ' .. tostring(createdPlayer.lastname or '')
         createdPlayer.syncClient()
+        TriggerEvent('rp_core:server:playerLoaded', src, createdPlayer)
+        TriggerClientEvent('rp_core:client:playerLoaded', src, {
+            source = src,
+            charId = createdPlayer.charId,
+            characterSlot = createdPlayer.slot,
+            name = createdPlayer.name
+        })
         return createdPlayer
     end)
     if not loadOk or not player then
