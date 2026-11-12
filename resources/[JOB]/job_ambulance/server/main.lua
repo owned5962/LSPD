@@ -19,6 +19,10 @@ RegisterNetEvent('job_ambulance:setDuty', function(status)
         return
     end
 
+    if not exports['rp_core']:SetPlayerDuty(src, status, Config.Job) then
+        TriggerClientEvent('rp_core:client:notify', src, 'Impossible de synchroniser votre état de service. Réessayez.', 'error')
+        return
+    end
     dutyPlayers[src] = status
     TriggerClientEvent('job_ambulance:dutyUpdated', src, status)
     print(string.format('[JOB_AMBULANCE] Player %s is now %s duty', player.name or src, status and 'ON' or 'OFF'))
