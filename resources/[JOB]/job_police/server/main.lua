@@ -19,6 +19,10 @@ RegisterNetEvent('job_police:setDuty', function(status)
         return
     end
 
+    if not exports['rp_core']:SetPlayerDuty(src, status, Config.Job) then
+        TriggerClientEvent('rp_core:client:notify', src, 'Impossible de synchroniser votre état de service. Réessayez.', 'error')
+        return
+    end
     dutyPlayers[src] = status
     TriggerClientEvent('job_police:dutyUpdated', src, status)
     print(string.format('[LSPD] Officier %s est désormais %s service', player.name or src, status and 'EN' or 'HORS'))
