@@ -319,3 +319,95 @@ RegisterNetEvent('rp_tablet_admin:server:healPlayer', function(rawTargetId)
     TriggerClientEvent('rp_tablet_admin:client:heal', targetId)
     NotifyExtended(src, 'Joueur ' .. targetId .. ' soigné.', 'success')
 end)
+
+
+-- Signalements joueurs : commande publique limitée et modération réservée au staff.
+local ReportCooldowns = {}
+
+RegisterCommand('report', function(src, args)
+    if src == 0 then return end
+    local now = os.time()
+    if ReportCooldowns[src] and now - ReportCooldowns[src] < 60 then
+        NotifyExtended(src, 'Veuillez attendre 60 secondes avant un nouveau signalement.')
+        return
+    end
+    local message = table.concat(args or {}, ' '):gsub('[%c]', ' '):gsub('%s+', ' ')
+    message = message:match('^%s*(.-)%s*$') or ''
+    if #message < 10 or #message > 500 then
+        NotifyExtended(src, 'Utilisation : /report suivi d’un message de 10 à 500 caractères.')
+        return
+    end
+    local player = exports['rp_core']:GetPlayerFromId(src)
+    local identifier = player and player.identifier or nil
+    if not identifier then
+        for _, value in ipairs(GetPlayerIdentifiers(src) or {}) do
+            if value:sub(1, 8) == 'license:' then identifier = value; break end
+        end
+    end
+    if not identifier then
+        NotifyExtended(src, 'Impossible d’identifier votre personnage. Réessayez plus tard.')
+        return
+    end
+    local ok, reportId = pcall(MySQL.insert.await,
+        'INSERT INTO player_reports (player_identifier, player_name, message) VALUES (?, ?, ?)',
+        { tostring(identifier):sub(1, 80), (GetPlayerName(src) or 'Joueur'):sub(1, 64), message })
+    if not ok or not reportId then
+        print('[rp_tablet_admin] Player report insert failed: ' .. tostring(reportId))
+        NotifyExtended(src, 'Votre signalement n’a pas pu être enregistré.')
+        return
+    end
+    ReportCooldowns[src] = now
+    NotifyExtended(src, 'Signalement #' .. tostring(reportId) .. ' enregistré. Merci.', 'success')
+end, false)
+
+AddEventHandler('playerDropped', function()
+    ReportCooldowns[source] = nil
+end)
+
+RegisterNetEvent('rp_tablet_admin:server:requestReports', function()
+    local src = source
+    if not AllowExtendedAction(src, 'reports_read', 1200) then return end
+    local ok, reports = pcall(MySQL.query.await, [[
+        SELECT id, player_name, message, status, handled_by, created_at, handled_at
+        FROM player_reports
+        ORDER BY CASE status WHEN 'open' THEN 0 ELSE 1 END, created_at DESC
+        LIMIT 100
+    ]])
+    if not ok then
+        print('[rp_tablet_admin] Report query failed: ' .. tostring(reports))
+        NotifyExtended(src, 'Impossible de charger les signalements.')
+        return
+    end
+    TriggerClientEvent('rp_tablet_admin:client:reports', src, reports or {})
+end)
+
+RegisterNetEvent('rp_tablet_admin:server:updateReport', function(rawReportId, rawStatus)
+    local src = source
+    if not AllowExtendedAction(src, 'reports_update', 700) then return end
+    local reportId = tonumber(rawReportId)
+    local status = rawStatus == 'resolved' and 'resolved' or rawStatus == 'rejected' and 'rejected' or nil
+    if not reportId or reportId < 1 or reportId % 1 ~= 0 or not status then
+        NotifyExtended(src, 'Signalement ou statut invalide.')
+        return
+    end
+    local staff = exports['rp_core']:GetPlayerFromId(src)
+    local staffName = staff and (((staff.firstname or '') .. ' ' .. (staff.lastname or '')):gsub('^%s*(.-)%s*$', '%1'))
+        or (GetPlayerName(src) or 'Staff')
+    local ok, affected = pcall(MySQL.update.await, [[
+        UPDATE player_reports
+        SET status = ?, handled_by = ?, handled_at = CURRENT_TIMESTAMP
+        WHERE id = ? AND status = 'open'
+    ]], { status, staffName:sub(1, 64), reportId })
+    if not ok then
+        print('[rp_tablet_admin] Report update failed: ' .. tostring(affected))
+        NotifyExtended(src, 'Impossible de mettre à jour le signalement.')
+        return
+    end
+    if not affected or affected < 1 then
+        NotifyExtended(src, 'Signalement introuvable ou déjà traité.')
+        return
+    end
+    LogExtendedAction(src, 'report_' .. status, nil, 'Signalement #' .. reportId)
+    TriggerClientEvent('rp_tablet_admin:client:reportUpdated', src, reportId, status)
+    NotifyExtended(src, 'Signalement #' .. reportId .. (status == 'resolved' and ' marqué comme traité.' or ' rejeté.'), 'success')
+end)
