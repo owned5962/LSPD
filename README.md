@@ -40,7 +40,7 @@ Les noms des ressources FiveM (`rp_core`, `job_police`, etc.) restent inchangés
    ```cfg
    add_principal identifier.license:VOTRE_LICENSE group.admin
    ```
-8. Vérifiez l'ordre de démarrage : ressources CFX standard, `oxmysql`, `rp_core`, `rp_jobs`, `rp_economy`, puis les autres ressources. `rp_jobs` doit être disponible avant les systèmes qui utilisent ses exports.
+8. Vérifiez l'ordre de démarrage : ressources CFX standard, `oxmysql`, `rp_core`, `rp_jobs`, puis `rp_characters` et `rp_economy`. `rp_characters` déclare sa dépendance à `rp_jobs`, car le chargement d'un personnage synchronise son métier et son grade.
 
 ## Mise à jour d'une base existante
 1. Faites une sauvegarde complète de la base.
