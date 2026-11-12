@@ -822,12 +822,30 @@ end
 
 CreateThread(function()
     Wait(1000)
-    local ok, err = pcall(ensureDetectionStatsTable)
-    if not ok then
-        print('[rp_anticheat] Initialisation SQL impossible: ' .. tostring(err))
-        return
+
+    -- oxmysql may connect before MariaDB is fully ready, then briefly lose the
+    -- socket during startup. Keep retrying instead of permanently disabling the
+    -- anticheat initialization after one transient ECONNRESET / ECONNREFUSED.
+    local databaseReady = false
+    local lastDatabaseError
+    while not databaseReady do
+        local ok, err = pcall(ensureDetectionStatsTable)
+        if ok then
+            databaseReady = true
+        else
+            if tostring(err) ~= lastDatabaseError then
+                print('[rp_anticheat] Base SQL indisponible, nouvelle tentative dans 5 secondes : ' .. tostring(err))
+                lastDatabaseError = tostring(err)
+            end
+            Wait(5000)
+        end
     end
-    loadDetectionHistory()
+
+    local historyOk, historyError = pcall(loadDetectionHistory)
+    if not historyOk then
+        print('[rp_anticheat] Chargement de l’historique impossible : ' .. tostring(historyError))
+    end
+
     local weaponOk, weaponErr = pcall(loadWeaponPolicy)
     if not weaponOk then
         print('[rp_anticheat] Chargement des règles d’armes impossible, utilisation des valeurs par défaut: ' .. tostring(weaponErr))
@@ -848,7 +866,12 @@ CreateThread(function()
     end
     for _, rawId in ipairs(GetPlayers()) do
         local id = tonumber(rawId)
-        if id then restorePlayerPrison(id) end
+        if id then
+            local restoreOk, restoreError = pcall(restorePlayerPrison, id)
+            if not restoreOk then
+                print(('[rp_anticheat] Restauration prison impossible pour %s : %s'):format(id, tostring(restoreError)))
+            end
+        end
     end
     while true do
         Wait(5000)
