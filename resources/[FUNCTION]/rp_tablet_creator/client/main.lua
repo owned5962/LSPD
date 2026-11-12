@@ -60,6 +60,16 @@ RegisterNUICallback('createGang', function(data, cb)
     cb({ ok = true })
 end)
 
+RegisterNUICallback('createJob', function(data, cb)
+    TriggerServerEvent('rp_tablet_creator:server:createJob', data)
+    cb({ ok = true })
+end)
+
+RegisterNUICallback('createGang', function(data, cb)
+    TriggerServerEvent('rp_tablet_creator:server:createGang', data)
+    cb({ ok = true })
+end)
+
 RegisterNUICallback('setWorld', function(data, cb)
     TriggerServerEvent('rp_tablet_creator:server:setWorld', data.weather, data.hours, data.minutes)
     cb({ ok = true })
@@ -143,6 +153,10 @@ RegisterNetEvent('rp_tablet_creator:client:toolsData', function(jobs, blips, map
         catalog = catalog or {}, position = { x = coords.x, y = coords.y, z = coords.z },
         players = players or {}, items = items or {}, settings = settings or {}, modules = modules or {}
     })
+end)
+
+RegisterNetEvent('rp_tablet_creator:client:organizationsData', function(gangs)
+    SendNUIMessage({ action = 'organizationsData', gangs = gangs or {} })
 end)
 
 RegisterNetEvent('rp_tablet_creator:client:organizationsData', function(gangs)
