@@ -116,6 +116,10 @@ window.addEventListener('message', (event) => {
         showView('jobs');
         document.getElementById('jobcenter-app').classList.remove('hidden');
         renderJobs();
+    } else if (data.action === 'updateJobs') {
+        allJobs = Array.isArray(data.jobs) ? data.jobs : allJobs;
+        document.getElementById('jobs-count').innerText = allJobs.length;
+        renderJobs();
     } else if (data.action === 'jobStats') {
         jobStats = data.stats || {};
         renderJobStats();
