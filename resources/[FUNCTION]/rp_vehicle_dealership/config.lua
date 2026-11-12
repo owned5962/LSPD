@@ -1,7 +1,7 @@
 Config = {}
 
-Config.InteractionDistance = 2.0
-Config.ServerInteractionDistance = 4.0
+Config.InteractionDistance = 1.0
+Config.ServerInteractionDistance = 1.5
 Config.PurchaseCooldown = 3000
 
 -- Showroom Premium Deluxe Motorsport, Los Santos.
