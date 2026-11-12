@@ -223,8 +223,16 @@ RegisterNetEvent('rp_businesses:server:buyPistol', function()
     end
 
     local weaponName = AMMUNATION_PISTOL_WEAPON
-    local metadata = type(player.metadata) == 'table' and player.metadata or {}
-    metadata.weapons = type(metadata.weapons) == 'table' and metadata.weapons or {}
+    -- Work on a detached metadata table: a failed SQL transaction must not leave
+    -- a free weapon in the in-memory player cache for a later autosave.
+    local metadata = {}
+    for key, value in pairs(player.metadata or {}) do metadata[key] = value end
+    metadata.weapons = {}
+    for _, entry in ipairs(type(player.metadata) == 'table' and type(player.metadata.weapons) == 'table' and player.metadata.weapons or {}) do
+        if type(entry) == 'table' then
+            metadata.weapons[#metadata.weapons + 1] = { name = entry.name, ammo = tonumber(entry.ammo) or 0 }
+        end
+    end
     local hasWeapon = false
     for _, entry in ipairs(metadata.weapons) do
         if type(entry) == 'table' and entry.name == weaponName then
