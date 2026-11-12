@@ -13,6 +13,7 @@
     <button type="button" class="creator-tab" data-tab="mapping">Mapping & blips</button>
     <button type="button" class="creator-tab" data-tab="management">Gestion & paramètres</button>
     <button type="button" class="creator-tab" data-tab="organizations">Jobs & gangs</button>
+    <button type="button" class="creator-tab" data-tab="organizations">Jobs & gangs</button>
   </nav>
   <section class="intro"><span class="live"></span> CONSOLE CRÉATEUR <p>Contrôle de l'environnement serveur et communication globale.</p></section>
   <section class="grid" data-tab-panel="world">
@@ -117,6 +118,37 @@
         <label><input id="creator-access-creator" type="checkbox" checked> Créateur (F11)</label>
       </div>
       <button id="creator-save-access" class="primary">Enregistrer les accès aux tablettes</button>
+    </article>
+  </section>
+
+  <section class="grid creator-org-grid" data-tab-panel="organizations" hidden>
+    <article class="panel">
+      <h2><i class="fa-solid fa-briefcase"></i> Créer un métier</h2>
+      <p class="panel-help">Enregistrement MySQL et ajout au catalogue des métiers en direct.</p>
+      <label for="new-job-name">Identifiant technique</label><input id="new-job-name" maxlength="40" placeholder="ex. pizzaiolo">
+      <label for="new-job-label">Nom affiché</label><input id="new-job-label" maxlength="64" placeholder="Pizzeria Vespucci">
+      <label for="new-job-category">Catégorie</label><input id="new-job-category" maxlength="32" value="commerce">
+      <label for="new-job-description">Description</label><textarea id="new-job-description" maxlength="255" placeholder="Description des missions du métier"></textarea>
+      <label class="check-line"><input id="new-job-whitelisted" type="checkbox"> Métier sur candidature / whitelist</label>
+      <h3 class="subheading">Grades et salaires (0 à 4)</h3>
+      <div class="grade-editor">
+        <label>Grade 0<input id="new-job-grade-0" maxlength="48" value="Débutant"></label><label>Salaire<input id="new-job-salary-0" type="number" min="0" max="100000" value="200"></label>
+        <label>Grade 1<input id="new-job-grade-1" maxlength="48" value="Employé"></label><label>Salaire<input id="new-job-salary-1" type="number" min="0" max="100000" value="300"></label>
+        <label>Grade 2<input id="new-job-grade-2" maxlength="48" value="Confirmé"></label><label>Salaire<input id="new-job-salary-2" type="number" min="0" max="100000" value="400"></label>
+        <label>Grade 3<input id="new-job-grade-3" maxlength="48" value="Responsable"></label><label>Salaire<input id="new-job-salary-3" type="number" min="0" max="100000" value="500"></label>
+        <label>Grade 4<input id="new-job-grade-4" maxlength="48" value="Directeur"></label><label>Salaire<input id="new-job-salary-4" type="number" min="0" max="100000" value="650"></label>
+      </div>
+      <button id="create-job" class="primary"><i class="fa-solid fa-plus"></i> Créer le métier</button>
+    </article>
+    <article class="panel">
+      <h2><i class="fa-solid fa-users"></i> Créer un gang</h2>
+      <p class="panel-help">Registre persistant avec identifiant unique et couleur personnalisée.</p>
+      <label for="new-gang-name">Identifiant technique</label><input id="new-gang-name" maxlength="40" placeholder="ex. families">
+      <label for="new-gang-label">Nom du gang</label><input id="new-gang-label" maxlength="64" placeholder="The Families">
+      <label for="new-gang-color">Couleur</label><input id="new-gang-color" type="color" value="#22c55e">
+      <label for="new-gang-description">Description</label><textarea id="new-gang-description" maxlength="255" placeholder="Territoire, activités et identité du gang"></textarea>
+      <button id="create-gang" class="primary"><i class="fa-solid fa-plus"></i> Créer le gang</button>
+      <h3 class="subheading">Gangs enregistrés</h3><div id="creator-gang-list" class="org-list">Chargement…</div>
     </article>
   </section>
 
