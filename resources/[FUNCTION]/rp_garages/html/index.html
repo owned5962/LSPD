@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Garage personnel</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <main id="garage" class="hidden">
+        <header class="topbar">
+            <div class="brand">
+                <div class="brand-mark">LS</div>
+                <div><span class="eyebrow">LOS SANTOS ROLEPLAY</span><h1 id="garage-title">Garage personnel</h1></div>
+            </div>
+            <button id="close" class="close" aria-label="Fermer">×</button>
+        </header>
+        <section class="hero">
+            <div>
+                <span class="eyebrow">ESPACE PERSONNEL</span>
+                <h2>Votre flotte, <em>à portée de main.</em></h2>
+                <p>Consultez vos véhicules, rangez-les ou sortez-les de votre garage.</p>
+            </div>
+            <div class="hero-icon">⌑</div>
+        </section>
+        <section class="actions">
+            <div class="section-title"><span>GESTION DU GARAGE</span><span id="vehicle-count">0 véhicule</span></div>
+            <button id="store" class="store hidden"><span class="action-icon">↓</span><span><strong>Ranger mon véhicule</strong><small>Sauvegarder son état et le mettre à l'abri</small></span><b>›</b></button>
+        </section>
+        <section class="fleet">
+            <div class="section-title"><span>MES VÉHICULES</span><span class="muted">PROPRIÉTÉ PERSONNELLE</span></div>
+            <div id="vehicle-list" class="vehicle-list"></div>
+            <div id="empty" class="empty hidden"><div>⌑</div><strong>Aucun véhicule enregistré</strong><p>Achète ton premier véhicule chez Premium Deluxe Motorsport pour le retrouver ici.</p></div>
+        </section>
+        <footer><span>LSRP · SERVICE GARAGE</span><span>ESC POUR FERMER</span></footer>
+    </main>
+    <script src="app.js"></script>
+</body>
+</html>
