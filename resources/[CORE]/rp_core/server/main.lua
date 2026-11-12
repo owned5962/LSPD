@@ -92,6 +92,18 @@ end
 
 exports('RegisterPlayer', RegisterPlayer)
 
+local function UnregisterPlayer(source, expectedIdentifier)
+    local src = tonumber(source)
+    local player = src and Players[src]
+    if not player then return false end
+    if expectedIdentifier and player.identifier ~= expectedIdentifier then return false end
+    Players[src] = nil
+    TriggerEvent('rp_core:server:playerUnloaded', src, player)
+    return true
+end
+
+exports('UnregisterPlayer', UnregisterPlayer)
+
 -- Backward-compatible alias used by older resources.
 exports('GetPlayer', GetPlayerFromId)
 exports('GetPlayerFromId', GetPlayerFromId)
