@@ -227,7 +227,7 @@ CreateThread(function()
                     0.8, 0.8, 0.35, 255, 255, 255, 150,
                     false, false, 2, false, nil, nil, false)
                 DrawHelpText(('Appuie sur ~INPUT_CONTEXT~ pour gérer le secteur ~b~%s~s~'):format(nearestSector.id))
-                if IsControlJustReleased(0, 38) then
+                if IsControlJustReleased(0, 38) or IsDisabledControlJustReleased(0, 38) then
                     DebugLog('info', 'CLAIM_POINT_INTERACT', ('secteur=%s'):format(nearestSector.id))
                     TriggerServerEvent('rp_territories:server:requestOpen', nearestSector.id)
                 end
