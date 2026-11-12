@@ -9,6 +9,7 @@ def test_fuel_resource_loads_shared_station_configuration():
     config = (FUEL / "shared/config.lua").read_text(encoding="utf-8")
     assert "shared/config.lua" in manifest
     assert "PricePerLitre = 6" in config
+    assert "ConsumptionMultiplier = 2.5" in config
     assert "rp_businesses" in manifest
     assert config.count("{ x = ") == 16
 
@@ -24,6 +25,10 @@ def test_fuel_purchase_is_server_authoritative_and_time_based():
     assert "VehicleMovementTolerance" in server
     assert "refundPayment" in server
     assert "fuel_refund" in server
+    assert "getFuelPrice()" in server
+    assert "getFuelConsumptionMultiplier()" in server
+    assert "rp_fuel:server:requestSettings" in server
+    assert "ConsumptionMultiplier" in config
 
 
 def test_fuel_tablet_displays_price_estimate_and_live_progress():
@@ -46,8 +51,8 @@ def test_fuel_interaction_targets_individual_gas_pumps_with_e():
     assert "prop_gas_pump_1a" in client
     assert "prop_gas_pump_1d" in client
     assert "prop_vintage_pump" in client
-    assert "nearestPump(playerCoords, 6.5)" in client
-    assert "nearestPump(vehicleCoords, 7.5)" in client
+    assert "nearestPump(playerCoords, 1.0)" in client
+    assert "nearestPump(vehicleCoords, 1.0)" in client
     assert "vehicleNearPump" in client
     assert "prop_gas_pump_old4" in client
     assert "IsControlJustReleased(0, 38)" in client
@@ -78,8 +83,8 @@ def test_fuel_rejections_always_release_the_tablet_and_station_checks_have_a_fal
     assert "notify(src," not in purchase_block
     assert "FuelConfig.Stations or {}" in server
     assert "GetLocationsByType('gas_station')" in server
-    assert "nearestPump(playerCoords, 6.5)" in client
-    assert "nearestPump(vehicleCoords, 7.5)" in client
+    assert "nearestPump(playerCoords, 1.0)" in client
+    assert "nearestPump(vehicleCoords, 1.0)" in client
     assert "RegisterNetEvent('rp_fuel:client:purchaseResult'" in client
     assert "isPurchasePending = false" in client
     assert config.count("{ x = ") == 16
