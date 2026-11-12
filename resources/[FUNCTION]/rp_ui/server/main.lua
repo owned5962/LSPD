@@ -20,6 +20,12 @@ RegisterNetEvent('rp_ui:server:requestDiagnosticsAccess', function()
     TriggerClientEvent('rp_ui:client:openFounderDiagnostics', src)
 end)
 
+local function GetSafePlayerPing(src)
+    if type(GetPlayerPing) ~= 'function' then return 0 end
+    local ok, ping = pcall(GetPlayerPing, src)
+    return ok and math.max(0, tonumber(ping) or 0) or 0
+end
+
 -- Server-side aggregate statistics for the F12 information panel.
 -- Only aggregate counts are exposed; no character identifiers or personal data.
 
@@ -62,7 +68,7 @@ RegisterNetEvent('rp_ui:server:requestDiagnosticsStats', function()
 
     TriggerClientEvent('rp_ui:client:diagnosticsStats', src, {
         online = #GetPlayers(),
-        ping = math.max(0, tonumber(GetPlayerPing(src)) or 0),
+        ping = GetSafePlayerPing(src),
         registered = tonumber(registeredCount),
         registrationHistory = history or {},
         jobs = jobs,
