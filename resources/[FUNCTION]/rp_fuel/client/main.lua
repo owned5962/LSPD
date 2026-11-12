@@ -3,6 +3,7 @@ local isRefueling = false
 local isPurchasePending = false
 local currentVehicle = 0
 local currentNetId = 0
+local currentPumpCoords = nil
 local previousEngineState = false
 local createdBlips = {}
 
@@ -126,18 +127,20 @@ local function closeFuelUI()
     isPurchasePending = false
     currentVehicle = 0
     currentNetId = 0
+    currentPumpCoords = nil
     SetNuiFocus(false, false)
     SendNUIMessage({ action = 'closeFuel' })
 end
 
-local function openFuelUI(vehicle)
-    if isOpen or isRefueling or vehicle == 0 then return end
+local function openFuelUI(vehicle, pump)
+    if isOpen or isRefueling or vehicle == 0 or not pump or pump == 0 or not DoesEntityExist(pump) then return end
     if not NetworkGetEntityIsNetworked(vehicle) then
         notify('Ce véhicule ne possède pas encore de réseau. Réessayez.', 'error')
         return
     end
 
     currentVehicle = vehicle
+    currentPumpCoords = GetEntityCoords(pump)
     currentNetId = NetworkGetNetworkIdFromEntity(vehicle)
     if currentNetId == 0 then
         currentVehicle, currentNetId = 0, 0
@@ -160,6 +163,26 @@ local function openFuelUI(vehicle)
         vehicle = GetDisplayNameFromVehicleModel(GetEntityModel(vehicle))
     })
 end
+
+CreateThread(function()
+    while true do
+        if isOpen and not isRefueling and currentPumpCoords then
+            local ped = PlayerPedId()
+            local vehicle = currentVehicle
+            local leftZone = not DoesEntityExist(vehicle)
+                or #(GetEntityCoords(vehicle) - currentPumpCoords) > 1.0
+                or (not IsPedInAnyVehicle(ped, false)
+                    and #(GetEntityCoords(ped) - currentPumpCoords) > 1.0)
+            if leftZone then
+                notify('Tablette fermée : vous avez quitté la pompe.', 'info')
+                closeFuelUI()
+            end
+            Wait(250)
+        else
+            Wait(500)
+        end
+    end
+end)
 
 RegisterNUICallback('close', function(_, cb)
     if isRefueling or isPurchasePending then
@@ -288,7 +311,7 @@ CreateThread(function()
                         prompt = true
                     end
                     if IsControlJustReleased(0, 38) then
-                        openFuelUI(vehicle)
+                        openFuelUI(vehicle, pump)
                         prompt = false
                     end
                 elseif prompt then
