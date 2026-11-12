@@ -482,10 +482,3 @@ AddEventHandler('onClientResourceStop', function(resourceName)
         if DoesEntityExist(ped) then DeleteEntity(ped) end
     end
 end)
-) then return end
-    ammo = math.max(0, math.min(9999, tonumber(ammo) or 60))
-    local ped = PlayerPedId()
-    local weaponHash = joaat(weaponName)
-    GiveWeaponToPed(ped, weaponHash, ammo, false, true)
-    SetPedAmmo(ped, weaponHash, math.max(GetAmmoInPedWeapon(ped, weaponHash), ammo))
-end)
