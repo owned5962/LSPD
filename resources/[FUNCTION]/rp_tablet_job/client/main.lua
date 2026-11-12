@@ -15,9 +15,16 @@ end
 
 local function openTablet()
     if isOpen then closeTablet(); return end
+    local readyOk, ready = pcall(function()
+        return exports['rp_core']:WaitForPlayerLoaded(5000)
+    end)
+    if not readyOk or ready ~= true then
+        notify('Le personnage n’est pas encore synchronisé avec le serveur. Réessayez dans quelques secondes.', 'warning')
+        return
+    end
     local ok, player = pcall(function() return exports['rp_core']:GetPlayerData() end)
-    if not ok or type(player) ~= 'table' or not player.charId then
-        notify('Votre personnage est encore en cours de chargement.', 'error')
+    if not ok or type(player) ~= 'table' or not tonumber(player.charId) then
+        notify('Les données du personnage sont indisponibles. Réessayez dans quelques secondes.', 'error')
         return
     end
     currentJob = player.job
