@@ -259,3 +259,59 @@ document.getElementById('creator-save-access').addEventListener('click', () => {
         creator: document.getElementById('creator-access-creator').checked
     }).catch(() => creatorMessage('Erreur lors de la sauvegarde des accès.'));
 });
+
+ 
+// Forms for persistent server organizations.
+function submitNewJob() {
+    const data = {
+        name: document.getElementById('new-job-name').value.trim().toLowerCase(),
+        label: document.getElementById('new-job-label').value.trim(),
+        category: document.getElementById('new-job-category').value.trim().toLowerCase(),
+        description: document.getElementById('new-job-description').value.trim(),
+        whitelisted: document.getElementById('new-job-whitelisted').checked,
+        grades: {}
+    };
+    for (let grade = 0; grade <= 4; grade++) {
+        data.grades[grade] = {
+            label: document.getElementById('new-job-grade-' + grade).value.trim(),
+            salary: Number(document.getElementById('new-job-salary-' + grade).value)
+        };
+    }
+    if (!/^[a-z][a-z0-9_]{2,39}$/.test(data.name) || data.label.length < 2 || data.description.length < 3
+        || Object.values(data.grades).some(g => g.label.length < 2 || !Number.isInteger(g.salary) || g.salary < 0 || g.salary > 100000)) {
+        creatorMessage('Vérifiez l’identifiant, la description et les cinq grades/salaires.'); return;
+    }
+    post('createJob', data).catch(() => creatorMessage('Impossible de contacter le serveur.'));
+}
+document.getElementById('create-job').addEventListener('click', submitNewJob);
+
+function renderCreatorGangs(gangs) {
+    const host = document.getElementById('creator-gang-list');
+    host.replaceChildren();
+    if (!Array.isArray(gangs) || gangs.length === 0) {
+        host.textContent = 'Aucun gang créé pour le moment.'; return;
+    }
+    gangs.forEach(gang => {
+        const row = document.createElement('div'); row.className = 'org-row';
+        const swatch = document.createElement('span'); swatch.className = 'org-swatch';
+        swatch.style.backgroundColor = /^#[0-9a-f]{6}$/i.test(gang.color || '') ? gang.color : '#64748b';
+        const label = document.createElement('span'); label.textContent = (gang.label || gang.name) + ' · ' + gang.name;
+        row.append(swatch, label); host.append(row);
+    });
+}
+document.getElementById('create-gang').addEventListener('click', () => {
+    const data = {
+        name: document.getElementById('new-gang-name').value.trim().toLowerCase(),
+        label: document.getElementById('new-gang-label').value.trim(),
+        color: document.getElementById('new-gang-color').value,
+        description: document.getElementById('new-gang-description').value.trim()
+    };
+    if (!/^[a-z][a-z0-9_]{2,39}$/.test(data.name) || data.label.length < 2 || data.description.length < 3) {
+        creatorMessage('Vérifiez l’identifiant, le nom et la description du gang.'); return;
+    }
+    post('createGang', data).catch(() => creatorMessage('Impossible de contacter le serveur.'));
+});
+window.addEventListener('message', event => {
+    const data = event.data || {};
+    if (data.action === 'organizationsData') renderCreatorGangs(data.gangs || []);
+});
