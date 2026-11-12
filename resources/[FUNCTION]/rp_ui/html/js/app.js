@@ -1,12 +1,7 @@
 let progressInterval = null;
-let textUiHideTimer = null;
 let notificationSequence = 0;
 
 function hideTextUI() {
-    if (textUiHideTimer !== null) {
-        clearTimeout(textUiHideTimer);
-        textUiHideTimer = null;
-    }
     document.getElementById('textui-container')?.classList.add('hidden');
 }
 
@@ -55,11 +50,9 @@ window.addEventListener('message', function(event) {
     } else if (data.action === 'showTextUI') {
         const textElement = document.getElementById('textui-text');
         if (textElement) textElement.textContent = String(data.text ?? '');
+        // Keep the prompt visible until the owning resource explicitly hides it.
+        // This avoids flicker when proximity loops refresh at intervals above 350 ms.
         document.getElementById('textui-container')?.classList.remove('hidden');
-        if (textUiHideTimer !== null) clearTimeout(textUiHideTimer);
-        // Job resources refresh the prompt while the player remains nearby.
-        // Auto-hide it when they leave, even if a resource forgets to send hideTextUI.
-        textUiHideTimer = setTimeout(hideTextUI, 350);
     } else if (data.action === 'hideTextUI') {
         hideTextUI();
     } else if (data.action === 'startProgress') {
