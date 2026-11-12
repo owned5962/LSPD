@@ -1,4 +1,5 @@
 local isShopOpen = false
+local clothingPromptVisible = false
 local clothingCamera = nil
 
 local function stopClothingCamera()
@@ -204,23 +205,41 @@ CreateThread(function()
     end
 
     while true do
-        local sleep = 1000
-        local playerCoords = GetEntityCoords(PlayerPedId())
-        for _, pos in ipairs(clothingShops) do
-            local dist = #(playerCoords - pos)
-            if dist < 15.0 then
-                sleep = 0
-                DrawMarker(20, pos.x, pos.y, pos.z, 0, 0, 0, 0, 0, 0, 0.6, 0.6, 0.6, 56, 189, 248, 150, false, true, 2, false, nil, nil, false)
-                if dist < 1.0 then
-                    exports['rp_ui']:ShowTextUI('[E] Ouvrir la boutique de vêtements')
-                    if IsControlJustPressed(0, 38) then
+        local sleep = 700
+        local nearShop = false
+        if not isShopOpen and not IsPauseMenuActive() then
+            local playerCoords = GetEntityCoords(PlayerPedId())
+            for _, pos in ipairs(clothingShops) do
+                local dist = #(playerCoords - pos)
+                if dist < 15.0 then
+                    sleep = 100
+                    DrawMarker(20, pos.x, pos.y, pos.z, 0, 0, 0, 0, 0, 0,
+                        0.6, 0.6, 0.6, 56, 189, 248, 150, false, true, 2, false, nil, nil, false)
+                end
+                if dist <= 1.0 then
+                    nearShop = true
+                    sleep = 0
+                    if IsControlJustReleased(0, 38) then
                         isShopOpen = true
+                        if clothingPromptVisible then
+                            exports['rp_ui']:HideTextUI()
+                            clothingPromptVisible = false
+                        end
                         SetNuiFocus(true, true)
                         startClothingCamera()
                         SendNUIMessage({ action = 'open', catalog = GetClothingCatalog() })
+                        break
                     end
                 end
             end
+        end
+
+        if nearShop and not isShopOpen and not clothingPromptVisible then
+            exports['rp_ui']:ShowTextUI('[E] Ouvrir la boutique de vêtements')
+            clothingPromptVisible = true
+        elseif (not nearShop or isShopOpen or IsPauseMenuActive()) and clothingPromptVisible then
+            exports['rp_ui']:HideTextUI()
+            clothingPromptVisible = false
         end
         Wait(sleep)
     end
@@ -248,6 +267,7 @@ end)
 RegisterNUICallback('close', function(data, cb)
     isShopOpen = false
     stopClothingCamera()
+    if clothingPromptVisible then exports['rp_ui']:HideTextUI(); clothingPromptVisible = false end
     SetNuiFocus(false, false)
     exports['rp_ui']:HideTextUI()
     SendNUIMessage({ action = 'close' })
