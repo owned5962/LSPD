@@ -1,0 +1,73 @@
+name: Gameplay fixes verification
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  gameplay-fixes:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install Lua 5.4
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y lua5.4
+
+      - name: Verify Ammu-Nation, inventory, fuel, dealership and proximity
+        run: |
+          python tests/test_ammunation_interaction.py
+          python tests/test_vehicle_dealership.py
+          python tests/test_fuel_system.py
+          python tests/test_bank_transactions.py
+          python tests/test_vehicle_rental_frontdesk.py
+          python -m pytest -q tests/test_clothing_catalog.py tests/test_territory_claims.py
+
+      - name: Compile changed Lua resources
+        run: |
+          luac5.4 -p resources/'[FUNCTION]'/rp_businesses/client/main.lua
+          luac5.4 -p resources/'[FUNCTION]'/rp_businesses/server/main.lua
+          luac5.4 -p resources/'[FUNCTION]'/rp_inventory/client/main.lua
+          luac5.4 -p resources/'[FUNCTION]'/rp_inventory/server/main.lua
+          luac5.4 -p resources/'[FUNCTION]'/rp_anticheat/shared/config.lua
+          luac5.4 -p resources/'[FUNCTION]'/rp_fuel/client/main.lua
+          luac5.4 -p resources/'[FUNCTION]'/rp_fuel/server/main.lua
+          luac5.4 -p resources/'[FUNCTION]'/rp_fuel/shared/config.lua
+          luac5.4 -p resources/'[FUNCTION]'/rp_tablet_creator/client/main.lua
+          luac5.4 -p resources/'[FUNCTION]'/rp_tablet_creator/server/main.lua
+          luac5.4 -p resources/'[FUNCTION]'/rp_vehicle_dealership/client/main.lua
+          luac5.4 -p resources/'[FUNCTION]'/rp_vehicle_dealership/server/main.lua
+          luac5.4 -p resources/'[FUNCTION]'/rp_vehicle_dealership/config.lua
+          luac5.4 -p resources/'[FUNCTION]'/rp_clothing/client/main.lua
+          luac5.4 -p resources/'[FUNCTION]'/rp_territories/client/main.lua
+          luac5.4 -p resources/'[FUNCTION]'/rp_territories/server/main.lua
+          luac5.4 -p resources/'[FUNCTION]'/rp_territories/shared/config.lua
+          luac5.4 -p resources/'[FUNCTION]'/rp_economy/client/main.lua
+          luac5.4 -p resources/'[FUNCTION]'/rp_economy/server/main.lua
+          luac5.4 -p resources/'[FUNCTION]'/rp_vehicle_rental/client/main.lua
+          luac5.4 -p resources/'[FUNCTION]'/rp_vehicle_rental/server/main.lua
+          luac5.4 -p resources/'[FUNCTION]'/rp_vehicle_rental/config.lua
+
+      - name: Check changed NUI JavaScript
+        run: |
+          node --check resources/'[FUNCTION]'/rp_vehicle_dealership/html/js/app.js
+          node --check resources/'[FUNCTION]'/rp_tablet_creator/html/app.js
+          node --check resources/'[FUNCTION]'/rp_clothing/html/js/app.js
+
+      - name: Compile Python tests
+        run: python -m compileall -q tests
