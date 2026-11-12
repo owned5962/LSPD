@@ -1,6 +1,7 @@
 local playerInventories = {}
 local transferLocks = {}
 local inventoryCharacterIds = {}
+local inventoryLoadLocks = {}
 
 local DEFAULT_INVENTORY = {
     { name = 'id_card', count = 1 },
@@ -75,20 +76,57 @@ local function sendInventory(src, player, open)
 end
 
 local function loadInventory(player)
-    local row = MySQL.single.await('SELECT items FROM player_inventories WHERE character_id = ?', { player.charId })
-    if row and row.items then
-        local ok, decoded = pcall(json.decode, row.items)
-        if ok then
-            playerInventories[player.source] = normalizeInventory(decoded)
-            inventoryCharacterIds[player.source] = player.charId
-            return
-        end
-        print(('[rp_inventory] Invalid saved inventory for character %s; restoring defaults'):format(player.charId))
+    if not player or not tonumber(player.source) or not tonumber(player.charId) then
+        error('Cannot load inventory without a registered character')
     end
 
-    playerInventories[player.source] = normalizeInventory(DEFAULT_INVENTORY)
-    inventoryCharacterIds[player.source] = player.charId
-    saveInventory(player)
+    local src, charId = tonumber(player.source), tonumber(player.charId)
+    if playerInventories[src] and inventoryCharacterIds[src] == charId then return true end
+
+    while inventoryLoadLocks[src] do
+        local activePlayer = exports['rp_core']:GetPlayerFromId(src)
+        if not activePlayer or tonumber(activePlayer.charId) ~= charId then
+            error('Character changed or disconnected while inventory was loading')
+        end
+        if playerInventories[src] and inventoryCharacterIds[src] == charId then return true end
+        Wait(50)
+    end
+
+    inventoryLoadLocks[src] = charId
+    local ok, err = pcall(function()
+        local row = MySQL.single.await(
+            'SELECT items FROM player_inventories WHERE character_id = ?', { charId })
+        local inventory
+
+        if row and row.items then
+            local decodedOk, decoded = pcall(json.decode, row.items)
+            if decodedOk and type(decoded) == 'table' then
+                inventory = normalizeInventory(decoded)
+            else
+                print(('[rp_inventory] Invalid saved inventory for character %s; restoring defaults')
+                    :format(charId))
+            end
+        end
+
+        inventory = inventory or normalizeInventory(DEFAULT_INVENTORY)
+        local activePlayer = exports['rp_core']:GetPlayerFromId(src)
+        if not activePlayer or tonumber(activePlayer.charId) ~= charId then
+            error('Character changed or disconnected before inventory load completed')
+        end
+
+        playerInventories[src] = inventory
+        inventoryCharacterIds[src] = charId
+        if not row or not row.items then
+            if not saveInventory(activePlayer) then
+                playerInventories[src] = nil
+                inventoryCharacterIds[src] = nil
+                error('Default inventory could not be persisted')
+            end
+        end
+    end)
+    if inventoryLoadLocks[src] == charId then inventoryLoadLocks[src] = nil end
+    if not ok then error(err) end
+    return true
 end
 
 -- Trusted server-side snapshot API for anticheat/admin tools.
@@ -120,6 +158,50 @@ local function GetPlayerInventory(source)
 end
 
 exports('GetPlayerInventory', GetPlayerInventory)
+
+-- Warm the inventory cache as soon as rp_core publishes a fully loaded character.
+-- This removes the first-open race and gives every gameplay resource one consistent
+-- character-keyed inventory snapshot.
+local function WarmPlayerInventory(source, player)
+    local src = tonumber(source)
+    if not src or not player or tonumber(player.source) ~= src or not tonumber(player.charId) then return end
+    CreateThread(function()
+        local ok, err = pcall(loadInventory, player)
+        if not ok then
+            print(('[rp_inventory] Preload failed for character %s: %s')
+                :format(tostring(player.charId), tostring(err)))
+        end
+    end)
+end
+
+AddEventHandler('rp_core:server:playerLoaded', WarmPlayerInventory)
+
+AddEventHandler('rp_core:server:playerUnloaded', function(source, player)
+    local src = tonumber(source)
+    if not src then return end
+    if player and playerInventories[src] and inventoryCharacterIds[src] == tonumber(player.charId) then
+        if not saveInventory(player) then
+            print(('[rp_inventory] Unload save failed for character %s.')
+                :format(tostring(player.charId)))
+        end
+    end
+    playerInventories[src] = nil
+    inventoryCharacterIds[src] = nil
+    inventoryLoadLocks[src] = nil
+    transferLocks[src] = nil
+end)
+
+AddEventHandler('onResourceStart', function(resourceName)
+    if resourceName ~= GetCurrentResourceName() then return end
+    CreateThread(function()
+        Wait(0)
+        local ok, players = pcall(function() return exports['rp_core']:GetAllPlayers() end)
+        if not ok or type(players) ~= 'table' then return end
+        for src, player in pairs(players) do
+            WarmPlayerInventory(src, player)
+        end
+    end)
+end)
 
 -- Commande chat serveur : /openinventory (alias /inv).
 -- Elle déclenche le toggle sur le client concerné, sans dépendre de l'exécution
@@ -686,23 +768,7 @@ RegisterNetEvent('rp_inventory:server:requestWeapons', function()
     TriggerClientEvent('rp_inventory:client:restoreWeapons', src, weapons)
 end)
 
-AddEventHandler('playerDropped', function()
-    local src = source
-    local player = exports['rp_core']:GetPlayerFromId(src)
-    local charId = inventoryCharacterIds[src]
-    if charId and playerInventories[src] then
-        local ok, err = pcall(MySQL.update.await,
-            'INSERT INTO player_inventories (character_id, items) VALUES (?, ?) ON DUPLICATE KEY UPDATE items = VALUES(items)',
-            { charId, json.encode(playerInventories[src]) }
-        )
-        if not ok then
-            print(('[rp_inventory] Disconnect save failed for character %s: %s'):format(charId, tostring(err)))
-        end
-    end
-    playerInventories[src] = nil
-    inventoryCharacterIds[src] = nil
-    transferLocks[src] = nil
-end)
+-- Cache cleanup and persistence are handled by rp_core:server:playerUnloaded.
 
 
 -- Server-only inventory grant API for trusted gameplay resources (e.g. vehicle salvage).
