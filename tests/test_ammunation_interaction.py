@@ -16,6 +16,8 @@ def test_ammunation_client_uses_shared_blip_points_and_one_metre_prompt():
     assert "ammunationOpening = true" in client
     assert "SetTimeout(5000" in client
     assert "rp_businesses:client:openDenied" in client
+    assert "products = type(products) == 'table' and products or {}" in client
+    assert "RegisterNUICallback('buyAmmunationWeapon'" in client
     assert "id = 'ammunation'" in locations
 
 
@@ -34,7 +36,7 @@ def test_ammunation_server_checks_shared_points_and_one_metre_range():
 def test_ammunation_payment_is_atomic_and_weapon_metadata_is_persistent():
     server = (BUSINESSES / "server/main.lua").read_text(encoding="utf-8")
     open_block = server.split("RegisterNetEvent('rp_businesses:server:requestAmmunation'", 1)[1].split("RegisterNetEvent('rp_businesses:server:buyPistol'", 1)[0]
-    buy_block = server.split("RegisterNetEvent('rp_businesses:server:buyPistol'", 1)[1].split("-- Catalogue des supérettes", 1)[0]
+    buy_block = server.split("local function purchaseAmmunationWeapon(src, itemName)", 1)[1].split("RegisterNetEvent('rp_businesses:server:buyAmmunationWeapon'", 1)[0]
     assert "getPlayerAtAmmunation(src)" in open_block
     assert "getPlayerAtAmmunation(src)" in buy_block
     assert "AcquireCharacterLock(locks)" in buy_block
@@ -43,6 +45,9 @@ def test_ammunation_payment_is_atomic_and_weapon_metadata_is_persistent():
     assert "metadata.weapons" in buy_block
     assert "ReleaseCharacterLock(locks)" in buy_block
     assert "weaponPurchased" in buy_block
+    assert "AMMUNATION_WEAPONS" in server
+    assert "weapon_mp5" in server and "weapon_battleaxe" in server and "weapon_knife" in server
+    assert "buildAmmunationCatalog()" in open_block
 
 
 def test_inventory_contains_equipable_melee_weapons_and_mp5():
