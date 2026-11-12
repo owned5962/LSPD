@@ -1,39 +1,45 @@
 const tablet=document.getElementById('tablet');
 const cashValue=document.getElementById('cash-value');
-const buyButton=document.getElementById('buy');
+const productsRoot=document.getElementById('products');
 const feedback=document.getElementById('feedback');
-let purchasing=false;
-
+const closeButton=document.getElementById('close');
+let purchasing=new Set();
 function formatCash(value){return Math.max(0,Number(value)||0).toLocaleString('fr-FR')+' $'}
-function closeTablet(){
-    fetch('https://rp_businesses/closeAmmunation',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'}).catch(()=>{});
-}
-document.getElementById('close').addEventListener('click',closeTablet);
+function post(name,data={}){return fetch('https://rp_businesses/'+name,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});}
+function closeTablet(){post('closeStore').catch(()=>{});}
+closeButton.addEventListener('click',closeTablet);
 document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!tablet.classList.contains('hidden')){event.preventDefault();closeTablet();}});
-buyButton.addEventListener('click',()=>{
-    if(purchasing)return;
-    purchasing=true;
-    buyButton.disabled=true;
-    feedback.className='feedback';
-    feedback.textContent='Validation du paiement…';
-    fetch('https://rp_businesses/buyAmmunationPistol',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'})
-        .catch(()=>{purchasing=false;buyButton.disabled=false;feedback.className='feedback error';feedback.textContent='Connexion au magasin impossible.';});
-});
+function renderProducts(products){
+ productsRoot.replaceChildren(); purchasing.clear();
+ (Array.isArray(products)?products:[]).forEach(product=>{
+  if(!product||typeof product.item!=='string')return;
+  const card=document.createElement('article');card.className='product-card';
+  const visual=document.createElement('div');visual.className='product-image';visual.textContent=product.image||'🛒';visual.setAttribute('aria-label',product.label||'Produit');
+  const details=document.createElement('div');details.className='product-details';
+  const name=document.createElement('h2');name.textContent=product.label||product.item;
+  const price=document.createElement('strong');price.className='product-price';price.textContent=formatCash(product.price);
+  const button=document.createElement('button');button.className='buy-button';button.type='button';button.textContent='ACHETER';
+  button.addEventListener('click',()=>{
+   if(purchasing.has(product.item))return;
+   purchasing.add(product.item);button.disabled=true;feedback.className='feedback';feedback.textContent='Validation de l’achat…';
+   post('buyStoreItem',{item:product.item}).catch(()=>{purchasing.delete(product.item);button.disabled=false;feedback.className='feedback error';feedback.textContent='Connexion à la boutique impossible.';});
+  });
+  details.append(name,price,button);card.append(visual,details);productsRoot.append(card);
+ });
+}
 window.addEventListener('message',event=>{
-    const data=event.data||{};
-    if(data.action==='openAmmunation'){
-        tablet.classList.remove('hidden');
-        cashValue.textContent=formatCash(data.cash);
-        feedback.className='feedback';
-        feedback.textContent='Paiement en espèces uniquement.';
-        purchasing=false;buyButton.disabled=false;
-    }else if(data.action==='closeAmmunation'){
-        tablet.classList.add('hidden');
-        purchasing=false;buyButton.disabled=false;
-    }else if(data.action==='purchaseResult'){
-        purchasing=false;buyButton.disabled=false;
-        cashValue.textContent=formatCash(data.cash);
-        feedback.className='feedback '+(data.success?'success':'error');
-        feedback.textContent=data.message||'';
-    }
+ const data=event.data||{};
+ if(data.action==='openStore'||data.action==='openAmmunation'){
+  tablet.classList.remove('hidden');cashValue.textContent=formatCash(data.cash);
+  document.getElementById('store-title').textContent=data.storeName||(data.action==='openAmmunation'?'AMMU-NATION':'STORE');
+  if(data.action==='openAmmunation')renderProducts([{item:'pistol',label:'Pistolet standard',price:Number(data.price)||500,image:'🔫'}]);
+  else renderProducts(data.products);
+  feedback.className='feedback';feedback.textContent='Paiement en espèces uniquement.';
+ }else if(data.action==='closeStore'||data.action==='closeAmmunation'){
+  tablet.classList.add('hidden');purchasing.clear();
+ }else if(data.action==='storePurchaseResult'||data.action==='purchaseResult'){
+  cashValue.textContent=formatCash(data.cash);feedback.className='feedback '+(data.success?'success':'error');feedback.textContent=data.message||'';
+  if(data.success){document.querySelectorAll('.buy-button').forEach(button=>{button.disabled=false;});purchasing.clear();}
+  else {document.querySelectorAll('.buy-button').forEach(button=>{button.disabled=false;});purchasing.clear();}
+ }
 });
