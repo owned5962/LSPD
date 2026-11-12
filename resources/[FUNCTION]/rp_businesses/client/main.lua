@@ -149,7 +149,7 @@ RegisterNetEvent('rp_businesses:client:locations', function(locations)
     end
 end)
 
-RegisterNetEvent('rp_businesses:client:openAmmunation', function(cash)
+RegisterNetEvent('rp_businesses:client:openAmmunation', function(cash, products)
     ammunationOpening = false
     if ammunationPromptVisible then
         exports['rp_ui']:HideTextUI()
@@ -160,7 +160,7 @@ RegisterNetEvent('rp_businesses:client:openAmmunation', function(cash)
     SendNUIMessage({
         action = 'openAmmunation',
         cash = tonumber(cash) or 0,
-        price = 500
+        products = type(products) == 'table' and products or {}
     })
 end)
 
@@ -191,6 +191,13 @@ end)
 
 RegisterNUICallback('closeAmmunation', function(_, cb)
     closeAmmunationTablet()
+    cb({ ok = true })
+end)
+
+RegisterNUICallback('buyAmmunationWeapon', function(data, cb)
+    local itemName = type(data) == 'table' and tostring(data.item or '') or ''
+    if #itemName < 1 or #itemName > 48 then cb({ ok = false }); return end
+    TriggerServerEvent('rp_businesses:server:buyAmmunationWeapon', itemName)
     cb({ ok = true })
 end)
 
