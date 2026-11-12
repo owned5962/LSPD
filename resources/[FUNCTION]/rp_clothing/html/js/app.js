@@ -96,6 +96,7 @@ function closeBarber() {
     barberActive = false;
     document.getElementById('clothing-wrapper').classList.add('hidden');
     document.getElementById('clothing-wrapper').classList.remove('barber-mode');
+    document.getElementById('barber-panel').classList.add('hidden');
     post('closeBarber');
 }
 document.getElementById('barber-cancel').addEventListener('click', closeBarber);
@@ -112,9 +113,10 @@ window.addEventListener('message', event => {
         barberState = { style:Number(data.style)||0, color:Number(data.color)||0, highlight:Number(data.highlight)||0 };
         document.getElementById('clothing-wrapper').classList.remove('hidden');
         document.getElementById('clothing-wrapper').classList.add('barber-mode');
-        document.getElementById('hair-style').max = Math.max(0, Number(data.styleCount)||0 - 1);
-        document.getElementById('hair-color').max = Math.max(0, Number(data.colorCount)||64 - 1);
-        document.getElementById('hair-highlight').max = Math.max(0, Number(data.colorCount)||64 - 1);
+        document.getElementById('barber-panel').classList.remove('hidden');
+        document.getElementById('hair-style').max = Math.max(0, (Number(data.styleCount) || 1) - 1);
+        document.getElementById('hair-color').max = Math.max(0, (Number(data.colorCount) || 64) - 1);
+        document.getElementById('hair-highlight').max = Math.max(0, (Number(data.colorCount) || 64) - 1);
         document.getElementById('hair-style').value = barberState.style;
         document.getElementById('hair-color').value = barberState.color;
         document.getElementById('hair-highlight').value = barberState.highlight;
@@ -125,12 +127,14 @@ window.addEventListener('message', event => {
         barberActive = false;
         document.getElementById('clothing-wrapper').classList.add('hidden');
         document.getElementById('clothing-wrapper').classList.remove('barber-mode');
+        document.getElementById('barber-panel').classList.add('hidden');
     } else if (data.action === 'barberPurchaseResult') {
         document.getElementById('barber-status').textContent = data.message || '';
         if (data.success) {
             barberActive = false;
             document.getElementById('clothing-wrapper').classList.add('hidden');
             document.getElementById('clothing-wrapper').classList.remove('barber-mode');
+            document.getElementById('barber-panel').classList.add('hidden');
         } else document.getElementById('barber-buy').disabled = false;
     } else if (data.action === 'open') {
         document.getElementById('clothing-wrapper').classList.remove('hidden');
