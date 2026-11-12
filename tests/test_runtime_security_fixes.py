@@ -39,6 +39,7 @@ class RuntimeSecurityFixTests(unittest.TestCase):
         self.assertIn("pending.vehicleStartCoords", server)
         self.assertIn("GetPlayerInventory(src)", server)
         self.assertIn("item.name == 'repairkit'", server)
+        self.assertEqual(server.count("if not playerHasRepairKit(src) then"), 2)
         self.assertNotIn("IsPedArmed", client)
         self.assertIn("rp_vehicle_loot:server:startTire", client)
         self.assertIn("rp_vehicle_loot:server:completeTire", client)
