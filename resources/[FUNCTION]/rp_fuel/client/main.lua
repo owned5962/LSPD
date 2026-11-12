@@ -15,6 +15,10 @@ RegisterNetEvent('rp_fuel:client:settings', function(price, consumptionMultiplie
     FuelConfig.ConsumptionMultiplier = math.max(0.1, math.min(20.0, tonumber(consumptionMultiplier) or FuelConfig.ConsumptionMultiplier or 2.5))
 end)
 
+RegisterNetEvent('rp_core:client:setPlayerData', function()
+    TriggerServerEvent('rp_fuel:server:requestSettings')
+end)
+
 CreateThread(function()
     Wait(2000)
     TriggerServerEvent('rp_fuel:server:requestSettings')
