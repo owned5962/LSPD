@@ -115,8 +115,8 @@ local function openFuelUI(vehicle)
         return
     end
 
-    local currentFuel = math.max(0, math.min(100, GetVehicleFuelLevel(vehicle)))
-    Entity(vehicle).state:set('rpFuel', currentFuel, true)
+    local currentFuel = tonumber(Entity(vehicle).state.rpFuel) or GetVehicleFuelLevel(vehicle)
+    currentFuel = math.max(0, math.min(100, currentFuel))
     isOpen = true
     exports['rp_ui']:HideTextUI()
     SetNuiFocus(true, true)
@@ -190,7 +190,6 @@ RegisterNetEvent('rp_fuel:client:purchaseResult', function(success, message, net
     local vehicle = NetworkGetEntityFromNetworkId(currentNetId)
     if vehicle ~= 0 and DoesEntityExist(vehicle) then
         SetVehicleFuelLevel(vehicle, tonumber(fuel) or 100.0)
-        Entity(vehicle).state:set('rpFuel', tonumber(fuel) or 100.0, true)
     end
     setVehicleAfterRefuel(true)
     SendNUIMessage({ action = 'fuelPurchased', fuel = fuel, message = message })
@@ -208,27 +207,17 @@ RegisterNetEvent('rp_fuel:client:setFuel', function(netId, fuel)
 end)
 
 CreateThread(function()
-    local lastFuelTick = GetGameTimer()
-    local lastStateSync = 0
+    -- The server simulates consumption and owns rpFuel. Clients only mirror the
+    -- replicated value into the local vehicle native for the dashboard/gameplay.
     while true do
         Wait(1000)
         local ped = PlayerPedId()
         local vehicle = GetVehiclePedIsIn(ped, false)
-        if vehicle ~= 0 and GetPedInVehicleSeat(vehicle, -1) == ped and not isRefueling then
-            local now = GetGameTimer()
-            local elapsed = math.max(0, math.min(5000, now - lastFuelTick)) / 1000.0
-            lastFuelTick = now
-            local fuel = math.max(0.0, GetVehicleFuelLevel(vehicle))
-            local consumption = GetEntitySpeed(vehicle) * 0.00022 * elapsed
-            if consumption > 0 and fuel > 0 then
-                SetVehicleFuelLevel(vehicle, math.max(0.0, fuel - consumption))
+        if vehicle ~= 0 and DoesEntityExist(vehicle) then
+            local serverFuel = tonumber(Entity(vehicle).state.rpFuel)
+            if serverFuel and serverFuel >= 0 and serverFuel <= 100 then
+                SetVehicleFuelLevel(vehicle, serverFuel)
             end
-            if now - lastStateSync >= 5000 then
-                Entity(vehicle).state:set('rpFuel', GetVehicleFuelLevel(vehicle), true)
-                lastStateSync = now
-            end
-        else
-            lastFuelTick = GetGameTimer()
         end
     end
 end)
