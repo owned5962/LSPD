@@ -142,6 +142,15 @@ def test_core_job_exports_fail_soft_when_job_catalog_is_unavailable():
     assert "local lookupOk, resolvedJob, resolvedGrade = pcall(function()" in player
 
 
+
+def test_character_resource_declares_job_catalog_startup_dependency():
+    manifest = (CHARACTERS / "fxmanifest.lua").read_text(encoding="utf-8")
+    cfg = (ROOT / "server.cfg").read_text(encoding="utf-8")
+
+    assert "'rp_jobs'" in manifest
+    assert cfg.index("ensure rp_core") < cfg.index("ensure rp_jobs") < cfg.index("ensure rp_characters")
+
+
 if __name__ == "__main__":
     test_server_player_registry_only_exposes_fully_loaded_characters()
     test_client_receives_complete_authoritative_character_snapshot()
@@ -153,4 +162,5 @@ if __name__ == "__main__":
     test_core_rejects_invalid_character_identity_and_never_falls_back_to_id_one()
     test_identifier_lookup_does_not_expose_the_live_player_record()
     test_core_job_exports_fail_soft_when_job_catalog_is_unavailable()
+    test_character_resource_declares_job_catalog_startup_dependency()
     print("Player session and SQL dependency checks passed.")
