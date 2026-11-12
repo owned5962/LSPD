@@ -72,7 +72,7 @@ body { position: relative; overflow: hidden; color: var(--text); background: #07
 .panel-heading h3 { font-size: 12px; font-weight: 800; }
 .live-pill { display: inline-flex; align-items: center; gap: 5px; padding: 4px 6px; border: 1px solid rgba(71,221,164,.22); border-radius: 20px; color: #8de9c4; background: rgba(30,150,105,.1); font-size: 6px; font-weight: 800; letter-spacing: .7px; white-space: nowrap; }
 .live-pill i, .recruitment-status i { width: 5px; height: 5px; border-radius: 50%; background: #54dfa3; box-shadow: 0 0 8px #54dfa3; }
-.updates-list { display: flex; flex-direction: column; gap: 5px; margin-top: 7px; }
+.updates-list { display: flex; flex-direction: column; gap: 5px; margin-top: 7px; max-height: clamp(150px, 25vh, 270px); overflow-y: auto; padding-right: 4px; scrollbar-width: thin; scrollbar-color: rgba(117,207,255,.35) transparent; }
 .update-row { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 8px; min-width: 0; padding: 5px 7px; border-left: 2px solid rgba(91,193,245,.7); background: rgba(38,91,130,.13); }
 .update-main { min-width: 0; }
 .update-title { overflow: hidden; color: #e5f2fc; font-size: 8px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
@@ -95,7 +95,7 @@ body { position: relative; overflow: hidden; color: var(--text); background: #07
 .version-note { margin-top: 7px; color: #8ea5bc; font-size: 7px; line-height: 1.4; }
 .future-updates { margin-top: 7px; padding-top: 6px; border-top: 1px solid rgba(160,200,232,.12); }
 .future-updates > small { color: #7dcdf2; font-size: 6px; font-weight: 800; letter-spacing: .8px; }
-.future-updates ul { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 5px; padding-left: 11px; color: #c5d5e4; font-size: 7px; }
+.future-updates ul { display: grid; grid-template-columns: 1fr; gap: 4px; max-height: clamp(90px, 15vh, 160px); overflow-y: auto; margin-top: 5px; padding-left: 11px; padding-right: 4px; color: #c5d5e4; font-size: 7px; scrollbar-width: thin; scrollbar-color: rgba(117,207,255,.35) transparent; }
 .future-updates li { padding-right: 4px; }
 .recruitment-banner { display: flex; align-items: center; gap: 7px; min-width: 0; padding: 8px; border: 1px solid rgba(77,222,164,.34); border-radius: 9px; background: linear-gradient(115deg, rgba(11,69,57,.76), rgba(5,23,30,.88)); box-shadow: inset 0 0 30px rgba(67,220,161,.06), 0 12px 32px rgba(0,0,0,.2); }
 .recruitment-icon { display: grid; place-items: center; width: 28px; height: 28px; flex: 0 0 28px; border: 1px solid rgba(92,231,176,.32); border-radius: 9px; color: #83edc0; background: rgba(42,170,122,.16); font-size: 16px; }
