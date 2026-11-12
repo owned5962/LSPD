@@ -34,7 +34,11 @@ function updateTuningPreview() {
     levelLabel.textContent = activeCategory.toggle
         ? (index === 1 ? 'Activé' : 'Désactivé')
         : 'Niveau ' + (index + 1);
-    priceLabel.textContent = money(price) + ' , { modType: activeCategory.modType, modIndex: index });
+    priceLabel.textContent = money(price) + ' ' + String.fromCharCode(36);
+    const alreadyInstalled = Number(activeCategory.installedIndex) === index;
+    tuningBuy.disabled = alreadyInstalled || tuningPending;
+    tuningBuy.textContent = alreadyInstalled ? 'Déjà installé' : 'Confirmer et payer';
+    post('previewTune', { modType: activeCategory.modType, modIndex: index });
 }
 
 function selectTuningCategory() {
