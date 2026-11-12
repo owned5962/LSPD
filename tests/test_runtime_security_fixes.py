@@ -15,8 +15,8 @@ class RuntimeSecurityFixTests(unittest.TestCase):
 
         self.assertIn("function(rawNetId, rawLitres, payment)", server)
         self.assertNotIn("rawCurrentFuel", server)
-        self.assertIn("local currentFuel = vehicleFuel[netId]", server)
-        self.assertIn("vehicleFuel[netId] = currentFuel", server)
+        self.assertIn("local currentFuel = initializeVehicleFuel(vehicle, false)", server)
+        self.assertIn("vehicleFuel[netId] = initialFuel", server)
         self.assertIn("currentFuel < 0 or currentFuel > 100", server)
         self.assertIn("GetAllVehicles()", server)
         self.assertIn("initializeVehicleFuel(vehicle, true)", server)
