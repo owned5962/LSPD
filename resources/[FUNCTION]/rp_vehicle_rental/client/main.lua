@@ -3,6 +3,7 @@ local rentalTablets = {}
 local rentalBlips = {}
 local activeRental = nil
 local tabletOpen = false
+local tabletOpening = false
 local promptVisible = false
 
 
@@ -51,7 +52,10 @@ local function createRentalPeds()
     end
     for key, location in pairs(Config.Locations) do
         local p = location.ped
-        local ped = CreatePed(4, hash, p.x, p.y, p.z - 1.0, p.w, false, true)
+        RequestCollisionAtCoord(p.x, p.y, p.z)
+        local foundGround, groundZ = GetGroundZFor_3dCoord(p.x, p.y, p.z + 3.0, false)
+        local spawnZ = foundGround and groundZ or p.z
+        local ped = CreatePed(4, hash, p.x, p.y, spawnZ, p.w, false, true)
         if ped and ped ~= 0 then
             SetEntityAsMissionEntity(ped, true, true)
             SetBlockingOfNonTemporaryEvents(ped, true)
@@ -59,7 +63,8 @@ local function createRentalPeds()
             SetEntityInvincible(ped, true)
             FreezeEntityPosition(ped, true)
             TaskStartScenarioInPlace(ped, 'WORLD_HUMAN_STAND_IMPATIENT', 0, true)
-            local tablet = CreateObject(tabletHash, p.x, p.y, p.z, false, false, false)
+            local pedCoords = GetEntityCoords(ped)
+            local tablet = CreateObject(tabletHash, pedCoords.x, pedCoords.y, pedCoords.z, false, false, false)
             if tablet and tablet ~= 0 then
                 SetEntityCollision(tablet, false, false)
                 AttachEntityToEntity(tablet, ped, GetPedBoneIndex(ped, 57005),
@@ -90,6 +95,7 @@ end
 
 local function openTablet(isRenewal, vehicles, price, maxHours, label, locationKey)
     if tabletOpen then return end
+    tabletOpening = false
     tabletOpen = true
     SetNuiFocus(true, true)
     SendNUIMessage({
@@ -105,6 +111,11 @@ end
 
 RegisterNetEvent('rp_vehicle_rental:client:openTablet', function(isRenewal, vehicles, price, maxHours, label, locationKey)
     openTablet(isRenewal, vehicles, price, maxHours, label, locationKey)
+end)
+
+RegisterNetEvent('rp_vehicle_rental:client:openDenied', function(message)
+    tabletOpening = false
+    notify(tostring(message or 'Impossible d’ouvrir la tablette de location.'), 'error')
 end)
 
 RegisterNetEvent('rp_vehicle_rental:client:spawnRental', function(data)
@@ -134,6 +145,7 @@ RegisterNetEvent('rp_vehicle_rental:client:spawnRental', function(data)
         expiresAt = GetGameTimer() + (tonumber(data.minutes) or 60) * 60000
     }
     tabletOpen = false
+    tabletOpening = false
     SetNuiFocus(false, false)
     SendNUIMessage({ action = 'close' })
     TriggerServerEvent('rp_vehicle_rental:server:registerVehicle', netId)
@@ -156,12 +168,14 @@ RegisterNetEvent('rp_vehicle_rental:client:renewed', function(expiresAt, minutes
         activeRental.graceUntil = nil
     end
     tabletOpen = false
+    tabletOpening = false
     SetNuiFocus(false, false)
     SendNUIMessage({ action = 'close' })
 end)
 
 RegisterNetEvent('rp_vehicle_rental:client:forceReturn', function(netId, reason)
     tabletOpen = false
+    tabletOpening = false
     SetNuiFocus(false, false)
     SendNUIMessage({ action = 'close' })
     local vehicle = activeRental and activeRental.vehicle or (netId and NetToVeh(netId))
@@ -199,6 +213,7 @@ end)
 
 RegisterNUICallback('decline', function(data, cb)
     tabletOpen = false
+    tabletOpening = false
     SetNuiFocus(false, false)
     SendNUIMessage({ action = 'close' })
     TriggerServerEvent('rp_vehicle_rental:server:decline')
@@ -210,6 +225,7 @@ RegisterNUICallback('close', function(data, cb)
         TriggerServerEvent('rp_vehicle_rental:server:decline')
     end
     tabletOpen = false
+    tabletOpening = false
     SetNuiFocus(false, false)
     SendNUIMessage({ action = 'close' })
     cb({ ok = true })
@@ -222,7 +238,7 @@ CreateThread(function()
     local currentLocation = nil
     while true do
         local waitTime = 800
-        if not tabletOpen and not activeRental then
+        if not tabletOpen and not tabletOpening and not activeRental then
             local coords = GetEntityCoords(PlayerPedId())
             local nearestKey, nearestDistance
             for key, location in pairs(Config.Locations) do
@@ -240,7 +256,14 @@ CreateThread(function()
                     currentLocation = nearestKey
                 end
                 if IsControlJustReleased(0, 38) then
+                    tabletOpening = true
                     TriggerServerEvent('rp_vehicle_rental:server:openTablet', nearestKey)
+                    SetTimeout(6000, function()
+                        if tabletOpening and not tabletOpen then
+                            tabletOpening = false
+                            notify('Le serveur ne répond pas à la demande de location. Réessayez.', 'error')
+                        end
+                    end)
                 end
             elseif promptVisible then
                 exports['rp_ui']:HideTextUI()
@@ -277,6 +300,8 @@ end)
 
 AddEventHandler('onClientResourceStop', function(resourceName)
     if resourceName ~= GetCurrentResourceName() then return end
+    tabletOpening = false
+    tabletOpen = false
     SetNuiFocus(false, false)
     if promptVisible then exports['rp_ui']:HideTextUI() end
     for _, blip in pairs(rentalBlips) do
