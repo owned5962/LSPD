@@ -185,12 +185,13 @@ RegisterNetEvent('rp_garages:server:store', function(garageId, rawNetId, rawProp
         SELECT id, model, stored FROM rp_owned_vehicles
         WHERE plate = ? AND character_id = ? AND identifier = ? LIMIT 1
     ]], { plate, player.charId, player.identifier })
-    if not owned or tostring(owned.model) ~= tostring(GetEntityModel(vehicle)) and false then
-        -- Model is verified below using the stored model hash sent by the entity.
-        if not owned then
-            notify(src, 'Ce véhicule ne t’appartient pas.', 'error')
-            return
-        end
+    if not owned then
+        notify(src, 'Ce véhicule ne t’appartient pas.', 'error')
+        return
+    end
+    if GetEntityModel(vehicle) ~= GetHashKey(tostring(owned.model)) then
+        notify(src, 'Le modèle du véhicule ne correspond pas à son enregistrement.', 'error')
+        return
     end
     if tonumber(owned.stored) == 1 then
         notify(src, 'Ce véhicule est déjà rangé.', 'error')
@@ -265,7 +266,7 @@ RegisterNetEvent('rp_garages:server:retrieve', function(garageId, rawVehicleId)
         return
     end
 
-    pendingSpawns[src] = { id = tonumber(row.id), charId = player.charId, plate = tostring(row.plate), createdAt = os.time() }
+    pendingSpawns[src] = { id = tonumber(row.id), charId = player.charId, plate = tostring(row.plate), model = tostring(row.model), spawn = spawnCoords, createdAt = os.time() }
     TriggerClientEvent('rp_garages:client:spawn', src, {
         garage = garage.id,
         vehicleId = tonumber(row.id),
@@ -293,7 +294,63 @@ RegisterNetEvent('rp_garages:server:spawned', function(rawNetId, rawVehicleId)
     local entity = NetworkGetEntityFromNetworkId(netId)
     if entity == 0 or not DoesEntityExist(entity) or GetEntityType(entity) ~= 2
         or NetworkGetEntityOwner(entity) ~= src
-        or GetVehicleNumberPlateText(entity):gsub('%s+$', '') ~= pending.plate then
+        or GetVehicleNumberPlateText(entity):gsub('%s+
+        MySQL.update.await('UPDATE rp_owned_vehicles SET stored = 1 WHERE id = ? AND character_id = ?', { pending.id, pending.charId })
+        pendingSpawns[src] = nil
+        TriggerClientEvent('rp_garages:client:spawnFailed', src, 'Le véhicule n’a pas été validé. Réessaie.')
+        return
+    end
+
+    pendingSpawns[src] = nil
+    TriggerClientEvent('rp_garages:client:spawnConfirmed', src, netId)
+end)
+
+RegisterNetEvent('rp_garages:server:spawnFailed', function(rawVehicleId)
+    local src = source
+    local pending = pendingSpawns[src]
+    local vehicleId = tonumber(rawVehicleId)
+    if not pending or pending.id ~= vehicleId then return end
+    MySQL.update.await('UPDATE rp_owned_vehicles SET stored = 1 WHERE id = ? AND character_id = ?', { pending.id, pending.charId })
+    pendingSpawns[src] = nil
+end)
+
+AddEventHandler('playerDropped', function()
+    local src = source
+    local pending = pendingSpawns[src]
+    if pending then
+        MySQL.update.await('UPDATE rp_owned_vehicles SET stored = 1 WHERE id = ? AND character_id = ?', { pending.id, pending.charId })
+        pendingSpawns[src] = nil
+    end
+    for key in pairs(actionLocks) do
+        if key:match('^' .. src .. ':') then actionLocks[key] = nil end
+    end
+end)
+
+CreateThread(function()
+    while true do
+        Wait(5000)
+        local now = os.time()
+        for src, pending in pairs(pendingSpawns) do
+            if now - pending.createdAt > Config.SpawnTimeout then
+                MySQL.update.await('UPDATE rp_owned_vehicles SET stored = 1 WHERE id = ? AND character_id = ?', { pending.id, pending.charId })
+                pendingSpawns[src] = nil
+                notify(src, 'La sortie du véhicule a expiré. Il a été remis dans le garage.', 'error')
+            end
+        end
+    end
+end)
+
+exports('GetStoredVehicles', function(characterId)
+    characterId = tonumber(characterId)
+    if not characterId then return {} end
+    return MySQL.query.await(
+        'SELECT id, plate, model, label, stored FROM rp_owned_vehicles WHERE character_id = ? ORDER BY id DESC',
+        { characterId }
+    ) or {}
+end)
+, '') ~= pending.plate
+        or GetEntityModel(entity) ~= GetHashKey(pending.model)
+        or #(GetEntityCoords(entity) - pending.spawn) > 8.0 then
         MySQL.update.await('UPDATE rp_owned_vehicles SET stored = 1 WHERE id = ? AND character_id = ?', { pending.id, pending.charId })
         pendingSpawns[src] = nil
         TriggerClientEvent('rp_garages:client:spawnFailed', src, 'Le véhicule n’a pas été validé. Réessaie.')
