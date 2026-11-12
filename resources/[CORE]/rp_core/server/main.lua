@@ -67,13 +67,15 @@ function GetAllPlayers()
     for source, player in pairs(Players) do
         local copy = {}
         for key, value in pairs(player) do
-            if type(value) == 'table' then
-                local ok, cloned = pcall(function()
-                    return json.decode(json.encode(value))
-                end)
-                copy[key] = ok and type(cloned) == 'table' and cloned or {}
-            else
-                copy[key] = value
+            if type(value) ~= 'function' then
+                if type(value) == 'table' then
+                    local ok, cloned = pcall(function()
+                        return json.decode(json.encode(value))
+                    end)
+                    copy[key] = ok and type(cloned) == 'table' and cloned or {}
+                else
+                    copy[key] = value
+                end
             end
         end
         snapshot[source] = copy
