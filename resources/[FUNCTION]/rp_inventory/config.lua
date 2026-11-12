@@ -50,6 +50,7 @@ Config.DefaultItems = {
 
     -- Armes de corps à corps : objets d'inventaire distincts des armes à feu.
     ['weapon_knife'] = { label = 'Couteau', weight = 0.4, type = 'weapon', weapon = 'WEAPON_KNIFE', icon = 'fas fa-knife' },
+    ['weapon_nightstick'] = { label = 'Matraque', weight = 0.8, type = 'weapon', weapon = 'WEAPON_NIGHTSTICK', icon = 'fas fa-baton' },
     ['weapon_bat'] = { label = 'Batte de baseball', weight = 1.2, type = 'weapon', weapon = 'WEAPON_BAT', icon = 'fas fa-baseball-bat-ball' },
     ['weapon_crowbar'] = { label = 'Pied-de-biche', weight = 1.5, type = 'weapon', weapon = 'WEAPON_CROWBAR', icon = 'fas fa-toolbox' },
     ['weapon_hammer'] = { label = 'Marteau', weight = 1.0, type = 'weapon', weapon = 'WEAPON_HAMMER', icon = 'fas fa-hammer' },
@@ -65,6 +66,7 @@ Config.DefaultItems = {
     ['weapon_wrench'] = { label = 'Clé à molette', weight = 1.0, type = 'weapon', weapon = 'WEAPON_WRENCH', icon = 'fas fa-wrench' },
     ['weapon_battleaxe'] = { label = 'Hache de combat', weight = 1.8, type = 'weapon', weapon = 'WEAPON_BATTLEAXE', icon = 'fas fa-axe' },
     ['weapon_stone_hatchet'] = { label = 'Hachette en pierre', weight = 1.4, type = 'weapon', weapon = 'WEAPON_STONE_HATCHET', icon = 'fas fa-axe' },
+    ['weapon_candycane'] = { label = 'Canne en sucre', weight = 0.4, type = 'weapon', weapon = 'WEAPON_CANDYCANE', icon = 'fas fa-candy-cane' },
 
     -- Arme à feu demandée pour le catalogue Ammu-Nation / inventaire.
     ['weapon_mp5'] = { label = 'MP5', weight = 3.2, type = 'weapon', weapon = 'WEAPON_SMG', icon = 'fas fa-gun' }
