@@ -35,11 +35,28 @@ def test_ammunation_open_and_purchase_use_the_same_proximity_validation():
     assert "getPlayerAtAmmunation(src)" in open_block
     assert "getPlayerAtAmmunation(src)" in buy_block
     assert "openAmmunation" in open_block
-    assert "weaponPurchased" in buy_block
+    assert "AcquireCharacterLock(locks)" in buy_block
+    assert "UPDATE characters" in buy_block
+    assert "SET cash = cash - ?, metadata = ?" in buy_block
+    assert "metadata.weapons" in buy_block
+    assert "ReleaseCharacterLock(locks)" in buy_block
+
+
+def test_inventory_contains_melee_weapons_and_mp5_item():
+    config = (ROOT / "resources/[FUNCTION]/rp_inventory/config.lua").read_text(encoding="utf-8")
+    for item in (
+        "weapon_knife", "weapon_bat", "weapon_crowbar", "weapon_hammer",
+        "weapon_golfclub", "weapon_knuckle", "weapon_machete", "weapon_flashlight",
+        "weapon_bottle", "weapon_dagger", "weapon_hatchet", "weapon_switchblade",
+        "weapon_poolcue", "weapon_wrench", "weapon_battleaxe", "weapon_stone_hatchet",
+        "weapon_mp5"
+    ):
+        assert f"['{item}']" in config
 
 
 if __name__ == "__main__":
     test_ammunation_client_uses_shared_blip_points_without_waiting_for_mysql()
     test_ammunation_server_checks_same_shared_points_as_client_blips()
     test_ammunation_open_and_purchase_use_the_same_proximity_validation()
+    test_inventory_contains_melee_weapons_and_mp5_item()
     print("Ammu-Nation interaction checks passed.")
