@@ -67,7 +67,7 @@ def test_diagnostics_include_source_line_and_error_context():
 def test_claim_points_have_streamed_npcs_and_reliable_e_interaction():
     config = read("resources/[FUNCTION]/rp_territories/shared/config.lua")
     client = read("resources/[FUNCTION]/rp_territories/client/main.lua")
-    assert "Config.InteractionDistance = 3.5" in config
+    assert "Config.InteractionDistance = 1.0" in config
     assert "Config.PedModel" in config
     assert "Config.PedSpawnDistance" in config
     assert "CreatePed(4, model" in client
@@ -80,8 +80,13 @@ def test_claim_points_have_streamed_npcs_and_reliable_e_interaction():
 def test_free_territory_areas_are_persistently_visible_and_white():
     config = read("resources/[FUNCTION]/rp_territories/shared/config.lua")
     client = read("resources/[FUNCTION]/rp_territories/client/main.lua")
-    assert "Config.AreaAlphaFree = 180" in config
+    assert "Config.AreaAlphaFree = 255" in config
+    assert "Config.ServerValidationDistance = 1.5" in config
     assert "SetBlipColour(area, color)" in client
     assert "SetBlipDisplay(area, 2)" in client
     assert "SetBlipDisplay(point, 2)" in client
+    build_map = client.split("local function BuildMap()", 1)[1].split("RegisterNetEvent('rp_territories:client:sync'", 1)[0]
+    assert "RemoveMapBlips()" not in build_map
+    assert "local area = areaBlips[index]" in build_map
+    assert "local point = pointBlips[index]" in build_map
 
