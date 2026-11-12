@@ -102,6 +102,34 @@ def test_job_duty_is_shared_with_the_authoritative_player_record():
         assert "SetPlayerDuty(src, status, Config.Job)" in server, f"{job.name} does not sync duty to rp_core"
 
 
+
+def test_core_rejects_invalid_character_identity_and_never_falls_back_to_id_one():
+    player = (CORE / "server/player.lua").read_text(encoding="utf-8")
+    server = (CORE / "server/main.lua").read_text(encoding="utf-8")
+
+    assert "RequirePositiveInteger(charData.id, 'id')" in player
+    assert "RequirePositiveInteger(charData.char_id, 'char_id')" in player
+    assert "expected a FiveM license identifier" in player
+    assert "self.charId = characterId" in player
+    assert "tonumber(charData.id) or 1" not in player
+    assert "is_dead = ?" in player
+    assert "self.isDead == true and 1 or 0" in player
+    assert "exports('GetPlayerSnapshot', GetPlayerSnapshot)" in server
+    assert "charId = player.charId" in server
+    assert "activePlayer.identifier == player.identifier or tonumber(activePlayer.charId) == characterId" in server
+
+
+def test_identifier_lookup_does_not_expose_the_live_player_record():
+    server = (CORE / "server/main.lua").read_text(encoding="utf-8")
+    lookup = server.split("function GetPlayerByIdentifier(identifier)", 1)[1].split("function GetAllPlayers()", 1)[0]
+
+    assert "return player" not in lookup
+    assert "source = player.source" in lookup
+    assert "identifier = player.identifier" in lookup
+    assert "charId = player.charId" in lookup
+    assert "slot = player.slot" in lookup
+
+
 if __name__ == "__main__":
     test_server_player_registry_only_exposes_fully_loaded_characters()
     test_client_receives_complete_authoritative_character_snapshot()
@@ -110,4 +138,6 @@ if __name__ == "__main__":
     test_core_restart_requests_a_safe_character_bootstrap()
     test_inventory_is_preloaded_from_core_player_lifecycle_and_saved_on_unload()
     test_job_duty_is_shared_with_the_authoritative_player_record()
+    test_core_rejects_invalid_character_identity_and_never_falls_back_to_id_one()
+    test_identifier_lookup_does_not_expose_the_live_player_record()
     print("Player session and SQL dependency checks passed.")
