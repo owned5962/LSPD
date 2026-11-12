@@ -256,7 +256,13 @@ function handleTabletMessage(event) {
     }
     if (data.action === 'reports') { renderReports(data.reports); return; }
     if (data.action === 'reportUpdated') {
-        requestReports();
+        const row = document.querySelector('[data-report-id="' + Number(data.reportId) + '"]');
+        if (row) {
+            const statusCell = row.children[3];
+            const actionCell = row.children[5];
+            if (statusCell) statusCell.textContent = data.status === 'resolved' ? 'Traité' : 'Rejeté';
+            if (actionCell) actionCell.textContent = 'Mis à jour';
+        }
         showToast('Signalement mis à jour.');
         return;
     }
@@ -324,6 +330,7 @@ function renderReports(reports) {
     }
     rows.forEach(report => {
         const row = document.createElement('tr');
+        row.dataset.reportId = String(Number(report.id) || 0);
         const values = [String(report.id || ''), String(report.player_name || 'Joueur'), String(report.message || ''),
             report.status === 'open' ? 'En attente' : report.status === 'resolved' ? 'Traité' : 'Rejeté', String(report.created_at || '')];
         values.forEach(value => { const cell = document.createElement('td'); cell.textContent = value; row.appendChild(cell); });
