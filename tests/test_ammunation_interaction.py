@@ -69,7 +69,6 @@ def test_ammunation_client_has_one_valid_weapon_delivery_handler():
     client = (BUSINESSES / "client/main.lua").read_text(encoding="utf-8")
     assert client.count("RegisterNetEvent('rp_businesses:client:weaponPurchased'") == 1
     assert "if not weaponName:match('^WEAPON_[A-Z0-9_]+$') then return end" in client
-    assert ") then return end" not in client
 
 
 if __name__ == "__main__":
