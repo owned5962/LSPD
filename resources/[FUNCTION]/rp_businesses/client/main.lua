@@ -1,5 +1,7 @@
 local createdBlips = {}
+local pendingATMLocations = {}
 local locationsLoaded = false
+local ATMObjectModels = { 'prop_atm_01', 'prop_atm_02', 'prop_atm_03', 'prop_fleeca_atm' }
 
 local function addLocationBlip(location)
     if location.blip_enabled == false or tonumber(location.blip_enabled) == 0 then return end
@@ -25,8 +27,20 @@ RegisterNetEvent('rp_businesses:client:locations', function(locations)
         if DoesBlipExist(blip) then RemoveBlip(blip) end
     end
     createdBlips = {}
+    pendingATMLocations = {}
     for _, location in ipairs(locations) do
-        addLocationBlip(location)
+        if location.location_type == 'atm' then
+            pendingATMLocations[#pendingATMLocations + 1] = {
+                x = tonumber(location.x), y = tonumber(location.y), z = tonumber(location.z),
+                name = location.name or 'Distributeur automatique',
+                blip_sprite = location.blip_sprite, blip_display = location.blip_display,
+                blip_scale = location.blip_scale, blip_colour = location.blip_colour,
+                blip_enabled = location.blip_enabled, short_range = location.short_range,
+                verified = false
+            }
+        else
+            addLocationBlip(location)
+        end
     end
     locationsLoaded = #locations > 0
     if not locationsLoaded then
@@ -38,6 +52,51 @@ CreateThread(function()
     Wait(1500)
     requestLocations()
 end)
+
+
+-- ATM map markers are only created after a real GTA ATM prop is found at the
+-- configured location. This prevents stale or misplaced database coordinates
+-- from advertising an ATM where no machine exists.
+CreateThread(function()
+    while true do
+        local waitTime = 1800
+        if #pendingATMLocations > 0 and not IsPauseMenuActive() then
+            local playerCoords = GetEntityCoords(PlayerPedId())
+            for _, location in ipairs(pendingATMLocations) do
+                if not location.verified and location.x and location.y and location.z then
+                    local point = vector3(location.x, location.y, location.z)
+                    if #(playerCoords - point) <= 65.0 then
+                        waitTime = 250
+                        for _, model in ipairs(ATMObjectModels) do
+                            local object = GetClosestObjectOfType(
+                                location.x, location.y, location.z, 7.0, joaat(model), false, false, false
+                            )
+                            if object and object ~= 0 and DoesEntityExist(object) then
+                                local objectCoords = GetEntityCoords(object)
+                                if #(objectCoords - point) <= 7.0 then
+                                    addLocationBlip({
+                                        x = objectCoords.x, y = objectCoords.y, z = objectCoords.z,
+                                        name = location.name,
+                                        blip_enabled = location.blip_enabled,
+                                        blip_sprite = location.blip_sprite,
+                                        blip_display = location.blip_display,
+                                        blip_scale = location.blip_scale,
+                                        blip_colour = location.blip_colour,
+                                        short_range = location.short_range
+                                    })
+                                    location.verified = true
+                                    break
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+        Wait(waitTime)
+    end
+end)
+
 
 RegisterNetEvent('rp_core:client:setPlayerData', function()
     if not locationsLoaded then requestLocations() end
