@@ -31,4 +31,7 @@ def test_clothing_shop_exposes_live_variations_for_all_requested_categories():
     assert "RenderScriptCams(true, true, 500" in client
     assert "RegisterNUICallback('rotatePlayer'" in client
     assert "stopClothingCamera()" in client
+    assert "activeShopPosition = pos" in client
+    assert "GetEntityCoords(ped) - activeShopPosition) > 1.0" in client
+    assert "Boutique fermée : vous avez quitté la zone." in client
     assert 'id="rotate-left"' in html and 'id="rotate-right"' in html
