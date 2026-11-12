@@ -3,6 +3,22 @@ local vehicleFuel = {}
 local lastFuelUpdate = {}
 local nextRefuelId = 0
 
+local function getFuelPrice()
+    return math.max(1, math.min(1000, GetConvarInt('rp_fuel_price_per_litre', FuelConfig.PricePerLitre or 6)))
+end
+
+local function getFuelConsumptionMultiplier()
+    local value = tonumber(GetConvar('rp_fuel_consumption_multiplier', tostring(FuelConfig.ConsumptionMultiplier or 2.5)))
+    if not value or value ~= value then value = FuelConfig.ConsumptionMultiplier or 2.5 end
+    return math.max(0.1, math.min(20.0, value))
+end
+
+RegisterNetEvent('rp_fuel:server:requestSettings', function()
+    local src = source
+    if not exports['rp_core']:CanPerformAction(src, 'fuel:settings', 1500) then return end
+    TriggerClientEvent('rp_fuel:client:settings', src, getFuelPrice(), getFuelConsumptionMultiplier())
+end)
+
 local function notify(src, message, kind)
     if src and GetPlayerName(src) then
         TriggerClientEvent('rp_core:client:notify', src, message, kind or 'error')
@@ -214,7 +230,7 @@ RegisterNetEvent('rp_fuel:server:purchase', function(rawNetId, rawLitres, paymen
         return
     end
 
-    local amount = litres * FuelConfig.PricePerLitre
+    local amount = litres * getFuelPrice()
     local account = payment == 'auto' and (player.cash >= amount and 'cash' or 'bank') or payment
     local balance = account == 'cash' and player.cash or player.bank
     if balance < amount then
@@ -285,7 +301,7 @@ CreateThread(function()
                         local previous = lastFuelUpdate[netId] or now
                         local elapsed = math.max(0, math.min(5000, now - previous)) / 1000.0
                         local current = vehicleFuel[netId]
-                        local consumption = GetEntitySpeed(vehicle) * 0.00022 * elapsed
+                        local consumption = GetEntitySpeed(vehicle) * 0.00022 * getFuelConsumptionMultiplier() * elapsed
                         if consumption > 0 and current > 0 then
                             current = math.max(0.0, current - consumption)
                             vehicleFuel[netId] = current
