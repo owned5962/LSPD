@@ -44,13 +44,14 @@ end
 local function GetActiveTerritories()
     DebugLog('info', 'SQL_SELECT_ACTIVE', 'Chargement des territoires actifs')
     local rows = MySQL.query.await(
-        'SELECT sector_id, owner_name, color, expires_at FROM rp_territories WHERE expires_at > ?',
+        'SELECT sector_id, owner_name, territory_name, color, expires_at FROM rp_territories WHERE expires_at > ?',
         { os.time() }
     )
     local result = {}
     for _, row in ipairs(rows or {}) do
         result[row.sector_id] = {
             ownerName = row.owner_name,
+            territoryName = row.territory_name,
             color = tonumber(row.color),
             expiresAt = tonumber(row.expires_at)
         }
@@ -70,7 +71,7 @@ end
 
 local function GetSectorRow(sectorId)
     return MySQL.single.await(
-        'SELECT sector_id, owner_identifier, owner_character_id, owner_name, color, expires_at FROM rp_territories WHERE sector_id = ? LIMIT 1',
+        'SELECT sector_id, owner_identifier, owner_character_id, owner_name, territory_name, color, expires_at FROM rp_territories WHERE sector_id = ? LIMIT 1',
         { sectorId }
     )
 end
@@ -97,6 +98,10 @@ local function CreateStorage()
             INDEX idx_rp_territories_owner (owner_identifier, owner_character_id)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     ]])
+    local nameColumn = MySQL.query.await("SHOW COLUMNS FROM rp_territories LIKE 'territory_name'")
+    if not nameColumn or #nameColumn == 0 then
+        MySQL.query.await("ALTER TABLE rp_territories ADD COLUMN territory_name VARCHAR(64) NOT NULL DEFAULT '' AFTER owner_name")
+    end
     databaseReady = true
     BroadcastTerritories()
     DebugLog('info', 'STORAGE_READY', ('%d secteurs | prix=%d$ | durée=%dj'):format(#Config.Sectors, Config.Price, Config.DurationDays))
@@ -168,6 +173,8 @@ RegisterNetEvent('rp_territories:server:requestOpen', function(rawSectorId)
         occupied = active == true,
         isOwner = sameOwner == true,
         ownerName = active and tostring(row.owner_name or 'Joueur') or nil,
+        territoryName = active and tostring(row.territory_name or '') or '',
+        bankBalance = tonumber(player.bank) or 0,
         color = active and tonumber(row.color) or nil,
         expiresAt = active and tonumber(row.expires_at) or nil
     }
@@ -175,7 +182,7 @@ RegisterNetEvent('rp_territories:server:requestOpen', function(rawSectorId)
     TriggerClientEvent('rp_territories:client:openMenu', src, info)
 end)
 
-RegisterNetEvent('rp_territories:server:claim', function(rawSectorId, rawColorId)
+RegisterNetEvent('rp_territories:server:claim', function(rawSectorId, rawColorId, rawTerritoryName)
     local src = source
     DebugLog('info', 'CLAIM_REQUEST', ('secteur=%s | couleur=%s'):format(tostring(rawSectorId), tostring(rawColorId)))
     if not exports['rp_core']:CanPerformAction(src, 'territory:claim', 4000) then
@@ -190,9 +197,10 @@ RegisterNetEvent('rp_territories:server:claim', function(rawSectorId, rawColorId
 
     local sectorId = type(rawSectorId) == 'string' and rawSectorId or ''
     local colorId = tonumber(rawColorId)
+    local territoryName = type(rawTerritoryName) == 'string' and rawTerritoryName:gsub('[%c<>]', ' '):sub(1, 64) or ''
     local player = GetPlayer(src)
     if not player or not Config.SectorById[sectorId] or not IsValidColor(colorId)
-        or not IsNearSector(src, sectorId) then
+        or #territoryName < 2 or not IsNearSector(src, sectorId) then
         DebugLog('warn', 'CLAIM_VALIDATION_FAILED', ('secteur=%s | joueur chargé=%s | couleur valide=%s | proximité=%s'):format(sectorId, tostring(player ~= nil), tostring(IsValidColor(colorId)), tostring(Config.SectorById[sectorId] ~= nil and player ~= nil and IsNearSector(src, sectorId))))
         Notify(src, 'Demande de revendication invalide.', 'error')
         return
@@ -219,9 +227,9 @@ RegisterNetEvent('rp_territories:server:claim', function(rawSectorId, rawColorId
             return { success = false, message = 'Ce secteur appartient déjà à ' .. tostring(current.owner_name or 'un autre joueur') .. '.' }
         end
 
-        if type(player.removeCash) ~= 'function' or not player.removeCash(Config.Price) then
-            DebugLog('warn', 'CLAIM_PAYMENT_REFUSED', ('secteur=%s | montant=%d$ | fonction removeCash disponible=%s'):format(sectorId, Config.Price, tostring(type(player.removeCash) == 'function')))
-            return { success = false, message = ('Il te faut %d $ en liquide pour %s ce secteur.'):format(Config.Price, sameOwner and 'renouveler' or 'revendiquer') }
+        if type(player.removeBank) ~= 'function' or not player.removeBank(Config.Price, 'Achat du territoire ' .. territoryName, 'territory_purchase') then
+            DebugLog('warn', 'CLAIM_PAYMENT_REFUSED', ('secteur=%s | montant=%d$ | fonction removeBank disponible=%s'):format(sectorId, Config.Price, tostring(type(player.removeBank) == 'function')))
+            return { success = false, message = ('Il te faut %d $ sur ton compte bancaire pour %s ce secteur.'):format(Config.Price, sameOwner and 'renouveler' or 'revendiquer') }
         end
 
         local expiresAt = now + (Config.DurationDays * DAY_SECONDS)
@@ -232,19 +240,20 @@ RegisterNetEvent('rp_territories:server:claim', function(rawSectorId, rawColorId
         DebugLog('info', 'CLAIM_SQL_WRITE', ('Sauvegarde secteur=%s | renouvellement=%s'):format(sectorId, tostring(sameOwner == true)))
         local saved, affected = pcall(MySQL.update.await, [[
             INSERT INTO rp_territories
-                (sector_id, owner_identifier, owner_character_id, owner_name, color, claimed_at, expires_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+                (sector_id, owner_identifier, owner_character_id, owner_name, territory_name, color, claimed_at, expires_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             ON DUPLICATE KEY UPDATE
                 owner_identifier = VALUES(owner_identifier),
                 owner_character_id = VALUES(owner_character_id),
                 owner_name = VALUES(owner_name),
+                territory_name = VALUES(territory_name),
                 color = VALUES(color),
                 claimed_at = VALUES(claimed_at),
                 expires_at = VALUES(expires_at)
-        ]], { sectorId, player.identifier, player.charId, ownerName, colorId, now, expiresAt })
+        ]], { sectorId, player.identifier, player.charId, ownerName, territoryName, colorId, now, expiresAt })
 
         if not saved or type(affected) ~= 'number' or affected < 1 then
-            local refunded = type(player.addCash) == 'function' and player.addCash(Config.Price)
+            local refunded = type(player.addBank) == 'function' and player.addBank(Config.Price, 'Remboursement achat territoire', 'territory_refund')
             DebugLog('error', 'CLAIM_SQL_WRITE_FAILED', ('secteur=%s | remboursement=%s | résultat=%s'):format(sectorId, tostring(refunded), tostring(affected)))
             return { success = false, message = 'Erreur lors de la sauvegarde. Le paiement a été annulé si possible.' }
         end
@@ -253,7 +262,10 @@ RegisterNetEvent('rp_territories:server:claim', function(rawSectorId, rawColorId
         return {
             success = true,
             message = sameOwner and 'Territoire renouvelé pour 7 jours !' or 'Territoire revendiqué !',
-            expiresAt = expiresAt
+            expiresAt = expiresAt,
+            territoryName = territoryName,
+            ownerName = ownerName,
+            color = colorId
         }
     end)
     finish()
