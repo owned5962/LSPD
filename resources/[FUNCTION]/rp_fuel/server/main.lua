@@ -1,4 +1,6 @@
 local pendingRefuels = {}
+local vehicleFuel = {}
+local lastFuelUpdate = {}
 local nextRefuelId = 0
 
 local function notify(src, message, kind)
@@ -98,13 +100,15 @@ local function completeRefuel(netId, pending)
         end
     end
 
-    local stateFuel = tonumber(Entity(vehicle).state.rpFuel)
-    if stateFuel and math.abs(stateFuel - pending.startFuel) > 1.0 then
+    local serverFuel = vehicleFuel[netId]
+    if not serverFuel or math.abs(serverFuel - pending.startFuel) > 1.0 then
         cancelRefuel(netId, pending, 'le niveau du réservoir a changé')
         return
     end
 
     pendingRefuels[netId] = nil
+    vehicleFuel[netId] = pending.newFuel
+    lastFuelUpdate[netId] = GetGameTimer()
     Entity(vehicle).state:set('rpFuel', pending.newFuel, true)
     TriggerClientEvent('rp_fuel:client:setFuel', -1, netId, pending.newFuel)
     TriggerClientEvent('rp_fuel:client:purchaseResult', pending.source, true,
@@ -148,11 +152,18 @@ RegisterNetEvent('rp_fuel:server:purchase', function(rawNetId, rawLitres, paymen
         return
     end
 
-    -- Fuel is read only from the replicated vehicle state. Never accept a client
-    -- fallback value: a modified client could otherwise request a free refill.
-    local currentFuel = tonumber(Entity(vehicle).state.rpFuel)
-    if not currentFuel or currentFuel ~= currentFuel or currentFuel < 0 or currentFuel > 100 then
-        notify(src, 'Niveau de carburant non synchronisé ou invalide. Fermez puis rouvrez la pompe.')
+    -- The authoritative fuel value is maintained by this server resource.
+    -- Entity state bags are only replicated to clients; they are not trusted as input.
+    local currentFuel = vehicleFuel[netId]
+    if currentFuel == nil then
+        currentFuel = 100.0
+        vehicleFuel[netId] = currentFuel
+        lastFuelUpdate[netId] = GetGameTimer()
+        Entity(vehicle).state:set('rpFuel', currentFuel, true)
+    end
+    if type(currentFuel) ~= 'number' or currentFuel ~= currentFuel
+        or currentFuel < 0 or currentFuel > 100 then
+        notify(src, 'Niveau de carburant serveur invalide. Réessayez plus tard.')
         return
     end
     local availableLitres = math.max(0, math.floor(100 - currentFuel))
@@ -214,6 +225,47 @@ RegisterNetEvent('rp_fuel:server:purchase', function(rawNetId, rawLitres, paymen
     SetTimeout(durationMs, function()
         if pendingRefuels[netId] == pending then completeRefuel(netId, pending) end
     end)
+end)
+
+CreateThread(function()
+    -- Server-owned fuel simulation. Clients only receive the replicated value and
+    -- can no longer raise their tank by writing an entity state bag.
+    while true do
+        Wait(1000)
+        local now = GetGameTimer()
+        for _, vehicle in ipairs(GetAllVehicles()) do
+            if vehicle and vehicle ~= 0 and DoesEntityExist(vehicle) then
+                local netId = NetworkGetNetworkIdFromEntity(vehicle)
+                if netId and netId > 0 then
+                    if vehicleFuel[netId] == nil then
+                        vehicleFuel[netId] = 100.0
+                        lastFuelUpdate[netId] = now
+                        Entity(vehicle).state:set('rpFuel', 100.0, true)
+                    elseif not pendingRefuels[netId] then
+                        local previous = lastFuelUpdate[netId] or now
+                        local elapsed = math.max(0, math.min(5000, now - previous)) / 1000.0
+                        local current = vehicleFuel[netId]
+                        local consumption = GetEntitySpeed(vehicle) * 0.00022 * elapsed
+                        if consumption > 0 and current > 0 then
+                            current = math.max(0.0, current - consumption)
+                            vehicleFuel[netId] = current
+                            Entity(vehicle).state:set('rpFuel', current, true)
+                        end
+                        lastFuelUpdate[netId] = now
+                    end
+                end
+            end
+        end
+    end
+end)
+
+AddEventHandler('entityRemoved', function(entity)
+    local netId = NetworkGetNetworkIdFromEntity(entity)
+    if netId and netId > 0 then
+        vehicleFuel[netId] = nil
+        lastFuelUpdate[netId] = nil
+        pendingRefuels[netId] = nil
+    end
 end)
 
 AddEventHandler('onResourceStop', function(resourceName)
