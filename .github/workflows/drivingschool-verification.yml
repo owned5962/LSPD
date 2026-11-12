@@ -3,20 +3,8 @@ name: Driving school verification
 on:
   push:
     branches: [main]
-    paths:
-      - 'resources/[FUNCTION]/rp_drivingschool/**'
-      - 'tests/test_drivingschool.py'
-      - 'database.sql'
-      - 'server.cfg'
-      - '.github/workflows/drivingschool-verification.yml'
   pull_request:
     branches: [main]
-    paths:
-      - 'resources/[FUNCTION]/rp_drivingschool/**'
-      - 'tests/test_drivingschool.py'
-      - 'database.sql'
-      - 'server.cfg'
-      - '.github/workflows/drivingschool-verification.yml'
   workflow_dispatch:
 
 jobs:
