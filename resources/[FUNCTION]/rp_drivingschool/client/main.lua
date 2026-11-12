@@ -19,7 +19,11 @@ local function openSchool()
 end
 
 RegisterNetEvent('rp_drivingschool:client:licenses', function(rows)
-    SendNUIMessage({ action = 'open', categories = Config.Categories, licenses = rows or {} })
+    local categories = {}
+    for id, item in pairs(Config.Categories) do
+        categories[id] = { label = item.label, price = item.price }
+    end
+    SendNUIMessage({ action = 'open', categories = categories, licenses = rows or {} })
     SetNuiFocus(true, true)
 end)
 
