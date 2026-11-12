@@ -292,7 +292,7 @@ function handleTabletMessage(event) {
     if (Array.isArray(data.frozenPlayers)) data.frozenPlayers.forEach(id => { const parsed = Number(id); if (Number.isInteger(parsed) && parsed > 0) frozenPlayers.add(parsed); });
     renderOnlinePlayers();
     const rank = document.getElementById('current-rank-label');
-    if (rank) rank.textContent = String(data.admin?.role || 'ADMIN').toUpperCase();
+    if (rank) rank.textContent = String(data.admin?.role || 'STAFF').toUpperCase();
 }
 
 function requestAuditLogs() {
