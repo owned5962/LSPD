@@ -455,7 +455,8 @@ RegisterNetEvent('rp_garages:server:purchaseUpgrade', function(rawNetId, rawModT
     local workshop = findWorkshop(src)
     local modType, modIndex, originalIndex = tonumber(rawModType), tonumber(rawModIndex), tonumber(rawOriginalIndex)
     local category = modType and Config.TuningCategories[modType]
-    local vehicle, owned, plate, netId = player and getOwnedDrivenVehicle(src, player, rawNetId)
+    local vehicle, owned, plate, netId
+    if player then vehicle, owned, plate, netId = getOwnedDrivenVehicle(src, player, rawNetId) end
     if not player or not workshop or not category or not vehicle or not modIndex or modIndex % 1 ~= 0
         or modIndex < 0 or modIndex > category.maxIndex then
         notify(src, 'Modification refusée : véhicule, emplacement ou niveau invalide.', 'error')
