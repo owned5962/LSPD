@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Auto-école — Los Santos RP</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main id="app" class="hidden">
+  <section class="panel">
+    <header><div><small>LOS SANTOS ROLEPLAY</small><h1 id="heading">Auto-école</h1><p id="subtitle">Choisissez votre catégorie de permis</p></div><button id="close" aria-label="Fermer">×</button></header>
+    <section id="catalog" class="catalog"></section>
+    <section id="exam" class="hidden">
+      <div class="progress"><span id="progress-label">Question 1/5</span><div><i id="progress-bar"></i></div></div>
+      <h2 id="question"></h2><div id="answers"></div>
+      <footer><button id="cancel" class="secondary">Annuler</button><button id="next" disabled>Continuer</button></footer>
+    </section>
+  </section>
+</main>
+<script src="app.js"></script>
+</body>
+</html>
