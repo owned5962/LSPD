@@ -4,14 +4,14 @@ on:
   push:
     branches: [main]
     paths:
-      - 'resources/[FUNCTION]/rp_garages/**'
+      - 'resources/**'
       - 'server.cfg'
       - 'tests/test_garage_system.py'
       - '.github/workflows/garage-system.yml'
   pull_request:
     branches: [main]
     paths:
-      - 'resources/[FUNCTION]/rp_garages/**'
+      - 'resources/**'
       - 'server.cfg'
       - 'tests/test_garage_system.py'
       - '.github/workflows/garage-system.yml'
