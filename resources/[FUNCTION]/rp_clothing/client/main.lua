@@ -1,17 +1,3 @@
-CreateThread(function()
-    while true do
-        if isShopOpen and clothingCamera and DoesCamExist(clothingCamera) then
-            local ped = PlayerPedId()
-            local cameraCoords = GetOffsetFromEntityInWorldCoords(ped, 0.0, 2.2, 0.65)
-            SetCamCoord(clothingCamera, cameraCoords.x, cameraCoords.y, cameraCoords.z)
-            PointCamAtEntity(clothingCamera, ped, 0.0, 0.0, 0.55, true)
-            Wait(0)
-        else
-            Wait(250)
-        end
-    end
-end)
-
 local isShopOpen = false
 local clothingCamera = nil
 
@@ -35,6 +21,21 @@ local function startClothingCamera()
     SetCamActive(clothingCamera, true)
     RenderScriptCams(true, true, 500, true, true)
 end
+
+CreateThread(function()
+    while true do
+        if isShopOpen and clothingCamera and DoesCamExist(clothingCamera) then
+            local ped = PlayerPedId()
+            local cameraCoords = GetOffsetFromEntityInWorldCoords(ped, 0.0, 2.2, 0.65)
+            SetCamCoord(clothingCamera, cameraCoords.x, cameraCoords.y, cameraCoords.z)
+            PointCamAtEntity(clothingCamera, ped, 0.0, 0.0, 0.55, true)
+            Wait(0)
+        else
+            Wait(250)
+        end
+    end
+end)
+
 
 AddEventHandler('onClientResourceStart', function(resourceName)
     if resourceName ~= GetCurrentResourceName() then return end
