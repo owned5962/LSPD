@@ -42,7 +42,7 @@ def test_admin_freeze_state_is_restored_from_server_on_tablet_open():
 def test_admin_tablet_has_no_source_one_bypass():
     source = read("resources/[FUNCTION]/rp_tablet_admin/server/main.lua")
     assert "if source == 1 then" not in source
-    assert 'IsPlayerAceAllowed(source, "rp_admin")' in source
+    assert "IsPlayerAceAllowed(source, 'rp_admin')" in source or 'IsPlayerAceAllowed(source, "rp_admin")' in source
     assert "GetOnlineTargetId" in source
     assert "amount > 1000000" in source
     assert "selectedJob.grades[grade]" in source
