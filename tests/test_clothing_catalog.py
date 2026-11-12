@@ -27,3 +27,8 @@ def test_clothing_shop_exposes_live_variations_for_all_requested_categories():
     assert 'id="texture-range"' in html
     assert 'id="prev-item"' in html and 'id="next-item"' in html
     assert "s'affiche directement sur ton personnage" in html
+    assert "CreateCam('DEFAULT_SCRIPTED_CAMERA', true)" in client
+    assert "RenderScriptCams(true, true, 500" in client
+    assert "RegisterNUICallback('rotatePlayer'" in client
+    assert "stopClothingCamera()" in client
+    assert 'id="rotate-left"' in html and 'id="rotate-right"' in html
