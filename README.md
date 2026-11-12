@@ -11,6 +11,14 @@ Serveur RP modulaire comprenant un système de personnages, une économie, 50 m�
 - 50 métiers RP et grades.
 - Tablette admin protégée par ACE.
 
+## Contrat central des joueurs
+
+`rp_core` est l'unique registre serveur des personnages actifs. Un personnage est publié via l'export `RegisterPlayer` uniquement après validation de sa session et de son identifiant. Les ressources peuvent utiliser `GetPlayerFromId`, `IsPlayerLoaded` et `WaitForPlayerLoaded` ; les événements `rp_core:server:playerLoaded` et `rp_core:server:playerUnloaded` signalent les changements de session.
+
+Le client reçoit un instantané autoritaire `PlayerData` comprenant l'identité, le personnage, les soldes, le métier/grade, le groupe, l'état de service, les besoins, les métadonnées, la position, l'apparence, le téléphone et l'état de décès. Les ressources métiers partagent l'état de service avec `rp_core` au lieu d'avoir des copies indépendantes.
+
+Les 50 ressources `job_*` n'utilisent pas directement MySQL : elles passent par les exports de `rp_core` et `rp_jobs`. Le pilote oxmysql reste chargé uniquement par les ressources qui effectuent réellement des opérations persistantes ou des requêtes SQL.
+
 ## Organisation des ressources
 
 - `resources/[CORE]` : `rp_core` et `rp_characters`.
