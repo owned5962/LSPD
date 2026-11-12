@@ -30,6 +30,8 @@ Config.WeaponCatalog = {
     { name = 'WEAPON_BATTLEAXE', label = "Hache de combat", category = "Mêlée", enabled = true },
     { name = 'WEAPON_POOLCUE', label = "Queue de billard", category = "Mêlée", enabled = true },
     { name = 'WEAPON_WRENCH', label = "Clé anglaise", category = "Mêlée", enabled = true },
+    { name = 'WEAPON_KNUCKLE', label = "Poing américain", category = "Mêlée", enabled = true },
+    { name = 'WEAPON_STONE_HATCHET', label = "Hachette en pierre", category = "Mêlée", enabled = true },
     { name = 'WEAPON_PISTOL', label = "Pistolet", category = "Armes de poing", enabled = true },
     { name = 'WEAPON_COMBATPISTOL', label = "Pistolet de combat", category = "Armes de poing", enabled = true },
     { name = 'WEAPON_APPISTOL', label = "Pistolet automatique", category = "Armes de poing", enabled = true },
