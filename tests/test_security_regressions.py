@@ -888,7 +888,8 @@ def test_bank_ui_is_only_opened_at_real_bank_or_atm_and_server_checks_distance()
     assert "if not IsNearBankOrATM(src, allowATM) then" in server
     assert "requireAuthenticatedSession(src, true)" in server
     assert "requireAuthenticatedSession(src, false)" in server
-    assert "https://rp_economy/close" in ui
+    assert "fetch('https://rp_economy/' + name" in ui
+    assert "post('close')" in ui
 
 
 def test_hud_is_refreshed_from_character_and_balance_events():
