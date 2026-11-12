@@ -30,3 +30,18 @@ Config.Garages = {
         blip = { enabled = true, sprite = 357, colour = 3, scale = 0.72 }
     }
 }
+
+Config.Workshops = {
+    { id = 'bennys', label = 'Bennys Motor Works', coords = vector3(117.4, -1818.7, 25.7) },
+    { id = 'harmony', label = 'Los Santos Customs - Harmony', coords = vector3(1174.8, 2640.2, 37.8) }
+}
+
+Config.TuningCategories = {
+    [11] = { id = 'engine', label = 'Moteur', basePrice = 1800, maxIndex = 10 },
+    [12] = { id = 'brakes', label = 'Freins', basePrice = 1200, maxIndex = 10 },
+    [13] = { id = 'transmission', label = 'Transmission', basePrice = 1500, maxIndex = 10 },
+    [15] = { id = 'suspension', label = 'Suspension', basePrice = 900, maxIndex = 10 },
+    [16] = { id = 'armor', label = 'Blindage', basePrice = 2500, maxIndex = 10 },
+    [18] = { id = 'turbo', label = 'Turbo', basePrice = 3500, maxIndex = 1, toggle = true },
+    [22] = { id = 'xenon', label = 'Phares xenon', basePrice = 900, maxIndex = 1, toggle = true }
+}
