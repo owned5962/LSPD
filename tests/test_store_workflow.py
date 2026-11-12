@@ -23,10 +23,10 @@ def test_store_catalog_only_sells_registered_inventory_items():
     server = (ROOT / "resources/[FUNCTION]/rp_businesses/server/main.lua").read_text(encoding="utf-8")
     inventory = (ROOT / "resources/[FUNCTION]/rp_inventory/config.lua").read_text(encoding="utf-8")
 
-    products_block = re.search(r"local STORE_PRODUCTS = \\{(.*?)\\n\\}", server, re.S)
+    products_block = re.search(r"local STORE_PRODUCTS = \{(.*?)\n\}", server, re.S)
     assert products_block, "Store catalogue is missing"
-    products = set(re.findall(r"([a-zA-Z0-9_]+)\\s*=", products_block.group(1)))
-    inventory_items = set(re.findall(r"\\['([a-zA-Z0-9_]+)'\\]\\s*=", inventory))
+    products = set(re.findall(r"([a-zA-Z0-9_]+)\s*=", products_block.group(1)))
+    inventory_items = set(re.findall(r"\['([a-zA-Z0-9_]+)'\]\s*=", inventory))
     assert products
     assert products <= inventory_items
 
