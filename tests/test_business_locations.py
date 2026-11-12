@@ -53,3 +53,18 @@ if __name__ == "__main__":
     test_business_map_categories_and_server_startup_are_registered()
     test_mysql_world_location_registry_covers_all_map_location_types()
     print("Business location checks passed.")
+
+
+
+def test_atm_blips_are_only_created_after_a_real_gta_atm_prop_is_found():
+    client = (ROOT / "resources/[FUNCTION]/rp_businesses/client/main.lua").read_text(encoding="utf-8")
+    locations = (ROOT / "resources/[FUNCTION]/rp_businesses/shared/locations.lua").read_text(encoding="utf-8")
+    for model in ("prop_atm_01", "prop_atm_02", "prop_atm_03", "prop_fleeca_atm"):
+        assert model in client
+    assert "pendingATMLocations" in client
+    assert "GetClosestObjectOfType(" in client
+    assert "location.verified = true" in client
+    assert "ATMBlipLocations =" in locations
+    assert "BankLocations =" in locations
+    assert "Fleeca Bank Legion Square" in locations
+    assert "Pacific Standard Public Bank" in locations
