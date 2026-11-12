@@ -36,6 +36,11 @@ function renderCategoryButtons() {
         button.textContent = category;
         button.addEventListener('click', () => {
             activeCategory = category;
+            selectedVehicle = null;
+            buyButton.disabled = true;
+            selectedName.textContent = 'Aucun véhicule sélectionné';
+            selectedPrice.textContent = '—';
+            feedback.textContent = '';
             renderCategoryButtons();
             renderVehicleCards();
         });
