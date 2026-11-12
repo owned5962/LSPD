@@ -36,7 +36,9 @@ local function IsNearSector(src, sectorId)
     if not ped or ped == 0 or not DoesEntityExist(ped) then return false end
     local coords = GetEntityCoords(ped)
     local dx, dy = coords.x - sector.x, coords.y - sector.y
-    return (dx * dx + dy * dy) <= (Config.ServerValidationDistance * Config.ServerValidationDistance)
+    local horizontalNear = (dx * dx + dy * dy) <= (Config.ServerValidationDistance * Config.ServerValidationDistance)
+    local verticalNear = math.abs(coords.z - sector.z) <= 2.0
+    return horizontalNear and verticalNear
 end
 
 local function GetActiveTerritories()
