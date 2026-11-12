@@ -250,6 +250,11 @@ CreateThread(function()
                         if consumption > 0 and current > 0 then
                             current = math.max(0.0, current - consumption)
                             vehicleFuel[netId] = current
+                        end
+
+                        -- Reassert the server value if the network owner tries to
+                        -- overwrite the replicated state bag from a modified client.
+                        if tonumber(Entity(vehicle).state.rpFuel) ~= current then
                             Entity(vehicle).state:set('rpFuel', current, true)
                         end
                         lastFuelUpdate[netId] = now
