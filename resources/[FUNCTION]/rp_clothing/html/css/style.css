@@ -40,3 +40,8 @@ input[type=range]{width:100%;margin:13px 0;accent-color:#38bdf8;cursor:pointer}
 .save-btn{display:flex;align-items:center;gap:9px;background:#0284c7;border:0;border-radius:8px;padding:0 15px;color:#fff;font-weight:700;font-size:11px;cursor:pointer}
 .save-btn:hover{background:#0369a1}.save-btn small{padding-left:8px;border-left:1px solid #ffffff55;color:#bae6fd}
 @media(max-width:650px){body{padding:1vh 1vw}.clothing-card{width:98vw;padding:14px}.shop-layout{grid-template-columns:150px 1fr;gap:8px}.category-btn{font-size:10px;padding:7px}.catalog-panel{padding:12px}.outfit-presets{grid-template-columns:repeat(2,1fr)}.save-box{flex-direction:column}.save-btn{padding:12px;justify-content:center}}
+
+.preview-controls{display:flex;align-items:center;justify-content:flex-end;gap:8px;margin:-6px 0 12px;color:#7dd3fc;font-size:9px;letter-spacing:1.4px;font-weight:800}
+.preview-controls span{margin-right:auto}
+.preview-controls button{width:34px;height:30px;border:1px solid #38bdf855;border-radius:7px;background:#0ea5e91a;color:#e0f2fe;font-size:20px;cursor:pointer}
+.preview-controls button:hover{background:#0284c7;color:#fff}
