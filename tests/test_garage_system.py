@@ -1,6 +1,6 @@
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]  # Repository root for isolated garage, ownership and tuning checks.
+ROOT = Path(__file__).resolve().parents[1]  # Repository root for garage ownership, persistence and workshop tuning checks.
 RESOURCE = ROOT / "resources" / "[FUNCTION]" / "rp_garages"
 
 
@@ -79,6 +79,8 @@ def test_workshop_tuning_is_server_priced_and_persisted():
     assert "rp_garages:server:openWorkshop" in server
     assert "getOwnedDrivenVehicle" in server
     assert "Config.TuningCategories[modType]" in server
+    assert "originalIndex ~= savedIndex" in server
+    assert "Cette amélioration est déjà installée." in server
     assert "player.removeBank, price" in server
     assert "rp_garages:server:saveTune" in server
     assert "UPDATE rp_owned_vehicles SET vehicle_props = ?" in server
