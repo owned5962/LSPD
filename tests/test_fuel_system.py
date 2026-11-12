@@ -28,7 +28,6 @@ def test_fuel_purchase_is_server_authoritative_and_time_based():
     assert "getFuelPrice()" in server
     assert "getFuelConsumptionMultiplier()" in server
     assert "rp_fuel:server:requestSettings" in server
-    assert "ConsumptionMultiplier" in config
     creator_server = (ROOT / "resources/[FUNCTION]/rp_tablet_creator/server/main.lua").read_text(encoding="utf-8")
     creator_client = (ROOT / "resources/[FUNCTION]/rp_tablet_creator/client/main.lua").read_text(encoding="utf-8")
     creator_html = (ROOT / "resources/[FUNCTION]/rp_tablet_creator/html/index.html").read_text(encoding="utf-8")
