@@ -11,19 +11,77 @@ local function stopClothingCamera()
     clothingCamera = nil
 end
 
+local barberMode = false
+local barberSnapshot = nil
+local barberPromptVisible = false
+local activeBarberPosition = nil
+local barberShops = {
+    vector3(1211.3, -470.8, 66.2), vector3(-34.1, -152.0, 57.1),
+    vector3(-814.3, -183.8, 37.6), vector3(136.8, -1708.4, 29.3),
+    vector3(-1282.6, -1116.8, 6.0), vector3(1931.2, 3729.7, 32.8),
+    vector3(-278.1, 6227.0, 31.7)
+}
+
 local function updateClothingCamera()
     if not clothingCamera or not DoesCamExist(clothingCamera) then return end
     local ped = PlayerPedId()
-    local cameraCoords = GetOffsetFromEntityInWorldCoords(ped, 0.0, 2.8, 0.8)
+    local cameraCoords, targetZ
+    if barberMode then
+        -- Tight, stable head framing for hairstyle previews.
+        cameraCoords = GetOffsetFromEntityInWorldCoords(ped, 0.0, 1.35, 0.82)
+        targetZ = GetEntityCoords(ped).z + 0.78
+        SetCamFov(clothingCamera, 27.0)
+    else
+        cameraCoords = GetOffsetFromEntityInWorldCoords(ped, 0.0, 2.8, 0.8)
+        targetZ = GetEntityCoords(ped).z + 0.9
+        SetCamFov(clothingCamera, 42.0)
+    end
     SetCamCoord(clothingCamera, cameraCoords.x, cameraCoords.y, cameraCoords.z)
     local pedCoords = GetEntityCoords(ped)
     local right = GetEntityRightVector(ped)
-    -- Offset the camera's look-at point so the character sits in the left
-    -- preview area and is not hidden behind the tablet on the right.
     PointCamAtCoord(clothingCamera,
-        pedCoords.x + right.x * 0.55,
-        pedCoords.y + right.y * 0.55,
-        pedCoords.z + 0.9)
+        pedCoords.x + right.x * (barberMode and 0.0 or 0.55),
+        pedCoords.y + right.y * (barberMode and 0.0 or 0.55),
+        targetZ)
+end
+
+local function captureBarberAppearance()
+    local ped = PlayerPedId()
+    local hairColor, highlightColor = GetPedHairColor(ped)
+    return {
+        style = GetPedDrawableVariation(ped, 2),
+        color = tonumber(hairColor) or 0,
+        highlight = tonumber(highlightColor) or 0,
+        heading = GetEntityHeading(ped)
+    }
+end
+
+local function restoreBarberAppearance()
+    if not barberSnapshot then return end
+    local ped = PlayerPedId()
+    local count = GetNumberOfPedDrawableVariations(ped, 2) or 0
+    if barberSnapshot.style >= 0 and barberSnapshot.style < count then
+        SetPedComponentVariation(ped, 2, barberSnapshot.style, 0, 0)
+    end
+    SetPedHairColor(ped, barberSnapshot.color, barberSnapshot.highlight)
+    SetEntityHeading(ped, barberSnapshot.heading)
+    FreezeEntityPosition(ped, false)
+    barberSnapshot = nil
+end
+
+local function closeBarberMenu(restore)
+    if not barberMode then return end
+    if restore then restoreBarberAppearance()
+    else
+        FreezeEntityPosition(PlayerPedId(), false)
+        barberSnapshot = nil
+    end
+    barberMode = false
+    activeBarberPosition = nil
+    stopClothingCamera()
+    SetNuiFocus(false, false)
+    SendNUIMessage({ action = 'closeBarber' })
+    if barberPromptVisible then exports['rp_ui']:HideTextUI(); barberPromptVisible = false end
 end
 
 local function startClothingCamera()
@@ -69,6 +127,7 @@ end)
 
 AddEventHandler('onClientResourceStop', function(resourceName)
     if resourceName ~= GetCurrentResourceName() then return end
+    if barberMode then restoreBarberAppearance() end
     stopClothingCamera()
     if clothingPromptVisible then exports['rp_ui']:HideTextUI(); clothingPromptVisible = false end
     SetNuiFocus(false, false)
@@ -214,6 +273,111 @@ local function CaptureAppearance()
 end
 
 CreateThread(function()
+    for _, pos in ipairs(barberShops) do
+        local blip = AddBlipForCoord(pos.x, pos.y, pos.z)
+        SetBlipSprite(blip, 71)
+        SetBlipDisplay(blip, 4)
+        SetBlipScale(blip, 0.75)
+        SetBlipColour(blip, 4)
+        SetBlipAsShortRange(blip, true)
+        BeginTextCommandSetBlipName('STRING')
+        AddTextComponentString('Coiffeur')
+        EndTextCommandSetBlipName(blip)
+    end
+
+    while true do
+        local sleep = 750
+        if barberMode then
+            local ped = PlayerPedId()
+            if not activeBarberPosition or #(GetEntityCoords(ped) - activeBarberPosition) > 3.0 then
+                closeBarberMenu(true)
+            else
+                updateClothingCamera()
+                DisableControlAction(0, 30, true)
+                DisableControlAction(0, 31, true)
+                DisableControlAction(0, 21, true)
+                DisableControlAction(0, 22, true)
+                DisableControlAction(0, 24, true)
+                DisableControlAction(0, 25, true)
+                Wait(0)
+            end
+        elseif not isShopOpen and not IsPauseMenuActive() then
+            local coords = GetEntityCoords(PlayerPedId())
+            local nearest, distance
+            for _, pos in ipairs(barberShops) do
+                local current = #(coords - pos)
+                if not distance or current < distance then nearest, distance = pos, current end
+            end
+            if nearest and distance <= 1.5 then
+                sleep = 0
+                if not barberPromptVisible then
+                    exports['rp_ui']:ShowTextUI('[E] Changer de coupe')
+                    barberPromptVisible = true
+                end
+                if IsControlJustReleased(0, 38) then
+                    local ped = PlayerPedId()
+                    barberSnapshot = captureBarberAppearance()
+                    activeBarberPosition = nearest
+                    barberMode = true
+                    FreezeEntityPosition(ped, true)
+                    SetNuiFocus(true, true)
+                    startClothingCamera()
+                    SendNUIMessage({
+                        action = 'openBarber',
+                        style = barberSnapshot.style,
+                        color = barberSnapshot.color,
+                        highlight = barberSnapshot.highlight,
+                        styleCount = GetNumberOfPedDrawableVariations(ped, 2) or 0,
+                        colorCount = GetNumHairColors() or 64
+                    })
+                    exports['rp_ui']:HideTextUI()
+                    barberPromptVisible = false
+                end
+            elseif barberPromptVisible then
+                exports['rp_ui']:HideTextUI()
+                barberPromptVisible = false
+            end
+        elseif barberPromptVisible then
+            exports['rp_ui']:HideTextUI()
+            barberPromptVisible = false
+        end
+        Wait(sleep)
+    end
+end)
+
+RegisterNUICallback('previewHair', function(data, cb)
+    if not barberMode or type(data) ~= 'table' then cb({ ok = false }); return end
+    local ped = PlayerPedId()
+    local style = tonumber(data.style)
+    local color = tonumber(data.color)
+    local highlight = tonumber(data.highlight) or 0
+    local count = GetNumberOfPedDrawableVariations(ped, 2) or 0
+    local colors = GetNumHairColors() or 64
+    if not style or style % 1 ~= 0 or style < 0 or style >= count
+        or not color or color % 1 ~= 0 or color < 0 or color >= colors
+        or highlight % 1 ~= 0 or highlight < 0 or highlight >= colors then
+        cb({ ok = false })
+        return
+    end
+    SetPedComponentVariation(ped, 2, style, 0, 0)
+    SetPedHairColor(ped, color, highlight)
+    cb({ ok = true })
+end)
+
+RegisterNUICallback('purchaseHair', function(data, cb)
+    if not barberMode then cb({ ok = false }); return end
+    local appearance = captureBarberAppearance()
+    TriggerServerEvent('rp_clothing:purchaseHair', appearance.style, appearance.color, appearance.highlight)
+    cb({ ok = true })
+end)
+
+RegisterNetEvent('rp_clothing:barberPurchaseResult', function(result)
+    if type(result) ~= 'table' then return end
+    SendNUIMessage({ action = 'barberPurchaseResult', success = result.success == true, message = tostring(result.message or '') })
+    if result.success == true then closeBarberMenu(false) end
+end)
+
+CreateThread(function()
     for _, pos in ipairs(clothingShops) do
         local blip = AddBlipForCoord(pos.x, pos.y, pos.z)
         SetBlipSprite(blip, 73)
@@ -285,6 +449,11 @@ end)
 RegisterNUICallback('applyPreset', function(data, cb)
     local ok = type(data) == 'table' and ApplyPreset(data.outfit)
     cb({ status = ok and 'ok' or 'invalid_preset' })
+end)
+
+RegisterNUICallback('closeBarber', function(_, cb)
+    closeBarberMenu(true)
+    cb({ ok = true })
 end)
 
 RegisterNUICallback('close', function(data, cb)
