@@ -136,7 +136,7 @@ local function UnregisterPlayer(source, expectedIdentifier)
     if not player then return false end
     if expectedIdentifier and player.identifier ~= expectedIdentifier then return false end
     Players[src] = nil
-    TriggerEvent('rp_core:server:playerUnloaded', src, player)
+    TriggerEvent('rp_core:server:playerUnloaded', src, ClonePlayerRecord(player))
     return true
 end
 
@@ -262,7 +262,7 @@ end)
     player.isLoaded = true
     player.name = tostring(player.firstname or '') .. ' ' .. tostring(player.lastname or '')
     Players[src] = player
-    TriggerEvent('rp_core:server:playerLoaded', src, player)
+    TriggerEvent('rp_core:server:playerLoaded', src, ClonePlayerRecord(player))
     return true
 end
 
