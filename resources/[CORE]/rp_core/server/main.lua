@@ -61,8 +61,36 @@ function GetPlayerByIdentifier(identifier)
 end
 
 function GetAllPlayers()
-    return Players
+    local snapshot = {}
+    for source, player in pairs(Players) do
+        snapshot[source] = player
+    end
+    return snapshot
 end
+
+local function RegisterPlayer(source, player)
+    local src = tonumber(source)
+    if not src or src < 1 or not GetPlayerName(src) or type(player) ~= 'table'
+        or tonumber(player.source) ~= src or type(player.identifier) ~= 'string'
+        or player.identifier == '' or not tonumber(player.charId) or tonumber(player.charId) < 1 then
+        return false
+    end
+    if Players[src] then return false end
+
+    for activeSource, activePlayer in pairs(Players) do
+        if activeSource ~= src and activePlayer.identifier == player.identifier then
+            return false
+        end
+    end
+
+    player.isLoaded = true
+    player.name = tostring(player.firstname or '') .. ' ' .. tostring(player.lastname or '')
+    Players[src] = player
+    TriggerEvent('rp_core:server:playerLoaded', src, player)
+    return true
+end
+
+exports('RegisterPlayer', RegisterPlayer)
 
 -- Backward-compatible alias used by older resources.
 exports('GetPlayer', GetPlayerFromId)
