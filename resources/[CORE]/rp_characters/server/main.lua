@@ -165,7 +165,8 @@ end
 RegisterNetEvent('rp_characters:server:checkPlayer', function()
     local src = source
     if not exports['rp_core']:CanPerformAction(src, 'character:check_player', 5000) then
-        TriggerClientEvent('rp_characters:client:bootError', src, 'Une demande de chargement est déjà en cours. Reconnectez-vous si le problème persiste.')
+        -- Duplicate bootstrap requests are expected when core and character
+        -- resources start together. Ignore them instead of showing a false error.
         return
     end
     local identifier = GetLicenseIdentifier(src)
