@@ -85,6 +85,22 @@ def test_inventory_is_preloaded_from_core_player_lifecycle_and_saved_on_unload()
     assert "Default inventory could not be persisted" in inventory
     assert "Disconnect save failed" not in inventory
 
+def test_job_duty_is_shared_with_the_authoritative_player_record():
+    core_server = (CORE / "server/main.lua").read_text(encoding="utf-8")
+    core_player = (CORE / "server/player.lua").read_text(encoding="utf-8")
+    core_client = (CORE / "client/main.lua").read_text(encoding="utf-8")
+    job_folders = sorted(path for path in JOBS.iterdir() if path.is_dir() and path.name.startswith("job_"))
+
+    assert "exports('SetPlayerDuty', SetPlayerDuty)" in core_server
+    assert "player.duty = status" in core_server
+    assert "RegisterNetEvent('rp_core:client:setDuty'" in core_client
+    assert "self.duty = false" in core_player
+    assert "self.job, self.jobGrade, self.duty = jobName, grade, false" in core_player
+
+    for job in job_folders:
+        server = (job / "server/main.lua").read_text(encoding="utf-8")
+        assert "SetPlayerDuty(src, status, Config.Job)" in server, f"{job.name} does not sync duty to rp_core"
+
 
 if __name__ == "__main__":
     test_server_player_registry_only_exposes_fully_loaded_characters()
@@ -93,4 +109,5 @@ if __name__ == "__main__":
     test_job_resources_do_not_load_unused_mysql_driver()
     test_core_restart_requests_a_safe_character_bootstrap()
     test_inventory_is_preloaded_from_core_player_lifecycle_and_saved_on_unload()
+    test_job_duty_is_shared_with_the_authoritative_player_record()
     print("Player session and SQL dependency checks passed.")
