@@ -4,6 +4,7 @@ local examVehicle
 local currentCheckpoint = 0
 local checkpointCount = 0
 local activeCategory
+local activeCheckpoints
 
 local function notify(message, kind)
     TriggerEvent('rp_core:client:notify', message, kind or 'info')
