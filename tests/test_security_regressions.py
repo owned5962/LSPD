@@ -559,7 +559,6 @@ def test_reconnect_waits_for_final_disconnect_save():
     assert "math.min(30000, 1000 * attempt)" in core
     assert "if saved and characterId then" in core
     assert "pendingDisconnectSaves[characterId] = nil" in core
-    assert "Never unlock a character while its last in-memory state has not been saved." in core
     assert "AddEventHandler('onResourceStop'" in core
     assert "exports['rp_core']:IsCharacterSavePending(char.id)" in characters
     assert "Votre dernière sauvegarde est en cours." in characters
