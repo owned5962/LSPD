@@ -106,8 +106,8 @@ def test_anticheat_tablet_javascript_is_not_duplicated_or_corrupted():
     assert "function renderPlayerDetail()" in ui
     assert "function renderLogs()" in ui
     assert "detailCell.colSpan = 6" in ui
-    assert "snapshot.cash == null" in ui
-    assert "snapshot.bank == null" in ui
+    assert "data.cash == null" in ui
+    assert "data.bank == null" in ui
     assert "const panel = $('player-detail');" in ui
     assert "+ Number(snapshot.cash)" not in ui
     assert "+ Number(snapshot.bank)" not in ui
