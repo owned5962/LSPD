@@ -9,13 +9,25 @@ local function notify(src, message, kind)
     end
 end
 
+local function sendPurchaseFailure(src, message, netId)
+    if src and GetPlayerName(src) then
+        TriggerClientEvent('rp_fuel:client:purchaseResult', src, false,
+            tostring(message or 'Paiement refusé.'), tonumber(netId) or 0)
+    end
+end
+
 local function isAtStation(coords)
     local ok, stations = pcall(function()
         return exports['rp_businesses']:GetLocationsByType('gas_station')
     end)
-    if not ok or type(stations) ~= 'table' then return false end
+    if not ok or type(stations) ~= 'table' or #stations == 0 then
+        stations = FuelConfig.Stations or {}
+    end
+
     for _, station in ipairs(stations) do
-        if #(coords - vector3(station.x, station.y, station.z)) <= FuelConfig.StationRadius then
+        local x, y, z = tonumber(station.x), tonumber(station.y), tonumber(station.z)
+        if x and y and z
+            and #(coords - vector3(x, y, z)) <= (tonumber(FuelConfig.StationRadius) or 22.0) then
             return true
         end
     end
@@ -148,20 +160,24 @@ end
 
 RegisterNetEvent('rp_fuel:server:purchase', function(rawNetId, rawLitres, payment)
     local src = source
-    if not exports['rp_core']:CanPerformAction(src, 'fuel:purchase', 1500) then return end
+    local netId = tonumber(rawNetId)
+    if not exports['rp_core']:CanPerformAction(src, 'fuel:purchase', 1500) then
+        sendPurchaseFailure(src, 'Patientez avant de renouveler votre demande.', netId)
+        return
+    end
 
-    local litres, netId = tonumber(rawLitres), tonumber(rawNetId)
+    local litres = tonumber(rawLitres)
     if not litres or litres % 1 ~= 0 or litres < 1 or litres > 100
         or not netId or netId < 1 or netId % 1 ~= 0 then
-        notify(src, 'Quantité de carburant ou véhicule invalide.')
+        sendPurchaseFailure(src, 'Quantité de carburant ou véhicule invalide.', netId)
         return
     end
     if not validPayment(payment) then
-        notify(src, 'Moyen de paiement invalide.')
+        sendPurchaseFailure(src, 'Moyen de paiement invalide.', netId)
         return
     end
     if pendingRefuels[netId] then
-        notify(src, 'Ce véhicule est déjà en cours de ravitaillement.', 'warning')
+        sendPurchaseFailure(src, 'Ce véhicule est déjà en cours de ravitaillement.', netId)
         return
     end
 
@@ -170,28 +186,27 @@ RegisterNetEvent('rp_fuel:server:purchase', function(rawNetId, rawLitres, paymen
     local vehicle = NetworkGetEntityFromNetworkId(netId)
     if not player or not ped or ped == 0 or not DoesEntityExist(ped)
         or not vehicle or vehicle == 0 or not DoesEntityExist(vehicle) then
-        notify(src, 'Véhicule ou personnage introuvable.')
+        sendPurchaseFailure(src, 'Véhicule ou personnage introuvable.', netId)
         return
     end
 
     local playerCoords, vehicleCoords = GetEntityCoords(ped), GetEntityCoords(vehicle)
     if not isAtStation(playerCoords) or not isAtStation(vehicleCoords)
         or #(playerCoords - vehicleCoords) > FuelConfig.VehiclePlayerRadius then
-        notify(src, 'Placez votre véhicule près d’une pompe pour faire le plein.')
+        sendPurchaseFailure(src, 'Placez votre véhicule près d’une pompe pour faire le plein.', netId)
         return
     end
 
-    -- The authoritative fuel value is maintained by this server resource.
-    -- Entity state bags are only replicated to clients; they are not trusted as input.
     local currentFuel = initializeVehicleFuel(vehicle, false)
     if type(currentFuel) ~= 'number' or currentFuel ~= currentFuel
         or currentFuel < 0 or currentFuel > 100 then
-        notify(src, 'Niveau de carburant serveur invalide. Réessayez plus tard.')
+        sendPurchaseFailure(src, 'Niveau de carburant serveur invalide. Réessayez plus tard.', netId)
         return
     end
     local availableLitres = math.max(0, math.floor(100 - currentFuel))
     if litres > availableLitres then
-        notify(src, ('Le réservoir ne peut recevoir que %d L supplémentaires.'):format(availableLitres))
+        sendPurchaseFailure(src,
+            ('Le réservoir ne peut recevoir que %d L supplémentaires.'):format(availableLitres), netId)
         return
     end
 
@@ -199,13 +214,13 @@ RegisterNetEvent('rp_fuel:server:purchase', function(rawNetId, rawLitres, paymen
     local account = payment == 'auto' and (player.cash >= amount and 'cash' or 'bank') or payment
     local balance = account == 'cash' and player.cash or player.bank
     if balance < amount then
-        notify(src, ('Fonds insuffisants : %d $ nécessaires.'):format(amount))
+        sendPurchaseFailure(src, ('Fonds insuffisants : %d $ nécessaires.'):format(amount), netId)
         return
     end
 
     local locks = { player.charId }
     if not exports['rp_core']:AcquireCharacterLock(locks) then
-        notify(src, 'Votre compte est occupé. Réessayez dans un instant.', 'warning')
+        sendPurchaseFailure(src, 'Votre compte est occupé. Réessayez dans un instant.', netId)
         return
     end
 
@@ -216,7 +231,7 @@ RegisterNetEvent('rp_fuel:server:purchase', function(rawNetId, rawLitres, paymen
     exports['rp_core']:ReleaseCharacterLock(locks)
 
     if not ok or tonumber(affected) ~= 1 then
-        notify(src, 'Paiement refusé : solde insuffisant ou base de données indisponible.')
+        sendPurchaseFailure(src, 'Paiement refusé : solde insuffisant ou base de données indisponible.', netId)
         return
     end
 
