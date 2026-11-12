@@ -73,3 +73,25 @@ def test_atm_blips_are_only_created_after_a_real_gta_atm_prop_is_found():
 if __name__ == "__main__":
     test_atm_blips_are_only_created_after_a_real_gta_atm_prop_is_found()
     print("ATM prop verification checks passed.")
+
+def test_barber_shops_open_dedicated_live_hair_preview_and_restore_on_cancel():
+    client = (ROOT / "resources/[FUNCTION]/rp_clothing/client/main.lua").read_text(encoding="utf-8")
+    server = (ROOT / "resources/[FUNCTION]/rp_clothing/server/main.lua").read_text(encoding="utf-8")
+    html = (ROOT / "resources/[FUNCTION]/rp_clothing/html/index.html").read_text(encoding="utf-8")
+    ui = (ROOT / "resources/[FUNCTION]/rp_clothing/html/js/app.js").read_text(encoding="utf-8")
+    assert "barberShops" in client and "'[E] Changer de coupe'" in client
+    assert "FreezeEntityPosition(ped, true)" in client
+    assert "GetOffsetFromEntityInWorldCoords(ped, 0.0, 1.35, 0.82)" in client
+    assert "RegisterNUICallback('previewHair'" in client
+    assert "SetPedComponentVariation(ped, 2, style, 0, 0)" in client
+    assert "RegisterNUICallback('closeBarber'" in client
+    assert "restoreBarberAppearance()" in client
+    assert "RegisterNetEvent('rp_clothing:purchaseHair'" in server
+    assert "player.removeCash(price)" in server
+    assert "UPDATE characters SET skin = ?" in server
+    assert "player.addCash(price)" in server
+    assert 'id="barber-panel"' in html
+    assert "openBarber" in ui and "previewHair" in ui and "purchaseHair" in ui
+    assert "barberActive" in ui
+
+
