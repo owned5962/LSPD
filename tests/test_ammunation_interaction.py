@@ -49,7 +49,7 @@ def test_inventory_contains_melee_weapons_and_mp5_item():
         "weapon_golfclub", "weapon_knuckle", "weapon_machete", "weapon_flashlight",
         "weapon_bottle", "weapon_dagger", "weapon_hatchet", "weapon_switchblade",
         "weapon_poolcue", "weapon_wrench", "weapon_battleaxe", "weapon_stone_hatchet",
-        "weapon_mp5"
+        "weapon_mp5", "weapon_nightstick", "weapon_candycane"
     ):
         assert f"['{item}']" in config
 
@@ -59,4 +59,15 @@ if __name__ == "__main__":
     test_ammunation_server_checks_same_shared_points_as_client_blips()
     test_ammunation_open_and_purchase_use_the_same_proximity_validation()
     test_inventory_contains_melee_weapons_and_mp5_item()
+
+
+def test_weapon_items_can_be_equipped_and_persisted():
+    server = (ROOT / "resources/[FUNCTION]/rp_inventory/server/main.lua").read_text(encoding="utf-8")
+    client = (ROOT / "resources/[FUNCTION]/rp_inventory/client/main.lua").read_text(encoding="utf-8")
+    assert "itemDef.type == 'weapon'" in server
+    assert "exports['rp_anticheat']:IsWeaponAllowed(weaponName)" in server
+    assert "MySQL.transaction.await" in server
+    assert "metadata.weapons[#metadata.weapons + 1]" in server
+    assert "rp_inventory:client:giveWeapon" in server
+    assert "RegisterNetEvent('rp_inventory:client:giveWeapon'" in client
     print("Ammu-Nation interaction checks passed.")
