@@ -113,7 +113,7 @@ local function completeRefuel(netId, pending)
         netId, pending.newFuel)
 end
 
-RegisterNetEvent('rp_fuel:server:purchase', function(rawNetId, rawLitres, payment, rawCurrentFuel)
+RegisterNetEvent('rp_fuel:server:purchase', function(rawNetId, rawLitres, payment)
     local src = source
     if not exports['rp_core']:CanPerformAction(src, 'fuel:purchase', 1500) then return end
 
@@ -148,13 +148,13 @@ RegisterNetEvent('rp_fuel:server:purchase', function(rawNetId, rawLitres, paymen
         return
     end
 
+    -- Fuel is read only from the replicated vehicle state. Never accept a client
+    -- fallback value: a modified client could otherwise request a free refill.
     local currentFuel = tonumber(Entity(vehicle).state.rpFuel)
-    if currentFuel == nil then currentFuel = tonumber(rawCurrentFuel) end
-    if not currentFuel or currentFuel ~= currentFuel then
-        notify(src, 'Impossible de lire le niveau de carburant du véhicule.')
+    if not currentFuel or currentFuel ~= currentFuel or currentFuel < 0 or currentFuel > 100 then
+        notify(src, 'Niveau de carburant non synchronisé ou invalide. Fermez puis rouvrez la pompe.')
         return
     end
-    currentFuel = math.max(0, math.min(100, currentFuel))
     local availableLitres = math.max(0, math.floor(100 - currentFuel))
     if litres > availableLitres then
         notify(src, ('Le réservoir ne peut recevoir que %d L supplémentaires.'):format(availableLitres))
