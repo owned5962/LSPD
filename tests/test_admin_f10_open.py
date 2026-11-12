@@ -11,7 +11,8 @@ def test_f10_key_mapping_and_manual_commands_are_registered():
     assert "RegisterKeyMapping('rp_admin_tablet_toggle', 'Ouvrir la Tablette Admin', 'keyboard', 'F10')" in client
     assert "RegisterCommand('admin', ToggleAdminTablet, false)" in client
     assert "RegisterCommand('adminmenu', ToggleAdminTablet, false)" in client
-    assert "weaponName:match('^WEAPON_[A-Z0-9_]+$')" in client
+    assert "local WEAPON_NAME_PATTERN = [[^WEAPON_[A-Z0-9_]+$]]" in client
+    assert "weaponName:match(WEAPON_NAME_PATTERN)" in client
     assert client.count("RegisterNetEvent('rp_tablet_admin:client:heal'") == 1
     assert not any(line.strip() == ") then return end" for line in client.splitlines())
 
