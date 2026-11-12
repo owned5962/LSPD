@@ -1,4 +1,5 @@
 local isTabletOpen = false
+local isAdminOpening = false
 local lastAdminToggleAt = 0
 local tabletEntity = nil
 local tabletDict = 'amb@code_human_in_bus_passenger_idles@female@tablet@base'
@@ -53,17 +54,27 @@ function CloseAdminTablet()
     end
     local wasOpen = isTabletOpen
     isTabletOpen = false
+    isAdminOpening = false
     SetNuiFocus(false, false)
     SendNUIMessage({ action = 'closeTablet' })
     if wasOpen then StopTabletAnimation() end
 end
 
 function OpenAdminTablet()
+    if isAdminOpening or isTabletOpen then return end
+    isAdminOpening = true
     TriggerServerEvent('rp_tablet_admin:server:requestOpen')
+    SetTimeout(7000, function()
+        if isAdminOpening and not isTabletOpen then
+            isAdminOpening = false
+            Notify('La tablette administrateur ne répond pas. Vérifiez les permissions et la console serveur.', 'error')
+        end
+    end)
 end
 
 
 RegisterNetEvent('rp_tablet_admin:client:openAuthorized', function(adminData, playersList, jobsList, frozenPlayers, itemCatalog, weaponPolicy)
+    isAdminOpening = false
     isTabletOpen = true
     StartTabletAnimation()
     SetNuiFocus(true, true)
@@ -78,10 +89,16 @@ RegisterNetEvent('rp_tablet_admin:client:openAuthorized', function(adminData, pl
     })
 end)
 
+RegisterNetEvent('rp_tablet_admin:client:openDenied', function(message)
+    isAdminOpening = false
+    Notify(tostring(message or 'Ouverture de la tablette administrateur refusée.'), 'error')
+end)
+
 local function ToggleAdminTablet()
     local now = GetGameTimer()
     if lastAdminToggleAt > 0 and now - lastAdminToggleAt < 500 then return end
     lastAdminToggleAt = now
+    if isAdminOpening then return end
 
     if isAdminSpectating then
         TriggerServerEvent('rp_tablet_admin:server:stopSpectate')
@@ -363,6 +380,7 @@ end)
 AddEventHandler('onClientResourceStart', function(resourceName)
     if resourceName ~= GetCurrentResourceName() then return end
     isTabletOpen = false
+    isAdminOpening = false
     SetNuiFocus(false, false)
     SendNUIMessage({ action = 'closeTablet' })
 end)
