@@ -986,3 +986,7 @@ button:disabled {
     .admin-subnav-btn { padding: 8px 10px; font-size: 10px; }
     .directory-list { grid-template-columns: 1fr; }
 }
+
+.report-action{border:1px solid var(--border-dark);border-radius:7px;padding:7px 9px;margin:2px;background:#171720;color:#f8fafc;font-size:9px;font-weight:800;cursor:pointer}
+.report-action:hover{border-color:#ef4444}.report-resolve{color:#86efac}.report-reject{color:#fda4af}
+#report-open-count{display:inline-flex;min-width:17px;justify-content:center;border-radius:20px;padding:2px 5px;background:rgba(239,68,68,.18);color:#fca5a5;font-size:9px}
