@@ -1,4 +1,4 @@
-const resource = 'rp_clothing';
+const NUI_RESOURCE = 'rp_clothing';
 let catalog = [];
 let activeCategory = null;
 
@@ -7,7 +7,7 @@ const categoryIcons = {
     bags:'fa-bag-shopping', accessories:'fa-link', decals:'fa-stamp', vests:'fa-shield-halved',
     hats:'fa-hat-cowboy', glasses:'fa-glasses', ears:'fa-gem', watches:'fa-clock', bracelets:'fa-ring'
 };
-const post = (name, data = {}) => fetch(`https://${resource}/${name}`, {
+const post = (name, data = {}) => fetch(`https://${NUI_RESOURCE}/${name}`, {
     method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)
 });
 
