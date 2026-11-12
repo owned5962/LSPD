@@ -49,6 +49,7 @@ Config.DefaultItems = {
     ['car_battery'] = { label = 'Batterie automobile', weight = 4.0, type = 'item', icon = 'fas fa-car-battery' },
 
     -- Armes de corps à corps : objets d'inventaire distincts des armes à feu.
+    ['weapon_pistol'] = { label = 'Pistolet standard', weight = 1.2, type = 'weapon', weapon = 'WEAPON_PISTOL', icon = 'fas fa-gun' },
     ['weapon_knife'] = { label = 'Couteau', weight = 0.4, type = 'weapon', weapon = 'WEAPON_KNIFE', icon = 'fas fa-knife' },
     ['weapon_nightstick'] = { label = 'Matraque', weight = 0.8, type = 'weapon', weapon = 'WEAPON_NIGHTSTICK', icon = 'fas fa-baton' },
     ['weapon_bat'] = { label = 'Batte de baseball', weight = 1.2, type = 'weapon', weapon = 'WEAPON_BAT', icon = 'fas fa-baseball-bat-ball' },
