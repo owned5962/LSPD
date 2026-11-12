@@ -170,3 +170,25 @@ body { position: relative; overflow: hidden; color: var(--text); background: #07
 @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition: none !important; }
 }
+
+
+/* Keyboard shortcuts displayed during loading. */
+.keybind-strip {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:18px;
+    margin:16px 0 20px;
+    padding:14px 18px;
+    border:1px solid rgba(148,163,184,.18);
+    border-radius:14px;
+    background:linear-gradient(120deg,rgba(15,23,42,.82),rgba(15,23,42,.45));
+}
+.keybind-heading { display:flex; flex-direction:column; gap:4px; flex:0 0 auto; }
+.keybind-heading small { color:#7dd3fc; font-size:9px; font-weight:800; letter-spacing:1.4px; }
+.keybind-heading strong { color:#f8fafc; font-size:12px; }
+.keybind-list { display:flex; align-items:center; justify-content:flex-end; flex-wrap:wrap; gap:10px 16px; }
+.keybind-item { display:flex; align-items:center; gap:7px; color:#cbd5e1; font-size:10px; white-space:nowrap; }
+.keybind-item kbd { min-width:32px; padding:5px 7px; border:1px solid rgba(125,211,252,.35); border-bottom-width:2px; border-radius:6px; background:rgba(14,165,233,.12); color:#bae6fd; text-align:center; font:800 10px 'JetBrains Mono',monospace; }
+@media(max-width:900px) { .keybind-strip { align-items:flex-start; flex-direction:column; } .keybind-list { justify-content:flex-start; } }
+@media(max-width:560px) { .keybind-list { display:grid; grid-template-columns:1fr 1fr; width:100%; } .keybind-item { white-space:normal; } }
