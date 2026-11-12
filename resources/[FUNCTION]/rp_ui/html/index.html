@@ -14,19 +14,32 @@
         </div>
     </div>
 
-    <!-- Persistent player HUD -->
-    <div id="hud-job-panel" class="hidden" aria-live="off">
-        <span class="hud-job-icon"><i class="fa-solid fa-id-badge"></i></span>
-        <div><strong id="hud-job">Sans-emploi</strong><small id="hud-grade">Citoyen</small></div>
-    </div>
-
+    <!-- Barre de statut : jauges circulaires et niveau de permission -->
     <div id="player-hud" class="hidden" aria-live="off">
         <div class="hud-vitals">
-            <div class="hud-vital-circle hunger-circle" id="hud-hunger-circle" style="--progress:100%">
-                <div class="hud-circle-inner"><i class="fa-solid fa-utensils"></i><b id="hud-hunger">100%</b></div>
+            <div class="hud-status-item">
+                <div class="hud-vital-circle hunger-circle" id="hud-hunger-circle" style="--progress:100%">
+                    <div class="hud-circle-inner"><i class="fa-solid fa-utensils"></i><b id="hud-hunger">100%</b></div>
+                </div>
+                <span class="hud-status-label">FAIM</span>
             </div>
-            <div class="hud-vital-circle thirst-circle" id="hud-thirst-circle" style="--progress:100%">
-                <div class="hud-circle-inner"><i class="fa-solid fa-droplet"></i><b id="hud-thirst">100%</b></div>
+            <div class="hud-status-item">
+                <div class="hud-vital-circle thirst-circle" id="hud-thirst-circle" style="--progress:100%">
+                    <div class="hud-circle-inner"><i class="fa-solid fa-droplet"></i><b id="hud-thirst">100%</b></div>
+                </div>
+                <span class="hud-status-label">SOIF</span>
+            </div>
+            <div class="hud-status-item">
+                <div class="hud-vital-circle stamina-circle" id="hud-stamina-circle" style="--progress:100%">
+                    <div class="hud-circle-inner"><i class="fa-solid fa-person-running"></i><b id="hud-stamina">100%</b></div>
+                </div>
+                <span class="hud-status-label">ENDURANCE</span>
+            </div>
+            <div class="hud-status-item">
+                <div class="hud-vital-circle admin-circle" id="hud-admin-circle" data-level="0">
+                    <div class="hud-circle-inner"><b id="hud-admin-level">0</b></div>
+                </div>
+                <span class="hud-status-label">ADMIN</span>
             </div>
         </div>
     </div>
