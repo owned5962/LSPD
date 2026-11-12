@@ -56,3 +56,12 @@
     .creator-admin-grid { grid-template-columns:1fr; }
     .tablet-access { grid-template-columns:1fr; }
 }
+
+
+.creator-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 18px;padding:8px;background:#0b1220;border:1px solid #26354a;border-radius:12px}
+.creator-tab{flex:1;min-width:150px;border:1px solid transparent;border-radius:8px;padding:11px 14px;background:transparent;color:#9fb0c5;font-weight:700;cursor:pointer}
+.creator-tab:hover{background:#17253a;color:#fff}
+.creator-tab.active{background:#1d4ed8;color:#fff;border-color:#60a5fa}
+[data-tab-panel][hidden]{display:none!important}
+.fuel-settings{margin-top:18px;padding-top:14px;border-top:1px solid #26354a}
+.fuel-settings small{display:block;color:#94a3b8;line-height:1.5;margin:8px 0}
