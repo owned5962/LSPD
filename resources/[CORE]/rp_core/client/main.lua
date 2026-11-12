@@ -14,10 +14,25 @@ PlayerData = {
     thirst = 100
 }
 
+local playerDataReady = false
+
+local function IsPlayerLoaded()
+    local characterId = tonumber(PlayerData.charId)
+    return playerDataReady == true and characterId ~= nil and characterId > 0
+end
+
 RegisterNetEvent('rp_core:client:setPlayerData', function(data)
+    if type(data) ~= 'table' then
+        print('[rp_core] Ignored invalid player-data synchronization payload.')
+        return
+    end
+
     for k, v in pairs(data) do
         PlayerData[k] = v
     end
+
+    local characterId = tonumber(PlayerData.charId)
+    playerDataReady = characterId ~= nil and characterId > 0
 end)
 
 RegisterNetEvent('rp_core:client:updateCash', function(amount)
@@ -37,6 +52,36 @@ end)
 
 exports('GetPlayerData', function()
     return PlayerData
+end)
+
+exports('IsPlayerLoaded', IsPlayerLoaded)
+
+-- Wait briefly for the authoritative server synchronization instead of
+-- showing a false "character not loaded" message during resource restarts.
+exports('WaitForPlayerLoaded', function(timeoutMs)
+    local timeout = math.max(0, math.min(15000, tonumber(timeoutMs) or 5000))
+    local deadline = GetGameTimer() + timeout
+    while not IsPlayerLoaded() and GetGameTimer() < deadline do
+        Wait(100)
+    end
+    return IsPlayerLoaded()
+end)
+
+AddEventHandler('onClientResourceStart', function(resourceName)
+    if resourceName ~= GetCurrentResourceName() then return end
+    CreateThread(function()
+        -- rp_core may be restarted while the character remains active server-side.
+        -- Re-request the existing server-owned player data rather than leaving
+        -- this client permanently stuck with the empty startup table.
+        for attempt = 1, 10 do
+            if IsPlayerLoaded() then return end
+            TriggerServerEvent('rp_core:server:requestPlayerDataSync')
+            Wait(1000)
+        end
+        if not IsPlayerLoaded() then
+            print('[rp_core] Player data was not restored; the server has no active character session for this client.')
+        end
+    end)
 end)
 
 RegisterNetEvent('rp_core:client:updateNeeds', function(hunger, thirst)
