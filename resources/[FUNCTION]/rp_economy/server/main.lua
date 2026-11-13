@@ -73,6 +73,10 @@ local function requireAuthenticatedSession(src, allowATM)
     return true
 end
 
+exports('IsBankSessionAuthenticated', function(src)
+    return requireAuthenticatedSession(tonumber(src), false) == true
+end)
+
 RegisterNetEvent('rp_economy:server:authenticate', function()
     local src = source
     -- Validate the actual terminal location before consuming the anti-spam cooldown.
