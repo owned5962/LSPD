@@ -319,7 +319,7 @@ function renderCreatorAdminData(data) {
     const fuelPrice = document.getElementById('creator-fuel-price');
     const fuelConsumption = document.getElementById('creator-fuel-consumption');
     if (fuelPrice && data.settings) fuelPrice.value = Number(data.settings.fuelPrice || 6);
-    if (fuelConsumption && data.settings) fuelConsumption.value = Number(data.settings.fuelConsumption || 2.5);
+    if (fuelConsumption && data.settings) fuelConsumption.value = Number(data.settings.fuelConsumption || 3.5);
 
     const playerSelect = document.getElementById('creator-player');
     const selectedId = playerSelect.value;
