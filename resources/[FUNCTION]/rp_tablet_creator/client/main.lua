@@ -44,6 +44,12 @@ RegisterNetEvent('rp_tablet_creator:client:open', function(role)
     TriggerServerEvent('rp_tablet_creator:server:requestAdminTools')
     TriggerServerEvent('rp_tablet_creator:server:requestOrganizations')
     TriggerServerEvent('rp_tablet_creator:server:requestJobBankData')
+    TriggerServerEvent('rp_tablet_creator:server:requestWeaponPolicy')
+end)
+
+RegisterNUICallback('saveWeaponPolicy', function(data, cb)
+    TriggerServerEvent('rp_tablet_creator:server:saveWeaponPolicy', data and data.policy)
+    cb({ ok = true })
 end)
 
 RegisterNUICallback('close', function(_, cb)
@@ -287,4 +293,15 @@ AddEventHandler('onClientResourceStop', function(resourceName)
     if resourceName ~= GetCurrentResourceName() then return end
     isOpen = false
     SetNuiFocus(false, false)
+end)
+
+
+RegisterNetEvent('rp_tablet_creator:client:weaponPolicyData', function(policy)
+    SendNUIMessage({ action = 'weaponPolicyData', weaponPolicy = policy or {} })
+end)
+RegisterNetEvent('rp_tablet_creator:client:weaponPolicySaved', function(policy)
+    SendNUIMessage({ action = 'weaponPolicySaved', weaponPolicy = policy or {} })
+end)
+RegisterNetEvent('rp_tablet_creator:client:weaponPolicySaveFailed', function(message)
+    SendNUIMessage({ action = 'weaponPolicySaveFailed', message = tostring(message or 'Enregistrement impossible.') })
 end)
