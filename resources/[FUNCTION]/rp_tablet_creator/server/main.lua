@@ -878,7 +878,7 @@ local function GetCreatorSettings()
         name = GetConvar('sv_hostname', 'Los Santos Stories'),
         slots = GetConvarInt('sv_maxclients', 64),
         fuelPrice = GetConvarInt('rp_fuel_price_per_litre', 6),
-        fuelConsumption = tonumber(GetConvar('rp_fuel_consumption_multiplier', '2.5')) or 2.5
+        fuelConsumption = tonumber(GetConvar('rp_fuel_consumption_multiplier', '3.5')) or 3.5
     }
     local ok, rows = pcall(MySQL.query.await, 'SELECT setting_key, setting_value FROM rp_creator_settings')
     if ok then
