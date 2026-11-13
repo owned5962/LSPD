@@ -86,9 +86,11 @@ def test_job_transaction_updates_live_cash_before_releasing_character_lock():
     start = service.index("local function transact(")
     end = service.index("RegisterNetEvent('rp_jobbank:server:deposit'", start)
     transaction = service[start:end]
-    assert transaction.index("player.cash = player.cash - amount") < transaction.index("ReleaseCharacterLock(lockIds)")
-    assert transaction.index("player.cash = player.cash + amount") < transaction.index("ReleaseCharacterLock(lockIds)")
+    release_lock = transaction.rindex("ReleaseCharacterLock(lockIds)")
+    assert transaction.index("player.cash = player.cash - amount") < release_lock
+    assert transaction.index("player.cash = player.cash + amount") < release_lock
     assert transaction.index("if not sqlOk or not tonumber(affected)") < transaction.index("ReleaseCharacterLock(lockIds)")
+    assert "Keep the character lock until the in-memory player record reflects" in transaction
 
 if __name__ == "__main__":
     checks = [
