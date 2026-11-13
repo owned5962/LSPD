@@ -1,4 +1,5 @@
 local JobsMap = {}
+local CustomJobsMap = {}
 
 for _, job in ipairs(JobsList) do
     JobsMap[job.name] = job
@@ -31,13 +32,13 @@ exports('IsValidJob', IsValidJob)
 exports('GetJobGrade', GetJobGrade)
 exports('GetAllJobs', GetAllJobs)
 
-local function normalizeCustomJob(raw)
+local function normalizeCustomJob(raw, allowExistingName)
     if type(raw) ~= 'table' then return nil, 'Données invalides.' end
     local name = type(raw.name) == 'string' and raw.name:lower() or ''
     local label = type(raw.label) == 'string' and raw.label:gsub('[%c<>]', ' '):sub(1, 64) or ''
     local description = type(raw.description) == 'string' and raw.description:gsub('[%c<>]', ' '):sub(1, 255) or ''
     local category = type(raw.category) == 'string' and raw.category:lower() or 'custom'
-    if #name < 3 or #name > 40 or name:match('^[a-z][a-z0-9_]+') ~= name or name == 'unemployed' or JobsMap[name] then
+    if #name < 3 or #name > 40 or name:match('^[a-z][a-z0-9_]+') ~= name or name == 'unemployed' or (JobsMap[name] and name ~= allowExistingName) then
         return nil, 'Identifiant invalide ou déjà utilisé.'
     end
     if #label < 2 or #description < 3 or #category > 32 or category:match('^[a-z][a-z0-9_]+') ~= category then
@@ -61,10 +62,29 @@ end
 local function RegisterRuntimeJob(job)
     if type(job) ~= 'table' or type(job.name) ~= 'string' then return false end
     JobsMap[job.name] = job
-    for _, current in ipairs(JobsList) do if current.name == job.name then return true end end
+    CustomJobsMap[job.name] = job
+    for index, current in ipairs(JobsList) do
+        if current.name == job.name then JobsList[index] = job; return true end
+    end
     JobsList[#JobsList + 1] = job
     return true
 end
+
+local function RemoveRuntimeJob(name)
+    JobsMap[name] = nil
+    CustomJobsMap[name] = nil
+    for index = #JobsList, 1, -1 do
+        if JobsList[index].name == name then table.remove(JobsList, index); break end
+    end
+end
+
+local function GetCustomJobs()
+    local result = {}
+    for _, job in pairs(CustomJobsMap) do result[#result + 1] = job end
+    table.sort(result, function(a, b) return a.name < b.name end)
+    return result
+end
+exports('GetCustomJobs', GetCustomJobs)
 
 local function CreateCustomJob(raw, createdBy)
     local job, validationError = normalizeCustomJob(raw)
@@ -81,6 +101,54 @@ local function CreateCustomJob(raw, createdBy)
     return true, job
 end
 exports('CreateCustomJob', CreateCustomJob)
+
+local function UpdateCustomJob(raw)
+    if type(raw) ~= 'table' or type(raw.name) ~= 'string' then return false, 'Métier invalide.' end
+    local name = raw.name:lower()
+    if not CustomJobsMap[name] then return false, 'Seuls les métiers personnalisés peuvent être modifiés.' end
+    local job, validationError = normalizeCustomJob(raw, name)
+    if not job then return false, validationError end
+    local ok, affected = pcall(MySQL.update.await,
+        'UPDATE rp_custom_jobs SET label = ?, category = ?, description = ?, whitelisted = ?, grades = ? WHERE name = ?',
+        { job.label, job.category, job.description, job.whitelisted and 1 or 0, json.encode(job.grades), name })
+    if not ok or type(affected) ~= 'number' then
+        print(('[rp_jobs] Custom job update failed for %s: %s'):format(name, tostring(affected)))
+        return false, 'Erreur SQL : métier non modifié.'
+    end
+    RegisterRuntimeJob(job)
+    TriggerClientEvent('rp_jobs:client:syncCustomJobs', -1, { job })
+    return true, job
+end
+exports('UpdateCustomJob', UpdateCustomJob)
+
+local function DeleteCustomJob(name)
+    if type(name) ~= 'string' or not CustomJobsMap[name] then
+        return false, 'Seuls les métiers personnalisés existants peuvent être supprimés.'
+    end
+    local checksOk, assigned, bank, history = pcall(function()
+        local assignedCount = MySQL.scalar.await('SELECT COUNT(*) FROM characters WHERE job = ?', { name })
+        local bankBalance = MySQL.scalar.await('SELECT balance FROM rp_job_bank_accounts WHERE job = ?', { name })
+        local historyCount = MySQL.scalar.await('SELECT COUNT(*) FROM rp_job_bank_transactions WHERE job = ?', { name })
+        return tonumber(assignedCount) or 0, tonumber(bankBalance) or 0, tonumber(historyCount) or 0
+    end)
+    if not checksOk then
+        print(('[rp_jobs] Custom job deletion checks failed for %s: %s'):format(name, tostring(assigned)))
+        return false, 'Vérification impossible : suppression refusée par sécurité.'
+    end
+    if assigned > 0 then return false, ('Suppression refusée : %d personnage(s) sont encore affectés à ce métier.'):format(assigned) end
+    if bank > 0 or history > 0 then
+        return false, 'Suppression refusée : le compte bancaire ou son historique contient des données. Videz/archivez ces données avant suppression.'
+    end
+    local ok, affected = pcall(MySQL.update.await, 'DELETE FROM rp_custom_jobs WHERE name = ?', { name })
+    if not ok or type(affected) ~= 'number' or affected < 1 then
+        print(('[rp_jobs] Custom job deletion failed for %s: %s'):format(name, tostring(affected)))
+        return false, 'Erreur SQL : métier non supprimé.'
+    end
+    RemoveRuntimeJob(name)
+    TriggerClientEvent('rp_jobs:client:removeCustomJob', -1, name)
+    return true, name
+end
+exports('DeleteCustomJob', DeleteCustomJob)
 -- Persistent job-center choice statistics (one increment per successful application).
 local JOB_STATS_TABLE = 'rp_job_selection_stats'
 local jobStatsReady = false
