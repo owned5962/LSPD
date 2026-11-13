@@ -444,6 +444,17 @@ RegisterNetEvent('rp_tablet_admin:server:updateReport', function(rawReportId, ra
     end
     LogExtendedAction(src, 'report_' .. status, nil, 'Signalement #' .. reportId)
     TriggerClientEvent('rp_tablet_admin:client:reportUpdated', src, reportId, status, staffName)
+    for _, rawId in ipairs(GetPlayers()) do
+        local staffId = tonumber(rawId)
+        if staffId and staffId ~= src then
+            local member = exports['rp_core']:GetPlayerFromId(staffId)
+            local group = member and tostring(member.group or '') or ''
+            if IsPlayerAceAllowed(staffId, 'rp_admin') or group == 'admin'
+                or group == 'superadmin' or group == 'fondateur' then
+                TriggerClientEvent('rp_tablet_admin:client:reportsRefresh', staffId)
+            end
+        end
+    end
     if status == 'accepted' then
         for _, rawId in ipairs(GetPlayers()) do
             local playerId = tonumber(rawId)
