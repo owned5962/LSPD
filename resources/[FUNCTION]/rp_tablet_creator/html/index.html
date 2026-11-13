@@ -169,6 +169,31 @@
       <div id="creator-job-list" class="org-list">Chargement…</div>
     </article>
     <article class="panel">
+      <h2><i class="fa-solid fa-warehouse"></i> Garages et flotte des métiers</h2>
+      <p class="panel-help">Placez-vous à l'emplacement du garage souhaité, choisissez le métier et configurez les modèles autorisés et le grade minimum. L'emplacement de sortie est calculé automatiquement devant vous.</p>
+      <label for="job-garage-job">Métier concerné</label>
+      <select id="job-garage-job"><option value="">Chargement des métiers…</option></select>
+      <label for="job-garage-model">Modèle du véhicule (spawn name)</label>
+      <input id="job-garage-model" maxlength="50" placeholder="police, ambulance, sultan">
+      <label for="job-garage-label">Nom affiché</label>
+      <input id="job-garage-label" maxlength="50" placeholder="Berline de patrouille">
+      <div class="coord-grid">
+        <label>Grade minimum
+          <select id="job-garage-grade"><option value="0">Grade 0</option><option value="1">Grade 1</option><option value="2">Grade 2</option><option value="3">Grade 3</option><option value="4">Grade 4</option></select>
+        </label>
+        <label>Véhicules configurés
+          <input id="job-garage-count" type="text" value="0 / 20" readonly>
+        </label>
+      </div>
+      <button id="job-garage-add-vehicle" type="button">Ajouter à la flotte</button>
+      <div id="job-garage-vehicle-list" class="org-list">Aucun véhicule ajouté.</div>
+      <div class="buttons">
+        <button id="job-garage-save" class="primary" type="button">Enregistrer le garage à ma position</button>
+        <button id="job-garage-delete" type="button">Supprimer le garage</button>
+      </div>
+      <small id="job-garage-status">La configuration est sauvegardée en base de données.</small>
+    </article>
+    <article class="panel">
       <h2><i class="fa-solid fa-users"></i> Créer un gang</h2>
       <p class="panel-help">Registre persistant avec identifiant unique et couleur personnalisée.</p>
       <label for="new-gang-name">Identifiant technique</label><input id="new-gang-name" maxlength="40" placeholder="ex. families">
