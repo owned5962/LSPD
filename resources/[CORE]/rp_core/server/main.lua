@@ -202,11 +202,11 @@ RegisterNetEvent('rp_core:server:requestPlayerDataSync', function()
     player.syncClient()
 end)
 
--- Save all connected characters regularly so economy/job changes survive crashes
--- more reliably than a disconnect-only save.
+-- Save all connected characters every minute to reduce the amount of progress
+-- that can be lost if the server or database stops unexpectedly.
 CreateThread(function()
     while true do
-        Wait(5 * 60 * 1000)
+        Wait(60 * 1000)
         for _, player in pairs(Players) do
             if player and player.save then
                 player.save()
