@@ -897,6 +897,45 @@ RegisterNetEvent('rp_tablet_creator:server:createJob', function(data)
     LogCreatorAction(src, 'create_job', nil, result.name)
 end)
 
+RegisterNetEvent('rp_tablet_creator:server:updateJob', function(data)
+    local src = source
+    if not creatorAccessAllowed(src) or not exports['rp_core']:CanPerformAction(src, 'creator:update_job', 1500) or type(data) ~= 'table' then return end
+    local callOk, updated, result = pcall(function()
+        return exports['rp_jobs']:UpdateCustomJob(data)
+    end)
+    if not callOk then
+        print(('[rp_tablet_creator] Custom job update failed: %s'):format(tostring(updated)))
+        reply(src, 'Erreur interne pendant la modification du métier.', false)
+        return
+    end
+    if updated ~= true then reply(src, tostring(result or 'Modification refusée.'), false); return end
+    reply(src, ('Métier %s modifié.'):format(result.label), true)
+    TriggerClientEvent('rp_tablet_creator:client:customJobsData', src, exports['rp_jobs']:GetCustomJobs())
+    TriggerClientEvent('rp_tablet_creator:client:refreshTools', src)
+    TriggerClientEvent('rp_tablet_creator:client:refreshAdminTools', src)
+    LogCreatorAction(src, 'update_job', nil, result.name)
+end)
+
+RegisterNetEvent('rp_tablet_creator:server:deleteJob', function(rawName)
+    local src = source
+    if not creatorAccessAllowed(src) or not exports['rp_core']:CanPerformAction(src, 'creator:delete_job', 1500) then return end
+    if type(rawName) ~= 'string' or #rawName > 40 then reply(src, 'Identifiant de métier invalide.', false); return end
+    local callOk, deleted, result = pcall(function()
+        return exports['rp_jobs']:DeleteCustomJob(rawName)
+    end)
+    if not callOk then
+        print(('[rp_tablet_creator] Custom job deletion failed: %s'):format(tostring(deleted)))
+        reply(src, 'Erreur interne pendant la suppression du métier.', false)
+        return
+    end
+    if deleted ~= true then reply(src, tostring(result or 'Suppression refusée.'), false); return end
+    reply(src, 'Métier supprimé.', true)
+    TriggerClientEvent('rp_tablet_creator:client:customJobsData', src, exports['rp_jobs']:GetCustomJobs())
+    TriggerClientEvent('rp_tablet_creator:client:refreshTools', src)
+    TriggerClientEvent('rp_tablet_creator:client:refreshAdminTools', src)
+    LogCreatorAction(src, 'delete_job', nil, rawName)
+end)
+
 RegisterNetEvent('rp_tablet_creator:server:createGang', function(data)
     local src = source
     if not creatorAccessAllowed(src) or not exports['rp_core']:CanPerformAction(src, 'creator:create_gang', 1500) or type(data) ~= 'table' then return end
@@ -951,4 +990,7 @@ RegisterNetEvent('rp_tablet_creator:server:requestOrganizations', function()
     local ok, gangs = pcall(function() return exports['rp_gangs']:GetAllGangs() end)
     if not ok then print('[rp_tablet_creator] Gang list failed: ' .. tostring(gangs)); gangs = {} end
     TriggerClientEvent('rp_tablet_creator:client:organizationsData', src, gangs or {})
+    local jobsOk, jobs = pcall(function() return exports['rp_jobs']:GetCustomJobs() end)
+    if not jobsOk then print('[rp_tablet_creator] Custom job list failed: ' .. tostring(jobs)); jobs = {} end
+    TriggerClientEvent('rp_tablet_creator:client:customJobsData', src, jobs or {})
 end)
