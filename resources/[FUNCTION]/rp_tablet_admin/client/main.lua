@@ -117,6 +117,23 @@ RegisterKeyMapping('rp_admin_tablet_toggle', 'Ouvrir la Tablette Admin', 'keyboa
 RegisterCommand('admin', ToggleAdminTablet, false)
 RegisterCommand('adminmenu', ToggleAdminTablet, false)
 
+RegisterCommand('rapport', function()
+    SetNuiFocus(true, true)
+    SendNUIMessage({ action = 'openPlayerReport' })
+end, false)
+
+RegisterNUICallback('submitPlayerReport', function(data, cb)
+    local message = type(data) == 'table' and data.message or ''
+    TriggerServerEvent('rp_tablet_admin:server:submitPlayerReport', message)
+    cb({ ok = true })
+end)
+
+RegisterNUICallback('closePlayerReport', function(_, cb)
+    SetNuiFocus(false, false)
+    SendNUIMessage({ action = 'closePlayerReport' })
+    cb({ ok = true })
+end)
+
 RegisterNUICallback('close', function(data, cb)
     if type(data) == 'table' and data.source == 'f10' then
         lastAdminToggleAt = GetGameTimer()
@@ -425,4 +442,13 @@ AddEventHandler('onClientResourceStop', function(resourceName)
     SetNuiFocus(false, false)
     SendNUIMessage({ action = 'closeTablet' })
     StopTabletAnimation()
+end)
+
+
+RegisterNetEvent('rp_tablet_admin:client:playerReportResult', function(success, message)
+    SendNUIMessage({ action = 'playerReportResult', success = success == true, message = tostring(message or '') })
+    if not success then Notify(tostring(message or 'Signalement impossible.'), 'error') end
+end)
+RegisterNetEvent('rp_tablet_admin:client:reportsRefresh', function()
+    if isTabletOpen then TriggerServerEvent('rp_tablet_admin:server:requestReports') end
 end)
