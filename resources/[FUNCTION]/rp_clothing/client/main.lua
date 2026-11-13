@@ -402,7 +402,7 @@ CreateThread(function()
                     DrawMarker(20, pos.x, pos.y, pos.z, 0, 0, 0, 0, 0, 0,
                         0.6, 0.6, 0.6, 56, 189, 248, 150, false, true, 2, false, nil, nil, false)
                 end
-                if dist <= 1.0 then
+                if dist <= 1.5 then
                     nearShop = true
                     sleep = 0
                     if IsControlJustReleased(0, 38) then
