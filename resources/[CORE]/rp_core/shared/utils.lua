@@ -47,3 +47,32 @@ end
 function Utils.TableDump(value)
     return DumpValue(value, {}, 0)
 end
+
+function Utils.NormalizePosition(value, fallback)
+    fallback = type(fallback) == 'table' and fallback or { x = 0.0, y = 0.0, z = 0.0, heading = 0.0 }
+    local x = type(value) == 'table' and tonumber(value.x) or nil
+    local y = type(value) == 'table' and tonumber(value.y) or nil
+    local z = type(value) == 'table' and tonumber(value.z) or nil
+    local heading = type(value) == 'table' and tonumber(value.heading) or nil
+
+    local function finite(number)
+        return number ~= nil and number == number and number ~= math.huge and number ~= -math.huge
+    end
+    local function defaultPosition()
+        return {
+            x = tonumber(fallback.x) or 0.0,
+            y = tonumber(fallback.y) or 0.0,
+            z = tonumber(fallback.z) or 0.0,
+            heading = tonumber(fallback.heading) or 0.0
+        }
+    end
+
+    if not finite(x) or not finite(y) or not finite(z)
+        or x < -6000 or x > 6000 or y < -6000 or y > 6000
+        or z < -500 or z > 2000 then
+        return defaultPosition()
+    end
+
+    if not finite(heading) then heading = tonumber(fallback.heading) or 0.0 end
+    return { x = x, y = y, z = z, heading = heading % 360 }
+end
