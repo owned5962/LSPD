@@ -128,3 +128,28 @@
 .weapon-policy-row { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 12px; margin:0; border:1px solid #293c56; border-radius:9px; background:#0b1525; color:#dbeafe; font-size:11px; text-transform:none; }
 .weapon-policy-row input { accent-color:#22c55e; width:18px; height:18px; flex:none; }
 @media(max-width:900px){.creator-tabs{overflow-x:auto;flex-wrap:nowrap}.creator-tab{flex:none}.weapon-policy-list{grid-template-columns:1fr}}
+
+
+/* One main tablet surface: content panels no longer look like separate windows. */
+#tablet [data-tab-panel] > .panel {
+    background:transparent;
+    border:0;
+    border-radius:0;
+    box-shadow:none;
+    padding:18px 12px;
+}
+#tablet [data-tab-panel] > .panel + .panel {
+    border-left:1px solid rgba(96,165,250,.14);
+}
+#tablet [data-tab-panel] > .panel h2 {
+    padding-bottom:12px;
+    border-bottom:1px solid rgba(96,165,250,.16);
+}
+#tablet [data-tab-panel] > .panel .panel-help { max-width:900px; }
+#tablet [data-tab-panel] > .panel .org-list,
+#tablet [data-tab-panel] > .panel .module-list,
+#tablet [data-tab-panel] > .panel .creator-bank-history {
+    background:rgba(8,15,28,.38);
+    border-radius:10px;
+    padding:6px;
+}
