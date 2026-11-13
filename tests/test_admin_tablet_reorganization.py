@@ -20,7 +20,7 @@ def test_admin_tabs_and_page_controls_are_separated():
     parser = IdCollector()
     parser.feed(html)
     assert len(parser.ids) == len(set(parser.ids)), "duplicate HTML id"
-    for tab in ("players", "gives", "weapons", "sanctions", "functions", "jobs", "weather", "map", "reports", "audit"):
+    for tab in ("players", "gives", "sanctions", "functions", "jobs", "weather", "map", "reports", "audit"):
         assert f'data-admin-view="{tab}"' in html
         assert f'id="admin-{tab}-view"' in html
     for prefix in ("give", "economy", "sanction", "function", "job"):
@@ -46,6 +46,8 @@ def test_admin_ui_routes_each_tab_and_player_search_to_its_own_target():
     assert "function giveAdminVehicle()" in ui
     assert "function giveAdminWeapon()" in ui
     assert "function renderWeaponPolicy()" in ui
+    assert 'data-admin-view="weapons"' not in read("resources/[FUNCTION]/rp_tablet_admin/html/index.html")
+    assert 'id="admin-weapons-view"' not in read("resources/[FUNCTION]/rp_tablet_admin/html/index.html")
     assert "function saveWeaponPolicy()" in ui
     assert "data.weaponPolicy" in ui
     assert "weaponPolicy.filter(weapon => weapon && weapon.enabled === true)" in ui
@@ -66,6 +68,8 @@ def test_admin_gta_map_uses_real_satellite_tiles_and_world_positions():
     assert "gtav-map-tiles/satelite/{z}/{x}-{y}.webp" in ui
     assert "new L.Transformation(1/32, 0, 1/32, 0)" in ui
     assert "function worldToMap(position)" in ui
+    assert "teleportToMapPoint" in ui
+    assert "admin-map-teleport" in read("resources/[FUNCTION]/rp_tablet_admin/html/index.html")
     assert "const GTA_MAP_SCALE = 8192 / (GTA_WORLD.maxY - GTA_WORLD.minY)" in ui
     assert "const GTA_MAP_OFFSET_X" in ui
     assert "L.marker(worldToMap(player.position)" in ui
