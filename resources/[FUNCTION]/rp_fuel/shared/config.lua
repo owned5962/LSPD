@@ -1,6 +1,6 @@
 FuelConfig = {
     PricePerLitre = 6,
-    ConsumptionMultiplier = 2.5,
+    ConsumptionMultiplier = 3.5,
     BaseFillMilliseconds = 2500,
     MillisecondsPerLitre = 700,
     StationRadius = 22.0,
