@@ -575,7 +575,24 @@ RegisterNetEvent('rp_tablet_creator:server:deleteJobStorage', function(jobName)
     if GetResourceState('rp_inventory') == 'started' then TriggerEvent('rp_inventory:server:reloadJobStorageConfigs') end
 end)
 
-RegisterNetEvent('rp_tablet_creator:server:deleteJobGarage'
+RegisterNetEvent('rp_tablet_creator:server:deleteJobGarage', function(jobName)
+    local src = source
+    if not creatorAccessAllowed(src) or not exports['rp_core']:CanPerformAction(src, 'creator:delete_job_garage', 1200) then return end
+    if type(jobName) ~= 'string' or #jobName > 64 then
+        reply(src, 'Métier invalide.', false)
+        return
+    end
+    local ok, affected = pcall(MySQL.update.await, 'DELETE FROM rp_creator_job_garages WHERE job = ?', { jobName })
+    if not ok then
+        print('[rp_tablet_creator] Job garage delete failed: ' .. tostring(affected))
+        reply(src, 'Erreur SQL : garage non supprimé.', false)
+        return
+    end
+    reply(src, 'Configuration du garage métier supprimée.', true)
+    if GetResourceState('rp_garages') == 'started' then TriggerEvent('rp_garages:server:reloadJobGarages') end
+    LogCreatorAction(src, 'delete_job_garage', nil, jobName)
+    TriggerClientEvent('rp_tablet_creator:client:refreshTools', src)
+end)
 
 RegisterNetEvent('rp_tablet_creator:server:spawnProp', function(rawModel)
     local src = source
