@@ -1471,3 +1471,9 @@ def test_clothing_changes_do_not_mutate_live_skin_before_database_success():
         handler = source.split("RegisterNetEvent('" + event + "'", 1)[1].split("end)", 1)[0]
         assert "local skin = CloneSkin(player.skin)" in handler
         assert handler.index("player.skin = skin") > handler.index("MySQL.")
+
+def test_clothing_refunds_are_verified_before_claiming_success():
+    source = read("resources/[FUNCTION]/rp_clothing/server/main.lua")
+    assert "local function RefundCash(src, player, amount, operation)" in source
+    assert "local ok, refunded = pcall(player.addCash, amount)" in source
+    assert "remboursement non confirmé" in source
