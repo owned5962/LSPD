@@ -15,6 +15,7 @@
       <button class="nav active" data-tab="overview"><i class="fa-solid fa-gauge-high"></i> Tableau de bord</button>
       <button class="nav" data-tab="team"><i class="fa-solid fa-users"></i> Équipe</button>
       <button class="nav" data-tab="missions"><i class="fa-solid fa-list-check"></i> Missions</button>
+      <button class="nav" data-tab="bank"><i class="fa-solid fa-building-columns"></i> Banque du métier</button>
       <button class="nav hidden" id="police-nav" data-tab="police"><i class="fa-solid fa-tower-broadcast"></i> Alertes police <span id="police-alert-count">0</span></button>
     </nav>
     <div class="sidebar-bottom"><span class="online-dot"></span> Réseau professionnel actif</div>
@@ -35,6 +36,27 @@
       <div class="section-title"><div><h2>Missions de service</h2><p>Les missions proposées dépendent du métier actif.</p></div></div>
       <div id="active-mission"></div><div id="mission-list" class="mission-list"></div>
       <p class="note">Cette première version gère l’acceptation et la clôture des missions dans la session. Les objectifs sur la carte, récompenses et preuves de réalisation seront raccordés aux scripts métier concernés.</p>
+    </section>
+    <section class="page" id="bank">
+      <div class="section-title">
+        <div><h2>Banque du métier</h2><p>Compte partagé de votre entreprise ou service.</p></div>
+        <button class="secondary" id="job-bank-refresh">Actualiser</button>
+      </div>
+      <article class="job-bank-card">
+        <div class="job-bank-heading"><div><small>COMPTE PROFESSIONNEL</small><h3 id="job-bank-label">Chargement du compte…</h3></div><strong id="job-bank-balance">— $</strong></div>
+        <p id="job-bank-permissions" class="job-bank-permissions">Vérification des autorisations…</p>
+        <div class="job-bank-actions">
+          <label for="job-bank-amount">Montant à transférer ($)</label>
+          <input id="job-bank-amount" type="number" min="1" max="1000000" step="1" placeholder="Ex. 500">
+          <div class="job-bank-buttons">
+            <button id="job-bank-deposit" type="button">Déposer</button>
+            <button id="job-bank-withdraw" type="button">Retirer</button>
+          </div>
+        </div>
+      </article>
+      <div class="section-title job-bank-history-title"><div><h3>Historique des opérations</h3><p>Les 12 dernières opérations enregistrées.</p></div></div>
+      <div id="job-bank-history" class="job-bank-history"></div>
+      <p class="note">Les dépôts et retraits respectent les autorisations configurées par le fondateur dans le Créateur. Les opérations sont contrôlées et enregistrées côté serveur.</p>
     </section>
     <section class="page" id="police">
       <div class="section-title"><div><h2>Centre de dispatch LSPD</h2><p>Alertes émises après un refus d’interpellation par un suspect.</p></div><button class="secondary" id="refresh-police">Actualiser</button></div>
