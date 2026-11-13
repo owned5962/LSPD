@@ -163,6 +163,18 @@ RegisterNUICallback('withdraw', function(data, cb)
     cb({ ok = true })
 end)
 
+RegisterNUICallback('jobDeposit', function(data, cb)
+    if not isBankOpen or not isAuthenticated or openedAsATM then cb({ ok = false }); return end
+    TriggerServerEvent('rp_jobbank:server:deposit', tonumber(data.amount))
+    cb({ ok = true })
+end)
+
+RegisterNUICallback('jobWithdraw', function(data, cb)
+    if not isBankOpen or not isAuthenticated or openedAsATM then cb({ ok = false }); return end
+    TriggerServerEvent('rp_jobbank:server:withdraw', tonumber(data.amount))
+    cb({ ok = true })
+end)
+
 RegisterNUICallback('transfer', function(data, cb)
     if not isBankOpen or not isAuthenticated or openedAsATM then cb({ ok = false }); return end
     TriggerServerEvent('rp_economy:server:transfer', tonumber(data.targetId), tonumber(data.amount))
@@ -177,6 +189,7 @@ RegisterNetEvent('rp_economy:client:authenticationResult', function(result)
         return
     end
     isAuthenticated = true
+    TriggerServerEvent('rp_jobbank:server:request')
     SendNUIMessage({
         action = 'authenticationSuccess',
         cash = tonumber(result.cash) or 0,
@@ -184,6 +197,10 @@ RegisterNetEvent('rp_economy:client:authenticationResult', function(result)
         playerName = result.playerName or 'Citoyen',
         accountNumber = result.accountNumber or 'Compte LSS'
     })
+end)
+
+RegisterNetEvent('rp_jobbank:client:update', function(data)
+    if isBankOpen and isAuthenticated then SendNUIMessage({ action = 'jobBankData', data = data }) end
 end)
 
 RegisterNetEvent('rp_economy:client:sessionExpired', function()
