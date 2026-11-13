@@ -208,9 +208,9 @@ def test_character_spawn_uses_validated_coordinates_and_wrap_safe_timeouts():
     assert "Utils.NormalizePosition(savedPosition, Config.DefaultSpawn)" in player
     utils = (CORE / "shared/utils.lua").read_text(encoding="utf-8")
     assert "function Utils.NormalizePosition(value, fallback)" in utils
-    assert "x < -6000 or x > 6000 or y < -6000 or y > 6000" in player
-    assert "z < -500 or z > 2000" in player
-    assert "self.position = NormalizePosition(savedPosition)" in player
+    assert "x < -6000 or x > 6000 or y < -6000 or y > 6000" in utils
+    assert "z < -500 or z > 2000" in utils
+    assert "self.position = Utils.NormalizePosition(savedPosition, Config.DefaultSpawn)" in player
     assert "spawnPlayer', src, player.position, char.sex, char.skin" in character_server
     assert "local function NormalizeClientSpawn(coords)" in character_client
     assert "local function SpawnWaitExpired(startedAt, duration)" in character_client
