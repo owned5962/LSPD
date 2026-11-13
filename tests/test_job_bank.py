@@ -80,6 +80,16 @@ def test_fleeca_terminal_exposes_job_bank_only_after_biometric_authentication_at
     assert "'server/jobbank.lua'" in manifest
 
 
+
+def test_job_transaction_updates_live_cash_before_releasing_character_lock():
+    service = read("resources/[FUNCTION]/rp_economy/server/jobbank.lua")
+    start = service.index("local function transact(")
+    end = service.index("RegisterNetEvent('rp_jobbank:server:deposit'", start)
+    transaction = service[start:end]
+    assert transaction.index("player.cash = player.cash - amount") < transaction.index("ReleaseCharacterLock(lockIds)")
+    assert transaction.index("player.cash = player.cash + amount") < transaction.index("ReleaseCharacterLock(lockIds)")
+    assert transaction.index("if not sqlOk or not tonumber(affected)") < transaction.index("ReleaseCharacterLock(lockIds)")
+
 if __name__ == "__main__":
     checks = [
         test_job_accounts_are_persistent_and_seeded_from_the_job_catalog,
