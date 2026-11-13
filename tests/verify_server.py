@@ -77,7 +77,7 @@ def test_all_resources_are_started_by_resource_name():
     resources_dir = os.path.join(BASE_DIR, 'resources')
     with open(os.path.join(BASE_DIR, 'server.cfg'), encoding='utf-8') as cfg_file:
         cfg = cfg_file.read()
-    started_resources = set(re.findall(r'^\\s*ensure\\s+([^\\s#]+)', cfg, re.MULTILINE))
+    started_resources = set(re.findall(r'^\s*ensure\s+([^\s#]+)', cfg, re.MULTILINE))
     manifests = []
     expected_counts = {'[CORE]': 2, '[JOB]': 50, '[FUNCTION]': 23}
     for category, expected_count in expected_counts.items():
