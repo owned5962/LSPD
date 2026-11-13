@@ -196,7 +196,11 @@ local function transact(src, rawAmount, kind, fromJobMenu)
     TriggerClientEvent('rp_core:client:updateCash', src, player.cash)
     TriggerClientEvent('rp_economy:client:refreshBalances', src, player.cash, player.bank)
     local refreshedOk, refreshed = pcall(getAccountData, jobName)
-    TriggerClientEvent('rp_jobbank:client:update', src, refreshedOk and refreshed or nil)
+    if fromJobMenu == true then
+        TriggerClientEvent('rp_jobbank:client:jobMenuUpdate', src, refreshedOk and refreshed or nil)
+    else
+        TriggerClientEvent('rp_jobbank:client:update', src, refreshedOk and refreshed or nil)
+    end
     local formatted = tostring(amount):reverse():gsub('(%d%d%d)', '%1 '):reverse():gsub('^ ', '')
     notify(src, (kind == 'deposit' and 'Dépôt' or 'Retrait') .. ' de ' .. formatted .. ' $ effectué sur le compte ' .. tostring(job.label or jobName) .. '.', 'success')
 end
