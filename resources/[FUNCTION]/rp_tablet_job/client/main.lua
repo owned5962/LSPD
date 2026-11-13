@@ -41,6 +41,11 @@ RegisterNUICallback('close', function(_, cb)
     cb({ ok = true })
 end)
 
+RegisterNUICallback('refreshSalaryStats', function(_, cb)
+    TriggerServerEvent('rp_tablet_job:server:requestSalaryStats')
+    cb({ ok = true })
+end)
+
 RegisterNUICallback('refresh', function(_, cb)
     TriggerServerEvent('rp_tablet_job:server:requestData')
     if currentJob == 'police' and currentDuty then
