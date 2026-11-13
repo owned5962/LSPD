@@ -63,7 +63,7 @@ def test_f4_salary_statistics_are_based_on_persisted_salary_transactions():
     ui = read("resources/[FUNCTION]/rp_tablet_job/html/app.js")
     assert "rp_tablet_job:server:requestSalaryStats" in server
     assert "FROM bank_transactions bt" in server
-    assert "WHERE c.job = ? AND bt.type = 'salary'" in server
+    assert "WHERE bt.type = 'salary' AND bt.reason = ?" in server
     assert "rp_tablet_job:client:salaryStats" in client
     assert 'data-tab="stats"' in html and 'id="salary-chart"' in html
     assert "function renderSalaryStats(data)" in ui
