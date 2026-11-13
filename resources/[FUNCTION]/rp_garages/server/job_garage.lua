@@ -145,13 +145,15 @@ end)
 RegisterNetEvent('rp_garages:server:storeJobVehicle', function()
     local src = source
     if not exports['rp_core']:CanPerformAction(src, 'garages:store_job_vehicle', 1800) then return end
-    local garage, player = getGarageForPlayer(src)
     local active = activeVehicles[src]
-    if not garage or not player or not active or active.job ~= player.job then
+    local player = getPlayer(src)
+    local garage = active and garages[active.job]
+    local ped = GetPlayerPed(src)
+    if not garage or not player or ped == 0 or not DoesEntityExist(ped)
+        or #(GetEntityCoords(ped) - garage.coords) > 6.0 then
         notify(src, 'Aucun véhicule de service à ranger ici.', 'error')
         return
     end
-    local ped = GetPlayerPed(src)
     local vehicle = active.entity
     if not DoesEntityExist(vehicle) or GetPedInVehicleSeat(vehicle, -1) ~= ped
         or NetworkGetNetworkIdFromEntity(vehicle) ~= active.netId
