@@ -135,6 +135,48 @@ def test_job_garage_runtime_enforces_server_job_grade_and_vehicle_ownership():
     assert "rp_garages:server:reloadJobGarages" in creator
 
 
+
+def test_creator_job_armory_and_shared_locker_are_persisted_and_grade_restricted():
+    creator = read("resources/[FUNCTION]/rp_tablet_creator/server/main.lua")
+    creator_client = read("resources/[FUNCTION]/rp_tablet_creator/client/main.lua")
+    creator_html = read("resources/[FUNCTION]/rp_tablet_creator/html/index.html")
+    creator_ui = read("resources/[FUNCTION]/rp_tablet_creator/html/app.js")
+    inventory = read("resources/[FUNCTION]/rp_inventory/server/main.lua")
+    inventory_client = read("resources/[FUNCTION]/rp_inventory/client/job_storage.lua")
+    inventory_manifest = read("resources/[FUNCTION]/rp_inventory/fxmanifest.lua")
+    catalog = read("resources/[FUNCTION]/rp_inventory/server/main.lua")
+    sql = read("database.sql")
+
+    assert "CREATE TABLE IF NOT EXISTS rp_creator_job_storage" in creator
+    assert "creator:save_job_storage" in creator and "creator:delete_job_storage" in creator
+    assert "exports['rp_inventory']:GetItemCatalog()" in creator
+    assert "itemDef.type ~= 'weapon'" in creator
+    assert "minGrade < 0 or grade > 4" not in creator  # grade validation uses grade < 0 / > 4
+    assert "grade < 0 or grade > 4" in creator
+    assert "RegisterNUICallback('saveJobStorage'" in creator_client
+    assert "RegisterNUICallback('deleteJobStorage'" in creator_client
+    assert 'id="job-storage-job"' in creator_html
+    assert 'id="job-storage-weapon-list"' in creator_html
+    assert "renderJobStorages(d.jobStorages || [], d.storageCatalog || [])" in creator_ui
+    assert "type = definition.type or 'item'" in catalog
+
+    assert "GetPlayerFromId(src)" in inventory
+    assert "player.job" in inventory and "player.jobGrade" in inventory
+    assert "GetEntityCoords(ped) - config.coords" in inventory
+    assert "config.armoryItems[itemName]" in inventory
+    assert "IsWeaponAllowed(definition.weapon)" in inventory
+    assert "AcquireCharacterLock({ player.charId })" in inventory
+    assert "MySQL.transaction.await(queries)" in inventory
+    assert "rp_job_storage_logs" in inventory
+    assert "rp_inventory:server:transferJobStorage" in inventory
+    assert "rp_inventory:client:jobStorageData" in inventory
+    assert "rp_inventory:server:openJobStorage" in inventory
+    assert "server/job_storage.lua" not in inventory_manifest
+    assert "client/job_storage.lua" in inventory_manifest
+    assert "transferJobStorage" in inventory_client
+    assert "rp_job_storage_items" in sql and "rp_job_storage_logs" in sql
+
+
 if __name__ == "__main__":
     test_custom_jobs_are_persisted_validated_and_loaded_with_numeric_grades()
     test_creator_job_creation_is_permission_gated_and_updates_job_selectors()
@@ -143,4 +185,5 @@ if __name__ == "__main__":
     test_creator_can_edit_and_safely_delete_custom_jobs()
     test_creator_job_garages_are_persisted_and_validated()
     test_job_garage_runtime_enforces_server_job_grade_and_vehicle_ownership()
+    test_creator_job_armory_and_shared_locker_are_persisted_and_grade_restricted()
     print("Creator organization regression checks passed.")
