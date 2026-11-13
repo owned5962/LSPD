@@ -397,7 +397,10 @@ RegisterNUICallback('selectCharacter', function(data, cb)
 end)
 
 RegisterNUICallback('updateSkinPreview', function(data, cb)
-    if type(data) == 'table' then ApplyCharacterAppearance(data.gender, data.skin) end
+    if type(data) == 'table' then
+        ApplyCharacterAppearance(data.gender, data.skin)
+        UpdateCreatorCamera()
+    end
     cb({ status = 'ok' })
 end)
 
