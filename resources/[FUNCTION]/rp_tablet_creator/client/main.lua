@@ -297,6 +297,10 @@ AddEventHandler('onResourceStop', function(resourceName)
     if resourceName ~= GetCurrentResourceName() then return end
     isOpen = false
     SetNuiFocus(false, false)
+    for _, blip in ipairs(activeJobBlips) do
+        if DoesBlipExist(blip) then RemoveBlip(blip) end
+    end
+    activeJobBlips = {}
 end)
 
 
