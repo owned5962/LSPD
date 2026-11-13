@@ -128,6 +128,21 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     window.addEventListener('message', handleTabletMessage);
+
+    document.getElementById('player-report-cancel')?.addEventListener('click', () => nuiPost('closePlayerReport').catch(() => {}));
+    document.getElementById('player-report-submit')?.addEventListener('click', () => {
+        const input = document.getElementById('player-report-message');
+        const message = (input?.value || '').trim();
+        if (message.length < 10 || message.length > 500) {
+            const status = document.getElementById('player-report-status');
+            if (status) status.textContent = 'Le message doit contenir entre 10 et 500 caractères.';
+            return;
+        }
+        nuiPost('submitPlayerReport', { message }).catch(() => {
+            const status = document.getElementById('player-report-status');
+            if (status) status.textContent = 'Impossible d’envoyer le signalement.';
+        });
+    });
     updateClock();
     setInterval(updateClock, 1000);
 });
@@ -255,13 +270,26 @@ function handleTabletMessage(event) {
         return;
     }
     if (data.action === 'reports') { renderReports(data.reports); return; }
+    if (data.action === 'openPlayerReport') { document.getElementById('player-report-overlay')?.classList.remove('hidden'); return; }
+    if (data.action === 'closePlayerReport') { document.getElementById('player-report-overlay')?.classList.add('hidden'); return; }
+    if (data.action === 'playerReportResult') {
+        const status = document.getElementById('player-report-status');
+        if (status) status.textContent = String(data.message || '');
+        if (data.success === true) {
+            document.getElementById('player-report-message').value = '';
+            document.getElementById('player-report-overlay')?.classList.add('hidden');
+            showToast(String(data.message || 'Signalement envoyé.'));
+        }
+        return;
+    }
+    if (data.action === 'reportsRefresh') { if (adminTabletOpen) requestReports(); return; }
     if (data.action === 'reportUpdated') {
         const row = document.querySelector('[data-report-id="' + Number(data.reportId) + '"]');
         if (row) {
             const statusCell = row.children[3];
             const actionCell = row.children[5];
-            if (statusCell) statusCell.textContent = data.status === 'resolved' ? 'Traité' : 'Rejeté';
-            if (actionCell) actionCell.textContent = 'Mis à jour';
+            if (statusCell) statusCell.textContent = data.status === 'accepted' ? 'Pris en charge' : data.status === 'resolved' ? 'Traité' : 'Rejeté';
+            if (actionCell) actionCell.textContent = data.handledBy ? 'Pris en charge par ' + String(data.handledBy) : 'Mis à jour';
         }
         showToast('Signalement mis à jour.');
         return;
@@ -332,23 +360,24 @@ function renderReports(reports) {
         const row = document.createElement('tr');
         row.dataset.reportId = String(Number(report.id) || 0);
         const values = [String(report.id || ''), String(report.player_name || 'Joueur'), String(report.message || ''),
-            report.status === 'open' ? 'En attente' : report.status === 'resolved' ? 'Traité' : 'Rejeté', String(report.created_at || '')];
+            report.status === 'open' ? 'En attente' : report.status === 'accepted' ? 'Pris en charge' : report.status === 'resolved' ? 'Traité' : 'Rejeté', String(report.created_at || '')];
         values.forEach(value => { const cell = document.createElement('td'); cell.textContent = value; row.appendChild(cell); });
         const actions = document.createElement('td');
         if (report.status === 'open') {
             const resolve = document.createElement('button');
-            resolve.type = 'button'; resolve.className = 'report-action report-resolve'; resolve.textContent = 'Traiter';
-            resolve.addEventListener('click', () => updateReportStatus(report.id, 'resolved'));
+            resolve.type = 'button'; resolve.className = 'report-action report-resolve'; resolve.textContent = 'Accepter';
+            resolve.classList.add('accept');
+            resolve.addEventListener('click', () => updateReportStatus(report.id, 'accepted'));
             const reject = document.createElement('button');
             reject.type = 'button'; reject.className = 'report-action report-reject'; reject.textContent = 'Rejeter';
             reject.addEventListener('click', () => updateReportStatus(report.id, 'rejected'));
             actions.append(resolve, reject);
-        } else actions.textContent = report.handled_by ? 'Par ' + String(report.handled_by) : 'Clôturé';
+        } else actions.textContent = report.handled_by ? (report.status === 'accepted' ? 'Pris en charge par ' : 'Par ') + String(report.handled_by) : 'Clôturé';
         row.appendChild(actions); body.appendChild(row);
     });
 }
 function updateReportStatus(reportId, status) {
-    if (!Number.isInteger(Number(reportId)) || !['resolved', 'rejected'].includes(status)) return;
+    if (!Number.isInteger(Number(reportId)) || !['accepted', 'resolved', 'rejected'].includes(status)) return;
     nuiPost('updateReport', { reportId: Number(reportId), status })
         .catch(() => showToast('Impossible de traiter ce signalement.'));
 }
