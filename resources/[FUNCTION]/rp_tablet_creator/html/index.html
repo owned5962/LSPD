@@ -194,6 +194,31 @@
       <small id="job-garage-status">La configuration est sauvegardée en base de données.</small>
     </article>
     <article class="panel">
+      <h2><i class="fa-solid fa-boxes-stacked"></i> Coffre et armurerie des métiers</h2>
+      <p class="panel-help">Placez-vous à l’emplacement souhaité. Le coffre partagé conserve les objets du métier ; l’armurerie ne propose que les armes autorisées selon le grade.</p>
+      <label for="job-storage-job">Métier concerné</label>
+      <select id="job-storage-job"><option value="">Chargement des métiers…</option></select>
+      <label class="check-line"><input id="job-storage-stash" type="checkbox" checked> Activer le coffre partagé (objets)</label>
+      <label class="check-line"><input id="job-storage-armory" type="checkbox" checked> Activer l’armurerie (armes)</label>
+      <label for="job-storage-weapon">Arme autorisée</label>
+      <select id="job-storage-weapon"><option value="">Chargement du catalogue…</option></select>
+      <div class="coord-grid">
+        <label>Grade minimum
+          <select id="job-storage-grade"><option value="0">Grade 0</option><option value="1">Grade 1</option><option value="2">Grade 2</option><option value="3">Grade 3</option><option value="4">Grade 4</option></select>
+        </label>
+        <label>Armes configurées
+          <input id="job-storage-count" type="text" value="0 / 30" readonly>
+        </label>
+      </div>
+      <button id="job-storage-add-weapon" type="button">Ajouter l’arme autorisée</button>
+      <div id="job-storage-weapon-list" class="org-list">Aucune arme configurée.</div>
+      <div class="buttons">
+        <button id="job-storage-save" class="primary" type="button">Enregistrer à ma position</button>
+        <button id="job-storage-delete" type="button">Supprimer la configuration</button>
+      </div>
+      <small id="job-storage-status">Le coffre et l’armurerie partagent ce point d’accès.</small>
+    </article>
+    <article class="panel">
       <h2><i class="fa-solid fa-users"></i> Créer un gang</h2>
       <p class="panel-help">Registre persistant avec identifiant unique et couleur personnalisée.</p>
       <label for="new-gang-name">Identifiant technique</label><input id="new-gang-name" maxlength="40" placeholder="ex. families">
