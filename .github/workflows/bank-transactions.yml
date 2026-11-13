@@ -6,6 +6,10 @@ on:
       - "resources/[FUNCTION]/rp_economy/**"
       - "resources/[CORE]/rp_core/server/player.lua"
       - "tests/test_bank_transactions.py"
+      - "tests/test_job_bank.py"
+      - "resources/[FUNCTION]/rp_tablet_creator/**"
+      - "database.sql"
+      - "migrations/006_job_bank_accounts.sql"
       - ".github/workflows/bank-transactions.yml"
   workflow_dispatch:
 
@@ -28,10 +32,17 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y lua5.4
       - name: Run banking regression checks
         run: python tests/test_bank_transactions.py
+      - name: Run shared job bank regression checks
+        run: python tests/test_job_bank.py
       - name: Compile banking Lua scripts
         run: |
           luac5.4 -p "resources/[FUNCTION]/rp_economy/server/main.lua"
+          luac5.4 -p "resources/[FUNCTION]/rp_economy/server/jobbank.lua"
           luac5.4 -p "resources/[FUNCTION]/rp_economy/client/main.lua"
           luac5.4 -p "resources/[CORE]/rp_core/server/player.lua"
-      - name: Check banking NUI JavaScript
-        run: node --check "resources/[FUNCTION]/rp_economy/html/js/app.js"
+          luac5.4 -p "resources/[FUNCTION]/rp_tablet_creator/server/main.lua"
+          luac5.4 -p "resources/[FUNCTION]/rp_tablet_creator/client/main.lua"
+      - name: Check banking and creator NUI JavaScript
+        run: |
+          node --check "resources/[FUNCTION]/rp_economy/html/js/app.js"
+          node --check "resources/[FUNCTION]/rp_tablet_creator/html/app.js"
