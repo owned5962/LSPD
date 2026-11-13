@@ -1,5 +1,6 @@
 fx_version 'cerulean'
 game 'gta5'
+nui_callback_strict_mode 'true'
 lua54 'yes'
 
 author 'GAutier'
