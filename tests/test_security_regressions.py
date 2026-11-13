@@ -1420,3 +1420,13 @@ if __name__ == "__main__":
     test_server_cfg_omits_default_framework_resources_and_starts_territories_last()
     test_character_appearance_recovers_missing_clothing_and_clears_invalid_props()
     test_job_bank_is_available_in_f4_job_tablet_with_server_side_permissions()
+
+def test_schema_migrations_are_safe_after_a_fresh_schema_import():
+    metadata_migration = read("migrations/004_character_metadata.sql")
+    salary_index_migration = read("migrations/008_job_salary_stats_index.sql")
+    assert "INFORMATION_SCHEMA.COLUMNS" in metadata_migration
+    assert "COLUMN_NAME = 'metadata'" in metadata_migration
+    assert "PREPARE rp_metadata_stmt" in metadata_migration
+    assert "INFORMATION_SCHEMA.STATISTICS" in salary_index_migration
+    assert "INDEX_NAME = 'idx_bank_salary_reason_created'" in salary_index_migration
+    assert "PREPARE rp_salary_index_stmt" in salary_index_migration
