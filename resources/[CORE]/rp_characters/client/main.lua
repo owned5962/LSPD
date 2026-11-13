@@ -463,6 +463,30 @@ RegisterNetEvent('rp_characters:client:closeMenu', function()
     CloseCharacterUI()
 end)
 
+local SPAWN_TIMER_MODULUS = 4294967296
+
+local function SpawnWaitExpired(startedAt, duration)
+    return ((GetGameTimer() % SPAWN_TIMER_MODULUS) - startedAt) % SPAWN_TIMER_MODULUS >= duration
+end
+
+local function NormalizeClientSpawn(coords)
+    local fallback = { x = -1037.7, y = -2737.8, z = 20.1, heading = 330.0 }
+    if type(coords) ~= 'table' then return fallback end
+
+    local x, y, z = tonumber(coords.x), tonumber(coords.y), tonumber(coords.z)
+    local heading = tonumber(coords.heading)
+    local function finite(value)
+        return value ~= nil and value == value and value ~= math.huge and value ~= -math.huge
+    end
+    if not finite(x) or not finite(y) or not finite(z)
+        or x < -6000 or x > 6000 or y < -6000 or y > 6000
+        or z < -500 or z > 2000 then
+        return fallback
+    end
+    if not finite(heading) then heading = fallback.heading end
+    return { x = x, y = y, z = z, heading = heading % 360 }
+end
+
 RegisterNetEvent('rp_characters:client:spawnPlayer', function(coords, gender, skin)
     pcall(SendLoadingScreenMessage, json.encode({
         eventName = 'lssStage',
@@ -471,12 +495,12 @@ RegisterNetEvent('rp_characters:client:spawnPlayer', function(coords, gender, sk
     }))
     characterSessionReady = true
     FinishCharacterBoot()
-    coords = type(coords) == 'table' and coords or { x = -1037.7, y = -2737.8, z = 20.1, heading = 330.0 }
+    coords = NormalizeClientSpawn(coords)
 
     DoScreenFadeOut(500)
     -- Never leave the client thread blocked forever if the fade native fails.
-    local fadeDeadline = GetGameTimer() + 5000
-    while not IsScreenFadedOut() and GetGameTimer() < fadeDeadline do
+    local fadeStartedAt = GetGameTimer() % SPAWN_TIMER_MODULUS
+    while not IsScreenFadedOut() and not SpawnWaitExpired(fadeStartedAt, 5000) do
         Wait(10)
     end
     if not IsScreenFadedOut() then
@@ -497,8 +521,8 @@ RegisterNetEvent('rp_characters:client:spawnPlayer', function(coords, gender, sk
     local spawnZ = tonumber(coords.z) or 20.1
     RequestCollisionAtCoord(spawnX, spawnY, spawnZ)
     SetFocusPosAndVel(spawnX, spawnY, spawnZ, 0.0, 0.0, 0.0)
-    local collisionDeadline = GetGameTimer() + 5000
-    while not HasCollisionLoadedAroundEntity(ped) and GetGameTimer() < collisionDeadline do
+    local collisionStartedAt = GetGameTimer() % SPAWN_TIMER_MODULUS
+    while not HasCollisionLoadedAroundEntity(ped) and not SpawnWaitExpired(collisionStartedAt, 5000) do
         RequestCollisionAtCoord(spawnX, spawnY, spawnZ)
         Wait(50)
     end
