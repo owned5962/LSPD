@@ -96,6 +96,11 @@ RegisterNUICallback('deleteJobStorage', function(data, cb)
     cb({ ok = true })
 end)
 
+RegisterNUICallback('refreshJobStorageHistory', function(data, cb)
+    TriggerServerEvent('rp_tablet_creator:server:requestJobStorageHistory', data and data.job)
+    cb({ ok = true })
+end)
+
 RegisterNUICallback('createGang', function(data, cb)
     TriggerServerEvent('rp_tablet_creator:server:createGang', data)
     cb({ ok = true })
@@ -181,6 +186,10 @@ end)
 RegisterNUICallback('updatePlayerAccess', function(data, cb)
     TriggerServerEvent('rp_tablet_creator:server:updatePlayerAccess', data)
     cb({ ok = true })
+end)
+
+RegisterNetEvent('rp_tablet_creator:client:jobStorageHistory', function(data)
+    SendNUIMessage({ action = 'jobStorageHistory', data = data or {} })
 end)
 
 RegisterNetEvent('rp_tablet_creator:client:jobBankData', function(data)
