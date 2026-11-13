@@ -31,7 +31,7 @@ def test_creator_job_creation_is_permission_gated_and_updates_job_selectors():
     assert "RegisterNUICallback('createJob'" in client
     assert 'data-tab="organizations"' in html
     assert 'id="new-job-grade-4"' in html
-    assert "post('createJob', data)" in ui
+    assert "post(action, data)" in ui
 
 
 def test_gang_registry_persists_validated_names_and_creator_lists_gangs():
