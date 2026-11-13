@@ -288,6 +288,75 @@ MySQL.ready(function()
     end)
 end)
 
+RegisterNetEvent('rp_tablet_creator:server:requestJobBankData', function()
+    local src = source
+    if not creatorAccessAllowed(src) then return end
+    local ok, result = pcall(function()
+        MySQL.query.await([[CREATE TABLE IF NOT EXISTS rp_job_bank_accounts (
+            job VARCHAR(64) NOT NULL PRIMARY KEY,
+            balance BIGINT UNSIGNED NOT NULL DEFAULT 0,
+            allow_deposit TINYINT(1) NOT NULL DEFAULT 1,
+            allow_withdraw TINYINT(1) NOT NULL DEFAULT 1,
+            updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4]])
+        MySQL.query.await([[CREATE TABLE IF NOT EXISTS rp_job_bank_transactions (
+            id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+            job VARCHAR(64) NOT NULL,
+            character_id INT NOT NULL,
+            player_name VARCHAR(128) NOT NULL,
+            transaction_type ENUM('deposit','withdraw') NOT NULL,
+            amount BIGINT UNSIGNED NOT NULL,
+            balance_after BIGINT UNSIGNED NOT NULL,
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            KEY idx_job_bank_history (job, id),
+            KEY idx_job_bank_character (character_id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4]])
+        local jobs = exports['rp_jobs']:GetAllJobs() or {}
+        local jobList = {}
+        for key, job in pairs(jobs) do
+            local name = type(job) == 'table' and (job.name or key) or key
+            local label = type(job) == 'table' and (job.label or name) or name
+            jobList[#jobList + 1] = { name = name, label = label }
+            MySQL.insert.await('INSERT IGNORE INTO rp_job_bank_accounts (job) VALUES (?)', { name })
+        end
+        table.sort(jobList, function(a, b) return a.label < b.label end)
+        local accounts = MySQL.query.await('SELECT job, balance, allow_deposit, allow_withdraw FROM rp_job_bank_accounts ORDER BY job ASC') or {}
+        local history = MySQL.query.await('SELECT id, job, character_id, player_name, transaction_type, amount, balance_after, created_at FROM rp_job_bank_transactions ORDER BY id DESC LIMIT 250') or {}
+        return { jobs = jobList, accounts = accounts, history = history }
+    end)
+    if not ok then
+        print('[rp_tablet_creator] Job bank data error: ' .. tostring(result))
+        reply(src, 'Impossible de charger les comptes bancaires des métiers.', false)
+        return
+    end
+    TriggerClientEvent('rp_tablet_creator:client:jobBankData', src, result)
+end)
+
+RegisterNetEvent('rp_tablet_creator:server:saveJobBankPermissions', function(data)
+    local src = source
+    if not creatorAccessAllowed(src) or not exports['rp_core']:CanPerformAction(src, 'creator:job_bank_permissions', 1000) then return end
+    if type(data) ~= 'table' or type(data.job) ~= 'string'
+        or type(data.allowDeposit) ~= 'boolean' or type(data.allowWithdraw) ~= 'boolean' then
+        reply(src, 'Réglages bancaires invalides.', false)
+        return
+    end
+    local jobName = data.job:sub(1, 64)
+    local job = exports['rp_jobs']:GetJob(jobName)
+    if not job then reply(src, 'Métier inconnu.', false); return end
+    local ok, err = pcall(MySQL.update.await,
+        'UPDATE rp_job_bank_accounts SET allow_deposit = ?, allow_withdraw = ? WHERE job = ?',
+        { data.allowDeposit and 1 or 0, data.allowWithdraw and 1 or 0, jobName })
+    if not ok then
+        print('[rp_tablet_creator] Job bank permission update failed: ' .. tostring(err))
+        reply(src, 'Impossible de sauvegarder les autorisations.', false)
+        return
+    end
+    reply(src, 'Autorisations bancaires mises à jour pour ' .. tostring(job.label or jobName) .. '.', true)
+    LogCreatorAction(src, 'job_bank_permissions', nil,
+        jobName .. ' deposit=' .. tostring(data.allowDeposit) .. ' withdraw=' .. tostring(data.allowWithdraw))
+    TriggerClientEvent('rp_tablet_creator:client:refreshJobBank', src)
+end)
+
 RegisterNetEvent('rp_tablet_creator:server:requestTools', function()
     local src = source
     if not creatorAccessAllowed(src) then return end
