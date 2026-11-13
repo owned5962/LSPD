@@ -151,6 +151,8 @@
       <label for="new-job-category">Catégorie</label><input id="new-job-category" maxlength="32" value="commerce">
       <label for="new-job-description">Description</label><textarea id="new-job-description" maxlength="255" placeholder="Description des missions du métier"></textarea>
       <label class="check-line"><input id="new-job-whitelisted" type="checkbox"> Métier sur candidature / whitelist</label>
+      <label for="new-job-capacity">Capacité maximale d'employés (0 = illimitée)</label>
+      <input id="new-job-capacity" type="number" min="0" max="500" step="1" value="0">
       <h3 class="subheading">Grades et salaires (0 à 4)</h3>
       <div class="grade-editor">
         <label>Grade 0<input id="new-job-grade-0" maxlength="48" value="Débutant"></label><label>Salaire<input id="new-job-salary-0" type="number" min="0" max="100000" value="200"></label>
