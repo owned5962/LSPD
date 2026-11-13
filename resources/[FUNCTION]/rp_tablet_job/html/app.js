@@ -3,11 +3,27 @@ let state = null;
 let policeAlerts = [];
 
 const $ = id => document.getElementById(id);
+function setRequestStatus(message, isError = false) {
+  const status = $('job-tablet-status');
+  if (!status) return;
+  status.hidden = !message;
+  status.textContent = message || '';
+  status.classList.toggle('request-error', isError);
+}
+
 const post = (name, data = {}) => fetch('https://' + resource + '/' + name, {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify(data)
-}).catch(() => {});
+}).then(response => {
+  if (!response.ok) throw new Error('HTTP ' + response.status);
+  setRequestStatus('');
+  return response.json().catch(() => ({}));
+}).catch(error => {
+  console.error('[rp_tablet_job] NUI ' + name + ' failed:', error);
+  setRequestStatus('Communication avec la tablette impossible. Réessayez ; si le problème persiste, vérifiez la ressource rp_tablet_job.', true);
+  return { ok: false, error: String(error) };
+});
 
 const missionCatalog = {
   police: [['Patrouille de secteur', 'Effectuez une patrouille préventive dans votre secteur.'], ['Sécurisation d’une zone', 'Assurez une présence visible et sécurisez le périmètre.']],
@@ -42,8 +58,9 @@ function submitJobBank(action) {
     $('job-bank-permissions').textContent = 'Saisissez un montant entier compris entre 1 et 1 000 000 $.';
     return;
   }
-  post(action, { amount });
-  input.value = '';
+  post(action, { amount }).then(result => {
+    if (result && result.ok !== false) input.value = '';
+  });
 }
 
 function renderJobBank(data) {
