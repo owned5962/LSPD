@@ -1,3 +1,14 @@
+local function RefundCash(src, player, amount, operation)
+    if not player or type(player.addCash) ~= 'function' then return false end
+    local ok, refunded = pcall(player.addCash, amount)
+    if not ok or refunded ~= true then
+        print(('[rp_clothing] Refund failed for player %s during %s (amount %s): %s')
+            :format(tostring(src), tostring(operation), tostring(amount), tostring(refunded)))
+        return false
+    end
+    return true
+end
+
 local function CloneSkin(value)
     local copy = {}
     if type(value) == 'table' then
@@ -31,8 +42,10 @@ RegisterNetEvent('rp_clothing:purchaseHair', function(rawStyle, rawColor, rawHig
         { json.encode(skin), player.charId, player.identifier }
     )
     if not ok or type(result) ~= 'number' or result < 0 then
-        player.addCash(price)
-        TriggerClientEvent('rp_clothing:barberPurchaseResult', src, { success = false, message = 'Sauvegarde impossible : paiement remboursé.' })
+        local refunded = RefundCash(src, player, price, 'barber purchase')
+        local message = refunded and 'Sauvegarde impossible : paiement remboursé.'
+            or 'Sauvegarde impossible : remboursement non confirmé. Contactez un administrateur.'
+        TriggerClientEvent('rp_clothing:barberPurchaseResult', src, { success = false, message = message })
         print(('[rp_clothing] Barber save failed for character %s: %s'):format(player.charId, tostring(result)))
         return
     end
@@ -121,8 +134,9 @@ RegisterNetEvent('rp_clothing:saveOutfit', function(name, skinData)
     end)
 
     if not ok then
-        player.addCash(150)
-        Notify(src, 'Enregistrement impossible : paiement annulé.', 'error')
+        local refunded = RefundCash(src, player, 150, 'outfit save')
+        Notify(src, refunded and 'Enregistrement impossible : paiement annulé.'
+            or 'Enregistrement impossible : remboursement non confirmé. Contactez un administrateur.', 'error')
         print(('[rp_clothing] Outfit save failed for %s: %s'):format(player.identifier, tostring(result)))
         return
     end
