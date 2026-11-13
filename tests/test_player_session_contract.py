@@ -150,7 +150,6 @@ def test_character_resource_declares_job_catalog_startup_dependency():
     assert "'rp_jobs'" in manifest
     assert cfg.index("ensure rp_core") < cfg.index("ensure rp_jobs") < cfg.index("ensure rp_characters")
 
-
 if __name__ == "__main__":
     test_server_player_registry_only_exposes_fully_loaded_characters()
     test_client_receives_complete_authoritative_character_snapshot()
