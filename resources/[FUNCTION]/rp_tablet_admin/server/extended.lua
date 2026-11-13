@@ -41,6 +41,20 @@ local function LogExtendedAction(src, action, targetId, details)
     if not ok then print('[rp_tablet_admin] Audit log failed: ' .. tostring(err)) end
 end
 
+RegisterNetEvent('rp_tablet_admin:server:teleportToMapPoint', function(rawX, rawY)
+    local src = source
+    if not AllowExtendedAction(src, 'teleport_map_point', 1000) then return end
+    local x, y = tonumber(rawX), tonumber(rawY)
+    if not x or not y or x ~= x or y ~= y
+        or x < -4500 or x > 4500 or y < -4500 or y > 8500 then
+        NotifyExtended(src, 'Coordonnées de téléportation invalides.')
+        return
+    end
+    TriggerClientEvent('rp_tablet_admin:client:teleportToMapPoint', src, { x = x, y = y })
+    LogExtendedAction(src, 'teleport_map_point', nil,
+        ('Téléportation au point X %.1f / Y %.1f défini sur la carte'):format(x, y))
+end)
+
 RegisterNetEvent('rp_tablet_admin:server:requestPlayerPositions', function()
     local src = source
     if not AllowExtendedAction(src, 'positions', 1800) then return end
