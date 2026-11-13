@@ -200,6 +200,22 @@ def test_core_startup_order_does_not_depend_on_private_server_keys():
     assert "ensure rp_core" in cfg
     assert "ensure rp_characters" in cfg
 
+def test_character_spawn_uses_validated_coordinates_and_wrap_safe_timeouts():
+    player = (CORE / "server/player.lua").read_text(encoding="utf-8")
+    character_server = (CHARACTERS / "server/main.lua").read_text(encoding="utf-8")
+    character_client = (CHARACTERS / "client/main.lua").read_text(encoding="utf-8")
+    assert "local function NormalizePosition(value)" in player
+    assert "x < -6000 or x > 6000 or y < -6000 or y > 6000" in player
+    assert "z < -500 or z > 2000" in player
+    assert "self.position = NormalizePosition(savedPosition)" in player
+    assert "spawnPlayer', src, player.position, char.sex, char.skin" in character_server
+    assert "local function NormalizeClientSpawn(coords)" in character_client
+    assert "local function SpawnWaitExpired(startedAt, duration)" in character_client
+    assert "local fadeStartedAt = GetGameTimer() % SPAWN_TIMER_MODULUS" in character_client
+    assert "local collisionStartedAt = GetGameTimer() % SPAWN_TIMER_MODULUS" in character_client
+    assert "GetGameTimer() < fadeDeadline" not in character_client
+    assert "GetGameTimer() < collisionDeadline" not in character_client
+
 
 if __name__ == "__main__":
     test_server_player_registry_only_exposes_fully_loaded_characters()
@@ -218,4 +234,5 @@ if __name__ == "__main__":
     test_core_manifest_declares_supported_runtime_and_driver_once()
     test_character_creation_is_server_validated_and_slot_uniqueness_is_database_enforced()
     test_core_startup_order_does_not_depend_on_private_server_keys()
+    test_character_spawn_uses_validated_coordinates_and_wrap_safe_timeouts()
     print("Player session, core architecture and SQL dependency checks passed.")
