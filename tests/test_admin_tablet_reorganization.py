@@ -120,7 +120,9 @@ def test_admin_weapon_grants_use_anticheat_policy_and_persistent_admin_controls(
     assert "AllowedAdminWeapons" not in extended
     assert "weaponPolicy = weaponPolicy or {}" in client
     assert "RegisterServerCallback('saveWeaponPolicy'" in client
-    assert 'data-admin-view="weapons"' in html and 'id="admin-weapons-view"' in html
+    assert 'data-admin-view="weapons"' not in html and 'id="admin-weapons-view"' not in html
+    creator_html = read("resources/[FUNCTION]/rp_tablet_creator/html/index.html")
+    assert 'data-tab="weapons"' in creator_html and 'id="creator-weapon-list"' in creator_html
     assert "function renderWeaponPolicy()" in ui and "function saveWeaponPolicy()" in ui
     assert "weaponPolicy.filter(weapon => weapon && weapon.enabled === true)" in ui
     assert "'rp_anticheat'" in manifest
