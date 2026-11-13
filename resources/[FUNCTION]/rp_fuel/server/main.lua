@@ -124,6 +124,40 @@ local function refundPayment(pending, reason)
     end)
 end
 
+local function refundPaymentNow(pending, reason)
+    local column = pending.account == 'cash' and 'cash' or 'bank'
+    local locks = { pending.charId }
+
+    for attempt = 1, 20 do
+        if exports['rp_core']:AcquireCharacterLock(locks) then
+            local ok, affected = pcall(MySQL.update.await,
+                ('UPDATE characters SET %s = %s + ? WHERE id = ? AND identifier = ?'):format(column, column),
+                { pending.amount, pending.charId, pending.identifier })
+            exports['rp_core']:ReleaseCharacterLock(locks)
+
+            if ok and tonumber(affected) == 1 then
+                local player = exports['rp_core']:GetPlayerFromId(pending.source)
+                if player and player.charId == pending.charId then
+                    if pending.account == 'cash' then
+                        player.cash = (tonumber(player.cash) or 0) + pending.amount
+                    else
+                        player.bank = (tonumber(player.bank) or 0) + pending.amount
+                    end
+                    updateBalanceClient(pending.source, player)
+                end
+                TriggerEvent('rp_economy:server:logTransaction', pending.charId, 'fuel_refund',
+                    pending.amount, 'Station-service', 'Remboursement : ' .. tostring(reason))
+                return true
+            end
+        end
+        Wait(250)
+    end
+
+    print(('[rp_fuel] CRITICAL: synchronous refund failed for character %s, amount %s (%s)'):format(
+        tostring(pending.charId), tostring(pending.amount), tostring(reason)))
+    return false
+end
+
 local function cancelRefuel(netId, pending, reason)
     if pendingRefuels[netId] ~= pending then return end
     pendingRefuels[netId] = nil
@@ -345,6 +379,7 @@ AddEventHandler('onResourceStop', function(resourceName)
     if resourceName ~= GetCurrentResourceName() then return end
     for netId, pending in pairs(pendingRefuels) do
         pendingRefuels[netId] = nil
-        refundPayment(pending, 'redémarrage de la ressource')
+        -- Do the refund inline: a new thread can be cancelled as the resource stops.
+        refundPaymentNow(pending, 'redémarrage de la ressource')
     end
 end)
