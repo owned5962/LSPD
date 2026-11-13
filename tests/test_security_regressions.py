@@ -1416,10 +1416,6 @@ def test_job_bank_is_available_in_f4_job_tablet_with_server_side_permissions():
     assert "if fromJobMenu == true then" in bank_server
     assert "account.allow_deposit" in bank_server and "account.allow_withdraw" in bank_server
 
-if __name__ == "__main__":
-    test_server_cfg_omits_default_framework_resources_and_starts_territories_last()
-    test_character_appearance_recovers_missing_clothing_and_clears_invalid_props()
-    test_job_bank_is_available_in_f4_job_tablet_with_server_side_permissions()
 
 def test_schema_migrations_are_safe_after_a_fresh_schema_import():
     metadata_migration = read("migrations/004_character_metadata.sql")
@@ -1477,3 +1473,9 @@ def test_clothing_refunds_are_verified_before_claiming_success():
     assert "local function RefundCash(src, player, amount, operation)" in source
     assert "local ok, refunded = pcall(player.addCash, amount)" in source
     assert "remboursement non confirmé" in source
+
+if __name__ == "__main__":
+    checks = [value for name, value in globals().items() if name.startswith("test_") and callable(value)]
+    for check in checks:
+        check()
+    print(f"All {len(checks)} security regression checks passed.")
