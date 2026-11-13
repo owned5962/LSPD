@@ -4,14 +4,30 @@ local actionCooldowns = {}
 local pendingDisconnectSaves = {}
 local pendingDisconnectPlayers = {}
 
+local TIMER_MODULUS = 4294967296
+
 local function CanPerformAction(src, action, cooldownMs)
     src = tonumber(src)
-    if not src or src < 1 or type(action) ~= 'string' or action == '' then return false end
-    local now = GetGameTimer()
+    if not src or src < 1 or src % 1 ~= 0
+        or type(action) ~= 'string' or action == '' or #action > 80 then
+        return false
+    end
+
+    local cooldown = tonumber(cooldownMs) or 1000
+    if cooldown ~= cooldown or cooldown == math.huge or cooldown == -math.huge then
+        cooldown = 1000
+    end
+    cooldown = math.floor(math.max(0, math.min(60000, cooldown)))
+
+    local now = GetGameTimer() % TIMER_MODULUS
     actionCooldowns[src] = actionCooldowns[src] or {}
-    local nextAllowed = actionCooldowns[src][action] or 0
-    if now < nextAllowed then return false end
-    actionCooldowns[src][action] = now + math.max(0, tonumber(cooldownMs) or 1000)
+    local lastAction = actionCooldowns[src][action]
+    if lastAction ~= nil then
+        local elapsed = (now - lastAction) % TIMER_MODULUS
+        if elapsed < cooldown then return false end
+    end
+
+    actionCooldowns[src][action] = now
     return true
 end
 
@@ -33,7 +49,7 @@ local function WaitForPlayerLoaded(source, timeoutMs)
     local src = tonumber(source)
     if not src or src < 1 then return nil end
     local timeout = math.max(0, math.min(15000, tonumber(timeoutMs) or 5000))
-    local deadline = GetGameTimer() + timeout
+    local startedAt = GetGameTimer() % TIMER_MODULUS
     repeat
         local player = Players[src]
         if player and player.isLoaded == true and tonumber(player.charId) then
@@ -41,7 +57,7 @@ local function WaitForPlayerLoaded(source, timeoutMs)
         end
         if not GetPlayerName(src) then return nil end
         Wait(100)
-    until GetGameTimer() >= deadline
+    until ((GetGameTimer() % TIMER_MODULUS) - startedAt) % TIMER_MODULUS >= timeout
     return nil
 end
 
@@ -214,7 +230,7 @@ AddEventHandler('playerDropped', function(reason)
             pendingDisconnectPlayers[characterId] = player
         end
         Players[src] = nil
-        TriggerEvent('rp_core:server:playerUnloaded', src, player)
+        TriggerEvent('rp_core:server:playerUnloaded', src, ClonePlayerRecord(player))
 
         CreateThread(function()
             -- The FiveM source ID may be reused after disconnect; never read a new player's ped.
