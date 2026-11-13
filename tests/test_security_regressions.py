@@ -1438,3 +1438,9 @@ def test_interaction_billing_keeps_in_memory_balances_in_sync_with_sql():
     assert "local targetNewBank = (tonumber(target.bank) or 0) - cost" in source
     assert "target.bank, player.bank = targetNewBank, sourceNewBank" in source
     assert source.index("tonumber(affectedRows) ~= 2") < source.index("local sourceNewBank")
+
+def test_job_interaction_menu_renders_server_labels_as_text():
+    app = read("resources/[FUNCTION]/rp_interactions/html/js/app.js")
+    assert "label.textContent = String(act.label || '')" in app
+    assert "row.innerHTML" not in app
+    assert "/^fa-[a-z0-9-]+$/.test(act.icon)" in app
