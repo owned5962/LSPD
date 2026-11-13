@@ -939,7 +939,8 @@ local function GetItemCatalog()
         catalog[#catalog + 1] = {
             name = name,
             label = definition.label or name,
-            weight = tonumber(definition.weight) or 0
+            weight = tonumber(definition.weight) or 0,
+            type = definition.type or 'item'
         }
     end
     table.sort(catalog, function(a, b) return a.label < b.label end)
