@@ -15,6 +15,7 @@
       <button class="nav active" data-tab="overview"><i class="fa-solid fa-gauge-high"></i> Tableau de bord</button>
       <button class="nav" data-tab="team"><i class="fa-solid fa-users"></i> Équipe</button>
       <button class="nav" data-tab="missions"><i class="fa-solid fa-list-check"></i> Missions</button>
+      <button class="nav" data-tab="stats"><i class="fa-solid fa-chart-column"></i> Statistiques</button>
       <button class="nav" data-tab="bank"><i class="fa-solid fa-building-columns"></i> Banque du métier</button>
       <button class="nav hidden" id="police-nav" data-tab="police"><i class="fa-solid fa-tower-broadcast"></i> Alertes police <span id="police-alert-count">0</span></button>
     </nav>
@@ -36,6 +37,15 @@
       <div class="section-title"><div><h2>Missions de service</h2><p>Les missions proposées dépendent du métier actif.</p></div></div>
       <div id="active-mission"></div><div id="mission-list" class="mission-list"></div>
       <p class="note">Cette première version gère l’acceptation et la clôture des missions dans la session. Les objectifs sur la carte, récompenses et preuves de réalisation seront raccordés aux scripts métier concernés.</p>
+    </section>
+    <section class="page" id="stats">
+      <div class="section-title"><div><h2>Statistiques du métier</h2><p>Total des salaires versés aux employés du métier, sur la journée, le mois et l’année en cours.</p></div><button class="secondary" id="salary-stats-refresh">Actualiser</button></div>
+      <div class="salary-stat-cards">
+        <article><i class="fa-solid fa-calendar-day"></i><small>Aujourd’hui</small><strong id="salary-today">0 $</strong></article>
+        <article><i class="fa-solid fa-calendar-week"></i><small>Ce mois</small><strong id="salary-month">0 $</strong></article>
+        <article><i class="fa-solid fa-calendar-check"></i><small>Cette année</small><strong id="salary-year">0 $</strong></article>
+      </div>
+      <article class="salary-chart-card"><div><h3>Répartition des salaires</h3><p>Comparaison des montants versés sur les trois périodes.</p></div><div id="salary-chart" class="salary-chart" aria-label="Graphique des salaires"></div><small id="salary-stats-note">Les données proviennent des versements réellement enregistrés en banque.</small></article>
     </section>
     <section class="page" id="bank">
       <div class="section-title">
