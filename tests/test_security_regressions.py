@@ -1376,6 +1376,17 @@ def test_job_storage_prompt_matches_enabled_stash_and_armory_access():
     assert "marker.stashEnabled and marker.armoryEnabled" in client
     assert "(data.stashEnabled ~= true and data.armoryEnabled ~= true)" in client
 
+
+
+
+def test_player_report_overlay_closes_on_escape_without_closing_admin_tablet():
+    ui = read("resources/[FUNCTION]/rp_tablet_admin/html/js/app.js")
+    handler = ui.split("document.addEventListener('keydown', (event) => {", 1)[1].split("window.addEventListener('message', handleTabletMessage)", 1)[0]
+    assert "player-report-overlay" in handler
+    assert "nuiPost('closePlayerReport')" in handler
+    assert handler.index("player-report-overlay") < handler.index("tablet-wrapper")
+    assert "return;" in handler
+
 if __name__ == "__main__":
     checks = sorted(
         (name, check)
