@@ -114,6 +114,27 @@ def test_creator_job_garages_are_persisted_and_validated():
     assert "renderJobGarages(d.jobGarages || [])" in ui
 
 
+
+def test_job_garage_runtime_enforces_server_job_grade_and_vehicle_ownership():
+    server = read("resources/[FUNCTION]/rp_garages/server/job_garage.lua")
+    client = read("resources/[FUNCTION]/rp_garages/client/job_garage.lua")
+    manifest = read("resources/[FUNCTION]/rp_garages/fxmanifest.lua")
+    creator = read("resources/[FUNCTION]/rp_tablet_creator/server/main.lua")
+    assert "GetPlayerFromId(src)" in server
+    assert "player.jobGrade" in server
+    assert "entry.minGrade" in server
+    assert "CanPerformAction(src, 'garages:spawn_job_vehicle'" in server
+    assert "CreateVehicleServerSetter" in server
+    assert "activeVehicles[src]" in server
+    assert "GetPedInVehicleSeat(vehicle, -1) ~= ped" in server
+    assert "NetworkGetNetworkIdFromEntity(vehicle) ~= active.netId" in server
+    assert "DeleteEntity(vehicle)" in server
+    assert "requestJobGarageMarker" in client
+    assert "spawnJobVehicle" in client and "storeJobVehicle" in client
+    assert "server/job_garage.lua" in manifest and "client/job_garage.lua" in manifest
+    assert "rp_garages:server:reloadJobGarages" in creator
+
+
 if __name__ == "__main__":
     test_custom_jobs_are_persisted_validated_and_loaded_with_numeric_grades()
     test_creator_job_creation_is_permission_gated_and_updates_job_selectors()
@@ -121,4 +142,5 @@ if __name__ == "__main__":
     test_creator_can_edit_and_delete_persisted_gangs()
     test_creator_can_edit_and_safely_delete_custom_jobs()
     test_creator_job_garages_are_persisted_and_validated()
+    test_job_garage_runtime_enforces_server_job_grade_and_vehicle_ownership()
     print("Creator organization regression checks passed.")
