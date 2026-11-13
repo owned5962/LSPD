@@ -43,10 +43,21 @@ RegisterNetEvent('rp_tablet_creator:client:open', function(role)
     TriggerServerEvent('rp_tablet_creator:server:requestTools')
     TriggerServerEvent('rp_tablet_creator:server:requestAdminTools')
     TriggerServerEvent('rp_tablet_creator:server:requestOrganizations')
+    TriggerServerEvent('rp_tablet_creator:server:requestJobBankData')
 end)
 
 RegisterNUICallback('close', function(_, cb)
     closeTablet()
+    cb({ ok = true })
+end)
+
+RegisterNUICallback('refreshJobBank', function(_, cb)
+    TriggerServerEvent('rp_tablet_creator:server:requestJobBankData')
+    cb({ ok = true })
+end)
+
+RegisterNUICallback('saveJobBankPermissions', function(data, cb)
+    TriggerServerEvent('rp_tablet_creator:server:saveJobBankPermissions', data)
     cb({ ok = true })
 end)
 
@@ -130,6 +141,14 @@ end)
 RegisterNUICallback('updatePlayerAccess', function(data, cb)
     TriggerServerEvent('rp_tablet_creator:server:updatePlayerAccess', data)
     cb({ ok = true })
+end)
+
+RegisterNetEvent('rp_tablet_creator:client:jobBankData', function(data)
+    SendNUIMessage({ action = 'jobBankData', data = data or {} })
+end)
+
+RegisterNetEvent('rp_tablet_creator:client:refreshJobBank', function()
+    if isOpen then TriggerServerEvent('rp_tablet_creator:server:requestJobBankData') end
 end)
 
 RegisterNetEvent('rp_tablet_creator:client:refreshTools', function()
