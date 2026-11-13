@@ -1231,9 +1231,3 @@ RegisterNetEvent('rp_inventory:server:transferJobStorage', function(storageType,
     sendJobStorageData(src, storageType)
 end)
 
-AddEventHandler('playerDropped', function()
-    local src = source
-    for job, owner in pairs(jobStorageLocks) do
-        if owner == src then jobStorageLocks[job] = nil end
-    end
-end)
