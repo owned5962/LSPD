@@ -910,6 +910,41 @@ RegisterNetEvent('rp_tablet_creator:server:createGang', function(data)
     LogCreatorAction(src, 'create_gang', nil, result.name)
 end)
 
+RegisterNetEvent('rp_tablet_creator:server:updateGang', function(data)
+    local src = source
+    if not creatorAccessAllowed(src) or not exports['rp_core']:CanPerformAction(src, 'creator:update_gang', 1200) or type(data) ~= 'table' then return end
+    local callOk, updated, result = pcall(function()
+        return exports['rp_gangs']:UpdateGang(data)
+    end)
+    if not callOk then
+        print(('[rp_tablet_creator] Gang update failed: %s'):format(tostring(updated)))
+        reply(src, 'Erreur interne pendant la modification du gang.', false)
+        return
+    end
+    if updated ~= true then reply(src, tostring(result or 'Modification refusée.'), false); return end
+    reply(src, ('Gang %s modifié.'):format(result.label), true)
+    TriggerClientEvent('rp_tablet_creator:client:organizationsData', src, exports['rp_gangs']:GetAllGangs())
+    LogCreatorAction(src, 'update_gang', nil, result.name)
+end)
+
+RegisterNetEvent('rp_tablet_creator:server:deleteGang', function(rawName)
+    local src = source
+    if not creatorAccessAllowed(src) or not exports['rp_core']:CanPerformAction(src, 'creator:delete_gang', 1500) then return end
+    if type(rawName) ~= 'string' or #rawName > 40 then reply(src, 'Identifiant de gang invalide.', false); return end
+    local callOk, deleted, result = pcall(function()
+        return exports['rp_gangs']:DeleteGang(rawName)
+    end)
+    if not callOk then
+        print(('[rp_tablet_creator] Gang deletion failed: %s'):format(tostring(deleted)))
+        reply(src, 'Erreur interne pendant la suppression du gang.', false)
+        return
+    end
+    if deleted ~= true then reply(src, tostring(result or 'Suppression refusée.'), false); return end
+    reply(src, 'Gang supprimé.', true)
+    TriggerClientEvent('rp_tablet_creator:client:organizationsData', src, exports['rp_gangs']:GetAllGangs())
+    LogCreatorAction(src, 'delete_gang', nil, rawName)
+end)
+
 RegisterNetEvent('rp_tablet_creator:server:requestOrganizations', function()
     local src = source
     if not creatorAccessAllowed(src) then return end
