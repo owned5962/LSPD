@@ -102,7 +102,7 @@ def test_creator_job_garages_are_persisted_and_validated():
     assert "creator:save_job_garage" in server and "creator:delete_job_garage" in server
     assert "exports['rp_jobs']:GetJob(jobName)" in server
     assert "or #data.vehicles > 20" in server
-    assert "model:match" in server
+    assert "model:find" in server
     assert "minGrade < 0 or minGrade > 4" in server
     assert "local spawnX = coords.x - math.sin(radians) * 4.0" in server
     assert "RegisterNUICallback('saveJobGarage'" in client
