@@ -133,8 +133,6 @@ RegisterNetEvent('rp_garages:server:spawnJobVehicle', function(rawModel)
     end
     local plate = ('SV%05d'):format((tonumber(src) * 997 + GetGameTimer()) % 100000)
     SetVehicleNumberPlateText(vehicle, plate)
-    SetVehicleDoorsLocked(vehicle, 1)
-    SetVehicleEngineOn(vehicle, false, true, true)
     SetEntityOrphanMode(vehicle, 2)
     local netId = NetworkGetNetworkIdFromEntity(vehicle)
     activeVehicles[src] = { netId = netId, entity = vehicle, job = garage.job, model = rawModel, plate = plate }
