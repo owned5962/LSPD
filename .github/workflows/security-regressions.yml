@@ -16,3 +16,5 @@ jobs:
           python-version: "3.x"
       - name: Run regression checks
         run: python tests/test_security_regressions.py
+      - name: Verify requested server UI and gameplay updates
+        run: python -m pytest -q tests/test_requested_server_updates.py
