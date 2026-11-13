@@ -68,6 +68,7 @@ jobs:
           metadata_count=$("${mysql_cmd[@]}" -e "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'characters' AND column_name = 'metadata'")
           salary_index_count=$("${mysql_cmd[@]}" -e "SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = 'bank_transactions' AND index_name = 'idx_bank_salary_reason_created'")
           bank_table_count=$("${mysql_cmd[@]}" -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name IN ('rp_job_bank_accounts', 'rp_job_bank_transactions')")
+          echo "metadata=$metadata_count salary_index=$salary_index_count job_bank_tables=$bank_table_count"
           test "$metadata_count" = "1"
           test "$salary_index_count" = "1"
           test "$bank_table_count" = "2"
