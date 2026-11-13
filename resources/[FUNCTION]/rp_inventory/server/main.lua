@@ -968,12 +968,18 @@ local function loadJobStorageConfigs()
                     weapons[entry.name] = tonumber(entry.minGrade) or 0
                 end
             end
-            loaded[row.job] = {
-                job = row.job, coords = vector3(tonumber(row.x), tonumber(row.y), tonumber(row.z)),
-                stashEnabled = tonumber(row.stash_enabled) == 1,
-                armoryEnabled = tonumber(row.armory_enabled) == 1,
-                armoryItems = weapons
-            }
+            local x, y, z = tonumber(row.x), tonumber(row.y), tonumber(row.z)
+            if type(row.job) == 'string' and #row.job > 0 and #row.job <= 64
+                and x and y and z and x == x and y == y and z == z then
+                loaded[row.job] = {
+                    job = row.job, coords = vector3(x, y, z),
+                    stashEnabled = tonumber(row.stash_enabled) == 1,
+                    armoryEnabled = tonumber(row.armory_enabled) == 1,
+                    armoryItems = weapons
+                }
+            else
+                print(('[rp_inventory] Ignoring invalid job storage configuration for job %s'):format(tostring(row.job)))
+            end
         end
     end
     jobStorageConfigs = loaded
@@ -1066,8 +1072,9 @@ local function sendJobStorageData(src, storageType)
     local inventory = {}
     for _, item in ipairs(normalizeInventory(playerInventories[src])) do
         local def = Config.DefaultItems[item.name]
-        local allowed = storageType == 'stash'
-            or (def and def.type == 'weapon' and config.armoryItems[item.name] ~= nil
+        local allowed = (storageType == 'stash' and def and def.type ~= 'weapon')
+            or (storageType == 'armory' and def and def.type == 'weapon'
+                and config.armoryItems[item.name] ~= nil
                 and (tonumber(player.jobGrade) or 0) >= config.armoryItems[item.name])
         if allowed then
             inventory[#inventory + 1] = { name = item.name, label = item.label or item.name, count = item.count }
@@ -1117,6 +1124,10 @@ RegisterNetEvent('rp_inventory:server:transferJobStorage', function(storageType,
         return
     end
     local lockedJob = player.job
+    if storageType == 'stash' and definition.type == 'weapon' then
+        notify(src, 'error', 'Les armes doivent passer par l’armurerie et ses restrictions de grade.')
+        return
+    end
     if storageType == 'armory' then
         local minimum = config.armoryItems[itemName]
         if definition.type ~= 'weapon' or minimum == nil or (tonumber(player.jobGrade) or 0) < minimum then
