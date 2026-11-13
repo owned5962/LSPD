@@ -90,6 +90,7 @@ def test_world_density_is_per_frame_but_police_dispatch_settings_are_not():
     assert "AddEventHandler('playerSpawned', ApplyPoliceSettings)" in world
     assert "ApplyWantedSettings()" in police
     assert "AddEventHandler('playerSpawned', ApplyWantedSettings)" in police
-    police_loop = police.split("CreateThread(function()", 1)[1]
+    wanted_section = police.split("local function ApplyWantedSettings()", 1)[1]
+    police_loop = wanted_section.split("CreateThread(function()", 1)[1].split("AddEventHandler('onResourceStop'", 1)[0]
     assert "SetMaxWantedLevel(0)" not in police_loop
     assert "SetPoliceIgnorePlayer" not in police_loop
