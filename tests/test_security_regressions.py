@@ -914,10 +914,9 @@ def test_cfx_default_resources_are_documented_and_start_order_is_valid():
     readme = read("README.md")
     assert "ensure oxmysql" in config
     assert config.index("ensure rp_jobs") < config.index("ensure rp_economy")
-    assert "ensure spawnmanager" in config
-    assert "ensure sessionmanager" in config
-    assert "ensure hardcap" in config
-    assert "ensure baseevents" in config
+    for resource in ("spawnmanager", "sessionmanager", "hardcap", "baseevents"):
+        assert f"ensure {resource}" not in config
+    assert config.rindex("ensure rp_territories") > config.index("ensure job_smuggler")
     assert "set onesync on" in config
     assert not any(line.strip() == "onesync on" for line in config.splitlines())
     assert "cfx-server-data" in readme
