@@ -139,9 +139,12 @@ local function DeleteCustomJob(name)
     if bank > 0 or history > 0 then
         return false, 'Suppression refusée : le compte bancaire ou son historique contient des données. Videz/archivez ces données avant suppression.'
     end
-    local ok, affected = pcall(MySQL.update.await, 'DELETE FROM rp_custom_jobs WHERE name = ?', { name })
-    if not ok or type(affected) ~= 'number' or affected < 1 then
-        print(('[rp_jobs] Custom job deletion failed for %s: %s'):format(name, tostring(affected)))
+    local ok, committed = pcall(MySQL.transaction.await, {
+        { query = 'DELETE FROM rp_job_bank_accounts WHERE job = ? AND balance = 0', values = { name } },
+        { query = 'DELETE FROM rp_custom_jobs WHERE name = ?', values = { name } }
+    })
+    if not ok or committed ~= true then
+        print(('[rp_jobs] Custom job deletion failed for %s: %s'):format(name, tostring(committed)))
         return false, 'Erreur SQL : métier non supprimé.'
     end
     RemoveRuntimeJob(name)
