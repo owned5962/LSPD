@@ -92,6 +92,35 @@ def test_creator_can_edit_and_safely_delete_custom_jobs():
     assert "post(action, data)" in ui and "post('deleteJob', { name: job.name })" in ui
     assert "customJobsData" in client and "renderCreatorJobs" in ui
 
+
+def test_creator_job_garages_are_persisted_and_validated():
+    server = read("resources/[FUNCTION]/rp_tablet_creator/server/main.lua")
+    client = read("resources/[FUNCTION]/rp_tablet_creator/client/main.lua")
+    html = read("resources/[FUNCTION]/rp_tablet_creator/html/index.html")
+    ui = read("resources/[FUNCTION]/rp_tablet_creator/html/app.js")
+    assert "CREATE TABLE IF NOT EXISTS rp_creator_job_garages" in server
+    assert "creator:save_job_garage" in server and "creator:delete_job_garage" in server
+    assert "exports['rp_jobs']:GetJob(jobName)" in server
+    assert "or #data.vehicles > 20" in server
+    assert "not model:match('^[a-z0-9_]+
+    test_custom_jobs_are_persisted_validated_and_loaded_with_numeric_grades()
+    test_creator_job_creation_is_permission_gated_and_updates_job_selectors()
+    test_gang_registry_persists_validated_names_and_creator_lists_gangs()
+    test_creator_can_edit_and_delete_persisted_gangs()
+    test_creator_can_edit_and_safely_delete_custom_jobs()
+    test_creator_job_garages_are_persisted_and_validated()
+    print("Creator organization regression checks passed.")
+)" in server
+    assert "minGrade < 0 or minGrade > 4" in server
+    assert "local spawnX = coords.x - math.sin(radians) * 4.0" in server
+    assert "RegisterNUICallback('saveJobGarage'" in client
+    assert "RegisterNUICallback('deleteJobGarage'" in client
+    assert 'id="job-garage-job"' in html and 'id="job-garage-add-vehicle"' in html
+    assert 'id="job-garage-save"' in html and 'id="job-garage-delete"' in html
+    assert "post('saveJobGarage', { job, vehicles: editingJobGarageVehicles })" in ui
+    assert "post('deleteJobGarage', { job })" in ui
+    assert "renderJobGarages(d.jobGarages || [])" in ui
+
 if __name__ == "__main__":
     test_custom_jobs_are_persisted_validated_and_loaded_with_numeric_grades()
     test_creator_job_creation_is_permission_gated_and_updates_job_selectors()
