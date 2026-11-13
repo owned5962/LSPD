@@ -29,6 +29,8 @@ def test_rental_price_and_server_side_validation():
     server = read("server/main.lua")
     assert "Config.PricePerTenMinutes = 100" in config
     assert "Config.MaxHours = 12" in config
+    assert "Config.InteractionDistance = 2.0" in config
+    assert "Config.InteractionDistance) or 2.0" in server
     assert "validDuration" in server
     assert "chargePlayer(src, cost" in server
     assert "CanPerformAction" in server
