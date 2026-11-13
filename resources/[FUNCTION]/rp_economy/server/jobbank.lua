@@ -77,6 +77,19 @@ MySQL.ready(function()
     end)
 end)
 
+RegisterNetEvent('rp_jobbank:server:requestFromJobMenu', function()
+    local src = source
+    if not exports['rp_core']:CanPerformAction(src, 'jobtablet:jobbank:request', 1000) then return end
+    local player = exports['rp_core']:GetPlayerFromId(src)
+    local jobName = player and tostring(player.job or '') or ''
+    if jobName == '' or jobName == 'unemployed' then
+        TriggerClientEvent('rp_jobbank:client:jobMenuUpdate', src, nil)
+        return
+    end
+    local ok, data = pcall(getAccountData, jobName)
+    TriggerClientEvent('rp_jobbank:client:jobMenuUpdate', src, ok and data or nil)
+end)
+
 RegisterNetEvent('rp_jobbank:server:request', function()
     local src = source
     if exports['rp_economy']:IsBankSessionAuthenticated(src) ~= true then return end
@@ -90,9 +103,10 @@ RegisterNetEvent('rp_jobbank:server:request', function()
     TriggerClientEvent('rp_jobbank:client:update', src, ok and data or nil)
 end)
 
-local function transact(src, rawAmount, kind)
-    if exports['rp_economy']:IsBankSessionAuthenticated(src) ~= true then return end
-    if not exports['rp_core']:CanPerformAction(src, 'economy:jobbank:' .. kind, 1500) then return end
+local function transact(src, rawAmount, kind, fromJobMenu)
+    if fromJobMenu ~= true and exports['rp_economy']:IsBankSessionAuthenticated(src) ~= true then return end
+    local actionName = fromJobMenu == true and ('jobtablet:jobbank:' .. kind) or ('economy:jobbank:' .. kind)
+    if not exports['rp_core']:CanPerformAction(src, actionName, 1500) then return end
     local player = exports['rp_core']:GetPlayerFromId(src)
     local amount = validAmount(rawAmount)
     local jobName = player and tostring(player.job or '') or ''
@@ -193,4 +207,12 @@ end)
 
 RegisterNetEvent('rp_jobbank:server:withdraw', function(amount)
     transact(source, amount, 'withdraw')
+end)
+
+RegisterNetEvent('rp_jobbank:server:jobMenuDeposit', function(amount)
+    transact(source, amount, 'deposit', true)
+end)
+
+RegisterNetEvent('rp_jobbank:server:jobMenuWithdraw', function(amount)
+    transact(source, amount, 'withdraw', true)
 end)
