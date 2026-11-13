@@ -72,11 +72,6 @@ def test_dispatch_alerts_are_limited_to_police_on_duty():
     assert "policeWaypoint" in tablet_client and "markPoliceAlert" in tablet_client
     assert "GPS suspect" in tablet_ui and "Prendre en charge" in tablet_ui
 
-if __name__ == "__main__":
-    checks = [value for name, value in globals().items() if name.startswith("test_") and callable(value)]
-    for check in checks:
-        check()
-    print(f"All {len(checks)} police interaction regression checks passed.")
 
 def test_world_density_is_per_frame_but_police_dispatch_settings_are_not():
     world = read("resources/[FUNCTION]/rp_world/client/main.lua")
@@ -94,3 +89,9 @@ def test_world_density_is_per_frame_but_police_dispatch_settings_are_not():
     police_loop = wanted_section.split("CreateThread(function()", 1)[1].split("AddEventHandler('onResourceStop'", 1)[0]
     assert "SetMaxWantedLevel(0)" not in police_loop
     assert "SetPoliceIgnorePlayer" not in police_loop
+
+if __name__ == "__main__":
+    checks = [value for name, value in globals().items() if name.startswith("test_") and callable(value)]
+    for check in checks:
+        check()
+    print(f"All {len(checks)} police interaction regression checks passed.")
