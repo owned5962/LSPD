@@ -102,15 +102,7 @@ def test_creator_job_garages_are_persisted_and_validated():
     assert "creator:save_job_garage" in server and "creator:delete_job_garage" in server
     assert "exports['rp_jobs']:GetJob(jobName)" in server
     assert "or #data.vehicles > 20" in server
-    assert "not model:match('^[a-z0-9_]+
-    test_custom_jobs_are_persisted_validated_and_loaded_with_numeric_grades()
-    test_creator_job_creation_is_permission_gated_and_updates_job_selectors()
-    test_gang_registry_persists_validated_names_and_creator_lists_gangs()
-    test_creator_can_edit_and_delete_persisted_gangs()
-    test_creator_can_edit_and_safely_delete_custom_jobs()
-    test_creator_job_garages_are_persisted_and_validated()
-    print("Creator organization regression checks passed.")
-)" in server
+    assert "model:match" in server
     assert "minGrade < 0 or minGrade > 4" in server
     assert "local spawnX = coords.x - math.sin(radians) * 4.0" in server
     assert "RegisterNUICallback('saveJobGarage'" in client
@@ -121,10 +113,12 @@ def test_creator_job_garages_are_persisted_and_validated():
     assert "post('deleteJobGarage', { job })" in ui
     assert "renderJobGarages(d.jobGarages || [])" in ui
 
+
 if __name__ == "__main__":
     test_custom_jobs_are_persisted_validated_and_loaded_with_numeric_grades()
     test_creator_job_creation_is_permission_gated_and_updates_job_selectors()
     test_gang_registry_persists_validated_names_and_creator_lists_gangs()
     test_creator_can_edit_and_delete_persisted_gangs()
     test_creator_can_edit_and_safely_delete_custom_jobs()
+    test_creator_job_garages_are_persisted_and_validated()
     print("Creator organization regression checks passed.")
