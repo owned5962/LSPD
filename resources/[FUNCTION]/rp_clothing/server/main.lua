@@ -84,8 +84,14 @@ local function SanitizeAppearance(data)
         clean.props[tostring(prop)] = { drawable = drawable, texture = texture }
     end
 
-    clean.hairStyle = tonumber(data.hairStyle) or 0
-    clean.hairColor = math.max(0, math.min(63, tonumber(data.hairColor) or 0))
+    local hairStyle = tonumber(data.hairStyle) or 0
+    local hairColor = tonumber(data.hairColor) or 0
+    if hairStyle ~= hairStyle or hairStyle % 1 ~= 0 or hairStyle < 0 or hairStyle > 200
+        or hairColor ~= hairColor or hairColor % 1 ~= 0 then
+        return nil
+    end
+    clean.hairStyle = hairStyle
+    clean.hairColor = math.max(0, math.min(63, hairColor))
     return clean
 end
 
