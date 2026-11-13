@@ -160,6 +160,9 @@ function renderCharacters(characters) {
         : (slots.size > 0 ? 'Créer un autre personnage' : 'Créer mon personnage');
 }
 document.getElementById('create-character-btn').addEventListener('click', () => postNui('beginCreation').catch(() => {}));
+document.getElementById('rotate-character-left').addEventListener('click', () => postNui('rotateCharacter', { direction: -1 }).catch(() => {}));
+document.getElementById('rotate-character-right').addEventListener('click', () => postNui('rotateCharacter', { direction: 1 }).catch(() => {}));
+
 document.getElementById('enter-city-btn').addEventListener('click', () => {
     if (!Number.isInteger(selectedCharacterSlot) || characterSelectionPending) return;
 
