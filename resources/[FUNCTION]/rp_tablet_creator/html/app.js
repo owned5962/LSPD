@@ -100,6 +100,95 @@ document.getElementById('job-garage-delete').addEventListener('click', () => {
     post('deleteJobGarage', { job }).catch(() => creatorMessage('Impossible de supprimer le garage métier.'));
 });
 
+let creatorJobStorages = [];
+let creatorStorageCatalog = [];
+let editingJobStorageWeapons = [];
+
+function selectedJobStorage() {
+    return creatorJobStorages.find(item => item.job === document.getElementById('job-storage-job').value) || null;
+}
+function renderJobStorageWeapons() {
+    const host = document.getElementById('job-storage-weapon-list');
+    document.getElementById('job-storage-count').value = editingJobStorageWeapons.length + ' / 30';
+    host.replaceChildren();
+    if (!editingJobStorageWeapons.length) {
+        host.textContent = 'Aucune arme configurée.';
+        return;
+    }
+    editingJobStorageWeapons.forEach((weapon, index) => {
+        const row = document.createElement('div');
+        row.className = 'org-row';
+        const item = creatorStorageCatalog.find(entry => entry.name === weapon.name);
+        const label = document.createElement('span');
+        label.textContent = (item?.label || weapon.name) + ' · grade ' + weapon.minGrade + '+';
+        const remove = document.createElement('button');
+        remove.type = 'button';
+        remove.textContent = 'Retirer';
+        remove.addEventListener('click', () => {
+            editingJobStorageWeapons.splice(index, 1);
+            renderJobStorageWeapons();
+        });
+        row.append(label, remove);
+        host.append(row);
+    });
+}
+function loadJobStorage(jobName) {
+    const storage = creatorJobStorages.find(item => item.job === jobName);
+    editingJobStorageWeapons = Array.isArray(storage?.armory_items) ? storage.armory_items.map(item => ({
+        name: String(item.name || ''), minGrade: Number(item.minGrade || 0)
+    })) : [];
+    document.getElementById('job-storage-stash').checked = storage
+        ? storage.stash_enabled === true || Number(storage.stash_enabled) === 1 : true;
+    document.getElementById('job-storage-armory').checked = storage
+        ? storage.armory_enabled === true || Number(storage.armory_enabled) === 1 : true;
+    document.getElementById('job-storage-status').textContent = storage
+        ? 'Configuration chargée. Position : ' + [storage.x, storage.y, storage.z].map(v => Number(v).toFixed(1)).join(', ')
+        : 'Aucun coffre configuré. Placez-vous à son emplacement avant de sauvegarder.';
+    renderJobStorageWeapons();
+}
+function renderJobStorages(rows, catalog) {
+    creatorJobStorages = Array.isArray(rows) ? rows : [];
+    creatorStorageCatalog = Array.isArray(catalog) ? catalog : [];
+    const select = document.getElementById('job-storage-job');
+    const previous = select.value;
+    fillSelect(select, creatorJobs, 'name', 'label');
+    if (creatorJobs.some(item => item.name === previous)) select.value = previous;
+    const weaponSelect = document.getElementById('job-storage-weapon');
+    fillSelect(weaponSelect, creatorStorageCatalog, 'name', 'label');
+    loadJobStorage(select.value);
+}
+document.getElementById('job-storage-job').addEventListener('change', event => loadJobStorage(event.target.value));
+document.getElementById('job-storage-add-weapon').addEventListener('click', () => {
+    const name = document.getElementById('job-storage-weapon').value;
+    const minGrade = Number(document.getElementById('job-storage-grade').value);
+    if (!name || !Number.isInteger(minGrade) || minGrade < 0 || minGrade > 4) {
+        creatorMessage('Choisissez une arme et un grade minimum valide.');
+        return;
+    }
+    if (editingJobStorageWeapons.length >= 30) { creatorMessage('Maximum 30 armes autorisées.'); return; }
+    if (editingJobStorageWeapons.some(item => item.name === name)) { creatorMessage('Cette arme est déjà configurée.'); return; }
+    editingJobStorageWeapons.push({ name, minGrade });
+    renderJobStorageWeapons();
+});
+document.getElementById('job-storage-save').addEventListener('click', () => {
+    const job = document.getElementById('job-storage-job').value;
+    const stashEnabled = document.getElementById('job-storage-stash').checked;
+    const armoryEnabled = document.getElementById('job-storage-armory').checked;
+    if (!job || (!stashEnabled && !armoryEnabled) || (armoryEnabled && !editingJobStorageWeapons.length)) {
+        creatorMessage('Sélectionnez un métier et activez au moins un espace correctement configuré.');
+        return;
+    }
+    post('saveJobStorage', { job, stashEnabled, armoryEnabled, armoryItems: editingJobStorageWeapons })
+        .then(() => { document.getElementById('job-storage-status').textContent = 'Enregistrement demandé au serveur…'; })
+        .catch(() => creatorMessage('Impossible de sauvegarder le coffre métier.'));
+});
+document.getElementById('job-storage-delete').addEventListener('click', () => {
+    const job = document.getElementById('job-storage-job').value;
+    if (!job || !selectedJobStorage()) { creatorMessage('Aucune configuration pour ce métier.'); return; }
+    if (!window.confirm('Supprimer le coffre et l’armurerie de ' + job + ' ?')) return;
+    post('deleteJobStorage', { job }).catch(() => creatorMessage('Impossible de supprimer la configuration.'));
+});
+
 function fillSelect(select, items, valueKey, labelKey) {
     select.replaceChildren();
     items.forEach(item => { const option=document.createElement('option'); option.value=item[valueKey]; option.textContent=item[labelKey] || item[valueKey]; select.append(option); });
@@ -143,6 +232,7 @@ window.addEventListener('message',e=>{
         creatorJobs=d.jobs||[];creatorBlips=d.blips||[];creatorMapping=d.mapping||[];window.creatorPosition=d.position||{x:0,y:0,z:0};
         const jobSelect=document.getElementById('blip-job');fillSelect(jobSelect,creatorJobs,'name','label');
         renderJobGarages(d.jobGarages || []);
+        renderJobStorages(d.jobStorages || [], d.storageCatalog || []);
         creatorProps=Object.keys(d.catalog||{}).sort().map(model=>({model,label:model}));
         renderPropOptions();
         if(jobSelect.value)loadBlipForJob(jobSelect.value);
