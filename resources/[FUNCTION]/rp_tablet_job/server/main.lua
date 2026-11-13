@@ -64,9 +64,8 @@ RegisterNetEvent('rp_tablet_job:server:requestSalaryStats', function()
             COALESCE(SUM(CASE WHEN bt.created_at >= MAKEDATE(YEAR(CURDATE()), 1) THEN bt.amount ELSE 0 END), 0) AS year,
             COALESCE(COUNT(CASE WHEN bt.created_at >= CURDATE() THEN 1 END), 0) AS paymentsToday
         FROM bank_transactions bt
-        INNER JOIN characters c ON c.id = bt.character_id
-        WHERE c.job = ? AND bt.type = 'salary'
-    ]], { player.job })
+        WHERE bt.type = 'salary' AND bt.reason = ?
+    ]], { 'Salaire - ' .. player.job })
     if not ok or type(stats) ~= 'table' then
         print('[rp_tablet_job] Salary statistics query failed: ' .. tostring(stats))
         TriggerClientEvent('rp_tablet_job:client:salaryStats', src, {
