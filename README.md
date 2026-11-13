@@ -79,15 +79,17 @@
 - Système de carburant, stations-service, ravitaillement, prix au litre et multiplicateur de consommation réglables en direct depuis le Creator
 - Concessionnaire et vente de véhicules
 - Location de véhicules
-- Vol et récupération d'objets dans les véhicules
-- Interactions entre joueurs et objets du monde
-- Banques, distributeurs et lieux d'activité
+- Vol de véhicules, fouille et récupération d'objets dans les véhicules
+- Interactions entre joueurs et objets du monde, menus contextuels, TextUI et barres de progression
+- Banques, distributeurs avec authentification, stations-service et base de données des lieux d'activité
 - Système de territoires et contrôle de zones
-- Système anticheat et politique d'armes autorisées
+- Système anticheat, surveillance, journal des détections, sanctions et politique d'armes autorisées
+- Missions de service selon le métier
 - Services de secours automatiques
+- Tablette et interactions de police, alertes, interventions et gestion de garde à vue
 - Métiers de police, ambulance, pompiers et autres services publics
 - Auto-école et gestion des permis
-- Vêtements et personnalisation de l'apparence
+- Boutiques de vêtements, salons de coiffure, barbiers et personnalisation de l'apparence
 - Tutoriel d'accueil des nouveaux personnages
 - Commande `/rapport` avec tablette de signalement, attribution à un administrateur, acceptation et notification du joueur
 - Interface de chargement et notifications
