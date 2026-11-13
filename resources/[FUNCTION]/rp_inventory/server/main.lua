@@ -1183,6 +1183,17 @@ RegisterNetEvent('rp_inventory:server:transferJobStorage', function(storageType,
         return
     end
     transferLocks[src] = true
+    local currentPlayer, currentConfig = getJobStorageAccess(src, storageType)
+    if not currentPlayer or not currentConfig or tonumber(currentPlayer.charId) ~= tonumber(player.charId)
+        or currentPlayer.job ~= player.job then
+        transferLocks[src] = nil
+        jobStorageLocks[player.job] = nil
+        exports['rp_core']:ReleaseCharacterLock({ player.charId })
+        notify(src, 'error', 'Ton métier ou ton accès au coffre a changé. Réessaie.')
+        return
+    end
+    player = currentPlayer
+    config = currentConfig
     local updated = normalizeInventory(inventory)
     if direction == 'deposit' then
         if nextPlayerCount == 0 then
