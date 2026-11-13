@@ -1456,3 +1456,10 @@ def test_clothing_server_actions_are_rate_limited():
     for event, action in expected.items():
         handler = source.split("RegisterNetEvent('" + event + "'", 1)[1]
         assert "CanPerformAction(src, '" + action + "'" in handler.split("end)", 1)[0]
+
+def test_job_tablet_duty_display_cannot_be_spoofed_by_client():
+    server = read("resources/[FUNCTION]/rp_tablet_job/server/main.lua")
+    handler = server.split("RegisterNetEvent('rp_tablet_job:server:setDutyState'", 1)[1].split("RegisterNetEvent", 1)[0]
+    assert "CanPerformAction(src, 'rp_tablet_job:setDutyState', 500)" in handler
+    assert "player.duty ~= status" in handler
+    assert "dutyStates[src] = player.duty == true" in handler
