@@ -241,6 +241,21 @@ def test_every_declared_resource_dependency_starts_before_its_consumer():
                     f"{resource} starts before its dependency {dependency}"
                 )
 
+def test_every_core_export_consumer_declares_core_dependency():
+    for category in ("[CORE]", "[FUNCTION]", "[JOB]"):
+        for manifest_path in (ROOT / "resources" / category).glob("*/fxmanifest.lua"):
+            resource = manifest_path.parent
+            if resource.name == "rp_core":
+                continue
+            source_files = list(resource.rglob("*.lua"))
+            if not any(re.search(r"exports\s*\[\s*['\"]rp_core['\"]\s*\]|exports\.rp_core", path.read_text(encoding="utf-8"))
+                       for path in source_files):
+                continue
+            manifest = manifest_path.read_text(encoding="utf-8")
+            assert re.search(r"dependency\s+['\"]rp_core['\"]|['\"]rp_core['\"]", manifest), (
+                f"{resource.name} calls rp_core exports without declaring rp_core dependency"
+            )
+
 
 if __name__ == "__main__":
     test_server_player_registry_only_exposes_fully_loaded_characters()
@@ -261,4 +276,5 @@ if __name__ == "__main__":
     test_core_startup_order_does_not_depend_on_private_server_keys()
     test_character_spawn_uses_validated_coordinates_and_wrap_safe_timeouts()
     test_every_declared_resource_dependency_starts_before_its_consumer()
+    test_every_core_export_consumer_declares_core_dependency()
     print("Player session, core architecture and SQL dependency checks passed.")
