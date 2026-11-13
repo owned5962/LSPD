@@ -14,6 +14,92 @@ document.getElementById('send').addEventListener('click',()=>{const message=docu
 
 
 let creatorJobs = [], creatorBlips = [], creatorMapping = [], creatorProps = [];
+let creatorJobGarages = [];
+let editingJobGarageVehicles = [];
+
+function selectedJobGarage() {
+    return creatorJobGarages.find(item => item.job === document.getElementById('job-garage-job').value) || null;
+}
+function renderJobGarageVehicles() {
+    const host = document.getElementById('job-garage-vehicle-list');
+    const count = document.getElementById('job-garage-count');
+    host.replaceChildren();
+    count.value = editingJobGarageVehicles.length + ' / 20';
+    if (!editingJobGarageVehicles.length) {
+        host.textContent = 'Aucun véhicule ajouté à cette flotte.';
+        return;
+    }
+    editingJobGarageVehicles.forEach((vehicle, index) => {
+        const row = document.createElement('div');
+        row.className = 'org-row';
+        const label = document.createElement('span');
+        label.textContent = vehicle.label + ' · ' + vehicle.model + ' · grade ' + vehicle.minGrade + '+';
+        const remove = document.createElement('button');
+        remove.type = 'button';
+        remove.textContent = 'Retirer';
+        remove.addEventListener('click', () => {
+            editingJobGarageVehicles.splice(index, 1);
+            renderJobGarageVehicles();
+        });
+        row.append(label, remove);
+        host.append(row);
+    });
+}
+function loadJobGarage(jobName) {
+    const garage = creatorJobGarages.find(item => item.job === jobName);
+    editingJobGarageVehicles = Array.isArray(garage?.vehicles) ? garage.vehicles.map(item => ({
+        model: String(item.model || ''), label: String(item.label || item.model || ''),
+        minGrade: Number(item.minGrade || 0)
+    })) : [];
+    document.getElementById('job-garage-status').textContent = garage
+        ? 'Garage existant chargé. Coordonnées : ' + [garage.x, garage.y, garage.z].map(v => Number(v).toFixed(1)).join(', ')
+        : 'Aucun garage configuré. Placez-vous au futur garage avant de sauvegarder.';
+    renderJobGarageVehicles();
+}
+function renderJobGarages(rows) {
+    creatorJobGarages = Array.isArray(rows) ? rows.map(item => {
+        let vehicles = item.vehicles;
+        if (typeof vehicles === 'string') { try { vehicles = JSON.parse(vehicles); } catch (_) { vehicles = []; } }
+        return { ...item, vehicles: Array.isArray(vehicles) ? vehicles : [] };
+    }) : [];
+    const select = document.getElementById('job-garage-job');
+    const previous = select.value;
+    fillSelect(select, creatorJobs, 'name', 'label');
+    if (creatorJobs.some(item => item.name === previous)) select.value = previous;
+    loadJobGarage(select.value);
+}
+document.getElementById('job-garage-job').addEventListener('change', event => loadJobGarage(event.target.value));
+document.getElementById('job-garage-add-vehicle').addEventListener('click', () => {
+    const model = document.getElementById('job-garage-model').value.trim().toLowerCase();
+    const label = document.getElementById('job-garage-label').value.trim();
+    const minGrade = Number(document.getElementById('job-garage-grade').value);
+    if (!/^[a-z0-9_]{3,50}$/.test(model) || label.length < 2 || label.length > 50
+        || !Number.isInteger(minGrade) || minGrade < 0 || minGrade > 4) {
+        creatorMessage('Vérifiez le modèle, le nom affiché et le grade minimum.');
+        return;
+    }
+    if (editingJobGarageVehicles.length >= 20) { creatorMessage('Maximum 20 véhicules par flotte.'); return; }
+    if (editingJobGarageVehicles.some(item => item.model === model)) { creatorMessage('Ce modèle est déjà dans la flotte.'); return; }
+    editingJobGarageVehicles.push({ model, label, minGrade });
+    document.getElementById('job-garage-model').value = '';
+    document.getElementById('job-garage-label').value = '';
+    renderJobGarageVehicles();
+});
+document.getElementById('job-garage-save').addEventListener('click', () => {
+    const job = document.getElementById('job-garage-job').value;
+    if (!job) { creatorMessage('Sélectionnez un métier.'); return; }
+    if (!editingJobGarageVehicles.length) { creatorMessage('Ajoutez au moins un véhicule à la flotte.'); return; }
+    post('saveJobGarage', { job, vehicles: editingJobGarageVehicles })
+        .then(() => { document.getElementById('job-garage-status').textContent = 'Enregistrement demandé au serveur…'; })
+        .catch(() => creatorMessage('Impossible de sauvegarder le garage métier.'));
+});
+document.getElementById('job-garage-delete').addEventListener('click', () => {
+    const job = document.getElementById('job-garage-job').value;
+    if (!job || !selectedJobGarage()) { creatorMessage('Aucun garage enregistré pour ce métier.'); return; }
+    if (!window.confirm('Supprimer la configuration du garage de ' + job + ' ?')) return;
+    post('deleteJobGarage', { job }).catch(() => creatorMessage('Impossible de supprimer le garage métier.'));
+});
+
 function fillSelect(select, items, valueKey, labelKey) {
     select.replaceChildren();
     items.forEach(item => { const option=document.createElement('option'); option.value=item[valueKey]; option.textContent=item[labelKey] || item[valueKey]; select.append(option); });
@@ -56,6 +142,7 @@ window.addEventListener('message',e=>{
     if(d.action==='toolsData'){
         creatorJobs=d.jobs||[];creatorBlips=d.blips||[];creatorMapping=d.mapping||[];window.creatorPosition=d.position||{x:0,y:0,z:0};
         const jobSelect=document.getElementById('blip-job');fillSelect(jobSelect,creatorJobs,'name','label');
+        renderJobGarages(d.jobGarages || []);
         creatorProps=Object.keys(d.catalog||{}).sort().map(model=>({model,label:model}));
         renderPropOptions();
         if(jobSelect.value)loadBlipForJob(jobSelect.value);
