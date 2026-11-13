@@ -309,6 +309,32 @@ local function spawnSavedMapping()
     end
 end
 
+-- Chaque joueur ne reçoit que les blips du métier qu'il exerce.
+local function sendJobBlipsToPlayer(src)
+    local player = exports['rp_core']:GetPlayerFromId(src)
+    local jobName = player and tostring(player.job or 'unemployed') or nil
+    if not jobName then
+        TriggerClientEvent('rp_tablet_creator:client:jobBlips', src, {})
+        return
+    end
+
+    local ok, rows = pcall(MySQL.query.await,
+        'SELECT job, label, x, y, z, sprite, color, scale, enabled FROM rp_creator_job_blips WHERE job = ? AND enabled = 1',
+        { jobName })
+    if ok then
+        TriggerClientEvent('rp_tablet_creator:client:jobBlips', src, rows or {})
+    else
+        print('[rp_tablet_creator] Job blip read failed for ' .. tostring(src) .. ': ' .. tostring(rows))
+    end
+end
+
+local function syncJobBlipsToPlayers()
+    for _, rawId in ipairs(GetPlayers()) do
+        local src = tonumber(rawId)
+        if src then sendJobBlipsToPlayer(src) end
+    end
+end
+
 -- Create the access-control table only after oxmysql is ready. Retry transient
 -- database failures instead of leaving CanUseTablet permanently unavailable.
 MySQL.ready(function()
@@ -331,13 +357,8 @@ MySQL.ready(function()
         Wait(500)
         local ok, err = pcall(spawnSavedMapping)
         if not ok then print('[rp_tablet_creator] Mapping restore failed: ' .. tostring(err)) end
-        local rowsOk, rows = pcall(MySQL.query.await,
-            'SELECT job, label, x, y, z, sprite, color, scale, enabled FROM rp_creator_job_blips')
-        if rowsOk then
-            TriggerClientEvent('rp_tablet_creator:client:syncJobBlips', -1, rows or {})
-        else
-            print('[rp_tablet_creator] Job blip restore failed: ' .. tostring(rows))
-        end
+        local blipsOk, blipsError = pcall(syncJobBlipsToPlayers)
+        if not blipsOk then print('[rp_tablet_creator] Job blip restore failed: ' .. tostring(blipsError)) end
     end)
 end)
 
@@ -644,25 +665,6 @@ RegisterNetEvent('rp_tablet_creator:server:deleteJobStorage', function(jobName)
     if GetResourceState('rp_inventory') == 'started' then TriggerEvent('rp_inventory:server:reloadJobStorageConfigs') end
 end)
 
-RegisterNetEvent('rp_tablet_creator:server:deleteJobGarage', function(jobName)
-    local src = source
-    if not creatorAccessAllowed(src) or not exports['rp_core']:CanPerformAction(src, 'creator:delete_job_garage', 1200) then return end
-    if type(jobName) ~= 'string' or #jobName > 64 then
-        reply(src, 'Métier invalide.', false)
-        return
-    end
-    local ok, affected = pcall(MySQL.update.await, 'DELETE FROM rp_creator_job_garages WHERE job = ?', { jobName })
-    if not ok then
-        print('[rp_tablet_creator] Job garage delete failed: ' .. tostring(affected))
-        reply(src, 'Erreur SQL : garage non supprimé.', false)
-        return
-    end
-    reply(src, 'Configuration du garage métier supprimée.', true)
-    if GetResourceState('rp_garages') == 'started' then TriggerEvent('rp_garages:server:reloadJobGarages') end
-    LogCreatorAction(src, 'delete_job_garage', nil, jobName)
-    TriggerClientEvent('rp_tablet_creator:client:refreshTools', src)
-end)
-
 RegisterNetEvent('rp_tablet_creator:server:spawnProp', function(rawModel)
     local src = source
     if not creatorAccessAllowed(src) or not exports['rp_core']:CanPerformAction(src, 'creator:spawn_prop', 700) then return end
@@ -694,7 +696,7 @@ end)
 
 RegisterNetEvent('rp_tablet_creator:server:deleteProp', function(rawId)
     local src = source
-    if not creatorAccessAllowed(src) then return end
+    if not creatorAccessAllowed(src) or not exports['rp_core']:CanPerformAction(src, 'creator:delete_prop', 700) then return end
     local id = tonumber(rawId)
     if not id or id % 1 ~= 0 or id < 1 then reply(src, 'ID de mapping invalide.', false); return end
     local ok, affected = pcall(MySQL.update.await, 'DELETE FROM rp_creator_mapping WHERE id = ?', { id })
@@ -708,7 +710,7 @@ end)
 
 RegisterNetEvent('rp_tablet_creator:server:saveJobBlip', function(data)
     local src = source
-    if not creatorAccessAllowed(src) then return end
+    if not creatorAccessAllowed(src) or not exports['rp_core']:CanPerformAction(src, 'creator:save_job_blip', 1200) then return end
     if type(data) ~= 'table' then reply(src, 'Configuration de blip invalide.', false); return end
     local jobName = type(data.job) == 'string' and data.job:sub(1, 64) or ''
     local job = exports['rp_jobs']:GetJob(jobName)
@@ -730,16 +732,20 @@ RegisterNetEvent('rp_tablet_creator:server:saveJobBlip', function(data)
             sprite=VALUES(sprite), color=VALUES(color), scale=VALUES(scale), enabled=VALUES(enabled), updated_by=VALUES(updated_by)
     ]], { jobName, label, x, y, z, sprite, color, scale, data.enabled and 1 or 0, creator })
     if not ok then reply(src, 'Erreur SQL : blip non sauvegardé.', false); print('[rp_tablet_creator] Blip save failed: ' .. tostring(err)); return end
-    local rows = MySQL.query.await('SELECT job, label, x, y, z, sprite, color, scale, enabled FROM rp_creator_job_blips') or {}
-    TriggerClientEvent('rp_tablet_creator:client:syncJobBlips', -1, rows)
+    local syncOk, syncError = pcall(syncJobBlipsToPlayers)
+    if not syncOk then
+        print('[rp_tablet_creator] Job blip sync failed: ' .. tostring(syncError))
+        reply(src, 'Blip enregistré, mais la synchronisation a échoué. Actualisez les joueurs.', false)
+        return
+    end
     reply(src, 'Blip du métier sauvegardé et synchronisé.', true)
 end)
 
 
 RegisterNetEvent('rp_tablet_creator:server:requestJobBlips', function()
     local src = source
-    local ok, rows = pcall(MySQL.query.await, 'SELECT job, label, x, y, z, sprite, color, scale, enabled FROM rp_creator_job_blips')
-    if ok then TriggerClientEvent('rp_tablet_creator:client:jobBlips', src, rows or {}) end
+    if not exports['rp_core']:CanPerformAction(src, 'creator:job_blips_read', 500) then return end
+    sendJobBlipsToPlayer(src)
 end)
 
 
