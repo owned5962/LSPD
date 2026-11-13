@@ -74,5 +74,17 @@
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
     <script src="js/app.js"></script>
+<div id="player-report-overlay" class="player-report-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="player-report-title">
+  <div class="player-report-card">
+   <div class="player-report-heading"><i class="fas fa-flag"></i><div><h2 id="player-report-title">Signaler un problème</h2><p>Décrivez clairement le problème rencontré. Le staff recevra votre message.</p></div></div>
+   <label for="player-report-message">Votre signalement</label>
+   <textarea id="player-report-message" maxlength="500" minlength="10" placeholder="Expliquez le problème (10 à 500 caractères)…"></textarea>
+   <div class="player-report-actions">
+    <button id="player-report-cancel" class="player-report-cancel" type="button"><i class="fas fa-xmark"></i> Annuler</button>
+    <button id="player-report-submit" class="player-report-submit" type="button"><i class="fas fa-paper-plane"></i> Envoyer</button>
+   </div>
+   <small id="player-report-status">Votre signalement est transmis à l’équipe de modération.</small>
+  </div>
+ </div>
 </body>
 </html>
