@@ -47,8 +47,26 @@ def test_gang_registry_persists_validated_names_and_creator_lists_gangs():
     assert "organizationsData" in client
 
 
+
+def test_creator_can_edit_and_delete_persisted_gangs():
+    gangs = read("resources/[FUNCTION]/rp_gangs/server/main.lua")
+    creator = read("resources/[FUNCTION]/rp_tablet_creator/server/main.lua")
+    client = read("resources/[FUNCTION]/rp_tablet_creator/client/main.lua")
+    html = read("resources/[FUNCTION]/rp_tablet_creator/html/index.html")
+    ui = read("resources/[FUNCTION]/rp_tablet_creator/html/app.js")
+    assert "exports('UpdateGang', UpdateGang)" in gangs
+    assert "exports('DeleteGang', DeleteGang)" in gangs
+    assert "UPDATE rp_gangs SET label = ?, description = ?, color = ? WHERE name = ?" in gangs
+    assert "DELETE FROM rp_gangs WHERE name = ?" in gangs
+    assert "creator:update_gang" in creator and "creator:delete_gang" in creator
+    assert "RegisterNUICallback('updateGang'" in client and "RegisterNUICallback('deleteGang'" in client
+    assert "id=\"cancel-gang-edit\"" in html
+    assert "post('updateGang', data)" in ui and "post('deleteGang', { name: gang.name })" in ui
+    assert "window.confirm" in ui
+
 if __name__ == "__main__":
     test_custom_jobs_are_persisted_validated_and_loaded_with_numeric_grades()
     test_creator_job_creation_is_permission_gated_and_updates_job_selectors()
     test_gang_registry_persists_validated_names_and_creator_lists_gangs()
+    test_creator_can_edit_and_delete_persisted_gangs()
     print("Creator organization regression checks passed.")
