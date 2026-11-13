@@ -442,6 +442,7 @@ RegisterNetEvent('rp_tablet_creator:server:saveJobGarage', function(data)
         return
     end
     reply(src, ('Garage de %s enregistré à votre position avec %d véhicule(s).'):format(job.label or jobName, #vehicles), true)
+    if GetResourceState('rp_garages') == 'started' then TriggerEvent('rp_garages:server:reloadJobGarages') end
     LogCreatorAction(src, 'save_job_garage', nil, jobName .. ' vehicles=' .. #vehicles)
     TriggerClientEvent('rp_tablet_creator:client:refreshTools', src)
 end)
@@ -460,6 +461,7 @@ RegisterNetEvent('rp_tablet_creator:server:deleteJobGarage', function(jobName)
         return
     end
     reply(src, 'Configuration du garage métier supprimée.', true)
+    if GetResourceState('rp_garages') == 'started' then TriggerEvent('rp_garages:server:reloadJobGarages') end
     LogCreatorAction(src, 'delete_job_garage', nil, jobName)
     TriggerClientEvent('rp_tablet_creator:client:refreshTools', src)
 end)
