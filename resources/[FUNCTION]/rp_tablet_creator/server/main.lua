@@ -1,4 +1,5 @@
 local CanUseTablet
+local LogCreatorAction
 local FounderCodeSessions = {}
 local FounderCodeAttempts = {}
 
@@ -923,7 +924,7 @@ function ApplyStoredCreatorSettings()
     end
 end
 
-local function LogCreatorAction(src, action, targetId, details)
+LogCreatorAction = function(src, action, targetId, details)
     local actor = exports['rp_core']:GetPlayerFromId(src)
     local target = targetId and exports['rp_core']:GetPlayerFromId(targetId) or nil
     print(('[rp_tablet_creator] %s (%s) -> %s: %s %s'):format(
