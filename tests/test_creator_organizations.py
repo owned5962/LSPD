@@ -16,6 +16,9 @@ def test_custom_jobs_are_persisted_validated_and_loaded_with_numeric_grades():
     assert "exports('CreateCustomJob', CreateCustomJob)" in jobs
     assert "name:match('^[a-z][a-z0-9_]+') ~= name" in jobs
     assert "for grade = 0, 4 do" in jobs
+    assert "max_employees INT UNSIGNED NOT NULL DEFAULT 0" in jobs
+    assert "SELECT COUNT(*) FROM characters WHERE job = ?" in jobs
+    assert "Ce métier a atteint sa capacité maximale." in jobs
     assert "numericGrades[grade]" in jobs
     assert "exports['rp_jobs']:IsValidJob(jobName)" in core
     assert "TriggerClientEvent('rp_jobs:client:syncCustomJobs'" in jobs
@@ -31,7 +34,9 @@ def test_creator_job_creation_is_permission_gated_and_updates_job_selectors():
     assert "RegisterNUICallback('createJob'" in client
     assert 'data-tab="organizations"' in html
     assert 'id="new-job-grade-4"' in html
+    assert 'id="new-job-capacity"' in html
     assert "post(action, data)" in ui
+    assert "maxEmployees: Number(document.getElementById('new-job-capacity').value)" in ui
 
 
 def test_gang_registry_persists_validated_names_and_creator_lists_gangs():
