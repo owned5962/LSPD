@@ -192,6 +192,29 @@ def test_creator_job_armory_and_shared_locker_are_persisted_and_grade_restricted
     assert "textContent = " in creator_ui
 
 
+
+
+def test_creator_f11_toggle_and_job_blips_are_scoped_and_rate_limited():
+    server = read("resources/[FUNCTION]/rp_tablet_creator/server/main.lua")
+    client = read("resources/[FUNCTION]/rp_tablet_creator/client/main.lua")
+    manifest = read("resources/[FUNCTION]/rp_tablet_creator/fxmanifest.lua")
+
+    assert "RegisterKeyMapping('creator', 'Ouvrir la tablette Créateur', 'keyboard', 'F11')" in client
+    assert "if isOpen then" in client and "closeTablet()" in client
+    assert "AddEventHandler('onResourceStop'" in client
+    assert "nui_callback_strict_mode 'true'" in manifest
+
+    # One authoritative delete handler avoids duplicate SQL operations.
+    assert server.count("RegisterNetEvent('rp_tablet_creator:server:deleteJobGarage'") == 1
+    assert "creator:delete_prop" in server and "creator:save_job_blip" in server
+
+    # Job-only blips are queried server-side, not broadcast to every client.
+    assert "WHERE job = ? AND enabled = 1" in server
+    assert "sendJobBlipsToPlayer(src)" in server
+    assert "syncJobBlipsToPlayers()" in server
+    assert "TriggerClientEvent('rp_tablet_creator:client:syncJobBlips', -1" not in server
+
+
 if __name__ == "__main__":
     test_custom_jobs_are_persisted_validated_and_loaded_with_numeric_grades()
     test_creator_job_creation_is_permission_gated_and_updates_job_selectors()
@@ -201,4 +224,5 @@ if __name__ == "__main__":
     test_creator_job_garages_are_persisted_and_validated()
     test_job_garage_runtime_enforces_server_job_grade_and_vehicle_ownership()
     test_creator_job_armory_and_shared_locker_are_persisted_and_grade_restricted()
+    test_creator_f11_toggle_and_job_blips_are_scoped_and_rate_limited()
     print("Creator organization regression checks passed.")
