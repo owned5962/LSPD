@@ -103,20 +103,41 @@ local function transact(src, rawAmount, kind)
     local jobOk, job = pcall(function() return exports['rp_jobs']:GetJob(jobName) end)
     if not jobOk or not job then notify(src, 'Métier invalide : opération refusée.', 'error'); return end
     if jobLocks[jobName] then notify(src, 'Une opération est déjà en cours sur ce compte.', 'warning'); return end
-    local data = getAccountData(jobName)
-    if not data then notify(src, 'Compte du métier indisponible.', 'error'); return end
+    jobLocks[jobName] = true
+    local dataOk, data = pcall(getAccountData, jobName)
+    if not dataOk or not data then
+        jobLocks[jobName] = nil
+        notify(src, 'Compte du métier indisponible.', 'error')
+        return
+    end
     local account = data.account
-    if kind == 'deposit' and not account.allow_deposit then notify(src, 'Les dépôts sont désactivés pour ce métier.', 'error'); return end
-    if kind == 'withdraw' and not account.allow_withdraw then notify(src, 'Les retraits sont désactivés pour ce métier.', 'error'); return end
-    if kind == 'deposit' and tonumber(player.cash) < amount then notify(src, 'Vous ne possédez pas assez d’espèces.', 'error'); return end
-    if kind == 'withdraw' and tonumber(account.balance) < amount then notify(src, 'Le solde du compte du métier est insuffisant.', 'error'); return end
+    if kind == 'deposit' and not account.allow_deposit then
+        jobLocks[jobName] = nil
+        notify(src, 'Les dépôts sont désactivés pour ce métier.', 'error')
+        return
+    end
+    if kind == 'withdraw' and not account.allow_withdraw then
+        jobLocks[jobName] = nil
+        notify(src, 'Les retraits sont désactivés pour ce métier.', 'error')
+        return
+    end
+    if kind == 'deposit' and tonumber(player.cash) < amount then
+        jobLocks[jobName] = nil
+        notify(src, 'Vous ne possédez pas assez d’espèces.', 'error')
+        return
+    end
+    if kind == 'withdraw' and tonumber(account.balance) < amount then
+        jobLocks[jobName] = nil
+        notify(src, 'Le solde du compte du métier est insuffisant.', 'error')
+        return
+    end
 
     local lockIds = { player.charId }
     if not exports['rp_core']:AcquireCharacterLock(lockIds) then
+        jobLocks[jobName] = nil
         notify(src, 'Une opération sur votre compte personnel est en cours. Réessayez.', 'warning')
         return
     end
-    jobLocks[jobName] = true
     local query, params
     if kind == 'deposit' then
         query = [[UPDATE characters AS c JOIN rp_job_bank_accounts AS a ON a.job = ?
@@ -131,7 +152,7 @@ local function transact(src, rawAmount, kind)
     end
     local sqlOk, affected = pcall(MySQL.update.await, query, params)
     exports['rp_core']:ReleaseCharacterLock(lockIds)
-    if not sqlOk or tonumber(affected) ~= 2 then
+    if not sqlOk or not tonumber(affected) or tonumber(affected) < 1 then
         jobLocks[jobName] = nil
         if not sqlOk then print(('[rp_jobbank] Erreur SQL %s/%s : %s'):format(jobName, kind, tostring(affected))) end
         notify(src, 'Opération refusée : solde, autorisation ou compte invalide.', 'error')
