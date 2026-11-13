@@ -34,3 +34,11 @@ jobs:
           luac5.4 -p resources/'[CORE]'/rp_characters/server/main.lua
           luac5.4 -p resources/'[FUNCTION]'/rp_ui/client/main.lua
           luac5.4 -p resources/'[FUNCTION]'/rp_ui/server/main.lua
+          luac5.4 -p resources/'[CORE]'/rp_characters/client/main.lua
+          luac5.4 -p resources/'[FUNCTION]'/rp_tablet_creator/client/main.lua
+          luac5.4 -p resources/'[FUNCTION]'/rp_tablet_creator/server/main.lua
+          luac5.4 -p resources/'[FUNCTION]'/rp_tablet_admin/server/extended.lua
+          luac5.4 -p resources/'[FUNCTION]'/rp_tablet_job/client/main.lua
+          luac5.4 -p resources/'[FUNCTION]'/rp_tablet_job/server/main.lua
+          luac5.4 -p resources/'[FUNCTION]'/rp_fuel/server/main.lua
+          luac5.4 -p resources/'[FUNCTION]'/rp_anticheat/server/main.lua
