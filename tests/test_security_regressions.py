@@ -1383,3 +1383,11 @@ def test_server_cfg_omits_default_framework_resources_and_starts_territories_las
         assert f"ensure {resource}" not in cfg
     assert cfg.index("ensure oxmysql") < cfg.index("ensure rp_core")
     assert cfg.rindex("ensure rp_territories") > cfg.index("ensure job_smuggler")
+
+
+def test_character_appearance_recovers_missing_clothing_and_clears_invalid_props():
+    client = read("resources/[CORE]/rp_characters/client/main.lua")
+    assert "local safeDefaults = {" in client
+    assert "safeDefaults[component][1]" in client
+    assert "Invalid or missing saved props are cleared safely." in client
+    assert "ClearPedProp(ped, prop)" in client
