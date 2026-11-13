@@ -371,3 +371,57 @@ window.addEventListener('message', event => {
     const data = event.data || {};
     if (data.action === 'organizationsData') renderCreatorGangs(data.gangs || []);
 });
+
+
+let creatorJobBankData = { jobs: [], accounts: [], history: [] };
+function formatCreatorBankMoney(value) {
+    const amount = Number(value);
+    return new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(Number.isFinite(amount) ? amount : 0) + ' $';
+}
+function renderCreatorJobBankSelection() {
+    const jobName = document.getElementById('creator-bank-job').value;
+    const account = creatorJobBankData.accounts.find(item => item.job === jobName);
+    document.getElementById('creator-bank-balance').textContent = formatCreatorBankMoney(account?.balance || 0);
+    document.getElementById('creator-bank-account-name').textContent = creatorJobBankData.jobs.find(item => item.name === jobName)?.label || jobName || 'Sélectionnez un métier';
+    document.getElementById('creator-bank-allow-deposit').checked = account ? Number(account.allow_deposit) === 1 : true;
+    document.getElementById('creator-bank-allow-withdraw').checked = account ? Number(account.allow_withdraw) === 1 : true;
+    const host = document.getElementById('creator-bank-history');
+    host.replaceChildren();
+    const rows = creatorJobBankData.history.filter(item => item.job === jobName);
+    if (!rows.length) { host.textContent = 'Aucune opération enregistrée pour ce métier.'; return; }
+    rows.forEach(item => {
+        const row = document.createElement('div'); row.className = 'creator-bank-history-row';
+        const who = document.createElement('span');
+        who.textContent = (item.player_name || 'Employé') + ' · ' + (item.transaction_type === 'deposit' ? 'Dépôt' : 'Retrait');
+        const amount = document.createElement('strong');
+        amount.textContent = (item.transaction_type === 'deposit' ? '+' : '−') + formatCreatorBankMoney(item.amount);
+        const date = document.createElement('small');
+        date.textContent = item.created_at ? String(item.created_at).replace('T', ' ').slice(0, 19) : '';
+        const balance = document.createElement('small');
+        balance.textContent = 'Solde après opération : ' + formatCreatorBankMoney(item.balance_after);
+        row.append(who, amount, date, balance); host.append(row);
+    });
+}
+function renderCreatorJobBank(data) {
+    creatorJobBankData = data || { jobs: [], accounts: [], history: [] };
+    const select = document.getElementById('creator-bank-job');
+    const previous = select.value;
+    fillSelect(select, creatorJobBankData.jobs || [], 'name', 'label');
+    if ((creatorJobBankData.jobs || []).some(item => item.name === previous)) select.value = previous;
+    renderCreatorJobBankSelection();
+}
+document.getElementById('creator-bank-job').addEventListener('change', renderCreatorJobBankSelection);
+document.getElementById('creator-bank-refresh').addEventListener('click', () => post('refreshJobBank').catch(() => creatorMessage('Actualisation bancaire impossible.')));
+document.getElementById('creator-bank-save').addEventListener('click', () => {
+    const job = document.getElementById('creator-bank-job').value;
+    if (!job) { creatorMessage('Sélectionnez un métier.'); return; }
+    post('saveJobBankPermissions', {
+        job,
+        allowDeposit: document.getElementById('creator-bank-allow-deposit').checked,
+        allowWithdraw: document.getElementById('creator-bank-allow-withdraw').checked
+    }).catch(() => creatorMessage('Impossible de sauvegarder les autorisations bancaires.'));
+});
+window.addEventListener('message', event => {
+    const data = event.data || {};
+    if (data.action === 'jobBankData') renderCreatorJobBank(data.data || {});
+});
