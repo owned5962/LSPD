@@ -97,3 +97,14 @@
 .org-swatch { width:13px; height:13px; border-radius:4px; flex:none; }
 .creator-org-grid input[type=color] { min-height:38px; padding:4px; }
 @media(max-width:800px){.creator-org-grid{grid-template-columns:1fr}}
+
+
+.creator-bank-grid{align-items:start}.creator-bank-grid .panel{max-height:none;overflow:visible}
+.job-bank-balance-card{display:flex;flex-direction:column;gap:5px;margin:14px 0;padding:18px;border:1px solid #29466a;border-radius:12px;background:linear-gradient(135deg,#10243b,#0b1525)}
+.job-bank-balance-card small{color:#8ca8c8;font-size:10px;letter-spacing:1px}.job-bank-balance-card strong{font-size:27px;color:#7dd3fc}.job-bank-balance-card span{color:#9fb0c5;font-size:11px}
+.creator-bank-grid .check-line{display:flex;align-items:center;gap:8px;margin:9px 0;padding:10px;border:1px solid #293c56;border-radius:8px;background:#0b1525}
+.creator-bank-grid input[type=checkbox]{accent-color:#38bdf8;width:17px;height:17px}
+.creator-bank-history{display:grid;gap:8px;max-height:440px;overflow:auto}
+.creator-bank-history-row{display:grid;grid-template-columns:1fr auto;gap:5px 12px;padding:10px;border:1px solid #293c56;border-radius:8px;background:#0b1525;font-size:11px}
+.creator-bank-history-row strong{color:#86efac}.creator-bank-history-row small{color:#8298b5}
+@media(max-width:900px){.creator-bank-grid{grid-template-columns:1fr}}
