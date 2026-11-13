@@ -1366,6 +1366,16 @@ def test_job_tablet_reports_nui_transport_failures_instead_of_silently_swallowin
     assert ".request-error" in css
 
 
+
+
+
+def test_job_storage_prompt_matches_enabled_stash_and_armory_access():
+    client = read("resources/[FUNCTION]/rp_inventory/client/job_storage.lua")
+    assert "prompt = '[E] Armurerie'" in client
+    assert "if marker.stashEnabled then" in client
+    assert "marker.stashEnabled and marker.armoryEnabled" in client
+    assert "(data.stashEnabled ~= true and data.armoryEnabled ~= true)" in client
+
 if __name__ == "__main__":
     checks = sorted(
         (name, check)
