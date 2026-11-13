@@ -18,3 +18,10 @@ jobs:
         run: python tests/test_security_regressions.py
       - name: Verify requested server UI and gameplay updates
         run: python tests/test_requested_server_updates.py
+      - name: Check modified NUI JavaScript syntax
+        run: |
+          node --check 'resources/[CORE]/rp_characters/html/js/app.js'
+          node --check 'resources/[FUNCTION]/rp_tablet_creator/html/app.js'
+          node --check 'resources/[FUNCTION]/rp_tablet_admin/html/js/app.js'
+          node --check 'resources/[FUNCTION]/rp_tablet_job/html/app.js'
+          node --check 'resources/[FUNCTION]/rp_inventory/html/js/app.js'
