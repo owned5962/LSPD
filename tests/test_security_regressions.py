@@ -1484,3 +1484,9 @@ def test_clothing_apply_rejects_invalid_database_update_result():
     source = read("resources/[FUNCTION]/rp_clothing/server/main.lua")
     handler = source.split("RegisterNetEvent('rp_clothing:applySavedOutfit'", 1)[1]
     assert "if not saved or type(result) ~= 'number' or result < 0 then" in handler
+
+def test_clothing_hair_appearance_is_integer_and_range_validated():
+    source = read("resources/[FUNCTION]/rp_clothing/server/main.lua")
+    assert "hairStyle % 1 ~= 0 or hairStyle < 0 or hairStyle > 200" in source
+    assert "hairColor ~= hairColor or hairColor % 1 ~= 0" in source
+    assert "math.max(0, math.min(63, hairColor))" in source
