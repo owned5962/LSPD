@@ -22,3 +22,20 @@
 .job-bank-history-row strong{font-size:12px;white-space:nowrap}
 .job-bank-history-row .positive{color:#4ade80}
 .job-bank-history-row .negative{color:#fca5a5}
+
+
+.salary-stat-cards { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; margin:18px 0; }
+.salary-stat-cards article { display:flex; flex-direction:column; gap:9px; padding:18px; border:1px solid #2b4564; border-radius:13px; background:linear-gradient(145deg,#172a43,#101c2d); }
+.salary-stat-cards i { color:#60a5fa; font-size:20px; }
+.salary-stat-cards small { color:#94a3b8; font-size:10px; text-transform:uppercase; letter-spacing:.8px; }
+.salary-stat-cards strong { color:#86efac; font-size:22px; }
+.salary-chart-card { padding:20px; border:1px solid #25364d; border-radius:13px; background:#121e30; }
+.salary-chart-card h3 { margin:0 0 5px; font-size:15px; }
+.salary-chart-card p,.salary-chart-card>small { color:#91a2b8; font-size:10px; }
+.salary-chart { display:grid; gap:15px; margin:22px 0; }
+.salary-chart-row { display:grid; grid-template-columns:100px minmax(80px,1fr) 120px; align-items:center; gap:12px; font-size:11px; }
+.salary-chart-row>span { color:#cbd5e1; }
+.salary-chart-row>b { text-align:right; color:#e2e8f0; font-size:11px; }
+.salary-chart-track { height:12px; border-radius:99px; background:#24364d; overflow:hidden; }
+.salary-chart-bar { height:100%; border-radius:99px; background:linear-gradient(90deg,#2563eb,#38bdf8); min-width:2px; }
+@media(max-width:850px){.salary-stat-cards{grid-template-columns:1fr}.salary-chart-row{grid-template-columns:80px minmax(60px,1fr) 90px}.salary-chart-row>b{font-size:9px}}
