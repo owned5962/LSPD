@@ -189,6 +189,43 @@ document.getElementById('job-storage-delete').addEventListener('click', () => {
     post('deleteJobStorage', { job }).catch(() => creatorMessage('Impossible de supprimer la configuration.'));
 });
 
+function renderJobStorageHistory(data) {
+    const host = document.getElementById('job-storage-history');
+    host.replaceChildren();
+    const entries = Array.isArray(data.entries) ? data.entries : [];
+    if (!entries.length) {
+        host.textContent = 'Aucun mouvement enregistré pour ' + String(data.job || 'ce métier') + '.';
+        return;
+    }
+    entries.forEach(entry => {
+        const row = document.createElement('div');
+        row.className = 'org-row';
+        const detail = document.createElement('span');
+        const kind = entry.storage_type === 'armory' ? 'Armurerie' : 'Coffre';
+        const action = entry.direction === 'deposit' ? 'Dépôt' : 'Retrait';
+        const quantity = Math.max(0, Number(entry.item_count) || 0);
+        const item = String(entry.item_name || 'Objet inconnu');
+        const player = String(entry.player_name || 'Joueur inconnu');
+        const timestamp = String(entry.created_at || '').replace('T', ' ').replace(/\.000Z$/, '');
+        detail.textContent = '#' + String(entry.id) + ' · ' + timestamp + ' · ' + kind + ' · ' +
+            action + ' · ' + item + ' ×' + quantity + ' · ' + player +
+            ' (ID personnage ' + String(entry.character_id || '?') + ')';
+        row.append(detail);
+        host.append(row);
+    });
+}
+document.getElementById('job-storage-history-refresh').addEventListener('click', () => {
+    const job = document.getElementById('job-storage-job').value;
+    if (!job) { creatorMessage('Sélectionnez un métier avant de consulter son historique.'); return; }
+    document.getElementById('job-storage-history').textContent = 'Chargement de l’historique…';
+    post('refreshJobStorageHistory', { job })
+        .catch(() => { document.getElementById('job-storage-history').textContent = 'Erreur de communication.'; });
+});
+window.addEventListener('message', event => {
+    const message = event.data || {};
+    if (message.action === 'jobStorageHistory') renderJobStorageHistory(message.data || {});
+});
+
 function fillSelect(select, items, valueKey, labelKey) {
     select.replaceChildren();
     items.forEach(item => { const option=document.createElement('option'); option.value=item[valueKey]; option.textContent=item[labelKey] || item[valueKey]; select.append(option); });
