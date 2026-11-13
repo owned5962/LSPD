@@ -1340,6 +1340,32 @@ def test_admin_extended_actions_respect_individual_tablet_revocation():
     assert "if not accessOk or tabletAllowed ~= true then return false end" in extended
 
 
+
+
+
+def test_job_tablet_waits_for_server_data_before_taking_nui_focus_and_times_out_cleanly():
+    client = read("resources/[FUNCTION]/rp_tablet_job/client/main.lua")
+    assert "local isOpening = false" in client
+    assert "isOpening = true" in client
+    assert "SetTimeout(7000" in client
+    assert "if isOpen and isOpening then" in client
+    assert "closeTablet()" in client[client.index("SetTimeout(7000"):client.index("RegisterCommand('jobtablet'")]
+    open_event = client.split("RegisterNetEvent('rp_tablet_job:client:openData'", 1)[1].split("RegisterNetEvent('rp_jobbank:client:jobMenuUpdate'", 1)[0]
+    assert "isOpening = false" in open_event
+    assert "SetNuiFocus(true, true)" in open_event
+
+
+def test_job_tablet_reports_nui_transport_failures_instead_of_silently_swallowing_them():
+    html = read("resources/[FUNCTION]/rp_tablet_job/html/index.html")
+    ui = read("resources/[FUNCTION]/rp_tablet_job/html/app.js")
+    css = read("resources/[FUNCTION]/rp_tablet_job/html/style.css")
+    assert 'id="job-tablet-status"' in html
+    assert "function setRequestStatus(message, isError = false)" in ui
+    assert "if (!response.ok) throw new Error" in ui
+    assert "Communication avec la tablette impossible." in ui
+    assert ".request-error" in css
+
+
 if __name__ == "__main__":
     checks = sorted(
         (name, check)
@@ -1419,27 +1445,3 @@ if __name__ == "__main__":
     test_server_cfg_omits_default_framework_resources_and_starts_territories_last()
     test_character_appearance_recovers_missing_clothing_and_clears_invalid_props()
     test_job_bank_is_available_in_f4_job_tablet_with_server_side_permissions()
-
-
-
-def test_job_tablet_waits_for_server_data_before_taking_nui_focus_and_times_out_cleanly():
-    client = read("resources/[FUNCTION]/rp_tablet_job/client/main.lua")
-    assert "local isOpening = false" in client
-    assert "isOpening = true" in client
-    assert "SetTimeout(7000" in client
-    assert "if isOpen and isOpening then" in client
-    assert "closeTablet()" in client[client.index("SetTimeout(7000"):client.index("RegisterCommand('jobtablet'")]
-    open_event = client.split("RegisterNetEvent('rp_tablet_job:client:openData'", 1)[1].split("RegisterNetEvent('rp_jobbank:client:jobMenuUpdate'", 1)[0]
-    assert "isOpening = false" in open_event
-    assert "SetNuiFocus(true, true)" in open_event
-
-
-def test_job_tablet_reports_nui_transport_failures_instead_of_silently_swallowing_them():
-    html = read("resources/[FUNCTION]/rp_tablet_job/html/index.html")
-    ui = read("resources/[FUNCTION]/rp_tablet_job/html/app.js")
-    css = read("resources/[FUNCTION]/rp_tablet_job/html/style.css")
-    assert 'id="job-tablet-status"' in html
-    assert "function setRequestStatus(message, isError = false)" in ui
-    assert "if (!response.ok) throw new Error" in ui
-    assert "Communication avec la tablette impossible." in ui
-    assert ".request-error" in css
