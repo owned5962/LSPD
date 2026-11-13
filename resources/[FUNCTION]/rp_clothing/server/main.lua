@@ -210,7 +210,7 @@ RegisterNetEvent('rp_clothing:applySavedOutfit', function(rawOutfitId)
         'UPDATE characters SET skin = ? WHERE id = ? AND identifier = ?',
         { json.encode(skin), player.charId, player.identifier }
     )
-    if not saved then
+    if not saved or type(result) ~= 'number' or result < 0 then
         Notify(src, 'Impossible de sauvegarder cette tenue.', 'error')
         print(('[rp_clothing] Outfit apply failed for character %s: %s'):format(player.charId, tostring(result)))
         return
