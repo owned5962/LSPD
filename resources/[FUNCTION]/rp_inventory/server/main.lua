@@ -1048,10 +1048,12 @@ local function getStorageItems(job, storageType, config, grade)
     local result = {}
     for _, row in ipairs(rows) do
         local def = Config.DefaultItems[row.item_name]
+        local typeAllowed = (storageType == 'stash' and def and def.type ~= 'weapon')
+            or (storageType == 'armory' and def and def.type == 'weapon')
         local gradeAllowed = storageType ~= 'armory'
             or (config and config.armoryItems[row.item_name] ~= nil
                 and (tonumber(grade) or 0) >= config.armoryItems[row.item_name])
-        if def and gradeAllowed then
+        if typeAllowed and gradeAllowed then
             result[#result + 1] = { name = row.item_name, label = def.label or row.item_name, count = tonumber(row.count) or 0 }
         end
     end
