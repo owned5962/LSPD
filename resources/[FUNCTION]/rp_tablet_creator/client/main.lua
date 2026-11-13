@@ -76,6 +76,16 @@ RegisterNUICallback('deleteJob', function(data, cb)
     cb({ ok = true })
 end)
 
+RegisterNUICallback('saveJobGarage', function(data, cb)
+    TriggerServerEvent('rp_tablet_creator:server:saveJobGarage', data)
+    cb({ ok = true })
+end)
+
+RegisterNUICallback('deleteJobGarage', function(data, cb)
+    TriggerServerEvent('rp_tablet_creator:server:deleteJobGarage', data and data.job)
+    cb({ ok = true })
+end)
+
 RegisterNUICallback('createGang', function(data, cb)
     TriggerServerEvent('rp_tablet_creator:server:createGang', data)
     cb({ ok = true })
@@ -175,12 +185,13 @@ RegisterNetEvent('rp_tablet_creator:client:refreshTools', function()
     if isOpen then TriggerServerEvent('rp_tablet_creator:server:requestTools') end
 end)
 
-RegisterNetEvent('rp_tablet_creator:client:toolsData', function(jobs, blips, mapping, catalog, players, items, settings, modules)
+RegisterNetEvent('rp_tablet_creator:client:toolsData', function(jobs, blips, mapping, catalog, players, items, settings, modules, _, jobGarages)
     local coords = GetEntityCoords(PlayerPedId())
     SendNUIMessage({
         action = 'toolsData', jobs = jobs or {}, blips = blips or {}, mapping = mapping or {},
         catalog = catalog or {}, position = { x = coords.x, y = coords.y, z = coords.z },
-        players = players or {}, items = items or {}, settings = settings or {}, modules = modules or {}
+        players = players or {}, items = items or {}, settings = settings or {}, modules = modules or {},
+        jobGarages = jobGarages or {}
     })
 end)
 
