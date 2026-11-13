@@ -276,40 +276,41 @@ local function ApplyCharacterAppearance(gender, skin)
         worker = { pants = 36, shoes = 12, undershirt = 59, top = 56 },
         sport = { pants = 5, shoes = 3, undershirt = 15, top = 15 }
     }
-    if type(skin.components) == 'table' then
-        for component = 0, 11 do
-            local saved = skin.components[tostring(component)] or skin.components[component]
-            if type(saved) == 'table' then
-                SetSafeComponent(ped, component, saved.drawable, saved.texture)
-            end
+    local outfit = outfits[skin.clothing] or outfits.casual
+    local safeDefaults = {
+        [3] = { 0, 0 }, [4] = { outfit.pants, 0 }, [5] = { 0, 0 },
+        [6] = { outfit.shoes, 0 }, [7] = { 0, 0 }, [8] = { outfit.undershirt, 0 },
+        [9] = { 0, 0 }, [10] = { 0, 0 }, [11] = { outfit.top, 0 }
+    }
+    -- Even a partially saved outfit must never leave a component missing:
+    -- validate every saved drawable/texture and fill absent clothing slots.
+    for component = 0, 11 do
+        local saved = type(skin.components) == 'table'
+            and (skin.components[tostring(component)] or skin.components[component]) or nil
+        if type(saved) == 'table' then
+            SetSafeComponent(ped, component, saved.drawable, saved.texture)
+        elseif safeDefaults[component] then
+            SetSafeComponent(ped, component, safeDefaults[component][1], safeDefaults[component][2])
         end
-    else
-        local outfit = outfits[skin.clothing] or outfits.casual
-        SetSafeComponent(ped, 4, outfit.pants, 0)
-        SetSafeComponent(ped, 6, outfit.shoes, 0)
-        SetSafeComponent(ped, 8, outfit.undershirt, 0)
-        SetSafeComponent(ped, 11, outfit.top, 0)
-        SetSafeComponent(ped, 3, 0, 0)
     end
 
-    if type(skin.props) == 'table' then
-        for prop = 0, 7 do
-            local saved = skin.props[tostring(prop)] or skin.props[prop]
-            if type(saved) == 'table' then
-                local drawable = tonumber(saved.drawable) or -1
-                local texture = tonumber(saved.texture) or 0
-                if drawable < 0 then
-                    ClearPedProp(ped, prop)
-                else
-                    local propCount = GetNumberOfPedPropDrawableVariations(ped, prop)
-                    if propCount and propCount > 0 then
-                        drawable = math.min(drawable, propCount - 1)
-                        local textureCount = GetNumberOfPedPropTextureVariations(ped, prop, drawable)
-                        texture = math.max(0, math.min(texture, math.max(0, (textureCount or 1) - 1)))
-                        SetPedPropIndex(ped, prop, drawable, texture, true)
-                    end
-                end
+    -- Props are optional. Invalid or missing saved props are cleared safely.
+    for prop = 0, 7 do
+        local saved = type(skin.props) == 'table'
+            and (skin.props[tostring(prop)] or skin.props[prop]) or nil
+        if type(saved) == 'table' then
+            local drawable = tonumber(saved.drawable) or -1
+            local texture = tonumber(saved.texture) or 0
+            local propCount = GetNumberOfPedPropDrawableVariations(ped, prop) or 0
+            if drawable < 0 or drawable >= propCount then
+                ClearPedProp(ped, prop)
+            else
+                local textureCount = GetNumberOfPedPropTextureVariations(ped, prop, drawable) or 1
+                texture = math.max(0, math.min(math.floor(texture), math.max(0, textureCount - 1)))
+                SetPedPropIndex(ped, prop, drawable, texture, true)
             end
+        else
+            ClearPedProp(ped, prop)
         end
     end
 
