@@ -150,26 +150,6 @@ def test_character_resource_declares_job_catalog_startup_dependency():
     assert "'rp_jobs'" in manifest
     assert cfg.index("ensure rp_core") < cfg.index("ensure rp_jobs") < cfg.index("ensure rp_characters")
 
-if __name__ == "__main__":
-    test_server_player_registry_only_exposes_fully_loaded_characters()
-    test_client_receives_complete_authoritative_character_snapshot()
-    test_disconnect_final_save_retries_until_persisted()
-    test_job_resources_do_not_load_unused_mysql_driver()
-    test_core_restart_requests_a_safe_character_bootstrap()
-    test_inventory_is_preloaded_from_core_player_lifecycle_and_saved_on_unload()
-    test_job_duty_is_shared_with_the_authoritative_player_record()
-    test_core_rejects_invalid_character_identity_and_never_falls_back_to_id_one()
-    test_identifier_lookup_does_not_expose_the_live_player_record()
-    test_core_job_exports_fail_soft_when_job_catalog_is_unavailable()
-    test_character_resource_declares_job_catalog_startup_dependency()
-    test_core_rate_limits_and_player_waits_are_safe_across_timer_rollover()
-    test_disconnect_lifecycle_emits_detached_player_snapshots()
-    test_core_manifest_declares_supported_runtime_and_driver_once()
-    test_character_creation_is_server_validated_and_slot_uniqueness_is_database_enforced()
-    test_core_startup_order_does_not_depend_on_private_server_keys()
-    print("Player session, core architecture and SQL dependency checks passed.")
-
-
 def test_core_rate_limits_and_player_waits_are_safe_across_timer_rollover():
     server = (CORE / "server/main.lua").read_text(encoding="utf-8")
     assert "local TIMER_MODULUS = 4294967296" in server
@@ -219,3 +199,23 @@ def test_core_startup_order_does_not_depend_on_private_server_keys():
     assert cfg.index("ensure rp_core") < cfg.index("ensure rp_jobs") < cfg.index("ensure rp_characters")
     assert "ensure rp_core" in cfg
     assert "ensure rp_characters" in cfg
+
+
+if __name__ == "__main__":
+    test_server_player_registry_only_exposes_fully_loaded_characters()
+    test_client_receives_complete_authoritative_character_snapshot()
+    test_disconnect_final_save_retries_until_persisted()
+    test_job_resources_do_not_load_unused_mysql_driver()
+    test_core_restart_requests_a_safe_character_bootstrap()
+    test_inventory_is_preloaded_from_core_player_lifecycle_and_saved_on_unload()
+    test_job_duty_is_shared_with_the_authoritative_player_record()
+    test_core_rejects_invalid_character_identity_and_never_falls_back_to_id_one()
+    test_identifier_lookup_does_not_expose_the_live_player_record()
+    test_core_job_exports_fail_soft_when_job_catalog_is_unavailable()
+    test_character_resource_declares_job_catalog_startup_dependency()
+    test_core_rate_limits_and_player_waits_are_safe_across_timer_rollover()
+    test_disconnect_lifecycle_emits_detached_player_snapshots()
+    test_core_manifest_declares_supported_runtime_and_driver_once()
+    test_character_creation_is_server_validated_and_slot_uniqueness_is_database_enforced()
+    test_core_startup_order_does_not_depend_on_private_server_keys()
+    print("Player session, core architecture and SQL dependency checks passed.")
