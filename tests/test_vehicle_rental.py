@@ -42,6 +42,11 @@ def test_rental_expiry_and_vehicle_return_flow():
     assert "renewalRequired" in server
     assert "ExpiryGraceSeconds" in server
     assert "forceReturn" in server
+    assert "refundRental" in server
+    assert "calculateUnusedRefund" in server
+    assert "AddEventHandler('onResourceStop'" in server
+    assert "refundAmount" in server
+    assert "rental.amount = cost" in server
     assert "TaskLeaveVehicle" in client
     assert "SetVehicleDoorsLockedForAllPlayers" in client
     assert "drawTimer" in client
