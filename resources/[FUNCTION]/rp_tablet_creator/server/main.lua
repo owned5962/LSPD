@@ -72,6 +72,40 @@ local function reply(src, message, success)
     TriggerClientEvent('rp_tablet_creator:client:result', src, message, success == true)
 end
 
+RegisterNetEvent('rp_tablet_creator:server:requestWeaponPolicy', function()
+    local src = source
+    if not creatorAccessAllowed(src)
+        or not exports['rp_core']:CanPerformAction(src, 'creator:weapon_policy_read', 1200) then return end
+    local ok, policy = pcall(function()
+        return exports['rp_anticheat']:GetWeaponPolicy()
+    end)
+    if not ok or type(policy) ~= 'table' then
+        print('[rp_tablet_creator] Weapon policy read failed: ' .. tostring(policy))
+        TriggerClientEvent('rp_tablet_creator:client:weaponPolicySaveFailed', src, 'Catalogue des armes indisponible.')
+        return
+    end
+    TriggerClientEvent('rp_tablet_creator:client:weaponPolicyData', src, policy)
+end)
+
+RegisterNetEvent('rp_tablet_creator:server:saveWeaponPolicy', function(rawPolicy)
+    local src = source
+    if not creatorAccessAllowed(src)
+        or not exports['rp_core']:CanPerformAction(src, 'creator:weapon_policy_write', 1500)
+        or type(rawPolicy) ~= 'table' then return end
+    local ok, saved, result = pcall(function()
+        return exports['rp_anticheat']:SaveWeaponPolicy(src, rawPolicy)
+    end)
+    if not ok or saved ~= true then
+        local message = type(result) == 'string' and result or 'Impossible d’enregistrer les autorisations des armes.'
+        TriggerClientEvent('rp_tablet_creator:client:weaponPolicySaveFailed', src, message)
+        reply(src, message, false)
+        return
+    end
+    TriggerClientEvent('rp_tablet_creator:client:weaponPolicySaved', src, result)
+    reply(src, 'Politique des armes enregistrée et synchronisée avec l’anticheat.', true)
+    LogCreatorAction(src, 'weapon_policy', nil, 'Mise à jour des armes autorisées/interdites')
+end)
+
 RegisterNetEvent('rp_tablet_creator:server:requestAccessStatus', function()
     local src = source
     local player = exports['rp_core']:GetPlayerFromId(src)
