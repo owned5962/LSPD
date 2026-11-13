@@ -152,7 +152,7 @@ local function transact(src, rawAmount, kind)
     end
     local sqlOk, affected = pcall(MySQL.update.await, query, params)
     exports['rp_core']:ReleaseCharacterLock(lockIds)
-    if not sqlOk or tonumber(affected) ~= 2 then
+    if not sqlOk or not tonumber(affected) or tonumber(affected) < 1 then
         jobLocks[jobName] = nil
         if not sqlOk then print(('[rp_jobbank] Erreur SQL %s/%s : %s'):format(jobName, kind, tostring(affected))) end
         notify(src, 'Opération refusée : solde, autorisation ou compte invalide.', 'error')
