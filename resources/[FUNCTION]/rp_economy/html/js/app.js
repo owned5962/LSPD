@@ -150,15 +150,59 @@ document.addEventListener('keydown', event => {
     }
 });
 
+function renderJobBank(data) {
+    const section = $('job-bank-section');
+    if (!data || !data.account) { section.classList.add('hidden'); return; }
+    section.classList.remove('hidden');
+    const account = data.account;
+    $('job-bank-label').textContent = account.label || account.job || 'Métier';
+    $('job-bank-balance').textContent = formatMoney(account.balance);
+    $('job-bank-account-state').textContent = 'Compte actif';
+    $('job-bank-operations').classList.toggle('hidden', isATM);
+    $('job-deposit-btn').disabled = !account.allow_deposit || isATM;
+    $('job-withdraw-btn').disabled = !account.allow_withdraw || isATM;
+    $('job-deposit-btn').title = account.allow_deposit ? '' : 'Dépôts désactivés par le fondateur';
+    $('job-withdraw-btn').title = account.allow_withdraw ? '' : 'Retraits désactivés par le fondateur';
+    const host = $('job-bank-history'); host.replaceChildren();
+    const history = Array.isArray(data.history) ? data.history : [];
+    if (!history.length) { host.textContent = 'Aucune opération enregistrée.'; return; }
+    history.forEach(item => {
+        const row = document.createElement('div'); row.className = 'job-bank-history-row';
+        const label = document.createElement('span');
+        label.textContent = (item.transaction_type === 'deposit' ? 'Dépôt' : 'Retrait') + ' · ' + (item.player_name || 'Employé');
+        const amount = document.createElement('strong');
+        amount.textContent = (item.transaction_type === 'deposit' ? '+' : '−') + formatMoney(item.amount);
+        const date = document.createElement('small'); date.textContent = item.created_at ? String(item.created_at).replace('T', ' ').slice(0, 19) : '';
+        row.append(label, amount, date); host.append(row);
+    });
+}
+
+async function submitJobBankOperation(type) {
+    if (!authenticated || isATM || busy.has('job-' + type)) return;
+    const inputId = type === 'deposit' ? 'job-deposit-amount' : 'job-withdraw-amount';
+    const buttonId = type === 'deposit' ? 'job-deposit-btn' : 'job-withdraw-btn';
+    const amount = Number($(inputId).value);
+    if (!Number.isSafeInteger(amount) || amount < 1 || amount > 1000000) { showToast('Saisissez un montant entier entre 1 et 1 000 000 $.', 'error'); return; }
+    const name = 'job-' + type; busy.add(name); setButtonBusy(buttonId, true, 'Traitement…');
+    const result = await post(type === 'deposit' ? 'jobDeposit' : 'jobWithdraw', { amount });
+    if (!result || result.ok === false) { busy.delete(name); setButtonBusy(buttonId, false); showToast('Demande impossible à envoyer.', 'error'); return; }
+    showToast('Opération envoyée au compte du métier…', 'info');
+}
+$('job-deposit-btn').addEventListener('click', () => submitJobBankOperation('deposit'));
+$('job-withdraw-btn').addEventListener('click', () => submitJobBankOperation('withdraw'));
 window.addEventListener('message', event => {
     const data = event.data || {};
-    if (data.action === 'openBank') {
+    if (data.action === 'jobBankData') {
+        renderJobBank(data.data);
+        ['deposit', 'withdraw'].forEach(type => { const name = 'job-' + type; if (busy.has(name)) { $(type === 'deposit' ? 'job-deposit-amount' : 'job-withdraw-amount').value = ''; busy.delete(name); setButtonBusy(name + '-btn', false); } });
+    } else if (data.action === 'openBank') {
         resetTerminal();
         bankOpen = true;
         isATM = data.isATM === true;
         $('bank-container').classList.remove('hidden');
         $('location-label').textContent = data.locationLabel || (isATM ? 'Distributeur automatique · 24/7' : 'Agence bancaire');
         $('transfer-section').classList.toggle('hidden', isATM);
+        $('job-bank-section').classList.add('hidden');
         $('account-holder').textContent = data.playerName || 'Citoyen';
         $('account-number').textContent = data.accountNumber || 'LS-000000';
         setAuthStatus('En attente de votre empreinte');
