@@ -59,6 +59,25 @@ RegisterNUICallback('finishMission', function(_, cb)
     cb({ ok = true })
 end)
 
+RegisterNUICallback('refreshJobBank', function(_, cb)
+    TriggerServerEvent('rp_jobbank:server:requestFromJobMenu')
+    cb({ ok = true })
+end)
+
+RegisterNUICallback('jobBankDeposit', function(data, cb)
+    local amount = tonumber(data and data.amount)
+    if not amount or amount % 1 ~= 0 or amount < 1 then cb({ ok = false }); return end
+    TriggerServerEvent('rp_jobbank:server:jobMenuDeposit', amount)
+    cb({ ok = true })
+end)
+
+RegisterNUICallback('jobBankWithdraw', function(data, cb)
+    local amount = tonumber(data and data.amount)
+    if not amount or amount % 1 ~= 0 or amount < 1 then cb({ ok = false }); return end
+    TriggerServerEvent('rp_jobbank:server:jobMenuWithdraw', amount)
+    cb({ ok = true })
+end)
+
 RegisterNUICallback('toggleDuty', function(_, cb)
     local ok, player = pcall(function() return exports['rp_core']:GetPlayerData() end)
     local job = ok and player and player.job
@@ -91,9 +110,15 @@ RegisterNetEvent('rp_tablet_job:client:openData', function(data)
     currentDuty = data.duty == true
     currentJob = data.jobName
     SendNUIMessage({ action = 'open', data = data })
+    TriggerServerEvent('rp_jobbank:server:requestFromJobMenu')
     if currentJob == 'police' and currentDuty then
         TriggerServerEvent('rp_police_interaction:server:requestAlerts')
     end
+end)
+
+RegisterNetEvent('rp_jobbank:client:jobMenuUpdate', function(data)
+    if not isOpen then return end
+    SendNUIMessage({ action = 'jobBankData', data = data })
 end)
 
 RegisterNetEvent('rp_tablet_job:client:refreshData', function(data)
