@@ -501,6 +501,29 @@ AddEventHandler('playerDropped', function()
     end
 end)
 
+AddEventHandler('onResourceStop', function(resourceName)
+    if resourceName ~= GetCurrentResourceName() then return end
+    for src, tuning in pairs(pendingTunes) do
+        refundPendingTune(src, tuning, 'Personnalisation annulée lors du redémarrage du garage.', false)
+    end
+    for src, pending in pairs(pendingSpawns) do
+        for _, vehicle in ipairs(GetAllVehicles()) do
+            if DoesEntityExist(vehicle)
+                and cleanPlate(GetVehicleNumberPlateText(vehicle)) == pending.plate then
+                DeleteEntity(vehicle)
+            end
+        end
+        local ok, affected = pcall(MySQL.update.await,
+            'UPDATE rp_owned_vehicles SET stored = 1 WHERE id = ? AND character_id = ? AND stored = 0',
+            { pending.id, pending.charId })
+        if not ok or tonumber(affected) ~= 1 then
+            print(('[rp_garages] Failed to restore pending vehicle %s for character %s on resource stop.')
+                :format(tostring(pending.id), tostring(pending.charId)))
+        end
+        pendingSpawns[src] = nil
+    end
+end)
+
 CreateThread(function()
     while true do
         Wait(5000)
