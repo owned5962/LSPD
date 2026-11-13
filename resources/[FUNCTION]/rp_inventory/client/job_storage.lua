@@ -7,16 +7,20 @@ local amount = 1
 local menuOpen = false
 local menuPending = false
 local promptShown = false
+local currentText = nil
 
 local function hideText()
     if promptShown then
         exports['rp_ui']:HideTextUI()
         promptShown = false
+        currentText = nil
     end
 end
 
 local function showText(value)
+    if currentText == value then return end
     exports['rp_ui']:ShowTextUI(value)
+    currentText = value
     promptShown = true
 end
 
