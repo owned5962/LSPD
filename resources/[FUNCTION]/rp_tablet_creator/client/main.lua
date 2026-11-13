@@ -66,6 +66,16 @@ RegisterNUICallback('createJob', function(data, cb)
     cb({ ok = true })
 end)
 
+RegisterNUICallback('updateJob', function(data, cb)
+    TriggerServerEvent('rp_tablet_creator:server:updateJob', data)
+    cb({ ok = true })
+end)
+
+RegisterNUICallback('deleteJob', function(data, cb)
+    TriggerServerEvent('rp_tablet_creator:server:deleteJob', data and data.name)
+    cb({ ok = true })
+end)
+
 RegisterNUICallback('createGang', function(data, cb)
     TriggerServerEvent('rp_tablet_creator:server:createGang', data)
     cb({ ok = true })
@@ -177,6 +187,10 @@ end)
 
 RegisterNetEvent('rp_tablet_creator:client:organizationsData', function(gangs)
     SendNUIMessage({ action = 'organizationsData', gangs = gangs or {} })
+end)
+
+RegisterNetEvent('rp_tablet_creator:client:customJobsData', function(jobs)
+    SendNUIMessage({ action = 'customJobsData', jobs = jobs or {} })
 end)
 
 RegisterNetEvent('rp_tablet_creator:client:adminToolsData', function(data)
