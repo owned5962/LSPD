@@ -125,6 +125,7 @@ end
 local function isStaff(src)
     local player = getPlayer(src)
     return IsPlayerAceAllowed(src, 'rp_admin')
+        or IsPlayerAceAllowed(src, 'rp_creator')
         or (player and (player.group == 'admin' or player.group == 'superadmin' or player.group == 'fondateur'))
 end
 
