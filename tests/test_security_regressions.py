@@ -1463,8 +1463,12 @@ def test_job_tablet_duty_display_cannot_be_spoofed_by_client():
 def test_clothing_changes_do_not_mutate_live_skin_before_database_success():
     source = read("resources/[FUNCTION]/rp_clothing/server/main.lua")
     assert "local function CloneSkin(value)" in source
-    for event in ("rp_clothing:purchaseHair", "rp_clothing:saveOutfit", "rp_clothing:applySavedOutfit"):
-        handler = source.split("RegisterNetEvent('" + event + "'", 1)[1].split("end)", 1)[0]
+    handlers = (
+        source.split("RegisterNetEvent('rp_clothing:purchaseHair'", 1)[1].split("local function Notify", 1)[0],
+        source.split("RegisterNetEvent('rp_clothing:saveOutfit'", 1)[1].split("RegisterNetEvent('rp_clothing:requestOutfits'", 1)[0],
+        source.split("RegisterNetEvent('rp_clothing:applySavedOutfit'", 1)[1],
+    )
+    for handler in handlers:
         assert "local skin = CloneSkin(player.skin)" in handler
         assert handler.index("player.skin = skin") > handler.index("MySQL.")
 
