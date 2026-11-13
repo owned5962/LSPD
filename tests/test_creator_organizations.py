@@ -32,7 +32,7 @@ def test_creator_job_creation_is_permission_gated_and_updates_job_selectors():
     assert "creator:create_job" in server
     assert "exports['rp_jobs']:CreateCustomJob" in server
     assert "RegisterNUICallback('createJob'" in client
-    assert 'data-tab="organizations"' in html
+    assert 'data-tab="jobs"' in html and 'data-tab="gangs"' in html and 'data-tab="weapons"' in html
     assert 'id="new-job-grade-4"' in html
     assert 'id="new-job-capacity"' in html
     assert "post(action, data)" in ui
