@@ -120,7 +120,7 @@ def test_character_appearance_is_applied_and_persisted():
     assert "mp_f_freemode_01" in client and "mp_m_freemode_01" in client
     assert "SetPedHairColor" in client
     assert "skin.components" in client and "skin.props" in client
-    assert "char.position, char.sex, char.skin" in server
+    assert "spawnPlayer', src, player.position, char.sex, char.skin" in server
     assert "sendAppearancePreview" in read("resources/[CORE]/rp_characters/html/js/app.js")
 
 
