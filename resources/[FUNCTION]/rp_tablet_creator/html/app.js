@@ -7,7 +7,7 @@ function activateCreatorTab(tab){
 }
 document.getElementById('close').addEventListener('click',close);
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!tablet.classList.contains('hidden')){e.preventDefault();close();}});
-window.addEventListener('message',e=>{const d=e.data||{};if(d.action==='open'){tablet.classList.remove('hidden');activateCreatorTab('world');document.getElementById('role').textContent=String(d.role||'CRÉATEUR').toUpperCase();status.textContent='Connecté · Contrôles autorisés';}else if(d.action==='close'){tablet.classList.add('hidden');}else if(d.action==='result'){status.textContent=d.message||'';status.style.color=d.success?'#86efac':'#fca5a5';}});
+window.addEventListener('message',e=>{const d=e.data||{};if(d.action==='open'){tablet.classList.remove('hidden');activateCreatorTab('weather');document.getElementById('role').textContent=String(d.role||'CRÉATEUR').toUpperCase();status.textContent='Connecté · Contrôles autorisés';}else if(d.action==='close'){tablet.classList.add('hidden');}else if(d.action==='result'){status.textContent=d.message||'';status.style.color=d.success?'#86efac':'#fca5a5';}});
 document.querySelectorAll('[data-weather]').forEach(button=>button.addEventListener('click',()=>post('setWorld',{weather:button.dataset.weather}).catch(()=>{status.textContent='Erreur de communication';})));
 document.getElementById('apply-time').addEventListener('click',()=>post('setWorld',{hours:Number(document.getElementById('hours').value),minutes:Number(document.getElementById('minutes').value)}).catch(()=>{status.textContent='Erreur de communication';}));
 document.getElementById('send').addEventListener('click',()=>{const message=document.getElementById('announcement').value.trim();if(!message){status.textContent='Saisissez une annonce avant de diffuser.';return;}post('broadcast',{message}).then(()=>{document.getElementById('announcement').value='';}).catch(()=>{status.textContent='Erreur de communication';});});
@@ -691,4 +691,50 @@ document.getElementById('creator-bank-save').addEventListener('click', () => {
 window.addEventListener('message', event => {
     const data = event.data || {};
     if (data.action === 'jobBankData') renderCreatorJobBank(data.data || {});
+});
+
+
+// Politique des armes déplacée dans la console Créateur.
+let creatorWeaponPolicy = [];
+function renderCreatorWeaponPolicy() {
+    const root = document.getElementById('creator-weapon-list');
+    if (!root) return;
+    const query = (document.getElementById('creator-weapon-search')?.value || '').trim().toLowerCase();
+    root.replaceChildren();
+    const filtered = creatorWeaponPolicy.filter(item =>
+        !query || (String(item.label || '') + ' ' + String(item.name || '')).toLowerCase().includes(query));
+    const enabled = creatorWeaponPolicy.filter(item => item.enabled === true).length;
+    const summary = document.getElementById('creator-weapon-summary');
+    if (summary) summary.textContent = enabled + ' autorisées · ' + (creatorWeaponPolicy.length - enabled) + ' interdites';
+    if (!filtered.length) { root.textContent = 'Aucune arme correspondante.'; return; }
+    filtered.forEach(item => {
+        const row = document.createElement('label');
+        row.className = 'weapon-policy-row';
+        const description = document.createElement('span');
+        description.textContent = String(item.label || item.name) + ' · ' + String(item.name || '');
+        const toggle = document.createElement('input');
+        toggle.type = 'checkbox';
+        toggle.checked = item.enabled === true;
+        toggle.addEventListener('change', () => { item.enabled = toggle.checked; renderCreatorWeaponPolicy(); });
+        row.append(description, toggle);
+        root.append(row);
+    });
+}
+window.addEventListener('message', event => {
+    const data = event.data || {};
+    if (data.action === 'weaponPolicyData' || data.action === 'weaponPolicySaved') {
+        creatorWeaponPolicy = Array.isArray(data.weaponPolicy) ? data.weaponPolicy.map(item => ({...item})) : [];
+        renderCreatorWeaponPolicy();
+    } else if (data.action === 'weaponPolicySaveFailed') {
+        creatorMessage(String(data.message || 'Échec de sauvegarde de la politique des armes.'));
+    }
+});
+document.getElementById('creator-weapon-search')?.addEventListener('input', renderCreatorWeaponPolicy);
+document.getElementById('creator-weapon-save')?.addEventListener('click', () => {
+    if (!creatorWeaponPolicy.length) { creatorMessage('Catalogue des armes indisponible.'); return; }
+    const policy = {};
+    creatorWeaponPolicy.forEach(item => { policy[item.name] = item.enabled === true; });
+    post('saveWeaponPolicy', { policy })
+        .then(() => creatorMessage('Enregistrement de la politique des armes demandé.', true))
+        .catch(() => creatorMessage('Impossible de sauvegarder la politique des armes.'));
 });
