@@ -28,39 +28,46 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install MySQL client
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y mysql-client
-
       - name: Import the complete schema
         env:
-          MYSQL_PWD: test-root-password
-        run: mysql --host=127.0.0.1 --user=root --default-character-set=utf8mb4 fivem_rp < database.sql
-
-      - name: Apply every migration twice
-        env:
-          MYSQL_PWD: test-root-password
+          MYSQL_ROOT_PASSWORD: test-root-password
         shell: bash
         run: |
           set -euo pipefail
+          container=$(docker ps --filter "ancestor=mysql:8.4" --format "{{.ID}}" | head -n1)
+          test -n "$container"
+          mysql_cmd=(docker exec -i "$container" mysql --user=root --password="$MYSQL_ROOT_PASSWORD" --default-character-set=utf8mb4)
+          "${mysql_cmd[@]}" fivem_rp < database.sql
+
+      - name: Apply every migration twice
+        env:
+          MYSQL_ROOT_PASSWORD: test-root-password
+        shell: bash
+        run: |
+          set -euo pipefail
+          container=$(docker ps --filter "ancestor=mysql:8.4" --format "{{.ID}}" | head -n1)
+          test -n "$container"
+          mysql_cmd=(docker exec -i "$container" mysql --user=root --password="$MYSQL_ROOT_PASSWORD" --default-character-set=utf8mb4)
           for pass in 1 2; do
             echo "Migration pass $pass"
             for migration in migrations/*.sql; do
               echo "Applying $migration"
-              mysql --host=127.0.0.1 --user=root --default-character-set=utf8mb4 fivem_rp < "$migration"
+              "${mysql_cmd[@]}" fivem_rp < "$migration"
             done
           done
 
       - name: Verify key schema objects
         env:
-          MYSQL_PWD: test-root-password
+          MYSQL_ROOT_PASSWORD: test-root-password
         shell: bash
         run: |
           set -euo pipefail
-          metadata_count=$(mysql --batch --skip-column-names --host=127.0.0.1 --user=root fivem_rp -e "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'characters' AND column_name = 'metadata'")
-          salary_index_count=$(mysql --batch --skip-column-names --host=127.0.0.1 --user=root fivem_rp -e "SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = 'bank_transactions' AND index_name = 'idx_bank_salary_reason_created'")
-          bank_table_count=$(mysql --batch --skip-column-names --host=127.0.0.1 --user=root fivem_rp -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name IN ('rp_job_bank_accounts', 'rp_job_bank_transactions')")
+          container=$(docker ps --filter "ancestor=mysql:8.4" --format "{{.ID}}" | head -n1)
+          test -n "$container"
+          mysql_cmd=(docker exec -i "$container" mysql --user=root --password="$MYSQL_ROOT_PASSWORD" --batch --skip-column-names fivem_rp)
+          metadata_count=$("${mysql_cmd[@]}" -e "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'characters' AND column_name = 'metadata'")
+          salary_index_count=$("${mysql_cmd[@]}" -e "SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = 'bank_transactions' AND index_name = 'idx_bank_salary_reason_created'")
+          bank_table_count=$("${mysql_cmd[@]}" -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name IN ('rp_job_bank_accounts', 'rp_job_bank_transactions')")
           test "$metadata_count" = "1"
           test "$salary_index_count" = "1"
           test "$bank_table_count" = "2"
