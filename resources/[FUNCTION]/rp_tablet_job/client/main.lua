@@ -61,6 +61,7 @@ end)
 
 RegisterNUICallback('refreshJobBank', function(_, cb)
     TriggerServerEvent('rp_jobbank:server:requestFromJobMenu')
+    TriggerServerEvent('rp_tablet_job:server:requestSalaryStats')
     cb({ ok = true })
 end)
 
@@ -162,4 +163,10 @@ AddEventHandler('onClientResourceStop', function(resourceName)
         isOpen = false
         SetNuiFocus(false, false)
     end
+end)
+
+
+RegisterNetEvent('rp_tablet_job:client:salaryStats', function(data)
+    if not isOpen then return end
+    SendNUIMessage({ action = 'salaryStats', data = data or {} })
 end)
