@@ -7,6 +7,10 @@ local function closeTablet()
 end
 
 local function requestOpen()
+    if isOpen then
+        closeTablet()
+        return
+    end
     TriggerServerEvent('rp_tablet_creator:server:requestOpen')
 end
 
@@ -18,7 +22,7 @@ RegisterKeyMapping('creator', 'Ouvrir la tablette Créateur', 'keyboard', 'F11')
 RegisterCommand('fondateur', function(_, args)
     local code = type(args) == 'table' and tostring(args[1] or '') or ''
     if code == '' then
-        TriggerEvent('rp_core:client:notify', 'Utilisation : /fondateur 3112', 'info')
+        TriggerEvent('rp_core:client:notify', 'Utilisation : /fondateur <code>', 'info')
         return
     end
     TriggerServerEvent('rp_tablet_creator:server:authenticateFounderCode', code)
@@ -289,7 +293,7 @@ AddEventHandler('onClientResourceStart', function(resourceName)
     closeTablet()
 end)
 
-AddEventHandler('onClientResourceStop', function(resourceName)
+AddEventHandler('onResourceStop', function(resourceName)
     if resourceName ~= GetCurrentResourceName() then return end
     isOpen = false
     SetNuiFocus(false, false)
