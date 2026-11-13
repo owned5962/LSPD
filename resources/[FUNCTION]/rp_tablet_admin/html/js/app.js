@@ -122,6 +122,15 @@ document.addEventListener('DOMContentLoaded', () => {
     // Keep keyboard closing available while the NUI has focus.
     document.addEventListener('keydown', (event) => {
         if (event.key !== 'Escape') return;
+
+        const reportOverlay = document.getElementById('player-report-overlay');
+        if (reportOverlay && !reportOverlay.classList.contains('hidden')) {
+            event.preventDefault();
+            event.stopPropagation();
+            nuiPost('closePlayerReport').catch(() => {});
+            return;
+        }
+
         const wrapper = document.getElementById('tablet-wrapper');
         if (!wrapper || !wrapper.classList.contains('is-open')) return;
         event.preventDefault();

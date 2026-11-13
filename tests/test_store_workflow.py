@@ -34,7 +34,7 @@ def test_store_catalog_only_sells_registered_inventory_items():
 def test_store_checkout_validates_proximity_and_refunds_failed_inventory_add():
     server = (ROOT / "resources/[FUNCTION]/rp_businesses/server/main.lua").read_text(encoding="utf-8")
     assert "getStoreLocations()" in server
-    assert "getPlayerAtStore(src, 4.0)" in server
+    assert "getPlayerAtStore(src, 1.5)" in server
     assert server.index("storePurchaseLocks[src] = true", server.index("buyStoreItem")) < server.index("pcall(player.removeCash, price)")
     assert "exports['rp_inventory']:AddItem(src, itemName, 1)" in server
     assert "pcall(player.addCash, price)" in server

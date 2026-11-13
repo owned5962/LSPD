@@ -39,3 +39,5 @@
 .salary-chart-track { height:12px; border-radius:99px; background:#24364d; overflow:hidden; }
 .salary-chart-bar { height:100%; border-radius:99px; background:linear-gradient(90deg,#2563eb,#38bdf8); min-width:2px; }
 @media(max-width:850px){.salary-stat-cards{grid-template-columns:1fr}.salary-chart-row{grid-template-columns:80px minmax(60px,1fr) 90px}.salary-chart-row>b{font-size:9px}}
+
+.request-error{border-color:#7f1d1d;background:#2a1118;color:#fecaca}

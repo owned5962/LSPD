@@ -604,7 +604,7 @@ def test_character_spawn_cannot_wait_forever_on_screen_fade():
     assert "local fadeStartedAt = GetGameTimer() % SPAWN_TIMER_MODULUS" in client
     assert "SpawnWaitExpired(fadeStartedAt, 5000)" in client
     assert "local collisionStartedAt = GetGameTimer() % SPAWN_TIMER_MODULUS" in client
-    assert "SpawnWaitExpired(collisionStartedAt, 5000)" in client
+    assert "SpawnWaitExpired(collisionStartedAt, 10000)" in client
     assert "local function NormalizeClientSpawn(coords)" in client
     assert "Utils.NormalizePosition(savedPosition, Config.DefaultSpawn)" in read("resources/[CORE]/rp_core/server/player.lua")
     assert "ShutdownLoadingScreen()" in client
@@ -1339,6 +1339,53 @@ def test_admin_extended_actions_respect_individual_tablet_revocation():
     assert "CanUseTablet(src, 'admin')" in extended
     assert "if not accessOk or tabletAllowed ~= true then return false end" in extended
 
+
+
+
+
+def test_job_tablet_waits_for_server_data_before_taking_nui_focus_and_times_out_cleanly():
+    client = read("resources/[FUNCTION]/rp_tablet_job/client/main.lua")
+    assert "local isOpening = false" in client
+    assert "isOpening = true" in client
+    assert "SetTimeout(7000" in client
+    assert "if isOpen and isOpening then" in client
+    assert "closeTablet()" in client[client.index("SetTimeout(7000"):client.index("RegisterCommand('jobtablet'")]
+    open_event = client.split("RegisterNetEvent('rp_tablet_job:client:openData'", 1)[1].split("RegisterNetEvent('rp_jobbank:client:jobMenuUpdate'", 1)[0]
+    assert "isOpening = false" in open_event
+    assert "SetNuiFocus(true, true)" in open_event
+
+
+def test_job_tablet_reports_nui_transport_failures_instead_of_silently_swallowing_them():
+    html = read("resources/[FUNCTION]/rp_tablet_job/html/index.html")
+    ui = read("resources/[FUNCTION]/rp_tablet_job/html/app.js")
+    css = read("resources/[FUNCTION]/rp_tablet_job/html/style.css")
+    assert 'id="job-tablet-status"' in html
+    assert "function setRequestStatus(message, isError = false)" in ui
+    assert "if (!response.ok) throw new Error" in ui
+    assert "Communication avec la tablette impossible." in ui
+    assert ".request-error" in css
+
+
+
+
+
+def test_job_storage_prompt_matches_enabled_stash_and_armory_access():
+    client = read("resources/[FUNCTION]/rp_inventory/client/job_storage.lua")
+    assert "prompt = '[E] Armurerie'" in client
+    assert "if marker.stashEnabled then" in client
+    assert "marker.stashEnabled and marker.armoryEnabled" in client
+    assert "(data.stashEnabled ~= true and data.armoryEnabled ~= true)" in client
+
+
+
+
+def test_player_report_overlay_closes_on_escape_without_closing_admin_tablet():
+    ui = read("resources/[FUNCTION]/rp_tablet_admin/html/js/app.js")
+    handler = ui.split("document.addEventListener('keydown', (event) => {", 1)[1].split("window.addEventListener('message', handleTabletMessage)", 1)[0]
+    assert "player-report-overlay" in handler
+    assert "nuiPost('closePlayerReport')" in handler
+    assert handler.index("player-report-overlay") < handler.index("tablet-wrapper")
+    assert "return;" in handler
 
 if __name__ == "__main__":
     checks = sorted(

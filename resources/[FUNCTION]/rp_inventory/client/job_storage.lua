@@ -70,7 +70,8 @@ local function openStorage(kind)
 end
 
 RegisterNetEvent('rp_inventory:client:jobStorageMarker', function(data)
-    if type(data) ~= 'table' then
+    if type(data) ~= 'table'
+        or (data.stashEnabled ~= true and data.armoryEnabled ~= true) then
         marker = nil
         if not menuOpen then hideText() end
         return
@@ -151,13 +152,18 @@ CreateThread(function()
             local distance = #(coords - marker.coords)
             if distance <= 2.5 then
                 waitTime = 0
-                local prompt = '[E] Coffre métier'
-                if marker.armoryEnabled then prompt = prompt .. ' · [G] Armurerie' end
+                local prompt
+                if marker.stashEnabled then
+                    prompt = '[E] Coffre métier'
+                    if marker.armoryEnabled then prompt = prompt .. ' · [G] Armurerie' end
+                else
+                    prompt = '[E] Armurerie'
+                end
                 showText(prompt)
                 if IsControlJustReleased(0, 38) then
                     if marker.stashEnabled then openStorage('stash')
                     elseif marker.armoryEnabled then openStorage('armory') end
-                elseif IsControlJustReleased(0, 47) and marker.armoryEnabled then
+                elseif IsControlJustReleased(0, 47) and marker.stashEnabled and marker.armoryEnabled then
                     openStorage('armory')
                 end
             else

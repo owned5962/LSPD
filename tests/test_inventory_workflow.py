@@ -42,7 +42,7 @@ def test_ground_drop_and_pickup_are_server_validated_and_persisted():
     schema = read("database.sql")
     migration = read("migrations/003_inventory_ground_drops.sql")
     drop = server[server.index("RegisterNetEvent('rp_inventory:dropItem'"):server.index("RegisterNetEvent('rp_inventory:server:pickupDrop'")]
-    pickup = server[server.index("RegisterNetEvent('rp_inventory:server:pickupDrop'"):server.index("AddEventHandler('playerDropped'")]
+    pickup = server[server.index("RegisterNetEvent('rp_inventory:server:pickupDrop'"):server.index("RegisterNetEvent('rp_inventory:server:requestWeapons'")]
     assert "CreateObjectNoOffset(DROP_MODEL" in drop
     assert "AcquireCharacterLock" in drop and "MySQL.transaction.await" in drop
     assert "INSERT INTO player_inventory_drops" in drop

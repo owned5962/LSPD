@@ -194,6 +194,42 @@ def test_creator_job_armory_and_shared_locker_are_persisted_and_grade_restricted
 
 
 
+def test_creator_ui_dom_tabs_and_nui_callback_contracts_are_complete():
+    import re
+
+    html = read("resources/[FUNCTION]/rp_tablet_creator/html/index.html")
+    ui = read("resources/[FUNCTION]/rp_tablet_creator/html/app.js")
+    client = read("resources/[FUNCTION]/rp_tablet_creator/client/main.lua")
+
+    ids = re.findall(r"""\bid=["']([^"']+)["']""", html)
+    assert len(ids) == len(set(ids)), "Creator HTML contains duplicate element IDs"
+    references = set(re.findall(r"""getElementById\(['"]([^'"]+)['"]\)""", ui))
+    assert references.issubset(set(ids)), f"Creator UI references missing IDs: {sorted(references - set(ids))}"
+
+    tabs = set(re.findall(r"""data-tab=["']([^"']+)["']""", html))
+    panels = set(re.findall(r"""data-tab-panel=["']([^"']+)["']""", html))
+    assert tabs == panels and len(tabs) == 10
+
+    callbacks = re.findall(r"""RegisterNUICallback\(['"]([^'"]+)['"]""", client)
+    assert len(callbacks) == len(set(callbacks)), "Creator has duplicate NUI callback registrations"
+    callback_blocks = re.findall(
+        r"""RegisterNUICallback\(['"]([^'"]+)['"]\s*,\s*function\([^)]*\)(.*?)\nend\)""",
+        client,
+        re.S,
+    )
+    for name, body in callback_blocks:
+        if name != "close":
+            assert "TriggerServerEvent(" in body, f"NUI callback {name} does not reach a server handler"
+
+    ui_actions = set(re.findall(r"""post\(['"]([^'"]+)['"]""", ui))
+    for pair in re.findall(
+        r"""const action = editing(?:Job|Gang)Name \? '((?:create|update)(?:Job|Gang))' : '((?:create|update)(?:Job|Gang))'""",
+        ui,
+    ):
+        ui_actions.update(pair)
+    missing_actions = set(callbacks) - {"close"} - ui_actions
+    assert not missing_actions, f"NUI callbacks are not invoked by the UI: {sorted(missing_actions)}"
+
 def test_creator_f11_toggle_and_job_blips_are_scoped_and_rate_limited():
     server = read("resources/[FUNCTION]/rp_tablet_creator/server/main.lua")
     client = read("resources/[FUNCTION]/rp_tablet_creator/client/main.lua")
@@ -224,5 +260,6 @@ if __name__ == "__main__":
     test_creator_job_garages_are_persisted_and_validated()
     test_job_garage_runtime_enforces_server_job_grade_and_vehicle_ownership()
     test_creator_job_armory_and_shared_locker_are_persisted_and_grade_restricted()
+    test_creator_ui_dom_tabs_and_nui_callback_contracts_are_complete()
     test_creator_f11_toggle_and_job_blips_are_scoped_and_rate_limited()
     print("Creator organization regression checks passed.")

@@ -3,6 +3,19 @@ local LogCreatorAction
 local FounderCodeSessions = {}
 local FounderCodeAttempts = {}
 
+-- Utilise un identifiant stable pour que la limitation survive aux reconnexions.
+-- Le fallback source ne sert que si aucun identifiant persistant n'est disponible.
+local function getFounderAttemptKey(src)
+    local identifiers = GetPlayerIdentifiers(src) or {}
+    for _, identifier in ipairs(identifiers) do
+        if identifier:sub(1, 8) == 'license:' then return identifier end
+    end
+    for _, identifier in ipairs(identifiers) do
+        if identifier:sub(1, 6) == 'fivem:' then return identifier end
+    end
+    return 'source:' .. tostring(src)
+end
+
 local function isFounder(src)
     if IsPlayerAceAllowed(src, 'rp_founder') then return true end
     if FounderCodeSessions[tonumber(src)] == true then return true end
@@ -15,8 +28,16 @@ end
 RegisterNetEvent('rp_tablet_creator:server:authenticateFounderCode', function(rawCode)
     local src = source
     local now = os.time()
-    local attempts = FounderCodeAttempts[src] or { count = 0, blockedUntil = 0 }
-    FounderCodeAttempts[src] = attempts
+    local attemptKey = getFounderAttemptKey(src)
+    local attempts = FounderCodeAttempts[attemptKey] or { count = 0, blockedUntil = 0, windowStartedAt = now }
+    FounderCodeAttempts[attemptKey] = attempts
+
+    -- Les tentatives anciennes hors fenêtre de 15 minutes ne pénalisent plus le joueur.
+    if now - (tonumber(attempts.windowStartedAt) or now) > 900 then
+        attempts.count = 0
+        attempts.blockedUntil = 0
+        attempts.windowStartedAt = now
+    end
 
     if attempts.blockedUntil > now then
         TriggerClientEvent('rp_tablet_creator:client:founderCodeResult', src,
@@ -36,13 +57,14 @@ RegisterNetEvent('rp_tablet_creator:server:authenticateFounderCode', function(ra
         if attempts.count >= 5 then
             attempts.count = 0
             attempts.blockedUntil = now + 600
+            attempts.windowStartedAt = now
         end
         TriggerClientEvent('rp_tablet_creator:client:founderCodeResult', src,
             'Code incorrect.', false)
         return
     end
 
-    FounderCodeAttempts[src] = nil
+    FounderCodeAttempts[attemptKey] = nil
     FounderCodeSessions[src] = true
     TriggerClientEvent('rp_tablet_creator:client:founderCodeResult', src,
         'Identification fondateur validée pour cette connexion.', true)
@@ -56,7 +78,6 @@ end)
 AddEventHandler('playerDropped', function()
     local src = source
     FounderCodeSessions[src] = nil
-    FounderCodeAttempts[src] = nil
 end)
 
 local function isCreator(src)
@@ -366,25 +387,11 @@ RegisterNetEvent('rp_tablet_creator:server:requestJobBankData', function()
     local src = source
     if not creatorAccessAllowed(src) then return end
     local ok, result = pcall(function()
-        MySQL.query.await([[CREATE TABLE IF NOT EXISTS rp_job_bank_accounts (
-            job VARCHAR(64) NOT NULL PRIMARY KEY,
-            balance BIGINT UNSIGNED NOT NULL DEFAULT 0,
-            allow_deposit TINYINT(1) NOT NULL DEFAULT 1,
-            allow_withdraw TINYINT(1) NOT NULL DEFAULT 1,
-            updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4]])
-        MySQL.query.await([[CREATE TABLE IF NOT EXISTS rp_job_bank_transactions (
-            id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-            job VARCHAR(64) NOT NULL,
-            character_id INT NOT NULL,
-            player_name VARCHAR(128) NOT NULL,
-            transaction_type ENUM('deposit','withdraw') NOT NULL,
-            amount BIGINT UNSIGNED NOT NULL,
-            balance_after BIGINT UNSIGNED NOT NULL,
-            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            KEY idx_job_bank_history (job, id),
-            KEY idx_job_bank_character (character_id)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4]])
+        -- Les tables et leur initialisation appartiennent au service rp_economy.
+        -- La tablette ne doit pas exécuter de DDL à chaque ouverture du menu.
+        if GetResourceState('rp_economy') ~= 'started' then
+            error('Le service bancaire rp_economy n’est pas démarré.')
+        end
         local jobs = exports['rp_jobs']:GetAllJobs() or {}
         local jobList = {}
         for key, job in pairs(jobs) do
