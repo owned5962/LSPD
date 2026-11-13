@@ -15,7 +15,10 @@ RegisterNetEvent('rp_auto_rescue:server:request', function()
 end)
 
 RegisterNetEvent('rp_auto_rescue:server:finish', function()
-    activeRescues[source] = nil
+    local src = source
+    if not activeRescues[src]
+        or not exports['rp_core']:CanPerformAction(src, 'auto_rescue:finish', 500) then return end
+    activeRescues[src] = nil
 end)
 
 AddEventHandler('playerDropped', function()
