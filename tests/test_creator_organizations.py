@@ -152,6 +152,7 @@ def test_creator_job_armory_and_shared_locker_are_persisted_and_grade_restricted
     assert "exports['rp_inventory']:GetItemCatalog()" in creator
     assert "itemDef.type ~= 'weapon'" in creator
     assert "grade < 0 or grade > 4" in creator
+    assert "minimum % 1 == 0 and minimum >= 0 and minimum <= 4" in inventory
     assert "RegisterNUICallback('saveJobStorage'" in creator_client
     assert "RegisterNUICallback('deleteJobStorage'" in creator_client
     assert 'id="job-storage-job"' in creator_html
