@@ -50,7 +50,7 @@ local function renderMenu()
 end
 
 local function openStorage(kind)
-    if menuOpen or menuPending then return end
+    if menuOpen or menuPending or not marker then return end
     if kind == 'stash' and not marker.stashEnabled then return end
     if kind == 'armory' and not marker.armoryEnabled then return end
     storageType = kind
