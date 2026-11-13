@@ -80,9 +80,11 @@ def test_inventory_hides_balances_and_uses_per_item_artwork():
 def test_fuel_default_is_increased_and_creator_can_configure_it():
     config = read("resources/[FUNCTION]/rp_fuel/shared/config.lua")
     server = read("resources/[FUNCTION]/rp_fuel/server/main.lua")
+    creator_server = read("resources/[FUNCTION]/rp_tablet_creator/server/main.lua")
     html = read("resources/[FUNCTION]/rp_tablet_creator/html/index.html")
     assert "ConsumptionMultiplier = 3.5" in config
     assert "FuelConfig.ConsumptionMultiplier or 3.5" in server
+    assert "if multiplier == 2.5" in creator_server
     assert 'id="creator-fuel-consumption"' in html and 'value="3.5"' in html
 
 
