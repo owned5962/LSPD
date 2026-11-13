@@ -77,3 +77,19 @@ if __name__ == "__main__":
     for check in checks:
         check()
     print(f"All {len(checks)} police interaction regression checks passed.")
+
+def test_world_density_is_per_frame_but_police_dispatch_settings_are_not():
+    world = read("resources/[FUNCTION]/rp_world/client/main.lua")
+    police = read("resources/[FUNCTION]/rp_police_interaction/client/main.lua")
+    density_loop = world.split("CreateThread(function()", 1)[1]
+    assert "SetPedDensityMultiplierThisFrame" in density_loop
+    assert "SetScenarioPedDensityMultiplierThisFrame" in density_loop
+    assert "SetVehicleDensityMultiplierThisFrame" in density_loop
+    assert "Wait(0)" in density_loop
+    assert "ApplyPoliceSettings()" in world
+    assert "AddEventHandler('playerSpawned', ApplyPoliceSettings)" in world
+    assert "ApplyWantedSettings()" in police
+    assert "AddEventHandler('playerSpawned', ApplyWantedSettings)" in police
+    police_loop = police.split("CreateThread(function()", 1)[1]
+    assert "SetMaxWantedLevel(0)" not in police_loop
+    assert "SetPoliceIgnorePlayer" not in police_loop
