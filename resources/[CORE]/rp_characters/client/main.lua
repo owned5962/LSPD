@@ -159,6 +159,11 @@ local function LoadFreemodeModel(gender)
     end
 
     if GetEntityModel(PlayerPedId()) ~= model then
+        local previousPed = PlayerPedId()
+        local previousCoords = GetEntityCoords(previousPed)
+        local previousHeading = GetEntityHeading(previousPed)
+        local wasFrozen = IsEntityPositionFrozen(previousPed)
+
         RequestModel(model)
         local timeout = GetGameTimer() + 10000
         while not HasModelLoaded(model) and GetGameTimer() < timeout do Wait(0) end
@@ -178,6 +183,16 @@ local function LoadFreemodeModel(gender)
             print('[rp_characters] Player model swap did not complete; using the current player model.')
             return false
         end
+
+        -- SetPlayerModel replaces the ped. Restore the creator/spawn transform
+        -- and its frozen state so gender changes cannot move or hide the preview.
+        local replacementPed = PlayerPedId()
+        SetEntityCoordsNoOffset(replacementPed, previousCoords.x, previousCoords.y, previousCoords.z, false, false, false)
+        SetEntityHeading(replacementPed, previousHeading)
+        FreezeEntityPosition(replacementPed, wasFrozen)
+        SetEntityVisible(replacementPed, true, false)
+        ResetEntityAlpha(replacementPed)
+        SetEntityCollision(replacementPed, true, true)
     end
 
     local ped = PlayerPedId()
@@ -331,12 +346,24 @@ RegisterNetEvent('rp_characters:client:adminApplySkin', function(gender, skin)
 end)
 
 local function OpenCreator(maxCharacters)
+    characterSessionReady = false
     SetPlayerControl(PlayerId(), false, 0)
     SetNuiFocus(true, true)
+
+    local ped = PlayerPedId()
+    SetEntityCoordsNoOffset(ped, -1042.0, -2745.0, 21.3, false, false, false)
+    SetEntityHeading(ped, 330.0)
+    FreezeEntityPosition(ped, true)
+    SetEntityVisible(ped, true, false)
+    ResetEntityAlpha(ped)
+    SetEntityCollision(ped, true, true)
+
+    -- Apply the initial appearance after placing the ped. The model swap
+    -- routine preserves this exact transform when the gender/model changes.
     ApplyCharacterAppearance('m', { hairStyle = 4, hairColor = 0, clothing = 'casual' })
-    SendNUIMessage({ action = 'openRegistration', maxCharacters = maxCharacters or 3 })
     isCreating = true
     SetupCreatorCamera()
+    SendNUIMessage({ action = 'openRegistration', maxCharacters = maxCharacters or 3 })
 end
 
 local function UpdateCreatorCamera()
@@ -351,18 +378,30 @@ end
 
 function SetupCreatorCamera()
     local ped = PlayerPedId()
-    SetEntityCoords(ped, -1042.0, -2745.0, 21.3, false, false, false, true)
+    SetEntityCoordsNoOffset(ped, -1042.0, -2745.0, 21.3, false, false, false)
     SetEntityHeading(ped, 330.0)
     FreezeEntityPosition(ped, true)
     SetEntityVisible(ped, true, false)
     ResetEntityAlpha(ped)
+    SetEntityCollision(ped, true, true)
+
+    -- Load the preview location before creating the scripted camera.
+    RequestCollisionAtCoord(-1042.0, -2745.0, 21.3)
+    local collisionDeadline = GetGameTimer() + 5000
+    while not HasCollisionLoadedAroundEntity(ped) and GetGameTimer() < collisionDeadline do
+        RequestCollisionAtCoord(-1042.0, -2745.0, 21.3)
+        Wait(50)
+        ped = PlayerPedId()
+    end
+
     if charCamera then
+        RenderScriptCams(false, false, 0, true, true)
         DestroyCam(charCamera, false)
         charCamera = nil
     end
     charCamera = CreateCam('DEFAULT_SCRIPTED_CAMERA', true)
     UpdateCreatorCamera()
-    SetCamFov(charCamera, 45.0)
+    SetCamFov(charCamera, 38.0)
     SetCamActive(charCamera, true)
     RenderScriptCams(true, true, 500, true, true)
 end
@@ -519,13 +558,24 @@ RegisterNetEvent('rp_characters:client:spawnPlayer', function(coords, gender, sk
     local spawnX = tonumber(coords.x) or -1037.7
     local spawnY = tonumber(coords.y) or -2737.8
     local spawnZ = tonumber(coords.z) or 20.1
+
+    -- Move the ped to the destination BEFORE testing its surrounding
+    -- collision. Checking at the creator location caused false timeouts and
+    -- could leave the player on a black screen while the destination streamed.
+    FreezeEntityPosition(ped, true)
+    SetEntityCoordsNoOffset(ped, spawnX, spawnY, spawnZ, false, false, false)
+    SetEntityHeading(ped, tonumber(coords.heading) or 330.0)
     RequestCollisionAtCoord(spawnX, spawnY, spawnZ)
     SetFocusPosAndVel(spawnX, spawnY, spawnZ, 0.0, 0.0, 0.0)
+
     local collisionStartedAt = GetGameTimer() % SPAWN_TIMER_MODULUS
-    while not HasCollisionLoadedAroundEntity(ped) and not SpawnWaitExpired(collisionStartedAt, 5000) do
+    while not HasCollisionLoadedAroundEntity(ped) and not SpawnWaitExpired(collisionStartedAt, 10000) do
         RequestCollisionAtCoord(spawnX, spawnY, spawnZ)
         Wait(50)
+        ped = PlayerPedId()
     end
+
+    -- Reassert the destination after streaming and always release the focus.
     SetEntityCoordsNoOffset(ped, spawnX, spawnY, spawnZ, false, false, false)
     SetEntityHeading(ped, tonumber(coords.heading) or 330.0)
     ClearFocus()
@@ -534,6 +584,7 @@ RegisterNetEvent('rp_characters:client:spawnPlayer', function(coords, gender, sk
     SetEntityCollision(ped, true, true)
     FreezeEntityPosition(ped, false)
     SetPlayerControl(PlayerId(), true, 0)
+    DisplayRadar(true)
 
     -- Close both loading-screen layers after the character has been placed.
     ShutdownLoadingScreen()
