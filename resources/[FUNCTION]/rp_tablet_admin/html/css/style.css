@@ -990,3 +990,20 @@ button:disabled {
 .report-action{border:1px solid var(--border-dark);border-radius:7px;padding:7px 9px;margin:2px;background:#171720;color:#f8fafc;font-size:9px;font-weight:800;cursor:pointer}
 .report-action:hover{border-color:#ef4444}.report-resolve{color:#86efac}.report-reject{color:#fda4af}
 #report-open-count{display:inline-flex;min-width:17px;justify-content:center;border-radius:20px;padding:2px 5px;background:rgba(239,68,68,.18);color:#fca5a5;font-size:9px}
+
+
+.player-report-overlay { position:fixed; inset:0; z-index:10000; display:grid; place-items:center; padding:20px; background:rgba(2,6,23,.82); backdrop-filter:blur(8px); }
+.player-report-overlay.hidden { display:none!important; }
+.player-report-card { width:min(560px,94vw); padding:26px; border:1px solid rgba(148,163,184,.24); border-radius:18px; background:linear-gradient(145deg,#111c2e,#17243a); color:#e2e8f0; box-shadow:0 24px 80px rgba(0,0,0,.55); }
+.player-report-heading { display:flex; align-items:center; gap:14px; margin-bottom:20px; }
+.player-report-heading>i { display:grid; place-items:center; width:48px; height:48px; border-radius:13px; background:rgba(239,68,68,.15); color:#f87171; font-size:21px; }
+.player-report-heading h2 { margin:0 0 5px; font-size:19px; }
+.player-report-heading p,.player-report-card small { color:#94a3b8; font-size:12px; line-height:1.5; }
+.player-report-card label { display:block; margin:14px 0 8px; font-size:12px; color:#cbd5e1; }
+.player-report-card textarea { width:100%; min-height:150px; resize:vertical; padding:13px; border:1px solid #3b4e69; border-radius:10px; background:#0b1424; color:#f8fafc; font:inherit; }
+.player-report-actions { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:16px 0 10px; }
+.player-report-actions button { padding:12px; border:0; border-radius:9px; color:white; font-weight:800; cursor:pointer; }
+.player-report-cancel { background:#b91c1c; }
+.player-report-submit { background:#15803d; }
+.player-report-actions button:hover { filter:brightness(1.12); }
+.report-action.accept,.report-resolve { background:#15803d!important; color:#fff!important; }
