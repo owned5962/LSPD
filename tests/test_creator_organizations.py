@@ -61,7 +61,8 @@ def test_creator_can_edit_and_delete_persisted_gangs():
     assert "creator:update_gang" in creator and "creator:delete_gang" in creator
     assert "RegisterNUICallback('updateGang'" in client and "RegisterNUICallback('deleteGang'" in client
     assert "id=\"cancel-gang-edit\"" in html
-    assert "post('updateGang', data)" in ui and "post('deleteGang', { name: gang.name })" in ui
+    assert "const action = editingGangName ? 'updateGang' : 'createGang'" in ui and "post(action, data)" in ui
+    assert "post('deleteGang', { name: gang.name })" in ui
     assert "window.confirm" in ui
 
 
