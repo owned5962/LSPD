@@ -21,7 +21,9 @@ def test_job_transactions_require_a_live_bank_session_and_server_permissions():
     economy = read("resources/[FUNCTION]/rp_economy/server/main.lua")
     assert "exports('IsBankSessionAuthenticated'" in economy
     assert "IsBankSessionAuthenticated(src) ~= true" in service
-    assert "CanPerformAction(src, 'economy:jobbank:' .. kind" in service
+    assert "CanPerformAction(src, actionName, 1500)" in service
+    assert "'economy:jobbank:' .. kind" in service
+    assert "'jobtablet:jobbank:' .. kind" in service
     assert "account.allow_deposit" in service
     assert "account.allow_withdraw" in service
     assert "a.allow_deposit = 1" in service
@@ -53,7 +55,7 @@ def test_creator_can_configure_each_job_and_review_auditable_history():
     assert "type(data.allowDeposit) ~= 'boolean'" in server
     assert "type(data.allowWithdraw) ~= 'boolean'" in server
     assert "UPDATE rp_job_bank_accounts SET allow_deposit = ?, allow_withdraw = ?" in server
-    assert 'data-tab="bank">Banque</button>' in html
+    assert 'data-tab="bank"' in html and "Banque Job" in html
     assert 'id="creator-bank-allow-deposit"' in html
     assert 'id="creator-bank-allow-withdraw"' in html
     assert 'id="creator-bank-history"' in html
