@@ -8,8 +8,8 @@ local function getFuelPrice()
 end
 
 local function getFuelConsumptionMultiplier()
-    local value = tonumber(GetConvar('rp_fuel_consumption_multiplier', tostring(FuelConfig.ConsumptionMultiplier or 2.5)))
-    if not value or value ~= value then value = FuelConfig.ConsumptionMultiplier or 2.5 end
+    local value = tonumber(GetConvar('rp_fuel_consumption_multiplier', tostring(FuelConfig.ConsumptionMultiplier or 3.5)))
+    if not value or value ~= value then value = FuelConfig.ConsumptionMultiplier or 3.5 end
     return math.max(0.1, math.min(20.0, value))
 end
 
