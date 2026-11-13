@@ -47,6 +47,9 @@ def test_rental_expiry_and_vehicle_return_flow():
     assert "AddEventHandler('onResourceStop'" in server
     assert "refundAmount" in server
     assert "rental.amount = cost" in server
+    register_handler = server.split("RegisterNetEvent('rp_vehicle_rental:server:registerVehicle'", 1)[1].split("RegisterNetEvent('rp_vehicle_rental:server:spawnFailed'", 1)[0]
+    assert "Never delete an arbitrary client-owned entity" in register_handler
+    assert "DeleteEntity(entity)" not in register_handler
     assert "TaskLeaveVehicle" in client
     assert "SetVehicleDoorsLockedForAllPlayers" in client
     assert "drawTimer" in client
