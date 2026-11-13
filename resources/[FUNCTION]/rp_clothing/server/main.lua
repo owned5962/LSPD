@@ -1,5 +1,6 @@
 RegisterNetEvent('rp_clothing:purchaseHair', function(rawStyle, rawColor, rawHighlight)
     local src = source
+    if not exports['rp_core']:CanPerformAction(src, 'clothing:purchase_hair', 1500) then return end
     local player = exports['rp_core']:GetPlayerFromId(src)
     local style, color, highlight = tonumber(rawStyle), tonumber(rawColor), tonumber(rawHighlight) or 0
     if not player or not style or not color or style % 1 ~= 0 or color % 1 ~= 0
@@ -71,6 +72,7 @@ end
 
 RegisterNetEvent('rp_clothing:saveOutfit', function(name, skinData)
     local src = source
+    if not exports['rp_core']:CanPerformAction(src, 'clothing:save_outfit', 2500) then return end
     local player = exports['rp_core']:GetPlayerFromId(src)
     if not player then
         Notify(src, 'Personnage non chargé.', 'error')
@@ -126,6 +128,7 @@ end)
 
 RegisterNetEvent('rp_clothing:requestOutfits', function()
     local src = source
+    if not exports['rp_core']:CanPerformAction(src, 'clothing:request_outfits', 1000) then return end
     local player = exports['rp_core']:GetPlayerFromId(src)
     if not player then return end
 
@@ -155,6 +158,7 @@ end)
 
 RegisterNetEvent('rp_clothing:applySavedOutfit', function(rawOutfitId)
     local src = source
+    if not exports['rp_core']:CanPerformAction(src, 'clothing:apply_outfit', 1000) then return end
     local player = exports['rp_core']:GetPlayerFromId(src)
     local outfitId = tonumber(rawOutfitId)
     if not player or not outfitId or outfitId % 1 ~= 0 or outfitId < 1 then return end
