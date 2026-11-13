@@ -1016,3 +1016,14 @@ button:disabled {
 .admin-player-table tbody tr { cursor:pointer; transition:background .15s ease; }
 .admin-player-table tbody tr:hover { background:rgba(59,130,246,.12); }
 .admin-player-table tbody tr.selected { background:rgba(37,99,235,.22); outline:1px solid rgba(96,165,250,.4); }
+
+
+.admin-give-groups { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; align-items:start; }
+.give-category { min-width:0; padding:14px; border:1px solid rgba(96,165,250,.2); border-radius:13px; background:rgba(15,27,45,.52); }
+.give-category-heading { display:flex; align-items:center; gap:9px; margin:0 0 12px; color:#93c5fd; font-size:11px; font-weight:900; letter-spacing:.8px; text-transform:uppercase; }
+.give-category-heading i { font-size:16px; }
+.give-category>.give-card { margin:0; width:100%; }
+.give-category.equipment { grid-column:1/-1; }
+.give-equipment-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+.give-equipment-grid .give-card { margin:0; min-width:0; }
+@media(max-width:850px){.admin-give-groups,.give-equipment-grid{grid-template-columns:1fr}.give-category.equipment{grid-column:auto}}
