@@ -5,7 +5,7 @@ author 'FiveM RP Framework'
 description 'Clothing store, outfit presets and persistent character appearance'
 version '1.1.0'
 
-dependency 'oxmysql'
+dependencies { 'oxmysql', 'rp_core' }
 
 ui_page 'html/index.html'
 
