@@ -112,6 +112,7 @@ CREATE TABLE IF NOT EXISTS `bank_transactions` (
     `sender_or_receiver` VARCHAR(128) DEFAULT NULL,
     `reason` VARCHAR(255) DEFAULT 'Transaction',
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    KEY `idx_bank_salary_reason_created` (`type`, `reason`, `created_at`),
     CONSTRAINT `fk_bank_characters` FOREIGN KEY (`character_id`) REFERENCES `characters` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
