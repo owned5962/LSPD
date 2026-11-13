@@ -19,11 +19,19 @@ function visualForItem(item) {
 
 function makeItemImage(item) {
     const visual = visualForItem(item);
+    const name = String(item.name || 'item');
+    // A stable per-item hash gives every distinct item its own artwork palette.
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) hash = ((hash << 5) - hash + name.charCodeAt(i)) | 0;
+    const hue = Math.abs(hash) % 360;
+    const label = name.replace(/[^a-z0-9_]/gi, '').slice(0, 12).toUpperCase();
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="96" viewBox="0 0 128 96">
-      <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#164e63"/><stop offset="1" stop-color="#1e293b"/></linearGradient></defs>
+      <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="hsl(${hue},58%,28%)"/><stop offset="1" stop-color="hsl(${(hue + 42) % 360},52%,13%)"/></linearGradient></defs>
       <rect width="128" height="96" rx="14" fill="url(#g)"/>
-      <circle cx="64" cy="45" r="31" fill="#38bdf8" opacity=".12"/>
-      <text x="64" y="61" text-anchor="middle" font-size="42">${visual.emoji}</text>
+      <path d="M12 72 L116 18" stroke="hsl(${hue},85%,72%)" stroke-opacity=".22" stroke-width="10"/>
+      <circle cx="64" cy="45" r="31" fill="hsl(${hue},85%,72%)" opacity=".13"/>
+      <text x="64" y="59" text-anchor="middle" font-size="40">${visual.emoji}</text>
+      <text x="64" y="86" text-anchor="middle" font-size="8" font-weight="700" fill="#e2e8f0" letter-spacing=".8">${label}</text>
     </svg>`;
     return 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg);
 }
@@ -33,8 +41,6 @@ window.addEventListener('message', function(event) {
     if (data.action === 'open' || data.action === 'update') {
         currentItems = Array.isArray(data.inventory) ? data.inventory : [];
         document.getElementById('inventory-wrapper').classList.remove('hidden');
-        document.getElementById('cash-val').innerText = Number(data.cash || 0).toLocaleString('fr-FR') + ' $';
-        document.getElementById('bank-val').innerText = Number(data.bank || 0).toLocaleString('fr-FR') + ' $';
         const weight = Number(data.currentWeight || 0);
         const maxWeight = Number(data.maxWeight || 30);
         document.getElementById('weight-text').innerText = `${weight.toFixed(1)} / ${maxWeight.toFixed(1)} KG`;
