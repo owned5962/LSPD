@@ -21,5 +21,6 @@ server_script 'server/main.lua'
 
 dependencies {
     'rp_core',
-    'rp_jobs'
+    'rp_jobs',
+    'rp_economy'
 }
