@@ -109,6 +109,7 @@ if __name__ == "__main__":
         test_job_accounts_are_persistent_and_seeded_from_the_job_catalog,
         test_job_transactions_require_a_live_bank_session_and_server_permissions,
         test_job_transactions_move_cash_and_shared_balance_and_write_history,
+        test_creator_uses_the_economy_bank_schema_without_recreating_tables_on_menu_open,
         test_creator_can_configure_each_job_and_review_auditable_history,
         test_fleeca_terminal_exposes_job_bank_only_after_biometric_authentication_at_a_branch,
     ]
