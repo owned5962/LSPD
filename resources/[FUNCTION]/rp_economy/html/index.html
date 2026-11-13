@@ -77,6 +77,16 @@
                     <div class="operation-input transfer-input"><input type="number" id="transfer-id" placeholder="ID joueur" min="1" step="1"><input type="number" id="transfer-amount" placeholder="Montant en $" min="1" step="1"><button id="transfer-btn">Envoyer <span>→</span></button></div>
                 </article>
             </div>
+            <section id="job-bank-section" class="job-bank-section hidden">
+                <div class="operations-heading"><div><span class="eyebrow">COMPTE PROFESSIONNEL</span><h3>Banque du métier · <span id="job-bank-label">Métier</span></h3><p>Compte partagé de votre entreprise ou service.</p></div><span class="operation-secure">Accès contrôlé</span></div>
+                <div class="job-bank-summary"><div><small>SOLDE DU COMPTE MÉTIER</small><strong id="job-bank-balance">0 $</strong></div><span id="job-bank-account-state">Compte actif</span></div>
+                <div id="job-bank-operations" class="operations-grid">
+                    <article class="operation-card"><div><h4>Déposer sur le compte métier</h4><p>Utilise vos espèces personnelles.</p></div><div class="operation-input"><input id="job-deposit-amount" type="number" min="1" step="1" placeholder="Montant en $"><button id="job-deposit-btn">Déposer →</button></div></article>
+                    <article class="operation-card"><div><h4>Retirer du compte métier</h4><p>Ajoute les fonds retirés à vos espèces.</p></div><div class="operation-input"><input id="job-withdraw-amount" type="number" min="1" step="1" placeholder="Montant en $"><button id="job-withdraw-btn">Retirer →</button></div></article>
+                </div>
+                <h3 class="job-bank-history-title">Historique des opérations</h3>
+                <div id="job-bank-history" class="job-bank-history"><small>Aucune opération enregistrée.</small></div>
+            </section>
             <div class="account-foot"><span>♢ Vos opérations sont protégées par Fleeca Secure.</span><span>Déconnexion automatique en quittant le terminal.</span></div>
         </section>
 
