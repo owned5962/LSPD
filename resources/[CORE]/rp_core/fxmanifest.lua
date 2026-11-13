@@ -4,7 +4,7 @@ lua54 'yes'
 
 author 'FiveM RP Team'
 description 'Core system for GTA 5 Roleplay (events, sessions, permissions, notifications)'
-version '1.0.0'
+version '1.1.1'
 
 dependency 'oxmysql'
 
