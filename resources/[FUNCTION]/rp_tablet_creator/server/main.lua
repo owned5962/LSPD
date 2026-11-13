@@ -904,6 +904,14 @@ function ApplyStoredCreatorSettings()
                 if price and price >= 1 and price <= 1000 then SetConvar('rp_fuel_price_per_litre', tostring(math.floor(price))) end
             elseif row.setting_key == 'fuel_consumption_multiplier' then
                 local multiplier = tonumber(row.setting_value)
+                -- 2.5 was the previous default; raise that legacy default while
+                -- preserving any custom value selected by the server owner.
+                if multiplier == 2.5 then
+                    multiplier = 3.5
+                    pcall(MySQL.update.await,
+                        'UPDATE rp_creator_settings SET setting_value = ? WHERE setting_key = ? AND setting_value = ?',
+                        { '3.5', 'fuel_consumption_multiplier', row.setting_value })
+                end
                 if multiplier and multiplier >= 0.1 and multiplier <= 20 then SetConvar('rp_fuel_consumption_multiplier', tostring(multiplier)) end
             end
         end
