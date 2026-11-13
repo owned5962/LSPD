@@ -52,6 +52,36 @@ RegisterNetEvent('rp_tablet_job:server:setDutyState', function(status)
     dutyStates[src] = status
 end)
 
+RegisterNetEvent('rp_tablet_job:server:requestSalaryStats', function()
+    local src = source
+    if not exports['rp_core']:CanPerformAction(src, 'rp_tablet_job:salaryStats', 1500) then return end
+    local player = getPlayer(src)
+    if not player or type(player.job) ~= 'string' or player.job == '' then return end
+    local ok, stats = pcall(MySQL.single.await, [[
+        SELECT
+            COALESCE(SUM(CASE WHEN bt.created_at >= CURDATE() THEN bt.amount ELSE 0 END), 0) AS today,
+            COALESCE(SUM(CASE WHEN bt.created_at >= DATE_FORMAT(CURDATE(), '%Y-%m-01') THEN bt.amount ELSE 0 END), 0) AS month,
+            COALESCE(SUM(CASE WHEN bt.created_at >= MAKEDATE(YEAR(CURDATE()), 1) THEN bt.amount ELSE 0 END), 0) AS year,
+            COALESCE(COUNT(CASE WHEN bt.created_at >= CURDATE() THEN 1 END), 0) AS paymentsToday
+        FROM bank_transactions bt
+        INNER JOIN characters c ON c.id = bt.character_id
+        WHERE c.job = ? AND bt.type = 'salary'
+    ]], { player.job })
+    if not ok or type(stats) ~= 'table' then
+        print('[rp_tablet_job] Salary statistics query failed: ' .. tostring(stats))
+        TriggerClientEvent('rp_tablet_job:client:salaryStats', src, {
+            today = 0, month = 0, year = 0, paymentsToday = 0, unavailable = true
+        })
+        return
+    end
+    TriggerClientEvent('rp_tablet_job:client:salaryStats', src, {
+        today = tonumber(stats.today) or 0,
+        month = tonumber(stats.month) or 0,
+        year = tonumber(stats.year) or 0,
+        paymentsToday = tonumber(stats.paymentsToday) or 0
+    })
+end)
+
 RegisterNetEvent('rp_tablet_job:server:requestData', function()
     local src = source
     if not exports['rp_core']:CanPerformAction(src, 'rp_tablet_job:requestData', 800) then return end
