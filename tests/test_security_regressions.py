@@ -1375,3 +1375,11 @@ def test_ui_uses_native_minimap_without_circlemap_texture_replacement():
     assert "circlemap texture unavailable" not in ui
     assert "GetPlayerPing(" not in ui
 
+
+
+def test_server_cfg_omits_default_framework_resources_and_starts_territories_last():
+    cfg = read("server.cfg")
+    for resource in ("spawnmanager", "sessionmanager", "hardcap", "baseevents"):
+        assert f"ensure {resource}" not in cfg
+    assert cfg.index("ensure oxmysql") < cfg.index("ensure rp_core")
+    assert cfg.rindex("ensure rp_territories") > cfg.index("ensure job_smuggler")
