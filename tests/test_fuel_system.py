@@ -9,7 +9,7 @@ def test_fuel_resource_loads_shared_station_configuration():
     config = (FUEL / "shared/config.lua").read_text(encoding="utf-8")
     assert "shared/config.lua" in manifest
     assert "PricePerLitre = 6" in config
-    assert "ConsumptionMultiplier = 2.5" in config
+    assert "ConsumptionMultiplier = 3.5" in config
     assert "rp_businesses" in manifest
     assert config.count("{ x = ") == 16
 
