@@ -606,7 +606,7 @@ def test_character_spawn_cannot_wait_forever_on_screen_fade():
     assert "local collisionStartedAt = GetGameTimer() % SPAWN_TIMER_MODULUS" in client
     assert "SpawnWaitExpired(collisionStartedAt, 5000)" in client
     assert "local function NormalizeClientSpawn(coords)" in client
-    assert "NormalizePosition(savedPosition)" in read("resources/[CORE]/rp_core/server/player.lua")
+    assert "Utils.NormalizePosition(savedPosition, Config.DefaultSpawn)" in read("resources/[CORE]/rp_core/server/player.lua")
     assert "ShutdownLoadingScreen()" in client
     assert "ShutdownLoadingScreenNui()" in client
     assert "Failed to initialize character" in server
