@@ -365,7 +365,7 @@ def test_admin_tablet_uses_live_players_and_never_fakes_success():
     assert "data.players" in ui
     assert "Permissions enregistrées avec succès" not in ui
     assert "Fonction indisponible." in ui
-    assert 'id="players-list"></div>' in html
+    assert '<tbody id="players-list">' in html
     assert "Sarah_Connor" not in html and "Alexandre_Vance" not in html
     assert "RegisterServerCallback('setWeatherTime'" in client
     assert "RegisterServerCallback('broadcastAnnouncement'" in client
