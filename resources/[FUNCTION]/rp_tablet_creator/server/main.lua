@@ -490,6 +490,40 @@ RegisterNetEvent('rp_tablet_creator:server:deleteJobGarage', function(jobName)
     TriggerClientEvent('rp_tablet_creator:client:refreshTools', src)
 end)
 
+RegisterNetEvent('rp_tablet_creator:server:requestJobStorageHistory', function(jobName)
+    local src = source
+    if not creatorAccessAllowed(src)
+        or not exports['rp_core']:CanPerformAction(src, 'creator:view_job_storage_history', 1000) then return end
+    if type(jobName) ~= 'string' or #jobName > 64 then
+        reply(src, 'Métier invalide pour consulter l’historique.', false)
+        return
+    end
+    jobName = jobName:lower()
+    local job = exports['rp_jobs']:GetJob(jobName)
+    if not job or job.name ~= jobName then
+        reply(src, 'Métier inconnu.', false)
+        return
+    end
+    local ok, rows = pcall(function()
+        return MySQL.query.await([[
+            SELECT id, storage_type, character_id, player_name, direction,
+                   item_name, item_count, created_at
+            FROM rp_job_storage_logs
+            WHERE job = ?
+            ORDER BY id DESC
+            LIMIT 100
+        ]], { jobName }) or {}
+    end)
+    if not ok then
+        print('[rp_tablet_creator] Job storage history query failed: ' .. tostring(rows))
+        reply(src, 'Historique indisponible. Vérifiez que rp_inventory a terminé son initialisation SQL.', false)
+        return
+    end
+    TriggerClientEvent('rp_tablet_creator:client:jobStorageHistory', src, {
+        job = jobName, entries = rows
+    })
+end)
+
 RegisterNetEvent('rp_tablet_creator:server:saveJobStorage', function(data)
     local src = source
     if not creatorAccessAllowed(src) or not exports['rp_core']:CanPerformAction(src, 'creator:save_job_storage', 1500) then return end
