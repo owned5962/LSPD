@@ -75,7 +75,13 @@ end)
 
 CreateThread(function()
     Wait(2500)
-    TriggerServerEvent('rp_garages:server:requestJobGarageMarker')
+    while true do
+        TriggerServerEvent('rp_garages:server:requestJobGarageMarker')
+        Wait(15000)
+    end
+end)
+
+CreateThread(function()
     while true do
         local sleep = 650
         if menuShown and fleet then
