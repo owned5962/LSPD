@@ -285,6 +285,17 @@ function submitNewJob() {
 }
 document.getElementById('create-job').addEventListener('click', submitNewJob);
 
+let editingGangName = null;
+function resetGangEditor() {
+    editingGangName = null;
+    document.getElementById('new-gang-name').readOnly = false;
+    document.getElementById('create-gang').innerHTML = '<i class="fa-solid fa-plus"></i> Créer le gang';
+    document.getElementById('cancel-gang-edit').hidden = true;
+    document.getElementById('new-gang-name').value = '';
+    document.getElementById('new-gang-label').value = '';
+    document.getElementById('new-gang-color').value = '#22c55e';
+    document.getElementById('new-gang-description').value = '';
+}
 function renderCreatorGangs(gangs) {
     const host = document.getElementById('creator-gang-list');
     host.replaceChildren();
@@ -296,9 +307,26 @@ function renderCreatorGangs(gangs) {
         const swatch = document.createElement('span'); swatch.className = 'org-swatch';
         swatch.style.backgroundColor = /^#[0-9a-f]{6}$/i.test(gang.color || '') ? gang.color : '#64748b';
         const label = document.createElement('span'); label.textContent = (gang.label || gang.name) + ' · ' + gang.name;
-        row.append(swatch, label); host.append(row);
+        const edit = document.createElement('button'); edit.type = 'button'; edit.textContent = 'Modifier';
+        edit.addEventListener('click', () => {
+            editingGangName = gang.name;
+            document.getElementById('new-gang-name').value = gang.name;
+            document.getElementById('new-gang-name').readOnly = true;
+            document.getElementById('new-gang-label').value = gang.label || '';
+            document.getElementById('new-gang-color').value = gang.color || '#64748b';
+            document.getElementById('new-gang-description').value = gang.description || '';
+            document.getElementById('create-gang').textContent = 'Enregistrer les modifications';
+            document.getElementById('cancel-gang-edit').hidden = false;
+        });
+        const remove = document.createElement('button'); remove.type = 'button'; remove.textContent = 'Supprimer';
+        remove.addEventListener('click', () => {
+            if (!window.confirm('Supprimer définitivement le gang ' + (gang.label || gang.name) + ' ?')) return;
+            post('deleteGang', { name: gang.name }).catch(() => creatorMessage('Impossible de supprimer le gang.'));
+        });
+        row.append(swatch, label, edit, remove); host.append(row);
     });
 }
+document.getElementById('cancel-gang-edit').addEventListener('click', resetGangEditor);
 document.getElementById('create-gang').addEventListener('click', () => {
     const data = {
         name: document.getElementById('new-gang-name').value.trim().toLowerCase(),
@@ -309,14 +337,14 @@ document.getElementById('create-gang').addEventListener('click', () => {
     if (!/^[a-z][a-z0-9_]{2,39}$/.test(data.name) || data.label.length < 2 || data.description.length < 3) {
         creatorMessage('Vérifiez l’identifiant, le nom et la description du gang.'); return;
     }
-    post('createGang', data).catch(() => creatorMessage('Impossible de contacter le serveur.'));
+    const action = editingGangName ? 'updateGang' : 'createGang';
+    post(action, data).then(() => resetGangEditor()).catch(() => creatorMessage('Impossible de contacter le serveur.'));
 });
 window.addEventListener('message', event => {
     const data = event.data || {};
     if (data.action === 'organizationsData') renderCreatorGangs(data.gangs || []);
 });
 
- 
 let creatorJobBankData = { jobs: [], accounts: [], history: [] };
 function formatCreatorBankMoney(value) {
     const amount = Number(value);
