@@ -538,9 +538,10 @@ exports('SaveWeaponPolicy', function(src, rawPolicy)
     src = tonumber(src)
     if not src or not isStaff(src) then return false, 'Accès administrateur requis.' end
     local accessOk, allowed = pcall(function()
-        return exports['rp_tablet_creator']:CanUseTablet(src, 'admin')
+        return exports['rp_tablet_creator']:CanUseTablet(src, 'creator')
+            or exports['rp_tablet_creator']:CanUseTablet(src, 'admin')
     end)
-    if not accessOk or allowed ~= true then return false, 'Accès à la tablette administrateur désactivé.' end
+    if not accessOk or allowed ~= true then return false, 'Accès à une tablette de gestion désactivé.' end
     if type(rawPolicy) ~= 'table' then return false, 'Configuration invalide.' end
 
     local clean = {}
