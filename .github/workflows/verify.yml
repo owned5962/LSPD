@@ -35,6 +35,7 @@ jobs:
       - name: Verify repository structure and regression checks
         run: |
           python tests/verify_server.py
+          python -m pytest -q tests
           python tests/test_security_regressions.py
           python tests/test_creator_organizations.py
           python tests/test_admin_f10_open.py
