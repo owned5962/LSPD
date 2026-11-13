@@ -94,3 +94,18 @@ def test_readme_only_contains_server_identity_jobs_and_feature_catalogue():
     assert "## Métiers disponibles" in readme
     assert "50." in readme and "winemaker" in readme
     assert "## Fonctionnalités présentes" in readme
+
+
+if __name__ == "__main__":
+    checks = [
+        test_character_creator_preview_clothing_rotation_and_spawn_recovery,
+        test_creator_has_separate_tabs_for_each_requested_function,
+        test_admin_player_table_reports_and_map_teleport,
+        test_f4_salary_statistics_are_based_on_persisted_salary_transactions,
+        test_inventory_hides_balances_and_uses_per_item_artwork,
+        test_fuel_default_is_increased_and_creator_can_configure_it,
+        test_readme_only_contains_server_identity_jobs_and_feature_catalogue,
+    ]
+    for check in checks:
+        check()
+    print(f"{len(checks)} requested-server regression checks passed.")
