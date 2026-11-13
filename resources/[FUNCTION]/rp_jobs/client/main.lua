@@ -110,11 +110,20 @@ RegisterNetEvent('rp_jobs:client:syncCustomJobs', function(jobs)
         if type(job) == 'table' and type(job.name) == 'string' and type(job.grades) == 'table' then
             JobsMap[job.name] = job
             local exists = false
-            for _, current in ipairs(JobsList) do
-                if current.name == job.name then exists = true break end
+            for index, current in ipairs(JobsList) do
+                if current.name == job.name then JobsList[index] = job; exists = true; break end
             end
             if not exists then JobsList[#JobsList + 1] = job end
         end
+    end
+    if isJobCenterOpen then SendNUIMessage({ action = 'updateJobs', jobs = JobsList }) end
+end)
+
+RegisterNetEvent('rp_jobs:client:removeCustomJob', function(name)
+    if type(name) ~= 'string' then return end
+    JobsMap[name] = nil
+    for index = #JobsList, 1, -1 do
+        if JobsList[index].name == name then table.remove(JobsList, index); break end
     end
     if isJobCenterOpen then SendNUIMessage({ action = 'updateJobs', jobs = JobsList }) end
 end)
