@@ -9,10 +9,11 @@ version '1.0.0'
 ui_page 'html/index.html'
 
 shared_scripts { 'config.lua' }
-client_scripts { 'client/main.lua' }
+client_scripts { 'client/main.lua', 'client/job_garage.lua' }
 server_scripts {
     '@oxmysql/lib/MySQL.lua',
-    'server/main.lua'
+    'server/main.lua',
+    'server/job_garage.lua'
 }
 
 files {
