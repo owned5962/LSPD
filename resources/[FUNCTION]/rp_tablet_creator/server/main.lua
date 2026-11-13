@@ -3,6 +3,19 @@ local LogCreatorAction
 local FounderCodeSessions = {}
 local FounderCodeAttempts = {}
 
+-- Utilise un identifiant stable pour que la limitation survive aux reconnexions.
+-- Le fallback source ne sert que si aucun identifiant persistant n'est disponible.
+local function getFounderAttemptKey(src)
+    local identifiers = GetPlayerIdentifiers(src) or {}
+    for _, identifier in ipairs(identifiers) do
+        if identifier:sub(1, 8) == 'license:' then return identifier end
+    end
+    for _, identifier in ipairs(identifiers) do
+        if identifier:sub(1, 6) == 'fivem:' then return identifier end
+    end
+    return 'source:' .. tostring(src)
+end
+
 local function isFounder(src)
     if IsPlayerAceAllowed(src, 'rp_founder') then return true end
     if FounderCodeSessions[tonumber(src)] == true then return true end
@@ -15,8 +28,16 @@ end
 RegisterNetEvent('rp_tablet_creator:server:authenticateFounderCode', function(rawCode)
     local src = source
     local now = os.time()
-    local attempts = FounderCodeAttempts[src] or { count = 0, blockedUntil = 0 }
-    FounderCodeAttempts[src] = attempts
+    local attemptKey = getFounderAttemptKey(src)
+    local attempts = FounderCodeAttempts[attemptKey] or { count = 0, blockedUntil = 0, windowStartedAt = now }
+    FounderCodeAttempts[attemptKey] = attempts
+
+    -- Les tentatives anciennes hors fenêtre de 15 minutes ne pénalisent plus le joueur.
+    if now - (tonumber(attempts.windowStartedAt) or now) > 900 then
+        attempts.count = 0
+        attempts.blockedUntil = 0
+        attempts.windowStartedAt = now
+    end
 
     if attempts.blockedUntil > now then
         TriggerClientEvent('rp_tablet_creator:client:founderCodeResult', src,
@@ -36,13 +57,14 @@ RegisterNetEvent('rp_tablet_creator:server:authenticateFounderCode', function(ra
         if attempts.count >= 5 then
             attempts.count = 0
             attempts.blockedUntil = now + 600
+            attempts.windowStartedAt = now
         end
         TriggerClientEvent('rp_tablet_creator:client:founderCodeResult', src,
             'Code incorrect.', false)
         return
     end
 
-    FounderCodeAttempts[src] = nil
+    FounderCodeAttempts[attemptKey] = nil
     FounderCodeSessions[src] = true
     TriggerClientEvent('rp_tablet_creator:client:founderCodeResult', src,
         'Identification fondateur validée pour cette connexion.', true)
@@ -56,7 +78,6 @@ end)
 AddEventHandler('playerDropped', function()
     local src = source
     FounderCodeSessions[src] = nil
-    FounderCodeAttempts[src] = nil
 end)
 
 local function isCreator(src)
