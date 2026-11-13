@@ -64,9 +64,32 @@ def test_creator_can_edit_and_delete_persisted_gangs():
     assert "post('updateGang', data)" in ui and "post('deleteGang', { name: gang.name })" in ui
     assert "window.confirm" in ui
 
+
+def test_creator_can_edit_and_safely_delete_custom_jobs():
+    jobs = read("resources/[FUNCTION]/rp_jobs/server/main.lua")
+    server = read("resources/[FUNCTION]/rp_tablet_creator/server/main.lua")
+    client = read("resources/[FUNCTION]/rp_tablet_creator/client/main.lua")
+    html = read("resources/[FUNCTION]/rp_tablet_creator/html/index.html")
+    ui = read("resources/[FUNCTION]/rp_tablet_creator/html/app.js")
+    assert "exports('UpdateCustomJob', UpdateCustomJob)" in jobs
+    assert "exports('DeleteCustomJob', DeleteCustomJob)" in jobs
+    assert "SELECT COUNT(*) FROM characters WHERE job = ?" in jobs
+    assert "SELECT COUNT(*) FROM rp_job_bank_transactions WHERE job = ?" in jobs
+    assert "bank > 0 or history > 0" in jobs
+    assert "rp_jobs:client:removeCustomJob" in jobs
+    assert "creator:update_job" in server and "creator:delete_job" in server
+    assert "exports['rp_jobs']:UpdateCustomJob" in server
+    assert "exports['rp_jobs']:DeleteCustomJob" in server
+    assert "RegisterNUICallback('updateJob'" in client
+    assert "RegisterNUICallback('deleteJob'" in client
+    assert 'id="creator-job-list"' in html and 'id="cancel-job-edit"' in html
+    assert "post(action, data)" in ui and "post('deleteJob', { name: job.name })" in ui
+    assert "customJobsData" in client and "renderCreatorJobs" in ui
+
 if __name__ == "__main__":
     test_custom_jobs_are_persisted_validated_and_loaded_with_numeric_grades()
     test_creator_job_creation_is_permission_gated_and_updates_job_selectors()
     test_gang_registry_persists_validated_names_and_creator_lists_gangs()
     test_creator_can_edit_and_delete_persisted_gangs()
+    test_creator_can_edit_and_safely_delete_custom_jobs()
     print("Creator organization regression checks passed.")
