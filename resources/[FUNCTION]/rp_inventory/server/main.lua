@@ -1035,14 +1035,17 @@ local function getJobStorageAccess(src, storageType)
     return player, config
 end
 
-local function getStorageItems(job, storageType)
+local function getStorageItems(job, storageType, config, grade)
     local rows = MySQL.query.await(
         'SELECT item_name, count FROM rp_job_storage_items WHERE job = ? AND storage_type = ? AND count > 0 ORDER BY item_name ASC',
         { job, storageType }) or {}
     local result = {}
     for _, row in ipairs(rows) do
         local def = Config.DefaultItems[row.item_name]
-        if def then
+        local gradeAllowed = storageType ~= 'armory'
+            or (config and config.armoryItems[row.item_name] ~= nil
+                and (tonumber(grade) or 0) >= config.armoryItems[row.item_name])
+        if def and gradeAllowed then
             result[#result + 1] = { name = row.item_name, label = def.label or row.item_name, count = tonumber(row.count) or 0 }
         end
     end
@@ -1059,7 +1062,7 @@ local function sendJobStorageData(src, storageType)
         local ok = pcall(loadInventory, player)
         if not ok then notify(src, 'error', 'Inventaire indisponible.'); return false end
     end
-    local storageItems = getStorageItems(player.job, storageType)
+    local storageItems = getStorageItems(player.job, storageType, config, player.jobGrade)
     local inventory = {}
     for _, item in ipairs(normalizeInventory(playerInventories[src])) do
         local def = Config.DefaultItems[item.name]
@@ -1169,12 +1172,17 @@ RegisterNetEvent('rp_inventory:server:transferJobStorage', function(storageType,
         end
     end
 
+    if transferLocks[src] or jobStorageLocks[player.job] then
+        notify(src, 'error', 'Une opération sur ce coffre est déjà en cours.')
+        return
+    end
+    jobStorageLocks[player.job] = src
     if not exports['rp_core']:AcquireCharacterLock({ player.charId }) then
+        jobStorageLocks[player.job] = nil
         notify(src, 'error', 'Sauvegarde du personnage en cours. Réessaie.')
         return
     end
     transferLocks[src] = true
-    jobStorageLocks[player.job] = src
     local updated = normalizeInventory(inventory)
     if direction == 'deposit' then
         if nextPlayerCount == 0 then
