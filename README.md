@@ -63,20 +63,20 @@
 
 ## Fonctionnalités présentes
 
-- Création, personnalisation, sauvegarde et sélection de personnages
+- Création, personnalisation, sauvegarde et sélection de personnages, avec aperçu 3D, rotation et prévisualisation des vêtements
 - Identité RP, héritage, morphologie, coiffure, vêtements, accessoires et choix du point d'arrivée
 - Sauvegarde des personnages, de leur position, de leur apparence et de leurs données
-- Inventaire joueur, utilisation, dépôt, transfert et persistance des objets
+- Inventaire joueur, utilisation, dépôt, transfert et persistance des objets, avec visuels individualisés par objet
 - Coffres partagés et armureries de métiers avec restrictions par grade et historique des mouvements
 - Économie joueur : portefeuille, compte bancaire et transactions
 - Comptes bancaires dédiés aux métiers, autorisations de dépôt/retrait et historique
-- Tablette métier F4
-- Tablette administrateur F10 : gestion des joueurs, sanctions, économie, métiers, météo, heure et journaux
-- Console Créateur F11 : environnement, annonces, mapping, blips, configuration, joueurs, métiers, gangs, garages, coffres, armureries et banque des métiers
+- Tablette métier F4 : équipe, missions, banque du métier et statistiques des salaires versés aujourd’hui, ce mois et cette année
+- Tablette administrateur F10 : tableau des joueurs, gives, sanctions, économie, métiers, météo, heure, carte GTA V, téléportation vers un point choisi sur la carte, signalements et journaux d’audit
+- Console Créateur F11 : onglets séparés météo, annonces, mapping, blips, configuration serveur, joueurs, métiers, gangs, garages, coffres, armureries, Banque Job et politique des armes
 - Gestion des métiers personnalisés, des grades, des salaires et des capacités d'effectif
 - Gestion des gangs
 - Garages de métiers et flottes de véhicules configurables
-- Système de carburant, stations-service, ravitaillement et réglages de consommation/prix
+- Système de carburant, stations-service, ravitaillement, prix au litre et multiplicateur de consommation réglables en direct depuis le Creator
 - Concessionnaire et vente de véhicules
 - Location de véhicules
 - Vol et récupération d'objets dans les véhicules
@@ -89,4 +89,5 @@
 - Auto-école et gestion des permis
 - Vêtements et personnalisation de l'apparence
 - Tutoriel d'accueil des nouveaux personnages
+- Commande `/rapport` avec tablette de signalement, attribution à un administrateur, acceptation et notification du joueur
 - Interface de chargement et notifications
