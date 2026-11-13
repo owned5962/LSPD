@@ -963,9 +963,11 @@ local function loadJobStorageConfigs()
         if ok and type(allowed) == 'table' then
             local weapons = {}
             for _, entry in ipairs(allowed) do
+                local minimum = type(entry) == 'table' and tonumber(entry.minGrade) or nil
                 if type(entry) == 'table' and type(entry.name) == 'string'
-                    and Config.DefaultItems[entry.name] and Config.DefaultItems[entry.name].type == 'weapon' then
-                    weapons[entry.name] = tonumber(entry.minGrade) or 0
+                    and Config.DefaultItems[entry.name] and Config.DefaultItems[entry.name].type == 'weapon'
+                    and minimum and minimum % 1 == 0 and minimum >= 0 and minimum <= 4 then
+                    weapons[entry.name] = minimum
                 end
             end
             local x, y, z = tonumber(row.x), tonumber(row.y), tonumber(row.z)
