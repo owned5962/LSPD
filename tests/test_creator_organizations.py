@@ -163,6 +163,9 @@ def test_creator_job_armory_and_shared_locker_are_persisted_and_grade_restricted
     assert "player.job" in inventory and "player.jobGrade" in inventory
     assert "GetEntityCoords(ped) - config.coords" in inventory
     assert "config.armoryItems[itemName]" in inventory
+    assert "storageType == 'stash' and definition.type == 'weapon'" in inventory
+    assert "storageType == 'stash' and def and def.type ~= 'weapon'" in inventory
+    assert "storageType == 'armory' and def and def.type == 'weapon'" in inventory
     assert "IsWeaponAllowed(definition.weapon)" in inventory
     assert "AcquireCharacterLock({ player.charId })" in inventory
     assert "MySQL.transaction.await(queries)" in inventory
