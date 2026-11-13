@@ -181,3 +181,23 @@ AddEventHandler('onResourceStop', function(resource)
         activeVehicles[src] = nil
     end
 end)
+
+RegisterNetEvent('rp_garages:server:requestJobGarageMarker', function()
+    local src = source
+    local player = getPlayer(src)
+    local garage = player and garages[player.job]
+    if not garage then
+        TriggerClientEvent('rp_garages:client:setJobGarage', src, nil)
+        return
+    end
+    TriggerClientEvent('rp_garages:client:setJobGarage', src, {
+        coords = { x = garage.coords.x, y = garage.coords.y, z = garage.coords.z }
+    })
+end)
+
+RegisterNetEvent('rp_garages:server:reloadJobGarages', function()
+    local src = source
+    if src ~= 0 then return end
+    local ok, err = pcall(loadGarages)
+    if not ok then print('[rp_garages] Garage refresh failed: ' .. tostring(err)) end
+end)
