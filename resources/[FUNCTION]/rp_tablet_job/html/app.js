@@ -31,6 +31,7 @@ $('refresh').addEventListener('click', () => post('refresh'));
 $('refresh-police').addEventListener('click', () => post('refresh'));
 $('duty-toggle').addEventListener('click', () => post('toggleDuty'));
 $('job-bank-refresh').addEventListener('click', () => post('refreshJobBank'));
+$('salary-stats-refresh')?.addEventListener('click', () => post('refreshSalaryStats'));
 $('job-bank-deposit').addEventListener('click', () => submitJobBank('jobBankDeposit'));
 $('job-bank-withdraw').addEventListener('click', () => submitJobBank('jobBankWithdraw'));
 
@@ -260,4 +261,43 @@ document.addEventListener('keydown', event => {
     event.preventDefault();
     post('close');
   }
+});
+
+
+function renderSalaryStats(data) {
+  const values = {
+    today: Math.max(0, Number(data?.today) || 0),
+    month: Math.max(0, Number(data?.month) || 0),
+    year: Math.max(0, Number(data?.year) || 0)
+  };
+  const format = value => value.toLocaleString('fr-FR', { maximumFractionDigits: 0 }) + ' $';
+  $('salary-today').textContent = format(values.today);
+  $('salary-month').textContent = format(values.month);
+  $('salary-year').textContent = format(values.year);
+  const chart = $('salary-chart');
+  chart.replaceChildren();
+  const max = Math.max(values.today, values.month, values.year, 1);
+  [['Aujourd’hui', values.today], ['Ce mois', values.month], ['Cette année', values.year]].forEach(([label, value]) => {
+    const row = document.createElement('div');
+    row.className = 'salary-chart-row';
+    const caption = document.createElement('span');
+    caption.textContent = label;
+    const track = document.createElement('div');
+    track.className = 'salary-chart-track';
+    const bar = document.createElement('div');
+    bar.className = 'salary-chart-bar';
+    bar.style.width = Math.max(1, (value / max) * 100) + '%';
+    track.append(bar);
+    const amount = document.createElement('b');
+    amount.textContent = format(value);
+    row.append(caption, track, amount);
+    chart.append(row);
+  });
+  $('salary-stats-note').textContent = data?.unavailable
+    ? 'Statistiques indisponibles : vérifiez la table bank_transactions.'
+    : 'Versements enregistrés : ' + (Number(data?.paymentsToday) || 0) + ' aujourd’hui. Les montants sont calculés pour le métier connecté.';
+}
+window.addEventListener('message', event => {
+  const message = event.data || {};
+  if (message.action === 'salaryStats') renderSalaryStats(message.data || {});
 });
