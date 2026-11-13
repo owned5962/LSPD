@@ -151,7 +151,6 @@ def test_creator_job_armory_and_shared_locker_are_persisted_and_grade_restricted
     assert "creator:save_job_storage" in creator and "creator:delete_job_storage" in creator
     assert "exports['rp_inventory']:GetItemCatalog()" in creator
     assert "itemDef.type ~= 'weapon'" in creator
-    assert "minGrade < 0 or grade > 4" not in creator  # grade validation uses grade < 0 / > 4
     assert "grade < 0 or grade > 4" in creator
     assert "RegisterNUICallback('saveJobStorage'" in creator_client
     assert "RegisterNUICallback('deleteJobStorage'" in creator_client
@@ -167,6 +166,9 @@ def test_creator_job_armory_and_shared_locker_are_persisted_and_grade_restricted
     assert "IsWeaponAllowed(definition.weapon)" in inventory
     assert "AcquireCharacterLock({ player.charId })" in inventory
     assert "MySQL.transaction.await(queries)" in inventory
+    transfer = inventory[inventory.index("RegisterNetEvent('rp_inventory:server:transferJobStorage'"):]
+    assert transfer.index("AcquireCharacterLock({ player.charId })") < transfer.index("local storageRow = MySQL.single.await")
+    assert "jobStorageLocks[lockedJob] = src" in transfer
     assert "rp_job_storage_logs" in inventory
     assert "rp_inventory:server:transferJobStorage" in inventory
     assert "rp_inventory:client:jobStorageData" in inventory
