@@ -262,7 +262,26 @@ document.getElementById('creator-save-access').addEventListener('click', () => {
 
  
 // Forms for persistent server organizations.
-function submitNewJob() {
+let editingJobName = null;
+let creatorCustomJobs = [];
+
+function resetJobEditor() {
+    editingJobName = null;
+    document.getElementById('new-job-name').readOnly = false;
+    document.getElementById('create-job').innerHTML = '<i class="fa-solid fa-plus"></i> Créer le métier';
+    document.getElementById('cancel-job-edit').hidden = true;
+    document.getElementById('new-job-name').value = '';
+    document.getElementById('new-job-label').value = '';
+    document.getElementById('new-job-category').value = 'commerce';
+    document.getElementById('new-job-description').value = '';
+    document.getElementById('new-job-whitelisted').checked = false;
+    for (let grade = 0; grade <= 4; grade++) {
+        document.getElementById('new-job-grade-' + grade).value = ['Débutant', 'Employé', 'Confirmé', 'Responsable', 'Directeur'][grade];
+        document.getElementById('new-job-salary-' + grade).value = [200, 300, 400, 500, 650][grade];
+    }
+}
+
+function readJobEditor() {
     const data = {
         name: document.getElementById('new-job-name').value.trim().toLowerCase(),
         label: document.getElementById('new-job-label').value.trim(),
@@ -278,12 +297,65 @@ function submitNewJob() {
         };
     }
     if (!/^[a-z][a-z0-9_]{2,39}$/.test(data.name) || data.label.length < 2 || data.description.length < 3
+        || data.category.length < 1 || data.category.length > 32 || !/^[a-z][a-z0-9_]*$/.test(data.category)
         || Object.values(data.grades).some(g => g.label.length < 2 || !Number.isInteger(g.salary) || g.salary < 0 || g.salary > 100000)) {
-        creatorMessage('Vérifiez l’identifiant, la description et les cinq grades/salaires.'); return;
+        creatorMessage('Vérifiez l’identifiant, la catégorie, la description et les cinq grades/salaires.'); return null;
     }
-    post('createJob', data).catch(() => creatorMessage('Impossible de contacter le serveur.'));
+    return data;
+}
+
+function renderCreatorJobs(jobs) {
+    creatorCustomJobs = Array.isArray(jobs) ? jobs : [];
+    const host = document.getElementById('creator-job-list');
+    host.replaceChildren();
+    if (!creatorCustomJobs.length) {
+        host.textContent = 'Aucun métier personnalisé créé pour le moment.';
+        return;
+    }
+    creatorCustomJobs.forEach(job => {
+        const row = document.createElement('div');
+        row.className = 'org-row';
+        const label = document.createElement('span');
+        label.textContent = (job.label || job.name) + ' · ' + job.name;
+        const edit = document.createElement('button');
+        edit.type = 'button';
+        edit.textContent = 'Modifier';
+        edit.addEventListener('click', () => {
+            editingJobName = job.name;
+            document.getElementById('new-job-name').value = job.name;
+            document.getElementById('new-job-name').readOnly = true;
+            document.getElementById('new-job-label').value = job.label || '';
+            document.getElementById('new-job-category').value = job.category || 'custom';
+            document.getElementById('new-job-description').value = job.description || '';
+            document.getElementById('new-job-whitelisted').checked = job.whitelisted === true;
+            for (let grade = 0; grade <= 4; grade++) {
+                const entry = job.grades?.[grade] || job.grades?.[String(grade)] || {};
+                document.getElementById('new-job-grade-' + grade).value = entry.label || ('Grade ' + grade);
+                document.getElementById('new-job-salary-' + grade).value = Number(entry.salary || 0);
+            }
+            document.getElementById('create-job').textContent = 'Enregistrer les modifications';
+            document.getElementById('cancel-job-edit').hidden = false;
+        });
+        const remove = document.createElement('button');
+        remove.type = 'button';
+        remove.textContent = 'Supprimer';
+        remove.addEventListener('click', () => {
+            if (!window.confirm('Supprimer le métier ' + (job.label || job.name) + ' ? La suppression sera refusée si des personnages lui sont affectés ou si son compte bancaire contient un solde ou un historique.')) return;
+            post('deleteJob', { name: job.name }).catch(() => creatorMessage('Impossible de supprimer le métier.'));
+        });
+        row.append(label, edit, remove);
+        host.append(row);
+    });
+}
+
+function submitNewJob() {
+    const data = readJobEditor();
+    if (!data) return;
+    const action = editingJobName ? 'updateJob' : 'createJob';
+    post(action, data).then(() => resetJobEditor()).catch(() => creatorMessage('Impossible de contacter le serveur.'));
 }
 document.getElementById('create-job').addEventListener('click', submitNewJob);
+document.getElementById('cancel-job-edit').addEventListener('click', resetJobEditor);
 
 let editingGangName = null;
 function resetGangEditor() {
@@ -343,6 +415,10 @@ document.getElementById('create-gang').addEventListener('click', () => {
 window.addEventListener('message', event => {
     const data = event.data || {};
     if (data.action === 'organizationsData') renderCreatorGangs(data.gangs || []);
+});
+window.addEventListener('message', event => {
+    const data = event.data || {};
+    if (data.action === 'customJobsData') renderCreatorJobs(data.jobs || []);
 });
 
 let creatorJobBankData = { jobs: [], accounts: [], history: [] };
