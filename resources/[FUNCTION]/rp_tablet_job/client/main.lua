@@ -1,4 +1,5 @@
 local isOpen = false
+local isOpening = false
 local currentDuty = false
 local currentJob = nil
 
@@ -9,6 +10,7 @@ end
 local function closeTablet()
     if not isOpen then return end
     isOpen = false
+    isOpening = false
     SetNuiFocus(false, false)
     SendNUIMessage({ action = 'close' })
 end
@@ -29,8 +31,14 @@ local function openTablet()
     end
     currentJob = player.job
     isOpen = true
-    SetNuiFocus(true, true)
+    isOpening = true
     TriggerServerEvent('rp_tablet_job:server:requestData')
+    SetTimeout(7000, function()
+        if isOpen and isOpening then
+            closeTablet()
+            notify('La tablette métier ne répond pas. Vérifiez que votre personnage et votre métier sont bien chargés, puis réessayez.', 'error')
+        end
+    end)
 end
 
 RegisterCommand('jobtablet', openTablet, false)
@@ -113,8 +121,10 @@ end)
 
 RegisterNetEvent('rp_tablet_job:client:openData', function(data)
     if not isOpen then return end
+    isOpening = false
     currentDuty = data.duty == true
     currentJob = data.jobName
+    SetNuiFocus(true, true)
     SendNUIMessage({ action = 'open', data = data })
     TriggerServerEvent('rp_jobbank:server:requestFromJobMenu')
     if currentJob == 'police' and currentDuty then
@@ -166,6 +176,7 @@ end)
 AddEventHandler('onClientResourceStop', function(resourceName)
     if resourceName == GetCurrentResourceName() then
         isOpen = false
+        isOpening = false
         SetNuiFocus(false, false)
     end
 end)
