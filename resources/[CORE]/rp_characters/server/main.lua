@@ -408,6 +408,34 @@ RegisterNetEvent('rp_characters:server:createCharacter', function(data)
             end
         end
         skin.eyeColor = safeNumber(input.eyeColor, 0, 31, true) or 0
+
+        -- Persist the actual clothing components and props selected in the creator.
+        skin.components = {}
+        if type(input.components) == 'table' then
+            for _, component in ipairs({ 3, 4, 5, 6, 7, 8, 9, 10, 11 }) do
+                local item = input.components[tostring(component)] or input.components[component]
+                if type(item) == 'table' then
+                    local drawable = safeNumber(item.drawable, 0, 500, true)
+                    local texture = safeNumber(item.texture, 0, 100, true)
+                    if drawable and texture then
+                        skin.components[tostring(component)] = { drawable = drawable, texture = texture }
+                    end
+                end
+            end
+        end
+        skin.props = {}
+        if type(input.props) == 'table' then
+            for _, prop in ipairs({ 0, 1, 2, 6, 7 }) do
+                local item = input.props[tostring(prop)] or input.props[prop]
+                if type(item) == 'table' then
+                    local drawable = safeNumber(item.drawable, -1, 200, true)
+                    local texture = safeNumber(item.texture, 0, 100, true)
+                    if drawable and texture then
+                        skin.props[tostring(prop)] = { drawable = drawable, texture = texture }
+                    end
+                end
+            end
+        end
     end
 
     local insertOk, charId = pcall(MySQL.insert.await,
