@@ -511,7 +511,15 @@ RegisterNetEvent('rp_tablet_creator:server:saveJobStorage', function(data)
         end
         local name = entry.name:lower()
         local grade = tonumber(entry.minGrade)
-        local itemDef = Config and Config.DefaultItems and Config.DefaultItems[name]
+        local itemDef
+        if GetResourceState('rp_inventory') == 'started' then
+            local catalogOk, catalog = pcall(function() return exports['rp_inventory']:GetItemCatalog() end)
+            if catalogOk and type(catalog) == 'table' then
+                for _, item in ipairs(catalog) do
+                    if item.name == name then itemDef = item break end
+                end
+            end
+        end
         if #name > 64 or not itemDef or itemDef.type ~= 'weapon'
             or not grade or grade % 1 ~= 0 or grade < 0 or grade > 4 or seen[name] then
             reply(src, 'L’armurerie accepte uniquement des armes du catalogue et un grade entre 0 et 4.', false)
