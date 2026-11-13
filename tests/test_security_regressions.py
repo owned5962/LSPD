@@ -1390,3 +1390,8 @@ def test_character_appearance_recovers_missing_clothing_and_clears_invalid_props
     assert "safeDefaults[component][1]" in client
     assert "Invalid or missing saved props are cleared safely." in client
     assert "ClearPedProp(ped, prop)" in client
+
+
+if __name__ == "__main__":
+    test_server_cfg_omits_default_framework_resources_and_starts_territories_last()
+    test_character_appearance_recovers_missing_clothing_and_clears_invalid_props()
