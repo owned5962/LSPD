@@ -225,6 +225,20 @@ AddEventHandler('playerDropped', function()
     end
 end)
 
+AddEventHandler('onResourceStop', function(resourceName)
+    if resourceName ~= GetCurrentResourceName() then return end
+    for src, purchase in pairs(pendingPurchases) do
+        -- A resource restart must not erase an already charged, unconfirmed purchase.
+        for _, vehicle in ipairs(GetAllVehicles()) do
+            if DoesEntityExist(vehicle)
+                and GetVehicleNumberPlateText(vehicle):sub(1, 7) == purchase.plate then
+                DeleteEntity(vehicle)
+            end
+        end
+        refundPurchase(src, purchase, 'Achat annulé lors du redémarrage de la concession. Paiement remboursé.')
+    end
+end)
+
 CreateThread(function()
     while true do
         Wait(5000)
