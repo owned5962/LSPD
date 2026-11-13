@@ -1,55 +1,6 @@
 local transferLocks = {}
 local saveLocks = {}
 
-local function NormalizePosition(value)
-    local fallback = Config.DefaultSpawn
-    if type(value) ~= 'table' then
-        return { x = fallback.x, y = fallback.y, z = fallback.z, heading = fallback.heading }
-    end
-
-    local x, y, z = tonumber(value.x), tonumber(value.y), tonumber(value.z)
-    local heading = tonumber(value.heading)
-    local function finite(number)
-        return number ~= nil and number == number and number ~= math.huge and number ~= -math.huge
-    end
-
-    if not finite(x) or not finite(y) or not finite(z)
-        or x < -6000 or x > 6000 or y < -6000 or y > 6000
-        or z < -500 or z > 2000 then
-        return { x = fallback.x, y = fallback.y, z = fallback.z, heading = fallback.heading }
-    end
-
-    if not finite(heading) then heading = fallback.heading end
-    return { x = x, y = y, z = z, heading = heading % 360 }
-end
-
--- Shared lock for balance-changing SQL transactions in other server resources.
--- It prevents periodic character saves from writing stale cash/bank values.
-local function AcquireCharacterLock(characterIds)
-    if type(characterIds) ~= 'table' or #characterIds < 1 then return false end
-    local ids, seen = {}, {}
-    for _, rawId in ipairs(characterIds) do
-        local id = tonumber(rawId)
-        if not id or id < 1 or id % 1 ~= 0 or seen[id]
-            or transferLocks[id] or saveLocks[id] then return false end
-        ids[#ids + 1], seen[id] = id, true
-    end
-    for _, id in ipairs(ids) do transferLocks[id] = true end
-    return true
-end
-
-local function ReleaseCharacterLock(characterIds)
-    if type(characterIds) ~= 'table' then return false end
-    for _, rawId in ipairs(characterIds) do
-        local id = tonumber(rawId)
-        if id and id > 0 then transferLocks[id] = nil end
-    end
-    return true
-end
-
-exports('AcquireCharacterLock', AcquireCharacterLock)
-exports('ReleaseCharacterLock', ReleaseCharacterLock)
-
 local function RequirePositiveInteger(value, fieldName)
     local number = tonumber(value)
     if not number or number < 1 or number % 1 ~= 0 then
@@ -119,7 +70,7 @@ function CreateRPPlayer(source, identifier, charData)
         local ok, decoded = pcall(json.decode, savedPosition)
         savedPosition = ok and decoded or nil
     end
-    self.position = NormalizePosition(savedPosition)
+    self.position = Utils.NormalizePosition(savedPosition, Config.DefaultSpawn)
 
     local savedSkin = charData.skin
     if type(savedSkin) == 'string' and savedSkin ~= '' then
