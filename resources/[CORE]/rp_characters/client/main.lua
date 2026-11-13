@@ -339,14 +339,30 @@ local function OpenCreator(maxCharacters)
     SetupCreatorCamera()
 end
 
+local function UpdateCreatorCamera()
+    if not charCamera then return end
+    local ped = PlayerPedId()
+    if not ped or ped == 0 or not DoesEntityExist(ped) then return end
+    -- Keep the camera in front of the ped, centered on the face and upper body.
+    local cameraCoords = GetOffsetFromEntityInWorldCoords(ped, 0.0, 2.25, 0.72)
+    SetCamCoord(charCamera, cameraCoords.x, cameraCoords.y, cameraCoords.z)
+    PointCamAtEntity(charCamera, ped, 0.0, 0.0, 0.55, true)
+end
+
 function SetupCreatorCamera()
     local ped = PlayerPedId()
     SetEntityCoords(ped, -1042.0, -2745.0, 21.3, false, false, false, true)
     SetEntityHeading(ped, 330.0)
     FreezeEntityPosition(ped, true)
+    SetEntityVisible(ped, true, false)
+    ResetEntityAlpha(ped)
+    if charCamera then
+        DestroyCam(charCamera, false)
+        charCamera = nil
+    end
     charCamera = CreateCam('DEFAULT_SCRIPTED_CAMERA', true)
-    SetCamCoord(charCamera, -1040.8, -2743.0, 21.6)
-    PointCamAtEntity(charCamera, ped, 0.0, 0.0, 0.2, true)
+    UpdateCreatorCamera()
+    SetCamFov(charCamera, 38.0)
     SetCamActive(charCamera, true)
     RenderScriptCams(true, true, 500, true, true)
 end
@@ -382,6 +398,20 @@ end)
 
 RegisterNUICallback('updateSkinPreview', function(data, cb)
     if type(data) == 'table' then ApplyCharacterAppearance(data.gender, data.skin) end
+    cb({ status = 'ok' })
+end)
+
+RegisterNUICallback('rotateCharacter', function(data, cb)
+    local direction = type(data) == 'table' and tonumber(data.direction) or nil
+    if direction ~= -1 and direction ~= 1 then
+        cb({ status = 'error' })
+        return
+    end
+    local ped = PlayerPedId()
+    if ped and ped ~= 0 and DoesEntityExist(ped) and isCreating then
+        SetEntityHeading(ped, (GetEntityHeading(ped) + (direction * 15.0)) % 360.0)
+        UpdateCreatorCamera()
+    end
     cb({ status = 'ok' })
 end)
 
@@ -459,9 +489,19 @@ RegisterNetEvent('rp_characters:client:spawnPlayer', function(coords, gender, sk
         ResetEntityAlpha(ped)
         SetEntityCollision(ped, true, true)
     end
-    SetEntityCoords(ped, tonumber(coords.x) or -1037.7, tonumber(coords.y) or -2737.8,
-        tonumber(coords.z) or 20.1, false, false, false, true)
+    local spawnX = tonumber(coords.x) or -1037.7
+    local spawnY = tonumber(coords.y) or -2737.8
+    local spawnZ = tonumber(coords.z) or 20.1
+    RequestCollisionAtCoord(spawnX, spawnY, spawnZ)
+    SetFocusPosAndVel(spawnX, spawnY, spawnZ, 0.0, 0.0, 0.0)
+    local collisionDeadline = GetGameTimer() + 5000
+    while not HasCollisionLoadedAroundEntity(ped) and GetGameTimer() < collisionDeadline do
+        RequestCollisionAtCoord(spawnX, spawnY, spawnZ)
+        Wait(50)
+    end
+    SetEntityCoordsNoOffset(ped, spawnX, spawnY, spawnZ, false, false, false)
     SetEntityHeading(ped, tonumber(coords.heading) or 330.0)
+    ClearFocus()
     SetEntityVisible(ped, true, false)
     ResetEntityAlpha(ped)
     SetEntityCollision(ped, true, true)
