@@ -1494,3 +1494,13 @@ def test_clothing_hair_appearance_is_integer_and_range_validated():
     assert "hairStyle % 1 ~= 0 or hairStyle < 0 or hairStyle > 200" in source
     assert "hairColor ~= hairColor or hairColor % 1 ~= 0" in source
     assert "math.max(0, math.min(63, hairColor))" in source
+
+def test_vehicle_purchases_and_garage_actions_are_recovered_on_resource_stop():
+    dealership = read("resources/[FUNCTION]/rp_vehicle_dealership/server/main.lua")
+    garages = read("resources/[FUNCTION]/rp_garages/server/main.lua")
+    assert "AddEventHandler('onResourceStop'" in dealership
+    assert "refundPurchase(src, purchase, 'Achat annulé lors du redémarrage" in dealership
+    assert "DeleteEntity(vehicle)" in dealership
+    assert "AddEventHandler('onResourceStop'" in garages
+    assert "refundPendingTune(src, tuning, 'Personnalisation annulée lors du redémarrage" in garages
+    assert "UPDATE rp_owned_vehicles SET stored = 1 WHERE id = ? AND character_id = ? AND stored = 0" in garages
