@@ -69,7 +69,7 @@ def test_core_exposes_player_factory_and_saves():
     assert "self.metadata" in core and "metadata = ?" in core
     assert "@oxmysql/lib/MySQL.lua" in manifest
     assert "player.save()" in main
-    assert "5 * 60 * 1000" in main
+    assert "Wait(60 * 1000)" in main
 
 
 def test_database_schema_has_unique_character_slots_and_one_job_grades_table():
