@@ -16,8 +16,12 @@ on:
   pull_request:
     paths:
       - "resources/[FUNCTION]/rp_economy/**"
+      - "resources/[FUNCTION]/rp_tablet_creator/**"
       - "resources/[CORE]/rp_core/server/player.lua"
       - "tests/test_bank_transactions.py"
+      - "tests/test_job_bank.py"
+      - "database.sql"
+      - "migrations/006_job_bank_accounts.sql"
       - ".github/workflows/bank-transactions.yml"
 
 jobs:
