@@ -159,7 +159,12 @@
         <label>Grade 3<input id="new-job-grade-3" maxlength="48" value="Responsable"></label><label>Salaire<input id="new-job-salary-3" type="number" min="0" max="100000" value="500"></label>
         <label>Grade 4<input id="new-job-grade-4" maxlength="48" value="Directeur"></label><label>Salaire<input id="new-job-salary-4" type="number" min="0" max="100000" value="650"></label>
       </div>
-      <button id="create-job" class="primary"><i class="fa-solid fa-plus"></i> Créer le métier</button>
+      <div class="buttons">
+        <button id="create-job" class="primary"><i class="fa-solid fa-plus"></i> Créer le métier</button>
+        <button id="cancel-job-edit" type="button" hidden>Annuler la modification</button>
+      </div>
+      <h3 class="subheading">Métiers personnalisés enregistrés</h3>
+      <div id="creator-job-list" class="org-list">Chargement…</div>
     </article>
     <article class="panel">
       <h2><i class="fa-solid fa-users"></i> Créer un gang</h2>
