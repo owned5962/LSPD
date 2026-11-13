@@ -20,6 +20,13 @@ def test_character_creator_preview_clothing_rotation_and_spawn_recovery():
     assert "skin.components = {}" in server and "skin.props = {}" in server
     assert "rotate-character-left" in ui and "rotate-character-right" in ui
     assert "postNui('rotateCharacter'" in js
+    assert "local previousCoords = GetEntityCoords(previousPed)" in client
+    assert "FreezeEntityPosition(replacementPed, wasFrozen)" in client
+    assert "RequestCollisionAtCoord(-1042.0, -2745.0, 21.3)" in client
+    assert "SetEntityCoordsNoOffset(ped, spawnX, spawnY, spawnZ" in client
+    assert "SpawnWaitExpired(collisionStartedAt, 10000)" in client
+    css = read("resources/[CORE]/rp_characters/html/css/style.css")
+    assert "left: 50%;" in css and "transform: translateX(-50%);" in css
 
 
 def test_creator_has_separate_tabs_for_each_requested_function():
