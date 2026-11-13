@@ -169,8 +169,9 @@ local function LoadCharacter(src, identifier, userGroup, char)
         end
     end
     print(('[rp_characters] Character loaded for player %s; sending spawn event.'):format(tostring(src)))
-    TriggerClientEvent('rp_characters:client:spawnPlayer', src, char.position, char.sex, char.skin)
+    -- Release the selector and its scripted camera before the spawn/fade sequence.
     TriggerClientEvent('rp_characters:client:closeMenu', src)
+    TriggerClientEvent('rp_characters:client:spawnPlayer', src, char.position, char.sex, char.skin)
     Notify(src, ('Bienvenue %s %s !'):format(char.firstname, char.lastname), 'success')
 end
 
