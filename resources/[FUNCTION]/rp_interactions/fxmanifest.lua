@@ -20,6 +20,8 @@ server_scripts {
     'server/main.lua'
 }
 
+dependencies { 'oxmysql', 'rp_core' }
+
 files {
     'html/index.html',
     'html/css/style.css',
