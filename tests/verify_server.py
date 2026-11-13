@@ -47,6 +47,14 @@ def test_dedicated_jobs():
         with open(os.path.join(job_dir, 'config.lua'), encoding='utf-8') as config_file:
             config = config_file.read()
         assert f"Config.Job = '{job[4:]}'" in config, f"{job} Config.Job mismatch"
+
+        with open(os.path.join(job_dir, 'server/main.lua'), encoding='utf-8') as server_file:
+            server = server_file.read()
+        assert "CanPerformAction(src," in server, f"{job} has no server-side action cooldown"
+        assert f"player.job ~= '{job[4:]}'" in server, f"{job} does not validate the player's job"
+        assert "type(status) ~= 'boolean'" in server, f"{job} does not validate duty state type"
+        assert "isAt(Config.DutyCoords, src, 5.0)" in server, f"{job} does not validate duty location"
+        assert "SetPlayerDuty(src, status, Config.Job)" in server, f"{job} does not sync duty to rp_core"
     print(f"✓ All {len(job_folders)} job resources have manifests, config, client and server files.")
 
 def test_core_resources():
