@@ -201,19 +201,19 @@ def test_creator_ui_dom_tabs_and_nui_callback_contracts_are_complete():
     ui = read("resources/[FUNCTION]/rp_tablet_creator/html/app.js")
     client = read("resources/[FUNCTION]/rp_tablet_creator/client/main.lua")
 
-    ids = re.findall(r'\\bid=["\\']([^"\\']+)["\\']', html)
+    ids = re.findall(r"""\bid=["']([^"']+)["']""", html)
     assert len(ids) == len(set(ids)), "Creator HTML contains duplicate element IDs"
-    references = set(re.findall(r"getElementById\\(['\\"]([^'\\"]+)['\\"]\\)", ui))
+    references = set(re.findall(r"""getElementById\(['"]([^'"]+)['"]\)""", ui))
     assert references.issubset(set(ids)), f"Creator UI references missing IDs: {sorted(references - set(ids))}"
 
-    tabs = set(re.findall(r'data-tab=["\\']([^"\\']+)["\\']', html))
-    panels = set(re.findall(r'data-tab-panel=["\\']([^"\\']+)["\\']', html))
+    tabs = set(re.findall(r"""data-tab=["']([^"']+)["']""", html))
+    panels = set(re.findall(r"""data-tab-panel=["']([^"']+)["']""", html))
     assert tabs == panels and len(tabs) == 10
 
-    callbacks = re.findall(r"RegisterNUICallback\\(['\\"]([^'\\"]+)['\\"]", client)
+    callbacks = re.findall(r"""RegisterNUICallback\(['"]([^'"]+)['"]""", client)
     assert len(callbacks) == len(set(callbacks)), "Creator has duplicate NUI callback registrations"
     callback_blocks = re.findall(
-        r"RegisterNUICallback\\(['\\"]([^'\\"]+)['\\"]\\s*,\\s*function\\([^)]*\\)(.*?)\\nend\\)",
+        r"""RegisterNUICallback\(['"]([^'"]+)['"]\s*,\s*function\([^)]*\)(.*?)\nend\)""",
         client,
         re.S,
     )
@@ -221,13 +221,14 @@ def test_creator_ui_dom_tabs_and_nui_callback_contracts_are_complete():
         if name != "close":
             assert "TriggerServerEvent(" in body, f"NUI callback {name} does not reach a server handler"
 
-    ui_actions = set(re.findall(r"post\\(['\\"]([^'\\"]+)['\\"]", ui))
-    ui_actions.update(re.findall(r"\\? '((?:create|update)(?:Job|Gang))' : '((?:create|update)(?:Job|Gang))'", ui))
-    flattened_actions = {value for pair in ui_actions if isinstance(pair, tuple) for value in pair}
-    flattened_actions.update(value for value in ui_actions if isinstance(value, str))
-    missing_actions = set(callbacks) - {"close"} - flattened_actions
+    ui_actions = set(re.findall(r"""post\(['"]([^'"]+)['"]""", ui))
+    for pair in re.findall(
+        r"""const action = editing(?:Job|Gang)Name \? '((?:create|update)(?:Job|Gang))' : '((?:create|update)(?:Job|Gang))'""",
+        ui,
+    ):
+        ui_actions.update(pair)
+    missing_actions = set(callbacks) - {"close"} - ui_actions
     assert not missing_actions, f"NUI callbacks are not invoked by the UI: {sorted(missing_actions)}"
-
 
 def test_creator_f11_toggle_and_job_blips_are_scoped_and_rate_limited():
     server = read("resources/[FUNCTION]/rp_tablet_creator/server/main.lua")
