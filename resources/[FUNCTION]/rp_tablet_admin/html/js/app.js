@@ -406,15 +406,23 @@ function renderOnlinePlayers() {
     if (count) count.textContent = String(onlinePlayers.length);
     list.replaceChildren();
     onlinePlayers.forEach(player => {
-        const entry = document.createElement('button'); entry.type = 'button'; entry.className = 'player-entry';
-        const info = document.createElement('span'); info.className = 'player-info';
-        const name = document.createElement('span'); name.className = 'name';
-        name.textContent = (player.name || player.rawName || 'Joueur') + ' [ID: ' + player.id + ']' + (player.isSelf ? ' (VOUS)' : '');
-        const meta = document.createElement('span'); meta.className = 'meta';
-        meta.textContent = 'Job : ' + (player.jobLabel || player.job || 'Inconnu') + ' · Grade : ' + (player.grade ?? 0) + ' · Ping : ' + (player.ping ?? 0) + ' ms';
-        info.append(name, meta); entry.append(info);
-        entry.addEventListener('click', () => selectPlayer(player.id, player.name || player.rawName || 'Joueur', player.job, entry));
-        list.append(entry);
+        const row = document.createElement('tr');
+        row.type = 'button';
+        row.className = 'player-entry';
+        const values = [
+            String(player.id),
+            (player.name || player.rawName || 'Joueur') + (player.isSelf ? ' (VOUS)' : ''),
+            String(player.jobLabel || player.job || 'Inconnu'),
+            String(player.grade ?? 0),
+            String(player.ping ?? 0) + ' ms'
+        ];
+        values.forEach(value => {
+            const cell = document.createElement('td');
+            cell.textContent = value;
+            row.appendChild(cell);
+        });
+        row.addEventListener('click', () => selectPlayer(player.id, player.name || player.rawName || 'Joueur', player.job, row));
+        list.append(row);
     });
     if (selectedPlayerId && !onlinePlayers.some(p => Number(p.id) === Number(selectedPlayerId))) selectedPlayerId = null;
     filterPlayers();
