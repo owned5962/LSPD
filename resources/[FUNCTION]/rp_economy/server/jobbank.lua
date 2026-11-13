@@ -172,19 +172,23 @@ local function transact(src, rawAmount, kind, fromJobMenu)
         params = { jobName, amount, amount, player.charId, player.identifier, amount }
     end
     local sqlOk, affected = pcall(MySQL.update.await, query, params)
-    exports['rp_core']:ReleaseCharacterLock(lockIds)
     if not sqlOk or not tonumber(affected) or tonumber(affected) < 1 then
+        exports['rp_core']:ReleaseCharacterLock(lockIds)
         jobLocks[jobName] = nil
         if not sqlOk then print(('[rp_jobbank] Erreur SQL %s/%s : %s'):format(jobName, kind, tostring(affected))) end
         notify(src, 'Opération refusée : solde, autorisation ou compte invalide.', 'error')
         return
     end
 
+    -- Keep the character lock until the in-memory player record reflects the
+    -- committed SQL balance. Otherwise another economy operation can acquire
+    -- the lock in the gap and then have its newer cash value overwritten here.
     if kind == 'deposit' then
         player.cash = player.cash - amount
     else
         player.cash = player.cash + amount
     end
+    exports['rp_core']:ReleaseCharacterLock(lockIds)
     local balance = kind == 'deposit' and (tonumber(account.balance) + amount) or (tonumber(account.balance) - amount)
     local playerName = (tostring(player.firstname or '') .. ' ' .. tostring(player.lastname or '')):gsub('^%s*(.-)%s*$', '%1')
     local logOk, logErr = pcall(MySQL.insert.await,
