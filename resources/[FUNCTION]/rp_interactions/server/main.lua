@@ -190,6 +190,11 @@ RegisterNetEvent('rp_interactions:executeAction', function(targetId, action, amo
             notify(src, 'error', 'Le paiement a échoué : solde modifié ou sauvegarde indisponible.')
             return
         end
+
+        -- Keep the authoritative in-memory player records in sync with the
+        -- atomic SQL transfer before notifying either client.
+        local sourceNewBank = (tonumber(player.bank) or 0) + cost
+        local targetNewBank = (tonumber(target.bank) or 0) - cost
         target.bank, player.bank = targetNewBank, sourceNewBank
         TriggerClientEvent('rp_core:client:updateBank', targetId, target.bank)
         TriggerClientEvent('rp_core:client:updateBank', src, player.bank)

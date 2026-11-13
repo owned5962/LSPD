@@ -89,7 +89,8 @@ def test_barber_shops_open_dedicated_live_hair_preview_and_restore_on_cancel():
     assert "RegisterNetEvent('rp_clothing:purchaseHair'" in server
     assert "player.removeCash(price)" in server
     assert "UPDATE characters SET skin = ?" in server
-    assert "player.addCash(price)" in server
+    assert "RefundCash(src, player, price, 'barber purchase')" in server
+    assert "remboursement non confirmé" in server
     assert 'id="barber-panel"' in html
     assert "openBarber" in ui and "previewHair" in ui and "purchaseHair" in ui
     assert "barberActive" in ui

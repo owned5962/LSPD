@@ -1,5 +1,25 @@
+local function RefundCash(src, player, amount, operation)
+    if not player or type(player.addCash) ~= 'function' then return false end
+    local ok, refunded = pcall(player.addCash, amount)
+    if not ok or refunded ~= true then
+        print(('[rp_clothing] Refund failed for player %s during %s (amount %s): %s')
+            :format(tostring(src), tostring(operation), tostring(amount), tostring(refunded)))
+        return false
+    end
+    return true
+end
+
+local function CloneSkin(value)
+    local copy = {}
+    if type(value) == 'table' then
+        for key, entry in pairs(value) do copy[key] = entry end
+    end
+    return copy
+end
+
 RegisterNetEvent('rp_clothing:purchaseHair', function(rawStyle, rawColor, rawHighlight)
     local src = source
+    if not exports['rp_core']:CanPerformAction(src, 'clothing:purchase_hair', 1500) then return end
     local player = exports['rp_core']:GetPlayerFromId(src)
     local style, color, highlight = tonumber(rawStyle), tonumber(rawColor), tonumber(rawHighlight) or 0
     if not player or not style or not color or style % 1 ~= 0 or color % 1 ~= 0
@@ -15,17 +35,17 @@ RegisterNetEvent('rp_clothing:purchaseHair', function(rawStyle, rawColor, rawHig
         return
     end
 
-    local skin = type(player.skin) == 'table' and player.skin or {}
-    local previousStyle, previousColor, previousHighlight = skin.hairStyle, skin.hairColor, skin.hairHighlight
+    local skin = CloneSkin(player.skin)
     skin.hairStyle, skin.hairColor, skin.hairHighlight = style, color, highlight
     local ok, result = pcall(MySQL.update.await,
         'UPDATE characters SET skin = ? WHERE id = ? AND identifier = ?',
         { json.encode(skin), player.charId, player.identifier }
     )
     if not ok or type(result) ~= 'number' or result < 0 then
-        skin.hairStyle, skin.hairColor, skin.hairHighlight = previousStyle, previousColor, previousHighlight
-        player.addCash(price)
-        TriggerClientEvent('rp_clothing:barberPurchaseResult', src, { success = false, message = 'Sauvegarde impossible : paiement remboursé.' })
+        local refunded = RefundCash(src, player, price, 'barber purchase')
+        local message = refunded and 'Sauvegarde impossible : paiement remboursé.'
+            or 'Sauvegarde impossible : remboursement non confirmé. Contactez un administrateur.'
+        TriggerClientEvent('rp_clothing:barberPurchaseResult', src, { success = false, message = message })
         print(('[rp_clothing] Barber save failed for character %s: %s'):format(player.charId, tostring(result)))
         return
     end
@@ -64,13 +84,20 @@ local function SanitizeAppearance(data)
         clean.props[tostring(prop)] = { drawable = drawable, texture = texture }
     end
 
-    clean.hairStyle = tonumber(data.hairStyle) or 0
-    clean.hairColor = math.max(0, math.min(63, tonumber(data.hairColor) or 0))
+    local hairStyle = tonumber(data.hairStyle) or 0
+    local hairColor = tonumber(data.hairColor) or 0
+    if hairStyle ~= hairStyle or hairStyle % 1 ~= 0 or hairStyle < 0 or hairStyle > 200
+        or hairColor ~= hairColor or hairColor % 1 ~= 0 then
+        return nil
+    end
+    clean.hairStyle = hairStyle
+    clean.hairColor = math.max(0, math.min(63, hairColor))
     return clean
 end
 
 RegisterNetEvent('rp_clothing:saveOutfit', function(name, skinData)
     local src = source
+    if not exports['rp_core']:CanPerformAction(src, 'clothing:save_outfit', 2500) then return end
     local player = exports['rp_core']:GetPlayerFromId(src)
     if not player then
         Notify(src, 'Personnage non chargé.', 'error')
@@ -92,7 +119,7 @@ RegisterNetEvent('rp_clothing:saveOutfit', function(name, skinData)
         return
     end
 
-    local skin = type(player.skin) == 'table' and player.skin or {}
+    local skin = CloneSkin(player.skin)
     skin.components = appearance.components
     skin.props = appearance.props
     skin.hairStyle = appearance.hairStyle
@@ -113,8 +140,9 @@ RegisterNetEvent('rp_clothing:saveOutfit', function(name, skinData)
     end)
 
     if not ok then
-        player.addCash(150)
-        Notify(src, 'Enregistrement impossible : paiement annulé.', 'error')
+        local refunded = RefundCash(src, player, 150, 'outfit save')
+        Notify(src, refunded and 'Enregistrement impossible : paiement annulé.'
+            or 'Enregistrement impossible : remboursement non confirmé. Contactez un administrateur.', 'error')
         print(('[rp_clothing] Outfit save failed for %s: %s'):format(player.identifier, tostring(result)))
         return
     end
@@ -126,6 +154,7 @@ end)
 
 RegisterNetEvent('rp_clothing:requestOutfits', function()
     local src = source
+    if not exports['rp_core']:CanPerformAction(src, 'clothing:request_outfits', 1000) then return end
     local player = exports['rp_core']:GetPlayerFromId(src)
     if not player then return end
 
@@ -155,6 +184,7 @@ end)
 
 RegisterNetEvent('rp_clothing:applySavedOutfit', function(rawOutfitId)
     local src = source
+    if not exports['rp_core']:CanPerformAction(src, 'clothing:apply_outfit', 1000) then return end
     local player = exports['rp_core']:GetPlayerFromId(src)
     local outfitId = tonumber(rawOutfitId)
     if not player or not outfitId or outfitId % 1 ~= 0 or outfitId < 1 then return end
@@ -179,14 +209,14 @@ RegisterNetEvent('rp_clothing:applySavedOutfit', function(rawOutfitId)
         return
     end
 
-    local skin = type(player.skin) == 'table' and player.skin or {}
+    local skin = CloneSkin(player.skin)
     skin.components, skin.props = appearance.components, appearance.props
     skin.hairStyle, skin.hairColor = appearance.hairStyle, appearance.hairColor
     local saved, result = pcall(MySQL.update.await,
         'UPDATE characters SET skin = ? WHERE id = ? AND identifier = ?',
         { json.encode(skin), player.charId, player.identifier }
     )
-    if not saved then
+    if not saved or type(result) ~= 'number' or result < 0 then
         Notify(src, 'Impossible de sauvegarder cette tenue.', 'error')
         print(('[rp_clothing] Outfit apply failed for character %s: %s'):format(player.charId, tostring(result)))
         return

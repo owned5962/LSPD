@@ -51,13 +51,50 @@ local function chargePlayer(src, amount, reason)
     if result ~= true then return false end
     TriggerEvent('rp_economy:server:logTransaction', player.charId, 'withdraw', amount,
         'Location de véhicules', reason)
-    return true
+    return true, player
 end
 
-local function closeRental(src, reason)
+local function refundRental(src, rental, amount, reason)
+    amount = math.floor(tonumber(amount) or 0)
+    if amount < 1 then return true end
+
+    local player = exports['rp_core']:GetPlayerFromId(src)
+    if player and player.charId == rental.charId and type(player.addCash) == 'function' then
+        local ok, refunded = pcall(player.addCash, amount, reason or 'Remboursement location', 'deposit')
+        if ok and refunded == true then
+            TriggerEvent('rp_economy:server:logTransaction', rental.charId, 'deposit', amount,
+                'Location de véhicules', reason or 'Remboursement location')
+            return true
+        end
+        print(('[rp_vehicle_rental] CRITICAL: refund failed for player %s, amount %s'):format(src, amount))
+        return false
+    end
+
+    local ok, affected = pcall(MySQL.update.await,
+        'UPDATE characters SET cash = cash + ? WHERE id = ? AND identifier = ?',
+        { amount, rental.charId, rental.identifier })
+    if ok and tonumber(affected) == 1 then
+        TriggerEvent('rp_economy:server:logTransaction', rental.charId, 'deposit', amount,
+            'Location de véhicules', reason or 'Remboursement location')
+        return true
+    end
+
+    print(('[rp_vehicle_rental] CRITICAL: offline refund failed for character %s, amount %s'):format(
+        tostring(rental.charId), amount))
+    return false
+end
+
+local function closeRental(src, reason, refundAmount)
     local rental = rentals[src]
     if not rental then return end
     rentals[src] = nil
+    if rental.netId then
+        local entity = NetworkGetEntityFromNetworkId(rental.netId)
+        if entity ~= 0 and DoesEntityExist(entity) then DeleteEntity(entity) end
+    end
+    if refundAmount and refundAmount > 0 then
+        refundRental(src, rental, refundAmount, reason or 'Location annulée')
+    end
     TriggerClientEvent('rp_vehicle_rental:client:forceReturn', src, rental.netId, reason or 'Location terminée')
 end
 
@@ -101,13 +138,16 @@ RegisterNetEvent('rp_vehicle_rental:server:rent', function(locationKey, model, r
     end
 
     local cost = rentalCost(minutes)
-    if not chargePlayer(src, cost, ('Location %s - %s minutes'):format(vehicle.label, minutes)) then
+    local paid, player = chargePlayer(src, cost, ('Location %s - %s minutes'):format(vehicle.label, minutes))
+    if not paid or not player then
         notify(src, 'Fonds insuffisants ou débit impossible.', 'error')
         return
     end
 
     local expiresAt = os.time() + (minutes * 60)
     rentals[src] = {
+        charId = player.charId,
+        identifier = player.identifier,
         location = actualLocation,
         model = vehicle.model,
         label = vehicle.label,
@@ -137,7 +177,8 @@ RegisterNetEvent('rp_vehicle_rental:server:registerVehicle', function(netId)
         or NetworkGetEntityOwner(entity) ~= src
         or #(GetEntityCoords(entity) - vector3(Config.Locations[rental.location].vehicle.x,
             Config.Locations[rental.location].vehicle.y, Config.Locations[rental.location].vehicle.z)) > 60.0 then
-        closeRental(src, 'Le véhicule n’a pas pu être enregistré.')
+        -- Never delete an arbitrary client-owned entity from an untrusted netId.
+        closeRental(src, 'Le véhicule n’a pas pu être enregistré. Paiement remboursé.', rental.amount)
         return
     end
     rental.netId = netId
@@ -147,14 +188,7 @@ RegisterNetEvent('rp_vehicle_rental:server:spawnFailed', function()
     local src = source
     local rental = rentals[src]
     if not rental or rental.netId then return end
-    rentals[src] = nil
-    local player = exports['rp_core']:GetPlayerFromId(src)
-    if player and type(player.addCash) == 'function' then
-        local ok, refunded = pcall(player.addCash, rental.amount, 'Remboursement location impossible', 'deposit')
-        if not ok or refunded ~= true then
-            print(('[rp_vehicle_rental] Refund failed for player %s, amount %s'):format(src, tostring(rental.amount)))
-        end
-    end
+    closeRental(src, 'Location annulée : le véhicule n’a pas pu être créé. Paiement remboursé.', rental.amount)
     notify(src, 'Location annulée : le véhicule n’a pas pu être créé. Votre paiement a été remboursé.', 'error')
 end)
 
@@ -179,6 +213,7 @@ RegisterNetEvent('rp_vehicle_rental:server:renew', function(rawMinutes)
     rental.expiresAt = os.time() + (minutes * 60)
     rental.graceUntil = nil
     rental.minutes = minutes
+    rental.amount = cost
     TriggerClientEvent('rp_vehicle_rental:client:renewed', src, rental.expiresAt, minutes)
     notify(src, ('Location prolongée de %d minutes pour %d $.'):format(minutes, cost), 'success')
 end)
@@ -190,14 +225,38 @@ RegisterNetEvent('rp_vehicle_rental:server:decline', function()
     closeRental(src, 'Vous avez refusé la prolongation')
 end)
 
+local function calculateUnusedRefund(rental, now)
+    local duration = math.max(1, (tonumber(rental.minutes) or 1) * 60)
+    local remaining = rental.netId and math.max(0, math.min(duration, (tonumber(rental.expiresAt) or now) - now)) or duration
+    return math.floor((tonumber(rental.amount) or 0) * remaining / duration)
+end
+
 AddEventHandler('playerDropped', function()
     local src = source
     local rental = rentals[src]
-    if rental and rental.netId then
-        local entity = NetworkGetEntityFromNetworkId(rental.netId)
-        if entity ~= 0 and DoesEntityExist(entity) then DeleteEntity(entity) end
+    if rental then
+        if rental.netId then
+            local entity = NetworkGetEntityFromNetworkId(rental.netId)
+            if entity ~= 0 and DoesEntityExist(entity) then DeleteEntity(entity) end
+        end
+        local refund = calculateUnusedRefund(rental, os.time())
+        if refund > 0 then refundRental(src, rental, refund, 'Remboursement après déconnexion') end
     end
     rentals[src] = nil
+end)
+
+AddEventHandler('onResourceStop', function(resourceName)
+    if resourceName ~= GetCurrentResourceName() then return end
+    local now = os.time()
+    for src, rental in pairs(rentals) do
+        if rental.netId then
+            local entity = NetworkGetEntityFromNetworkId(rental.netId)
+            if entity ~= 0 and DoesEntityExist(entity) then DeleteEntity(entity) end
+        end
+        local refund = calculateUnusedRefund(rental, now)
+        if refund > 0 then refundRental(src, rental, refund, 'Remboursement après redémarrage de la location') end
+        rentals[src] = nil
+    end
 end)
 
 CreateThread(function()

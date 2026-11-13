@@ -205,18 +205,25 @@ CreateThread(function()
     end
 end)
 
+local function ApplyWantedSettings()
+    local player = PlayerId()
+    SetMaxWantedLevel(0)
+    ClearPlayerWantedLevel(player)
+    SetPlayerWantedLevel(player, 0, false)
+    SetPlayerWantedLevelNow(player, false)
+    SetPoliceIgnorePlayer(player, true)
+    SetDispatchCopsForPlayer(player, false)
+    SetCreateRandomCops(false)
+    SetCreateRandomCopsNotOnScenarios(false)
+    SetCreateRandomCopsOnScenarios(false)
+end
+
+-- Les natives de wanted/dispatch ne nécessitent pas une boucle permanente.
+ApplyWantedSettings()
+AddEventHandler('playerSpawned', ApplyWantedSettings)
+
 CreateThread(function()
     while true do
-        SetMaxWantedLevel(0)
-        ClearPlayerWantedLevel(PlayerId())
-        SetPlayerWantedLevel(PlayerId(), 0, false)
-        SetPlayerWantedLevelNow(PlayerId(), false)
-        SetPoliceIgnorePlayer(PlayerId(), true)
-        SetDispatchCopsForPlayer(PlayerId(), false)
-        SetCreateRandomCops(false)
-        SetCreateRandomCopsNotOnScenarios(false)
-        SetCreateRandomCopsOnScenarios(false)
-
         if activeOfficer and DoesEntityExist(activeOfficer) and not interactionOpen and not inCustody then
             local distance = #(GetEntityCoords(activeOfficer) - GetEntityCoords(PlayerPedId()))
             if distance > 150.0 then removeOfficer() end

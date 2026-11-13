@@ -72,6 +72,24 @@ def test_dispatch_alerts_are_limited_to_police_on_duty():
     assert "policeWaypoint" in tablet_client and "markPoliceAlert" in tablet_client
     assert "GPS suspect" in tablet_ui and "Prendre en charge" in tablet_ui
 
+
+def test_world_density_is_per_frame_but_police_dispatch_settings_are_not():
+    world = read("resources/[FUNCTION]/rp_world/client/main.lua")
+    police = read("resources/[FUNCTION]/rp_police_interaction/client/main.lua")
+    density_loop = world.split("CreateThread(function()", 1)[1]
+    assert "SetPedDensityMultiplierThisFrame" in density_loop
+    assert "SetScenarioPedDensityMultiplierThisFrame" in density_loop
+    assert "SetVehicleDensityMultiplierThisFrame" in density_loop
+    assert "Wait(0)" in density_loop
+    assert "ApplyPoliceSettings()" in world
+    assert "AddEventHandler('playerSpawned', ApplyPoliceSettings)" in world
+    assert "ApplyWantedSettings()" in police
+    assert "AddEventHandler('playerSpawned', ApplyWantedSettings)" in police
+    wanted_section = police.split("local function ApplyWantedSettings()", 1)[1]
+    police_loop = wanted_section.split("CreateThread(function()", 1)[1].split("AddEventHandler('onResourceStop'", 1)[0]
+    assert "SetMaxWantedLevel(0)" not in police_loop
+    assert "SetPoliceIgnorePlayer" not in police_loop
+
 if __name__ == "__main__":
     checks = [value for name, value in globals().items() if name.startswith("test_") and callable(value)]
     for check in checks:

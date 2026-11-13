@@ -32,23 +32,11 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y lua5.4
 
-      - name: Verify repository structure and regression checks
+      - name: Run complete repository regression suite (all Python tests and Lua unit tests)
         run: |
           python tests/verify_server.py
-          python tests/test_security_regressions.py
-          python tests/test_creator_organizations.py
-          python tests/test_admin_f10_open.py
-          python tests/test_anticheat_statistics.py
-          python tests/test_auto_rescue.py
-          python tests/test_vehicle_rental.py
-          python tests/test_ammunation_interaction.py
-          python tests/test_vehicle_dealership.py
-          python tests/test_bank_transactions.py
-          python tests/test_vehicle_rental_frontdesk.py
-          python tests/test_drivingschool.py
-          python tests/test_fuel_system.py
-          python -m pytest -q tests/test_clothing_catalog.py tests/test_territory_claims.py
-          python tests/test_player_session_contract.py
+          python -m pytest -q tests
+          lua5.4 tests/test_core_utils.lua
 
       - name: Compile every Lua file
         shell: bash

@@ -604,7 +604,8 @@ def test_character_spawn_cannot_wait_forever_on_screen_fade():
     assert "local fadeStartedAt = GetGameTimer() % SPAWN_TIMER_MODULUS" in client
     assert "SpawnWaitExpired(fadeStartedAt, 5000)" in client
     assert "local collisionStartedAt = GetGameTimer() % SPAWN_TIMER_MODULUS" in client
-    assert "SpawnWaitExpired(collisionStartedAt, 5000)" in client
+    spawn_handler = client.split("RegisterNetEvent('rp_characters:client:spawnPlayer'", 1)[1]
+    assert "SpawnWaitExpired(collisionStartedAt, 10000)" in spawn_handler
     assert "local function NormalizeClientSpawn(coords)" in client
     assert "Utils.NormalizePosition(savedPosition, Config.DefaultSpawn)" in read("resources/[CORE]/rp_core/server/player.lua")
     assert "ShutdownLoadingScreen()" in client
@@ -1415,7 +1416,106 @@ def test_job_bank_is_available_in_f4_job_tablet_with_server_side_permissions():
     assert "if fromJobMenu == true then" in bank_server
     assert "account.allow_deposit" in bank_server and "account.allow_withdraw" in bank_server
 
+
+def test_schema_migrations_are_safe_after_a_fresh_schema_import():
+    metadata_migration = read("migrations/004_character_metadata.sql")
+    salary_index_migration = read("migrations/008_job_salary_stats_index.sql")
+    assert "INFORMATION_SCHEMA.COLUMNS" in metadata_migration
+    assert "COLUMN_NAME = 'metadata'" in metadata_migration
+    assert "PREPARE rp_metadata_stmt" in metadata_migration
+    assert "INFORMATION_SCHEMA.STATISTICS" in salary_index_migration
+    assert "INDEX_NAME = 'idx_bank_salary_reason_created'" in salary_index_migration
+    assert "PREPARE rp_salary_index_stmt" in salary_index_migration
+
+def test_interaction_billing_keeps_in_memory_balances_in_sync_with_sql():
+    source = read("resources/[FUNCTION]/rp_interactions/server/main.lua")
+    assert "UPDATE characters AS sender JOIN characters AS target" in source
+    assert "local sourceNewBank = (tonumber(player.bank) or 0) + cost" in source
+    assert "local targetNewBank = (tonumber(target.bank) or 0) - cost" in source
+    assert "target.bank, player.bank = targetNewBank, sourceNewBank" in source
+    assert source.index("tonumber(affectedRows) ~= 2") < source.index("local sourceNewBank")
+
+def test_job_interaction_menu_renders_server_labels_as_text():
+    app = read("resources/[FUNCTION]/rp_interactions/html/js/app.js")
+    assert "label.textContent = String(act.label || '')" in app
+    assert "row.innerHTML" not in app
+    assert "/^fa-[a-z0-9-]+$/.test(act.icon)" in app
+
+def test_clothing_server_actions_are_rate_limited():
+    source = read("resources/[FUNCTION]/rp_clothing/server/main.lua")
+    expected = {
+        "rp_clothing:purchaseHair": "clothing:purchase_hair",
+        "rp_clothing:saveOutfit": "clothing:save_outfit",
+        "rp_clothing:requestOutfits": "clothing:request_outfits",
+        "rp_clothing:applySavedOutfit": "clothing:apply_outfit",
+    }
+    for event, action in expected.items():
+        handler = source.split("RegisterNetEvent('" + event + "'", 1)[1]
+        assert "CanPerformAction(src, '" + action + "'" in handler.split("end)", 1)[0]
+
+def test_job_tablet_duty_display_cannot_be_spoofed_by_client():
+    server = read("resources/[FUNCTION]/rp_tablet_job/server/main.lua")
+    handler = server.split("RegisterNetEvent('rp_tablet_job:server:setDutyState'", 1)[1].split("RegisterNetEvent", 1)[0]
+    assert "CanPerformAction(src, 'rp_tablet_job:setDutyState', 500)" in handler
+    assert "player.duty ~= status" in handler
+    assert "dutyStates[src] = player.duty == true" in handler
+
+def test_clothing_changes_do_not_mutate_live_skin_before_database_success():
+    source = read("resources/[FUNCTION]/rp_clothing/server/main.lua")
+    assert "local function CloneSkin(value)" in source
+    handlers = (
+        source.split("RegisterNetEvent('rp_clothing:purchaseHair'", 1)[1].split("local function Notify", 1)[0],
+        source.split("RegisterNetEvent('rp_clothing:saveOutfit'", 1)[1].split("RegisterNetEvent('rp_clothing:requestOutfits'", 1)[0],
+        source.split("RegisterNetEvent('rp_clothing:applySavedOutfit'", 1)[1],
+    )
+    for handler in handlers:
+        assert "local skin = CloneSkin(player.skin)" in handler
+        assert handler.index("player.skin = skin") > handler.index("MySQL.")
+
+def test_clothing_refunds_are_verified_before_claiming_success():
+    source = read("resources/[FUNCTION]/rp_clothing/server/main.lua")
+    assert "local function RefundCash(src, player, amount, operation)" in source
+    assert "local ok, refunded = pcall(player.addCash, amount)" in source
+    assert "remboursement non confirmé" in source
+
+
+def test_clothing_apply_rejects_invalid_database_update_result():
+    source = read("resources/[FUNCTION]/rp_clothing/server/main.lua")
+    handler = source.split("RegisterNetEvent('rp_clothing:applySavedOutfit'", 1)[1]
+    assert "if not saved or type(result) ~= 'number' or result < 0 then" in handler
+
+def test_clothing_hair_appearance_is_integer_and_range_validated():
+    source = read("resources/[FUNCTION]/rp_clothing/server/main.lua")
+    assert "hairStyle % 1 ~= 0 or hairStyle < 0 or hairStyle > 200" in source
+    assert "hairColor ~= hairColor or hairColor % 1 ~= 0" in source
+    assert "math.max(0, math.min(63, hairColor))" in source
+
+def test_vehicle_purchases_and_garage_actions_are_recovered_on_resource_stop():
+    dealership = read("resources/[FUNCTION]/rp_vehicle_dealership/server/main.lua")
+    garages = read("resources/[FUNCTION]/rp_garages/server/main.lua")
+    assert "AddEventHandler('onResourceStop'" in dealership
+    assert "refundPurchase(src, purchase, 'Achat annulé lors du redémarrage" in dealership
+    assert "DeleteEntity(vehicle)" in dealership
+    assert "AddEventHandler('onResourceStop'" in garages
+    assert "refundPendingTune(src, tuning, 'Personnalisation annulée lors du redémarrage" in garages
+    assert "UPDATE rp_owned_vehicles SET stored = 1 WHERE id = ? AND character_id = ? AND stored = 0" in garages
+
+def test_fuel_pending_refunds_complete_synchronously_on_resource_stop():
+    source = read("resources/[FUNCTION]/rp_fuel/server/main.lua")
+    stop_handler = source.split("AddEventHandler('onResourceStop'", 1)[1]
+    assert "local function refundPaymentNow(pending, reason)" in source
+    assert "refundPaymentNow(pending, 'redémarrage de la ressource')" in stop_handler
+    assert "AcquireCharacterLock(locks)" in source
+    assert "ReleaseCharacterLock(locks)" in source
+
+def test_auto_rescue_finish_event_requires_active_session_and_cooldown():
+    source = read("resources/[FUNCTION]/rp_auto_rescue/server/main.lua")
+    handler = source.split("RegisterNetEvent('rp_auto_rescue:server:finish'", 1)[1].split("AddEventHandler('playerDropped'", 1)[0]
+    assert "if not activeRescues[src]" in handler
+    assert "CanPerformAction(src, 'auto_rescue:finish', 500)" in handler
+
 if __name__ == "__main__":
-    test_server_cfg_omits_default_framework_resources_and_starts_territories_last()
-    test_character_appearance_recovers_missing_clothing_and_clears_invalid_props()
-    test_job_bank_is_available_in_f4_job_tablet_with_server_side_permissions()
+    checks = [value for name, value in globals().items() if name.startswith("test_") and callable(value)]
+    for check in checks:
+        check()
+    print(f"All {len(checks)} security regression checks passed.")

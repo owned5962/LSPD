@@ -18,7 +18,13 @@ function renderActions(actions) {
     actions.forEach(act => {
         const row = document.createElement('div');
         row.className = 'action-row';
-        row.innerHTML = `<i class="fa-solid ${act.icon || 'fa-bolt'}"></i> <span>${act.label}</span>`;
+        const iconName = typeof act.icon === 'string' && /^fa-[a-z0-9-]+$/.test(act.icon)
+            ? act.icon : 'fa-bolt';
+        const icon = document.createElement('i');
+        icon.className = 'fa-solid ' + iconName;
+        const label = document.createElement('span');
+        label.textContent = String(act.label || '');
+        row.append(icon, document.createTextNode(' '), label);
         row.addEventListener('click', () => {
             let amount = 0;
             if (act.id === 'billing' || act.id === 'fine') {

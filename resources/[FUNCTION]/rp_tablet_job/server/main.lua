@@ -45,11 +45,12 @@ end
 
 RegisterNetEvent('rp_tablet_job:server:setDutyState', function(status)
     local src = source
-    if type(status) ~= 'boolean' then return end
+    if type(status) ~= 'boolean'
+        or not exports['rp_core']:CanPerformAction(src, 'rp_tablet_job:setDutyState', 500) then return end
     local player = getPlayer(src)
-    if not player or not player.job or player.job == 'unemployed' then return end
-    -- Display-only status reported after the job module sends its validated update.
-    dutyStates[src] = status
+    if not player or not player.job or player.job == 'unemployed' or player.duty ~= status then return end
+    -- The core player record is authoritative; the client cannot spoof roster duty.
+    dutyStates[src] = player.duty == true
 end)
 
 RegisterNetEvent('rp_tablet_job:server:requestSalaryStats', function()
