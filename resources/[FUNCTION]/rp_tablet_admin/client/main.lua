@@ -177,6 +177,7 @@ RegisterServerCallback('setWeatherTime', 'rp_tablet_admin:server:setWeatherTime'
 RegisterServerCallback('broadcastAnnouncement', 'rp_tablet_admin:server:broadcastAnnouncement',
     { 'message' })
 RegisterServerCallback('requestPlayerPositions', 'rp_tablet_admin:server:requestPlayerPositions', {})
+RegisterServerCallback('teleportToMapPoint', 'rp_tablet_admin:server:teleportToMapPoint', { 'x', 'y' })
 RegisterServerCallback('requestAuditLogs', 'rp_tablet_admin:server:requestAuditLogs', {})
 RegisterServerCallback('requestReports', 'rp_tablet_admin:server:requestReports', {})
 RegisterServerCallback('updateReport', 'rp_tablet_admin:server:updateReport', { 'reportId', 'status' })
@@ -385,6 +386,26 @@ end)
 
 RegisterNetEvent('rp_tablet_admin:client:freezeToggle', function(freeze)
     FreezeEntityPosition(PlayerPedId(), freeze == true)
+end)
+
+RegisterNetEvent('rp_tablet_admin:client:teleportToMapPoint', function(coords)
+    if type(coords) ~= 'table' or not tonumber(coords.x) or not tonumber(coords.y) then return end
+    local x, y = tonumber(coords.x), tonumber(coords.y)
+    local ped = PlayerPedId()
+    RequestCollisionAtCoord(x, y, 1000.0)
+    SetFocusPosAndVel(x, y, 1000.0, 0.0, 0.0, 0.0)
+    local found, groundZ = false, 0.0
+    local deadline = GetGameTimer() + 5000
+    while GetGameTimer() < deadline do
+        found, groundZ = GetGroundZFor_3dCoord(x, y, 1000.0, false)
+        if found then break end
+        RequestCollisionAtCoord(x, y, 1000.0)
+        Wait(50)
+    end
+    local z = found and (groundZ + 1.0) or 100.0
+    SetEntityCoordsNoOffset(ped, x, y, z, false, false, false)
+    ClearFocus()
+    Notify('Téléportation effectuée au point défini sur la carte.', 'success')
 end)
 
 RegisterNetEvent('rp_tablet_admin:client:teleport', function(coords)
