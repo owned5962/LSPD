@@ -919,16 +919,16 @@ def test_cfx_default_resources_are_documented_and_start_order_is_valid():
     assert config.rindex("ensure rp_territories") > config.index("ensure job_smuggler")
     assert "set onesync on" in config
     assert not any(line.strip() == "onesync on" for line in config.splitlines())
-    assert "cfx-server-data" in readme
-    assert "bash install-cfx-defaults.sh" in readme
-    assert "install-cfx-defaults.ps1" in readme
+    assert "# Los Santos Roleplay" in readme
+    assert "## Métiers disponibles" in readme
+    assert "## Fonctionnalités présentes" in readme
     windows_installer = read("install-cfx-defaults.ps1")
     for resource in ("spawnmanager", "sessionmanager", "hardcap", "baseevents"):
         assert resource in windows_installer
     installer = read("install-cfx-defaults.sh")
     for resource in ("spawnmanager", "sessionmanager", "hardcap", "baseevents"):
         assert resource in installer
-    assert "spawnmanager" in readme and "baseevents" in readme
+    assert "Installation" not in readme and "cfx-server-data" not in readme
 
 
 
