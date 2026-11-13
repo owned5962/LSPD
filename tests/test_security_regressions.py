@@ -1504,3 +1504,11 @@ def test_vehicle_purchases_and_garage_actions_are_recovered_on_resource_stop():
     assert "AddEventHandler('onResourceStop'" in garages
     assert "refundPendingTune(src, tuning, 'Personnalisation annulée lors du redémarrage" in garages
     assert "UPDATE rp_owned_vehicles SET stored = 1 WHERE id = ? AND character_id = ? AND stored = 0" in garages
+
+def test_fuel_pending_refunds_complete_synchronously_on_resource_stop():
+    source = read("resources/[FUNCTION]/rp_fuel/server/main.lua")
+    stop_handler = source.split("AddEventHandler('onResourceStop'", 1)[1]
+    assert "local function refundPaymentNow(pending, reason)" in source
+    assert "refundPaymentNow(pending, 'redémarrage de la ressource')" in stop_handler
+    assert "AcquireCharacterLock(locks)" in source
+    assert "ReleaseCharacterLock(locks)" in source
