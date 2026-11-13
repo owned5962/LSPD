@@ -1430,3 +1430,11 @@ def test_schema_migrations_are_safe_after_a_fresh_schema_import():
     assert "INFORMATION_SCHEMA.STATISTICS" in salary_index_migration
     assert "INDEX_NAME = 'idx_bank_salary_reason_created'" in salary_index_migration
     assert "PREPARE rp_salary_index_stmt" in salary_index_migration
+
+def test_interaction_billing_keeps_in_memory_balances_in_sync_with_sql():
+    source = read("resources/[FUNCTION]/rp_interactions/server/main.lua")
+    assert "UPDATE characters AS sender JOIN characters AS target" in source
+    assert "local sourceNewBank = (tonumber(player.bank) or 0) + cost" in source
+    assert "local targetNewBank = (tonumber(target.bank) or 0) - cost" in source
+    assert "target.bank, player.bank = targetNewBank, sourceNewBank" in source
+    assert source.index("tonumber(affectedRows) ~= 2") < source.index("local sourceNewBank")
