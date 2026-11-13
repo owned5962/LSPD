@@ -1444,3 +1444,15 @@ def test_job_interaction_menu_renders_server_labels_as_text():
     assert "label.textContent = String(act.label || '')" in app
     assert "row.innerHTML" not in app
     assert "/^fa-[a-z0-9-]+$/.test(act.icon)" in app
+
+def test_clothing_server_actions_are_rate_limited():
+    source = read("resources/[FUNCTION]/rp_clothing/server/main.lua")
+    expected = {
+        "rp_clothing:purchaseHair": "clothing:purchase_hair",
+        "rp_clothing:saveOutfit": "clothing:save_outfit",
+        "rp_clothing:requestOutfits": "clothing:request_outfits",
+        "rp_clothing:applySavedOutfit": "clothing:apply_outfit",
+    }
+    for event, action in expected.items():
+        handler = source.split("RegisterNetEvent('" + event + "'", 1)[1]
+        assert "CanPerformAction(src, '" + action + "'" in handler.split("end)", 1)[0]
