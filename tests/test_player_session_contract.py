@@ -204,7 +204,9 @@ def test_character_spawn_uses_validated_coordinates_and_wrap_safe_timeouts():
     player = (CORE / "server/player.lua").read_text(encoding="utf-8")
     character_server = (CHARACTERS / "server/main.lua").read_text(encoding="utf-8")
     character_client = (CHARACTERS / "client/main.lua").read_text(encoding="utf-8")
-    assert "local function NormalizePosition(value)" in player
+    assert "Utils.NormalizePosition(savedPosition, Config.DefaultSpawn)" in player
+    utils = (CORE / "shared/utils.lua").read_text(encoding="utf-8")
+    assert "function Utils.NormalizePosition(value, fallback)" in utils
     assert "x < -6000 or x > 6000 or y < -6000 or y > 6000" in player
     assert "z < -500 or z > 2000" in player
     assert "self.position = NormalizePosition(savedPosition)" in player
