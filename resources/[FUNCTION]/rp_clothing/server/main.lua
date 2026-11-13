@@ -1,3 +1,11 @@
+local function CloneSkin(value)
+    local copy = {}
+    if type(value) == 'table' then
+        for key, entry in pairs(value) do copy[key] = entry end
+    end
+    return copy
+end
+
 RegisterNetEvent('rp_clothing:purchaseHair', function(rawStyle, rawColor, rawHighlight)
     local src = source
     if not exports['rp_core']:CanPerformAction(src, 'clothing:purchase_hair', 1500) then return end
@@ -16,15 +24,13 @@ RegisterNetEvent('rp_clothing:purchaseHair', function(rawStyle, rawColor, rawHig
         return
     end
 
-    local skin = type(player.skin) == 'table' and player.skin or {}
-    local previousStyle, previousColor, previousHighlight = skin.hairStyle, skin.hairColor, skin.hairHighlight
+    local skin = CloneSkin(player.skin)
     skin.hairStyle, skin.hairColor, skin.hairHighlight = style, color, highlight
     local ok, result = pcall(MySQL.update.await,
         'UPDATE characters SET skin = ? WHERE id = ? AND identifier = ?',
         { json.encode(skin), player.charId, player.identifier }
     )
     if not ok or type(result) ~= 'number' or result < 0 then
-        skin.hairStyle, skin.hairColor, skin.hairHighlight = previousStyle, previousColor, previousHighlight
         player.addCash(price)
         TriggerClientEvent('rp_clothing:barberPurchaseResult', src, { success = false, message = 'Sauvegarde impossible : paiement remboursé.' })
         print(('[rp_clothing] Barber save failed for character %s: %s'):format(player.charId, tostring(result)))
@@ -94,7 +100,7 @@ RegisterNetEvent('rp_clothing:saveOutfit', function(name, skinData)
         return
     end
 
-    local skin = type(player.skin) == 'table' and player.skin or {}
+    local skin = CloneSkin(player.skin)
     skin.components = appearance.components
     skin.props = appearance.props
     skin.hairStyle = appearance.hairStyle
@@ -183,7 +189,7 @@ RegisterNetEvent('rp_clothing:applySavedOutfit', function(rawOutfitId)
         return
     end
 
-    local skin = type(player.skin) == 'table' and player.skin or {}
+    local skin = CloneSkin(player.skin)
     skin.components, skin.props = appearance.components, appearance.props
     skin.hairStyle, skin.hairColor = appearance.hairStyle, appearance.hairColor
     local saved, result = pcall(MySQL.update.await,
