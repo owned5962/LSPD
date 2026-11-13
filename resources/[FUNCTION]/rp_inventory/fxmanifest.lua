@@ -13,7 +13,8 @@ shared_scripts {
 }
 
 client_scripts {
-    'client/main.lua'
+    'client/main.lua',
+    'client/job_storage.lua'
 }
 
 server_scripts {
@@ -27,5 +28,5 @@ files {
     'html/js/app.js'
 }
 
-dependencies { 'oxmysql', 'rp_core' }
+dependencies { 'oxmysql', 'rp_core', 'rp_ui' }
 
