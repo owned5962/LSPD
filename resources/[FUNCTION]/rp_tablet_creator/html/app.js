@@ -275,6 +275,7 @@ function resetJobEditor() {
     document.getElementById('new-job-category').value = 'commerce';
     document.getElementById('new-job-description').value = '';
     document.getElementById('new-job-whitelisted').checked = false;
+    document.getElementById('new-job-capacity').value = '0';
     for (let grade = 0; grade <= 4; grade++) {
         document.getElementById('new-job-grade-' + grade).value = ['Débutant', 'Employé', 'Confirmé', 'Responsable', 'Directeur'][grade];
         document.getElementById('new-job-salary-' + grade).value = [200, 300, 400, 500, 650][grade];
@@ -288,6 +289,7 @@ function readJobEditor() {
         category: document.getElementById('new-job-category').value.trim().toLowerCase(),
         description: document.getElementById('new-job-description').value.trim(),
         whitelisted: document.getElementById('new-job-whitelisted').checked,
+        maxEmployees: Number(document.getElementById('new-job-capacity').value),
         grades: {}
     };
     for (let grade = 0; grade <= 4; grade++) {
@@ -298,6 +300,7 @@ function readJobEditor() {
     }
     if (!/^[a-z][a-z0-9_]{2,39}$/.test(data.name) || data.label.length < 2 || data.description.length < 3
         || data.category.length < 1 || data.category.length > 32 || !/^[a-z][a-z0-9_]*$/.test(data.category)
+        || !Number.isInteger(data.maxEmployees) || data.maxEmployees < 0 || data.maxEmployees > 500
         || Object.values(data.grades).some(g => g.label.length < 2 || !Number.isInteger(g.salary) || g.salary < 0 || g.salary > 100000)) {
         creatorMessage('Vérifiez l’identifiant, la catégorie, la description et les cinq grades/salaires.'); return null;
     }
@@ -316,7 +319,8 @@ function renderCreatorJobs(jobs) {
         const row = document.createElement('div');
         row.className = 'org-row';
         const label = document.createElement('span');
-        label.textContent = (job.label || job.name) + ' · ' + job.name;
+        const capacity = Number(job.maxEmployees || 0) > 0 ? Number(job.maxEmployees) + ' employés max.' : 'Capacité illimitée';
+        label.textContent = (job.label || job.name) + ' · ' + job.name + ' · ' + capacity;
         const edit = document.createElement('button');
         edit.type = 'button';
         edit.textContent = 'Modifier';
@@ -328,6 +332,7 @@ function renderCreatorJobs(jobs) {
             document.getElementById('new-job-category').value = job.category || 'custom';
             document.getElementById('new-job-description').value = job.description || '';
             document.getElementById('new-job-whitelisted').checked = job.whitelisted === true;
+            document.getElementById('new-job-capacity').value = Number(job.maxEmployees || 0);
             for (let grade = 0; grade <= 4; grade++) {
                 const entry = job.grades?.[grade] || job.grades?.[String(grade)] || {};
                 document.getElementById('new-job-grade-' + grade).value = entry.label || ('Grade ' + grade);
