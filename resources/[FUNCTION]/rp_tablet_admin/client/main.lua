@@ -211,8 +211,8 @@ RegisterNetEvent('rp_tablet_admin:client:reports', function(reports)
     SendNUIMessage({ action = 'reports', reports = reports or {} })
 end)
 
-RegisterNetEvent('rp_tablet_admin:client:reportUpdated', function(reportId, status)
-    SendNUIMessage({ action = 'reportUpdated', reportId = reportId, status = status })
+RegisterNetEvent('rp_tablet_admin:client:reportUpdated', function(reportId, status, handledBy)
+    SendNUIMessage({ action = 'reportUpdated', reportId = reportId, status = status, handledBy = handledBy })
 end)
 
 RegisterNetEvent('rp_tablet_admin:client:startSpectate', function(targetId, targetCoords)
@@ -447,7 +447,11 @@ end)
 
 RegisterNetEvent('rp_tablet_admin:client:playerReportResult', function(success, message)
     SendNUIMessage({ action = 'playerReportResult', success = success == true, message = tostring(message or '') })
-    if not success then Notify(tostring(message or 'Signalement impossible.'), 'error') end
+    if success then
+        SetNuiFocus(false, false)
+    else
+        Notify(tostring(message or 'Signalement impossible.'), 'error')
+    end
 end)
 RegisterNetEvent('rp_tablet_admin:client:reportsRefresh', function()
     if isTabletOpen then TriggerServerEvent('rp_tablet_admin:server:requestReports') end
