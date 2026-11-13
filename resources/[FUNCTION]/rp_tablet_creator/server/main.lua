@@ -225,6 +225,15 @@ local function ensureCreatorTables()
             updated_by VARCHAR(80) NOT NULL,
             updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4]])
+        MySQL.query.await([[CREATE TABLE IF NOT EXISTS rp_creator_job_storage (
+            job VARCHAR(64) NOT NULL PRIMARY KEY,
+            x DOUBLE NOT NULL, y DOUBLE NOT NULL, z DOUBLE NOT NULL,
+            stash_enabled TINYINT(1) NOT NULL DEFAULT 1,
+            armory_enabled TINYINT(1) NOT NULL DEFAULT 1,
+            armory_items LONGTEXT NOT NULL,
+            updated_by VARCHAR(80) NOT NULL,
+            updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4]])
         MySQL.query.await([[CREATE TABLE IF NOT EXISTS rp_creator_settings (
             setting_key VARCHAR(64) NOT NULL PRIMARY KEY,
             setting_value VARCHAR(255) NOT NULL,
@@ -380,7 +389,21 @@ RegisterNetEvent('rp_tablet_creator:server:requestTools', function()
         local decodedOk, vehicles = pcall(json.decode, garage.vehicles or '[]')
         garage.vehicles = decodedOk and type(vehicles) == 'table' and vehicles or {}
     end
-    TriggerClientEvent('rp_tablet_creator:client:toolsData', src, jobList, blips, mapping, PROP_CATALOG, nil, nil, nil, nil, jobGarages)
+    local jobStorages = MySQL.query.await('SELECT job, x, y, z, stash_enabled, armory_enabled, armory_items FROM rp_creator_job_storage ORDER BY job ASC') or {}
+    for _, storage in ipairs(jobStorages) do
+        local decodedOk, items = pcall(json.decode, storage.armory_items or '[]')
+        storage.armory_items = decodedOk and type(items) == 'table' and items or {}
+    end
+    local storageCatalog = {}
+    if GetResourceState('rp_inventory') == 'started' then
+        local catalogOk, catalog = pcall(function() return exports['rp_inventory']:GetItemCatalog() end)
+        if catalogOk and type(catalog) == 'table' then
+            for _, item in ipairs(catalog) do
+                if item.type == 'weapon' then storageCatalog[#storageCatalog + 1] = item end
+            end
+        end
+    end
+    TriggerClientEvent('rp_tablet_creator:client:toolsData', src, jobList, blips, mapping, PROP_CATALOG, nil, nil, nil, nil, jobGarages, jobStorages, storageCatalog)
 end)
 
 
@@ -445,6 +468,7 @@ RegisterNetEvent('rp_tablet_creator:server:saveJobGarage', function(data)
     if GetResourceState('rp_garages') == 'started' then TriggerEvent('rp_garages:server:reloadJobGarages') end
     LogCreatorAction(src, 'save_job_garage', nil, jobName .. ' vehicles=' .. #vehicles)
     TriggerClientEvent('rp_tablet_creator:client:refreshTools', src)
+    if GetResourceState('rp_inventory') == 'started' then TriggerEvent('rp_inventory:server:reloadJobStorageConfigs') end
 end)
 
 RegisterNetEvent('rp_tablet_creator:server:deleteJobGarage', function(jobName)
@@ -465,6 +489,85 @@ RegisterNetEvent('rp_tablet_creator:server:deleteJobGarage', function(jobName)
     LogCreatorAction(src, 'delete_job_garage', nil, jobName)
     TriggerClientEvent('rp_tablet_creator:client:refreshTools', src)
 end)
+
+RegisterNetEvent('rp_tablet_creator:server:saveJobStorage', function(data)
+    local src = source
+    if not creatorAccessAllowed(src) or not exports['rp_core']:CanPerformAction(src, 'creator:save_job_storage', 1500) then return end
+    if type(data) ~= 'table' or type(data.job) ~= 'string' or type(data.armoryItems) ~= 'table'
+        or #data.armoryItems > 30 or type(data.stashEnabled) ~= 'boolean'
+        or type(data.armoryEnabled) ~= 'boolean' or (not data.stashEnabled and not data.armoryEnabled) then
+        reply(src, 'Configuration du coffre invalide.', false)
+        return
+    end
+    local jobName = data.job:lower()
+    local job = exports['rp_jobs']:GetJob(jobName)
+    if not job or job.name ~= jobName then reply(src, 'Métier inconnu.', false); return end
+
+    local seen, allowed = {}, {}
+    for _, entry in ipairs(data.armoryItems) do
+        if type(entry) ~= 'table' or type(entry.name) ~= 'string' then
+            reply(src, 'Entrée d’armurerie invalide.', false)
+            return
+        end
+        local name = entry.name:lower()
+        local grade = tonumber(entry.minGrade)
+        local itemDef = Config and Config.DefaultItems and Config.DefaultItems[name]
+        if #name > 64 or not itemDef or itemDef.type ~= 'weapon'
+            or not grade or grade % 1 ~= 0 or grade < 0 or grade > 4 or seen[name] then
+            reply(src, 'L’armurerie accepte uniquement des armes du catalogue et un grade entre 0 et 4.', false)
+            return
+        end
+        seen[name] = true
+        allowed[#allowed + 1] = { name = name, minGrade = grade }
+    end
+    if data.armoryEnabled and #allowed == 0 then
+        reply(src, 'Ajoutez au moins une arme autorisée ou désactivez l’armurerie.', false)
+        return
+    end
+    local ped = GetPlayerPed(src)
+    if not ped or ped == 0 or not DoesEntityExist(ped) then
+        reply(src, 'Position du créateur introuvable.', false)
+        return
+    end
+    local coords = GetEntityCoords(ped)
+    local ok, err = pcall(MySQL.query.await, [[
+        INSERT INTO rp_creator_job_storage
+            (job, x, y, z, stash_enabled, armory_enabled, armory_items, updated_by)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        ON DUPLICATE KEY UPDATE x=VALUES(x), y=VALUES(y), z=VALUES(z),
+            stash_enabled=VALUES(stash_enabled), armory_enabled=VALUES(armory_enabled),
+            armory_items=VALUES(armory_items), updated_by=VALUES(updated_by)
+    ]], { jobName, coords.x, coords.y, coords.z, data.stashEnabled and 1 or 0,
+        data.armoryEnabled and 1 or 0, json.encode(allowed),
+        (GetPlayerName(src) or ('ID ' .. src)):sub(1, 80) })
+    if not ok then
+        print('[rp_tablet_creator] Job storage save failed: ' .. tostring(err))
+        reply(src, 'Erreur SQL : configuration non enregistrée.', false)
+        return
+    end
+    reply(src, ('Coffre et armurerie de %s enregistrés à votre position.'):format(job.label or jobName), true)
+    LogCreatorAction(src, 'save_job_storage', nil, jobName .. ' armory_items=' .. #allowed)
+    TriggerClientEvent('rp_tablet_creator:client:refreshTools', src)
+    if GetResourceState('rp_inventory') == 'started' then TriggerEvent('rp_inventory:server:reloadJobStorageConfigs') end
+end)
+
+RegisterNetEvent('rp_tablet_creator:server:deleteJobStorage', function(jobName)
+    local src = source
+    if not creatorAccessAllowed(src) or not exports['rp_core']:CanPerformAction(src, 'creator:delete_job_storage', 1200) then return end
+    if type(jobName) ~= 'string' or #jobName > 64 then reply(src, 'Métier invalide.', false); return end
+    local ok, err = pcall(MySQL.update.await, 'DELETE FROM rp_creator_job_storage WHERE job = ?', { jobName:lower() })
+    if not ok then
+        print('[rp_tablet_creator] Job storage delete failed: ' .. tostring(err))
+        reply(src, 'Impossible de supprimer la configuration.', false)
+        return
+    end
+    reply(src, 'Configuration du coffre métier supprimée.', true)
+    LogCreatorAction(src, 'delete_job_storage', nil, jobName:lower())
+    TriggerClientEvent('rp_tablet_creator:client:refreshTools', src)
+    if GetResourceState('rp_inventory') == 'started' then TriggerEvent('rp_inventory:server:reloadJobStorageConfigs') end
+end)
+
+RegisterNetEvent('rp_tablet_creator:server:deleteJobGarage'
 
 RegisterNetEvent('rp_tablet_creator:server:spawnProp', function(rawModel)
     local src = source
