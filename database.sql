@@ -569,7 +569,7 @@ CREATE TABLE IF NOT EXISTS `player_reports` (
   `player_identifier` VARCHAR(80) NOT NULL,
   `player_name` VARCHAR(64) NOT NULL,
   `message` VARCHAR(500) NOT NULL,
-  `status` ENUM('open','resolved','rejected') NOT NULL DEFAULT 'open',
+  `status` ENUM('open','accepted','resolved','rejected') NOT NULL DEFAULT 'open',
   `handled_by` VARCHAR(64) DEFAULT NULL,
   `handled_at` TIMESTAMP NULL DEFAULT NULL,
   `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
