@@ -103,41 +103,20 @@ local function transact(src, rawAmount, kind)
     local jobOk, job = pcall(function() return exports['rp_jobs']:GetJob(jobName) end)
     if not jobOk or not job then notify(src, 'Métier invalide : opération refusée.', 'error'); return end
     if jobLocks[jobName] then notify(src, 'Une opération est déjà en cours sur ce compte.', 'warning'); return end
-    jobLocks[jobName] = true
-    local dataOk, data = pcall(getAccountData, jobName)
-    if not dataOk or not data then
-        jobLocks[jobName] = nil
-        notify(src, 'Compte du métier indisponible.', 'error')
-        return
-    end
+    local data = getAccountData(jobName)
+    if not data then notify(src, 'Compte du métier indisponible.', 'error'); return end
     local account = data.account
-    if kind == 'deposit' and not account.allow_deposit then
-        jobLocks[jobName] = nil
-        notify(src, 'Les dépôts sont désactivés pour ce métier.', 'error')
-        return
-    end
-    if kind == 'withdraw' and not account.allow_withdraw then
-        jobLocks[jobName] = nil
-        notify(src, 'Les retraits sont désactivés pour ce métier.', 'error')
-        return
-    end
-    if kind == 'deposit' and tonumber(player.cash) < amount then
-        jobLocks[jobName] = nil
-        notify(src, 'Vous ne possédez pas assez d’espèces.', 'error')
-        return
-    end
-    if kind == 'withdraw' and tonumber(account.balance) < amount then
-        jobLocks[jobName] = nil
-        notify(src, 'Le solde du compte du métier est insuffisant.', 'error')
-        return
-    end
+    if kind == 'deposit' and not account.allow_deposit then notify(src, 'Les dépôts sont désactivés pour ce métier.', 'error'); return end
+    if kind == 'withdraw' and not account.allow_withdraw then notify(src, 'Les retraits sont désactivés pour ce métier.', 'error'); return end
+    if kind == 'deposit' and tonumber(player.cash) < amount then notify(src, 'Vous ne possédez pas assez d’espèces.', 'error'); return end
+    if kind == 'withdraw' and tonumber(account.balance) < amount then notify(src, 'Le solde du compte du métier est insuffisant.', 'error'); return end
 
     local lockIds = { player.charId }
     if not exports['rp_core']:AcquireCharacterLock(lockIds) then
-        jobLocks[jobName] = nil
         notify(src, 'Une opération sur votre compte personnel est en cours. Réessayez.', 'warning')
         return
     end
+    jobLocks[jobName] = true
     local query, params
     if kind == 'deposit' then
         query = [[UPDATE characters AS c JOIN rp_job_bank_accounts AS a ON a.job = ?
@@ -151,36 +130,20 @@ local function transact(src, rawAmount, kind)
         params = { jobName, amount, amount, player.charId, player.identifier, amount }
     end
     local sqlOk, affected = pcall(MySQL.update.await, query, params)
+    jobLocks[jobName] = nil
     exports['rp_core']:ReleaseCharacterLock(lockIds)
-    if not sqlOk or not tonumber(affected) or tonumber(affected) < 1 then
-        jobLocks[jobName] = nil
+    if not sqlOk or tonumber(affected) ~= 2 then
         if not sqlOk then print(('[rp_jobbank] Erreur SQL %s/%s : %s'):format(jobName, kind, tostring(affected))) end
         notify(src, 'Opération refusée : solde, autorisation ou compte invalide.', 'error')
         return
     end
 
     if kind == 'deposit' then player.cash = player.cash - amount else player.cash = player.cash + amount end
-    local balance = kind == 'deposit' and (tonumber(account.balance) + amount) or (tonumber(account.balance) - amount)
-    local playerName = (tostring(player.firstname or '') .. ' ' .. tostring(player.lastname or '')):gsub('^%s*(.-)%s*    TriggerClientEvent('rp_core:client:updateCash', src, player.cash)
-    TriggerClientEvent('rp_economy:client:refreshBalances', src, player.cash, player.bank)
-    local refreshed = getAccountData(jobName)
-    TriggerClientEvent('rp_jobbank:client:update', src, refreshed)
-    local formatted = tostring(amount):reverse():gsub('(%d%d%d)', '%1 '):reverse():gsub('^ ', '')
-    notify(src, (kind == 'deposit' and 'Dépôt' or 'Retrait') .. ' de ' .. formatted .. ' $ effectué sur le compte ' .. tostring(job.label or jobName) .. '.', 'success')
-end
-
-RegisterNetEvent('rp_jobbank:server:deposit', function(amount)
-    transact(source, amount, 'deposit')
-end)
-
-RegisterNetEvent('rp_jobbank:server:withdraw', function(amount)
-    transact(source, amount, 'withdraw')
-end)
-, '%1')
+    local balance = tonumber(MySQL.scalar.await('SELECT balance FROM rp_job_bank_accounts WHERE job = ?', { jobName })) or 0
+    local playerName = (tostring(player.firstname or '') .. ' ' .. tostring(player.lastname or '')):gsub('^%s*(.-)%s*$', '%1')
     local logOk, logErr = pcall(MySQL.insert.await,
         'INSERT INTO rp_job_bank_transactions (job, character_id, player_name, transaction_type, amount, balance_after) VALUES (?, ?, ?, ?, ?, ?)',
         { jobName, player.charId, playerName, kind, amount, balance })
-    jobLocks[jobName] = nil
     if not logOk then print('[rp_jobbank] Historique non enregistré : ' .. tostring(logErr)) end
     TriggerClientEvent('rp_core:client:updateCash', src, player.cash)
     TriggerClientEvent('rp_economy:client:refreshBalances', src, player.cash, player.bank)
