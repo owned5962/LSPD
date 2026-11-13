@@ -1209,13 +1209,11 @@ RegisterNetEvent('rp_inventory:server:transferJobStorage', function(storageType,
                 values = { player.job, storageType, itemName, nextStorageCount } },
             { query = 'INSERT INTO rp_job_storage_logs (job, storage_type, character_id, player_name, direction, item_name, item_count) VALUES (?, ?, ?, ?, ?, ?, ?)',
                 values = { player.job, storageType, player.charId, (GetPlayerName(src) or 'Inconnu'):sub(1, 128),
-                    direction, itemName, count } }
+                    direction, itemName, count } },
+            { query = 'DELETE FROM rp_job_storage_items WHERE job = ? AND storage_type = ? AND item_name = ? AND count = 0',
+                values = { player.job, storageType, itemName } }
         }
         if not MySQL.transaction.await(queries) then error('Job storage transaction rejected') end
-        if nextStorageCount == 0 then
-            MySQL.update.await('DELETE FROM rp_job_storage_items WHERE job = ? AND storage_type = ? AND item_name = ? AND count = 0',
-                { player.job, storageType, itemName })
-        end
     end)
     transferLocks[src] = nil
     jobStorageLocks[player.job] = nil
