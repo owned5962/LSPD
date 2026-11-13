@@ -506,6 +506,40 @@ CREATE TABLE IF NOT EXISTS `player_inventory_drops` (
     KEY `idx_inventory_drops_bucket` (`routing_bucket`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Coffres partagés et armureries par métier. Les armes sont limitées par configuration et grade.
+CREATE TABLE IF NOT EXISTS `rp_creator_job_storage` (
+    `job` VARCHAR(64) NOT NULL PRIMARY KEY,
+    `x` DOUBLE NOT NULL,
+    `y` DOUBLE NOT NULL,
+    `z` DOUBLE NOT NULL,
+    `stash_enabled` TINYINT(1) NOT NULL DEFAULT 1,
+    `armory_enabled` TINYINT(1) NOT NULL DEFAULT 1,
+    `armory_items` LONGTEXT NOT NULL,
+    `updated_by` VARCHAR(80) NOT NULL,
+    `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `rp_job_storage_items` (
+    `job` VARCHAR(64) NOT NULL,
+    `storage_type` ENUM('stash','armory') NOT NULL,
+    `item_name` VARCHAR(64) NOT NULL,
+    `count` INT UNSIGNED NOT NULL DEFAULT 0,
+    PRIMARY KEY (`job`, `storage_type`, `item_name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `rp_job_storage_logs` (
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `job` VARCHAR(64) NOT NULL,
+    `storage_type` VARCHAR(16) NOT NULL,
+    `character_id` INT NOT NULL,
+    `player_name` VARCHAR(128) NOT NULL,
+    `direction` VARCHAR(16) NOT NULL,
+    `item_name` VARCHAR(64) NOT NULL,
+    `item_count` INT UNSIGNED NOT NULL,
+    `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    KEY `idx_job_storage_logs_job_created` (`job`, `created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 
 CREATE TABLE IF NOT EXISTS `player_bans` (
     `identifier` VARCHAR(64) NOT NULL PRIMARY KEY,
