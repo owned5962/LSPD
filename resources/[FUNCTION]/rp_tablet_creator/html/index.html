@@ -13,7 +13,7 @@
     <button type="button" class="creator-tab" data-tab="mapping">Mapping & blips</button>
     <button type="button" class="creator-tab" data-tab="management">Gestion & paramètres</button>
     <button type="button" class="creator-tab" data-tab="organizations">Jobs & gangs</button>
-    <button type="button" class="creator-tab" data-tab="organizations">Jobs & gangs</button>
+    <button type="button" class="creator-tab" data-tab="bank">Banque</button>
   </nav>
   <section class="intro"><span class="live"></span> CONSOLE CRÉATEUR <p>Contrôle de l'environnement serveur et communication globale.</p></section>
   <section class="grid" data-tab-panel="world">
@@ -118,6 +118,27 @@
         <label><input id="creator-access-creator" type="checkbox" checked> Créateur (F11)</label>
       </div>
       <button id="creator-save-access" class="primary">Enregistrer les accès aux tablettes</button>
+    </article>
+  </section>
+
+  <section class="grid creator-bank-grid" data-tab-panel="bank" hidden>
+    <article class="panel">
+      <h2><i class="fa-solid fa-building-columns"></i> Comptes bancaires des métiers</h2>
+      <p class="panel-help">Chaque métier possède son propre compte partagé. Les soldes et autorisations sont conservés en base de données.</p>
+      <label for="creator-bank-job">Métier à configurer</label>
+      <select id="creator-bank-job"></select>
+      <div class="job-bank-balance-card"><small>SOLDE DU COMPTE</small><strong id="creator-bank-balance">0 $</strong><span id="creator-bank-account-name">Sélectionnez un métier</span></div>
+      <h3 class="subheading">Autorisations des employés</h3>
+      <label class="check-line"><input id="creator-bank-allow-deposit" type="checkbox" checked> Autoriser les dépôts sur le compte</label>
+      <label class="check-line"><input id="creator-bank-allow-withdraw" type="checkbox" checked> Autoriser les retraits depuis le compte</label>
+      <button id="creator-bank-save" class="primary"><i class="fa-solid fa-floppy-disk"></i> Enregistrer les autorisations</button>
+      <button id="creator-bank-refresh" type="button">Actualiser les comptes</button>
+      <small>Les changements sont appliqués immédiatement côté serveur et contrôlés à chaque transaction.</small>
+    </article>
+    <article class="panel">
+      <h2><i class="fa-solid fa-clock-rotate-left"></i> Historique bancaire</h2>
+      <p class="panel-help">Dépôts et retraits effectués par les employés du métier sélectionné.</p>
+      <div id="creator-bank-history" class="creator-bank-history"><small>Chargement de l'historique…</small></div>
     </article>
   </section>
 
