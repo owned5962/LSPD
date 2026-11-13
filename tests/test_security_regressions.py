@@ -1478,11 +1478,6 @@ def test_clothing_refunds_are_verified_before_claiming_success():
     assert "local ok, refunded = pcall(player.addCash, amount)" in source
     assert "remboursement non confirmé" in source
 
-if __name__ == "__main__":
-    checks = [value for name, value in globals().items() if name.startswith("test_") and callable(value)]
-    for check in checks:
-        check()
-    print(f"All {len(checks)} security regression checks passed.")
 
 def test_clothing_apply_rejects_invalid_database_update_result():
     source = read("resources/[FUNCTION]/rp_clothing/server/main.lua")
@@ -1518,3 +1513,9 @@ def test_auto_rescue_finish_event_requires_active_session_and_cooldown():
     handler = source.split("RegisterNetEvent('rp_auto_rescue:server:finish'", 1)[1].split("AddEventHandler('playerDropped'", 1)[0]
     assert "if not activeRescues[src]" in handler
     assert "CanPerformAction(src, 'auto_rescue:finish', 500)" in handler
+
+if __name__ == "__main__":
+    checks = [value for name, value in globals().items() if name.startswith("test_") and callable(value)]
+    for check in checks:
+        check()
+    print(f"All {len(checks)} security regression checks passed.")
