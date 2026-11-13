@@ -40,7 +40,7 @@ def test_fuel_purchase_is_server_authoritative_and_time_based():
     assert 'id="creator-fuel-price"' in creator_html
     assert 'id="creator-fuel-consumption"' in creator_html
     assert "data-tab-panel" in creator_html and "creator-tab" in creator_html
-    assert "activateCreatorTab('world')" in creator_ui
+    assert "activateCreatorTab('weather')" in creator_ui
     assert "renderCreatorAdminData" in creator_ui
 
 
