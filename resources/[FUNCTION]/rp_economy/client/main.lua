@@ -189,7 +189,7 @@ RegisterNetEvent('rp_economy:client:authenticationResult', function(result)
         return
     end
     isAuthenticated = true
-    TriggerServerEvent('rp_jobbank:server:request')
+    if not openedAsATM then TriggerServerEvent('rp_jobbank:server:request') end
     SendNUIMessage({
         action = 'authenticationSuccess',
         cash = tonumber(result.cash) or 0,
