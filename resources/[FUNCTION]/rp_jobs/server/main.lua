@@ -1,5 +1,6 @@
 local JobsMap = {}
 local CustomJobsMap = {}
+local JobCapacityLocks = {}
 
 for _, job in ipairs(JobsList) do
     JobsMap[job.name] = job
@@ -44,6 +45,10 @@ local function normalizeCustomJob(raw, allowExistingName)
     if #label < 2 or #description < 3 or #category > 32 or category:match('^[a-z][a-z0-9_]+') ~= category then
         return nil, 'Nom, catégorie ou description invalide.'
     end
+    local maxEmployees = tonumber(raw.maxEmployees) or 0
+    if maxEmployees % 1 ~= 0 or maxEmployees < 0 or maxEmployees > 500 then
+        return nil, 'La capacité doit être comprise entre 0 et 500 (0 = illimitée).'
+    end
     if type(raw.grades) ~= 'table' then return nil, 'Les cinq grades sont obligatoires.' end
     local grades = {}
     for grade = 0, 4 do
@@ -56,7 +61,7 @@ local function normalizeCustomJob(raw, allowExistingName)
         grades[grade] = { label = gradeLabel, salary = salary }
     end
     return { name=name, label=label, description=description, category=category, icon='fas fa-briefcase',
-        whitelisted=raw.whitelisted == true, grades=grades }
+        whitelisted=raw.whitelisted == true, maxEmployees=maxEmployees, grades=grades }
 end
 
 local function RegisterRuntimeJob(job)
@@ -90,8 +95,8 @@ local function CreateCustomJob(raw, createdBy)
     local job, validationError = normalizeCustomJob(raw)
     if not job then return false, validationError end
     local ok, id = pcall(MySQL.insert.await,
-        'INSERT INTO rp_custom_jobs (name, label, category, description, whitelisted, grades, created_by) VALUES (?, ?, ?, ?, ?, ?, ?)',
-        { job.name, job.label, job.category, job.description, job.whitelisted and 1 or 0, json.encode(job.grades), tostring(createdBy or 'Creator'):sub(1, 80) })
+        'INSERT INTO rp_custom_jobs (name, label, category, description, whitelisted, max_employees, grades, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        { job.name, job.label, job.category, job.description, job.whitelisted and 1 or 0, job.maxEmployees, json.encode(job.grades), tostring(createdBy or 'Creator'):sub(1, 80) })
     if not ok or not id then
         print(('[rp_jobs] Custom job save failed: %s'):format(tostring(id)))
         return false, 'Erreur SQL : métier non enregistré.'
@@ -109,8 +114,8 @@ local function UpdateCustomJob(raw)
     local job, validationError = normalizeCustomJob(raw, name)
     if not job then return false, validationError end
     local ok, affected = pcall(MySQL.update.await,
-        'UPDATE rp_custom_jobs SET label = ?, category = ?, description = ?, whitelisted = ?, grades = ? WHERE name = ?',
-        { job.label, job.category, job.description, job.whitelisted and 1 or 0, json.encode(job.grades), name })
+        'UPDATE rp_custom_jobs SET label = ?, category = ?, description = ?, whitelisted = ?, max_employees = ?, grades = ? WHERE name = ?',
+        { job.label, job.category, job.description, job.whitelisted and 1 or 0, job.maxEmployees, json.encode(job.grades), name })
     if not ok or type(affected) ~= 'number' then
         print(('[rp_jobs] Custom job update failed for %s: %s'):format(name, tostring(affected)))
         return false, 'Erreur SQL : métier non modifié.'
@@ -172,11 +177,16 @@ MySQL.ready(function()
             category VARCHAR(32) NOT NULL,
             description VARCHAR(255) NOT NULL,
             whitelisted TINYINT(1) NOT NULL DEFAULT 0,
+            max_employees INT UNSIGNED NOT NULL DEFAULT 0,
             grades LONGTEXT NOT NULL,
             created_by VARCHAR(80) NOT NULL,
             created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci]])
-        local rows = MySQL.query.await('SELECT name, label, category, description, whitelisted, grades FROM rp_custom_jobs') or {}
+        local capacityColumn = MySQL.query.await("SHOW COLUMNS FROM rp_custom_jobs LIKE 'max_employees'") or {}
+        if #capacityColumn == 0 then
+            MySQL.query.await('ALTER TABLE rp_custom_jobs ADD COLUMN max_employees INT UNSIGNED NOT NULL DEFAULT 0')
+        end
+        local rows = MySQL.query.await('SELECT name, label, category, description, whitelisted, max_employees, grades FROM rp_custom_jobs') or {}
         for _, row in ipairs(rows) do
             local decodedOk, grades = pcall(json.decode, row.grades or '{}')
             if decodedOk and type(grades) == 'table' then
@@ -188,7 +198,8 @@ MySQL.ready(function()
                 end
                 if validGrades then
                     RegisterRuntimeJob({ name=row.name, label=row.label, category=row.category, description=row.description,
-                        icon='fas fa-briefcase', whitelisted=tonumber(row.whitelisted)==1, grades=numericGrades })
+                        icon='fas fa-briefcase', whitelisted=tonumber(row.whitelisted)==1,
+                        maxEmployees=tonumber(row.max_employees) or 0, grades=numericGrades })
                 else
                     print(('[rp_jobs] Missing grades for custom job %s; ignored.'):format(tostring(row.name)))
                 end
@@ -241,7 +252,7 @@ end
 
 RegisterNetEvent('rp_jobs:server:requestJobStats', function()
     local src = source
-    local customOk, customRows = pcall(MySQL.query.await, 'SELECT name, label, category, description, whitelisted, grades FROM rp_custom_jobs')
+    local customOk, customRows = pcall(MySQL.query.await, 'SELECT name, label, category, description, whitelisted, max_employees, grades FROM rp_custom_jobs')
     if customOk then
         local customJobs = {}
         for _, row in ipairs(customRows or {}) do
@@ -255,7 +266,8 @@ RegisterNetEvent('rp_jobs:server:requestJobStats', function()
                 end
                 if validGrades then
                     customJobs[#customJobs + 1] = { name=row.name, label=row.label, category=row.category, description=row.description,
-                        icon='fas fa-briefcase', whitelisted=tonumber(row.whitelisted)==1, grades=numericGrades }
+                        icon='fas fa-briefcase', whitelisted=tonumber(row.whitelisted)==1,
+                        maxEmployees=tonumber(row.max_employees) or 0, grades=numericGrades }
                 end
             end
         end
@@ -321,7 +333,30 @@ RegisterNetEvent('rp_jobs:server:chooseJob', function(jobName)
         return
     end
 
+    local maxEmployees = tonumber(job.maxEmployees) or 0
+    if maxEmployees > 0 and player.job ~= jobName then
+        if JobCapacityLocks[jobName] then
+            RespondToJobSelection(src, false, 'Une embauche est déjà en cours pour ce métier. Réessayez.')
+            return
+        end
+        JobCapacityLocks[jobName] = true
+        local countOk, employeeCount = pcall(MySQL.scalar.await,
+            'SELECT COUNT(*) FROM characters WHERE job = ?', { jobName })
+        if not countOk then
+            JobCapacityLocks[jobName] = nil
+            print(('[rp_jobs] Capacity check failed for %s: %s'):format(jobName, tostring(employeeCount)))
+            RespondToJobSelection(src, false, 'Impossible de vérifier les places disponibles. Réessayez.')
+            return
+        end
+        if (tonumber(employeeCount) or 0) >= maxEmployees then
+            JobCapacityLocks[jobName] = nil
+            RespondToJobSelection(src, false, 'Ce métier a atteint sa capacité maximale.')
+            return
+        end
+    end
+
     local ok, applied = pcall(player.setJob, jobName, 0)
+    JobCapacityLocks[jobName] = nil
     if not ok then
         print(('[rp_jobs] Job application failed for player %s (%s): %s'):format(src, jobName, tostring(applied)))
         RespondToJobSelection(src, false, 'Erreur interne pendant l’embauche. Consultez la console serveur.')
