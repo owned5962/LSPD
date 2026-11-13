@@ -177,6 +177,15 @@ def test_creator_job_armory_and_shared_locker_are_persisted_and_grade_restricted
     assert "client/job_storage.lua" in inventory_manifest
     assert "transferJobStorage" in inventory_client
     assert "rp_job_storage_items" in sql and "rp_job_storage_logs" in sql
+    assert "requestJobStorageHistory" in creator
+    assert "creator:view_job_storage_history" in creator
+    assert "ORDER BY id DESC" in creator and "LIMIT 100" in creator
+    assert "RegisterNUICallback('refreshJobStorageHistory'" in creator_client
+    assert "rp_tablet_creator:client:jobStorageHistory" in creator_client
+    assert 'id="job-storage-history-refresh"' in creator_html
+    assert 'id="job-storage-history"' in creator_html
+    assert "renderJobStorageHistory" in creator_ui
+    assert "textContent = " in creator_ui
 
 
 if __name__ == "__main__":
