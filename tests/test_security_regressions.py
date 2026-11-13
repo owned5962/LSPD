@@ -1512,3 +1512,9 @@ def test_fuel_pending_refunds_complete_synchronously_on_resource_stop():
     assert "refundPaymentNow(pending, 'redémarrage de la ressource')" in stop_handler
     assert "AcquireCharacterLock(locks)" in source
     assert "ReleaseCharacterLock(locks)" in source
+
+def test_auto_rescue_finish_event_requires_active_session_and_cooldown():
+    source = read("resources/[FUNCTION]/rp_auto_rescue/server/main.lua")
+    handler = source.split("RegisterNetEvent('rp_auto_rescue:server:finish'", 1)[1].split("AddEventHandler('playerDropped'", 1)[0]
+    assert "if not activeRescues[src]" in handler
+    assert "CanPerformAction(src, 'auto_rescue:finish', 500)" in handler
