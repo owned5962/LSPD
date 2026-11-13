@@ -50,7 +50,7 @@ def test_admin_player_table_reports_and_map_teleport():
     assert "RegisterCommand('rapport'" in client
     assert "player-report-overlay" in html and "player-report-submit" in ui
     assert "rp_tablet_admin:server:submitPlayerReport" in server
-    assert "status == 'accepted'" in server
+    assert "rawStatus == 'accepted'" in server
     assert "Votre rapport a bien été pris en charge par un membre du staff." in server
     assert "handled_by" in server
     assert 'data-admin-view="weapons"' not in html and 'id="admin-weapons-view"' not in html
