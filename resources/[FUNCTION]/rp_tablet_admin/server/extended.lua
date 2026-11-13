@@ -390,7 +390,51 @@ RegisterNetEvent('rp_tablet_admin:server:submitPlayerReport', function(rawMessag
         TriggerClientEvent('rp_tablet_admin:client:playerReportResult', src, false, 'Message de signalement invalide.')
         return
     end
-    local message = rawMessage:gsub('[%c]', ' '):gsub('%s+', ' '):match('^%s*(.-)%s*    local src = source
+    local message = rawMessage:gsub('[%c]', ' '):gsub('%s+', ' '):match('^%s*(.-)%s*$') or ''
+    if #message < 10 or #message > 500 then
+        TriggerClientEvent('rp_tablet_admin:client:playerReportResult', src, false,
+            'Votre message doit contenir entre 10 et 500 caractères.')
+        return
+    end
+    local player = exports['rp_core']:GetPlayerFromId(src)
+    local identifier = player and player.identifier or nil
+    if not identifier then
+        for _, value in ipairs(GetPlayerIdentifiers(src) or {}) do
+            if value:sub(1, 8) == 'license:' then identifier = value; break end
+        end
+    end
+    if not identifier then
+        TriggerClientEvent('rp_tablet_admin:client:playerReportResult', src, false,
+            'Impossible d’identifier votre personnage. Réessayez plus tard.')
+        return
+    end
+    local ok, reportId = pcall(MySQL.insert.await,
+        'INSERT INTO player_reports (player_identifier, player_name, message) VALUES (?, ?, ?)',
+        { tostring(identifier):sub(1, 80), (GetPlayerName(src) or 'Joueur'):sub(1, 64), message })
+    if not ok or not reportId then
+        print('[rp_tablet_admin] NUI report insert failed: ' .. tostring(reportId))
+        TriggerClientEvent('rp_tablet_admin:client:playerReportResult', src, false,
+            'Votre signalement n’a pas pu être enregistré.')
+        return
+    end
+    ReportCooldowns[src] = now
+    TriggerClientEvent('rp_tablet_admin:client:playerReportResult', src, true,
+        'Votre signalement #' .. tostring(reportId) .. ' a bien été envoyé.')
+    for _, rawId in ipairs(GetPlayers()) do
+        local staffId = tonumber(rawId)
+        local staff = staffId and exports['rp_core']:GetPlayerFromId(staffId)
+        local group = staff and tostring(staff.group or '') or ''
+        if staffId and (IsPlayerAceAllowed(staffId, 'rp_admin') or IsPlayerAceAllowed(staffId, 'rp_founder')
+            or group == 'admin' or group == 'superadmin' or group == 'fondateur') then
+            TriggerClientEvent('rp_tablet_admin:client:reportsRefresh', staffId)
+            TriggerClientEvent('rp_core:client:notify', staffId,
+                'Nouveau signalement joueur #' .. tostring(reportId) .. '.', 'info')
+        end
+    end
+end)
+
+RegisterNetEvent('rp_tablet_admin:server:requestReports', function()
+    local src = source
     if not AllowExtendedAction(src, 'reports_read', 1200) then return end
     local ok, reports = pcall(MySQL.query.await, [[
         SELECT id, player_name, message, status, handled_by, created_at, handled_at
@@ -458,8 +502,8 @@ RegisterNetEvent('rp_tablet_admin:server:updateReport', function(rawReportId, ra
     if status == 'accepted' then
         for _, rawId in ipairs(GetPlayers()) do
             local playerId = tonumber(rawId)
-            local player = playerId and exports['rp_core']:GetPlayerFromId(playerId)
-            if player and player.identifier == owner.player_identifier then
+            local target = playerId and exports['rp_core']:GetPlayerFromId(playerId)
+            if target and target.identifier == owner.player_identifier then
                 TriggerClientEvent('rp_core:client:notify', playerId,
                     'Votre rapport a bien été pris en charge par un membre du staff.', 'success')
                 break
@@ -470,91 +514,4 @@ RegisterNetEvent('rp_tablet_admin:server:updateReport', function(rawReportId, ra
         and ('Signalement #' .. reportId .. ' pris en charge.')
         or ('Signalement #' .. reportId .. (status == 'resolved' and ' marqué comme traité.' or ' rejeté.')), 'success')
 end)
-) or ''
-    if #message < 10 or #message > 500 then
-        TriggerClientEvent('rp_tablet_admin:client:playerReportResult', src, false,
-            'Votre message doit contenir entre 10 et 500 caractères.')
-        return
-    end
-    local player = exports['rp_core']:GetPlayerFromId(src)
-    local identifier = player and player.identifier or nil
-    if not identifier then
-        for _, value in ipairs(GetPlayerIdentifiers(src) or {}) do
-            if value:sub(1, 8) == 'license:' then identifier = value; break end
-        end
-    end
-    if not identifier then
-        TriggerClientEvent('rp_tablet_admin:client:playerReportResult', src, false,
-            'Impossible d’identifier votre personnage. Réessayez plus tard.')
-        return
-    end
-    local ok, reportId = pcall(MySQL.insert.await,
-        'INSERT INTO player_reports (player_identifier, player_name, message) VALUES (?, ?, ?)',
-        { tostring(identifier):sub(1, 80), (GetPlayerName(src) or 'Joueur'):sub(1, 64), message })
-    if not ok or not reportId then
-        print('[rp_tablet_admin] NUI report insert failed: ' .. tostring(reportId))
-        TriggerClientEvent('rp_tablet_admin:client:playerReportResult', src, false,
-            'Votre signalement n’a pas pu être enregistré.')
-        return
-    end
-    ReportCooldowns[src] = now
-    TriggerClientEvent('rp_tablet_admin:client:playerReportResult', src, true,
-        'Votre signalement #' .. tostring(reportId) .. ' a bien été envoyé.')
-    for _, rawId in ipairs(GetPlayers()) do
-        local staffId = tonumber(rawId)
-        local staff = staffId and exports['rp_core']:GetPlayerFromId(staffId)
-        local group = staff and tostring(staff.group or '') or ''
-        if staffId and (IsPlayerAceAllowed(staffId, 'rp_admin') or IsPlayerAceAllowed(staffId, 'rp_founder')
-            or group == 'admin' or group == 'superadmin' or group == 'fondateur' or group == 'moderator') then
-            TriggerClientEvent('rp_tablet_admin:client:reportsRefresh', staffId)
-        end
-    end
-end)
 
-RegisterNetEvent('rp_tablet_admin:server:requestReports', function()
-    local src = source
-    if not AllowExtendedAction(src, 'reports_read', 1200) then return end
-    local ok, reports = pcall(MySQL.query.await, [[
-        SELECT id, player_name, message, status, handled_by, created_at, handled_at
-        FROM player_reports
-        ORDER BY CASE status WHEN 'open' THEN 0 ELSE 1 END, created_at DESC
-        LIMIT 100
-    ]])
-    if not ok then
-        print('[rp_tablet_admin] Report query failed: ' .. tostring(reports))
-        NotifyExtended(src, 'Impossible de charger les signalements.')
-        return
-    end
-    TriggerClientEvent('rp_tablet_admin:client:reports', src, reports or {})
-end)
-
-RegisterNetEvent('rp_tablet_admin:server:updateReport', function(rawReportId, rawStatus)
-    local src = source
-    if not AllowExtendedAction(src, 'reports_update', 700) then return end
-    local reportId = tonumber(rawReportId)
-    local status = rawStatus == 'resolved' and 'resolved' or rawStatus == 'rejected' and 'rejected' or nil
-    if not reportId or reportId < 1 or reportId % 1 ~= 0 or not status then
-        NotifyExtended(src, 'Signalement ou statut invalide.')
-        return
-    end
-    local staff = exports['rp_core']:GetPlayerFromId(src)
-    local staffName = staff and (((staff.firstname or '') .. ' ' .. (staff.lastname or '')):gsub('^%s*(.-)%s*$', '%1'))
-        or (GetPlayerName(src) or 'Staff')
-    local ok, affected = pcall(MySQL.update.await, [[
-        UPDATE player_reports
-        SET status = ?, handled_by = ?, handled_at = CURRENT_TIMESTAMP
-        WHERE id = ? AND status = 'open'
-    ]], { status, staffName:sub(1, 64), reportId })
-    if not ok then
-        print('[rp_tablet_admin] Report update failed: ' .. tostring(affected))
-        NotifyExtended(src, 'Impossible de mettre à jour le signalement.')
-        return
-    end
-    if not affected or affected < 1 then
-        NotifyExtended(src, 'Signalement introuvable ou déjà traité.')
-        return
-    end
-    LogExtendedAction(src, 'report_' .. status, nil, 'Signalement #' .. reportId)
-    TriggerClientEvent('rp_tablet_admin:client:reportUpdated', src, reportId, status)
-    NotifyExtended(src, 'Signalement #' .. reportId .. (status == 'resolved' and ' marqué comme traité.' or ' rejeté.'), 'success')
-end)
