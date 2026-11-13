@@ -62,6 +62,36 @@ local function CreateGang(rawData, createdBy)
     return true, gang
 end
 
+local function UpdateGang(rawData)
+    if not GangReady then return false, 'Le registre des gangs est indisponible.' end
+    if type(rawData) ~= 'table' or type(rawData.name) ~= 'string' then return false, 'Gang invalide.' end
+    local existingName = rawData.name:lower()
+    if not GangCache[existingName] then return false, 'Gang introuvable.' end
+    local gang, validationError = normalizeGang(rawData)
+    if not gang then return false, validationError end
+    local ok, affected = pcall(MySQL.update.await,
+        'UPDATE rp_gangs SET label = ?, description = ?, color = ? WHERE name = ?',
+        { gang.label, gang.description, gang.color, existingName })
+    if not ok or type(affected) ~= 'number' then
+        print(('[rp_gangs] Gang update failed: %s'):format(tostring(affected)))
+        return false, 'Erreur SQL : modification non enregistrée.'
+    end
+    GangCache[existingName] = gang
+    return true, gang
+end
+
+local function DeleteGang(rawName)
+    if not GangReady then return false, 'Le registre des gangs est indisponible.' end
+    if type(rawName) ~= 'string' or not GangCache[rawName] then return false, 'Gang introuvable.' end
+    local ok, affected = pcall(MySQL.update.await, 'DELETE FROM rp_gangs WHERE name = ?', { rawName })
+    if not ok or type(affected) ~= 'number' or affected < 1 then
+        print(('[rp_gangs] Gang deletion failed: %s'):format(tostring(affected)))
+        return false, 'Erreur SQL : suppression impossible.'
+    end
+    GangCache[rawName] = nil
+    return true
+end
+
 local function GetAllGangs()
     local list = {}
     for _, gang in pairs(GangCache) do list[#list + 1] = gang end
@@ -70,6 +100,8 @@ local function GetAllGangs()
 end
 
 exports('CreateGang', CreateGang)
+exports('UpdateGang', UpdateGang)
+exports('DeleteGang', DeleteGang)
 exports('GetGang', function(name) return GangCache[tostring(name or '')] end)
 exports('GetAllGangs', GetAllGangs)
 exports('IsValidGang', function(name) return GangCache[tostring(name or '')] ~= nil end)
