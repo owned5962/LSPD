@@ -1392,6 +1392,25 @@ def test_character_appearance_recovers_missing_clothing_and_clears_invalid_props
     assert "ClearPedProp(ped, prop)" in client
 
 
+
+def test_job_bank_is_available_in_f4_job_tablet_with_server_side_permissions():
+    job_client = read("resources/[FUNCTION]/rp_tablet_job/client/main.lua")
+    job_html = read("resources/[FUNCTION]/rp_tablet_job/html/index.html")
+    job_ui = read("resources/[FUNCTION]/rp_tablet_job/html/app.js")
+    job_manifest = read("resources/[FUNCTION]/rp_tablet_job/fxmanifest.lua")
+    bank_server = read("resources/[FUNCTION]/rp_economy/server/jobbank.lua")
+
+    assert 'data-tab="bank"' in job_html and 'id="job-bank-balance"' in job_html
+    assert "refreshJobBank" in job_client and "jobBankDeposit" in job_client and "jobBankWithdraw" in job_client
+    assert "rp_jobbank:server:requestFromJobMenu" in job_client
+    assert "rp_jobbank:server:jobMenuDeposit" in job_client and "rp_jobbank:server:jobMenuWithdraw" in job_client
+    assert "function renderJobBank(data)" in job_ui
+    assert "'rp_economy'" in job_manifest
+    assert "CanPerformAction(src, 'jobtablet:jobbank:request'" in bank_server
+    assert "fromJobMenu == true and ('jobtablet:jobbank:' .. kind)" in bank_server
+    assert "if fromJobMenu == true then" in bank_server
+    assert "account.allow_deposit" in bank_server and "account.allow_withdraw" in bank_server
+
 if __name__ == "__main__":
     test_server_cfg_omits_default_framework_resources_and_starts_territories_last()
     test_character_appearance_recovers_missing_clothing_and_clears_invalid_props()
