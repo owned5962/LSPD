@@ -4,7 +4,7 @@ Config.PricePerTenMinutes = 100
 Config.MinMinutes = 10
 Config.MaxHours = 12
 Config.ExpiryGraceSeconds = 60
-Config.InteractionDistance = 1.0
+Config.InteractionDistance = 2.0
 Config.PedModel = 's_m_m_autoshop_02'
 
 -- Les points correspondent aux choix de première apparition du créateur.
