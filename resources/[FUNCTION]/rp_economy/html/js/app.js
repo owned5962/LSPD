@@ -247,7 +247,7 @@ window.addEventListener('message', event => {
     } else if (data.action === 'bankNotice') {
         showToast(data.message, data.kind);
         if (data.kind === 'error' || data.kind === 'warning' || data.kind === 'success') {
-            ['deposit', 'withdraw', 'transfer'].forEach(name => {
+            ['deposit', 'withdraw', 'transfer', 'job-deposit', 'job-withdraw'].forEach(name => {
                 if (busy.has(name)) {
                     pendingInputs.delete(name);
                     busy.delete(name);
