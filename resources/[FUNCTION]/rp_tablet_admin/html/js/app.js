@@ -7,6 +7,8 @@ let availableJobs = [];
 let adminTabletOpen = false;
 let mapInstance = null;
 let mapMarkers = new Map();
+let selectedMapTeleportPoint = null;
+let mapTeleportMarker = null;
 let itemCatalog = [];
 let weaponPolicy = [];
 const panelTargets = { give: null, economy: null, sanction: null, function: null, job: null };
@@ -129,6 +131,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     window.addEventListener('message', handleTabletMessage);
 
+    document.getElementById('admin-map-teleport')?.addEventListener('click', () => {
+        if (!selectedMapTeleportPoint) return showToast('Cliquez d’abord sur la carte pour définir un point.');
+        const button = document.getElementById('admin-map-teleport');
+        if (button) button.disabled = true;
+        nuiPost('teleportToMapPoint', selectedMapTeleportPoint)
+            .then(() => showToast('Demande de téléportation envoyée.'))
+            .catch(() => showToast('Impossible de se téléporter à ce point.'))
+            .finally(() => { if (button && selectedMapTeleportPoint) button.disabled = false; });
+    });
     document.getElementById('player-report-cancel')?.addEventListener('click', () => nuiPost('closePlayerReport').catch(() => {}));
     document.getElementById('player-report-submit')?.addEventListener('click', () => {
         const input = document.getElementById('player-report-message');
@@ -519,6 +530,21 @@ function setupPlayerMap() {
     const bounds = L.latLngBounds([[0,0],[8192,8192]]);
     L.tileLayer('https://viruxe.github.io/gtav-map-tiles/satelite/{z}/{x}-{y}.webp', { minZoom:0, maxZoom:5, noWrap:true, bounds, tileSize:256, attribution:'GTA V map tiles · viruxe/gtav-map-tiles' }).addTo(mapInstance);
     mapInstance.fitBounds(bounds); mapInstance.setMaxBounds(bounds.pad(0.03));
+    mapInstance.on('click', event => {
+        const x = ((event.latlng.lng - GTA_MAP_OFFSET_X) / GTA_MAP_SCALE) + GTA_WORLD.minX;
+        const y = (event.latlng.lat / GTA_MAP_SCALE) + GTA_WORLD.minY;
+        if (!Number.isFinite(x) || !Number.isFinite(y)
+            || x < GTA_WORLD.minX || x > GTA_WORLD.maxX
+            || y < GTA_WORLD.minY || y > GTA_WORLD.maxY) return;
+        selectedMapTeleportPoint = { x: Math.round(x * 10) / 10, y: Math.round(y * 10) / 10 };
+        if (mapTeleportMarker) mapInstance.removeLayer(mapTeleportMarker);
+        mapTeleportMarker = L.marker(event.latlng).addTo(mapInstance).bindPopup('Point de téléportation<br>X: ' +
+            selectedMapTeleportPoint.x + ' · Y: ' + selectedMapTeleportPoint.y).openPopup();
+        const button = document.getElementById('admin-map-teleport');
+        const status = document.getElementById('map-updated-at');
+        if (button) button.disabled = false;
+        if (status) status.textContent = 'Point défini · X ' + selectedMapTeleportPoint.x + ' / Y ' + selectedMapTeleportPoint.y;
+    });
 }
 const GTA_WORLD = { minX:-4500, maxX:4500, minY:-4500, maxY:8500 };
 const GTA_MAP_SCALE = 8192 / (GTA_WORLD.maxY - GTA_WORLD.minY);
@@ -527,6 +553,13 @@ function worldToMap(position) {
     const x = GTA_MAP_OFFSET_X + (Number(position.x) - GTA_WORLD.minX) * GTA_MAP_SCALE;
     const y = (Number(position.y) - GTA_WORLD.minY) * GTA_MAP_SCALE;
     return [y, x];
+}
+
+function mapToWorld(position) {
+    return {
+        x: ((Number(position.lng) - GTA_MAP_OFFSET_X) / GTA_MAP_SCALE) + GTA_WORLD.minX,
+        y: (Number(position.lat) / GTA_MAP_SCALE) + GTA_WORLD.minY
+    };
 }
 function renderPlayerMap() {
     if (!mapInstance) return;
