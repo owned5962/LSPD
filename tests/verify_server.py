@@ -4,6 +4,7 @@ Comprehensive verification test for the FiveM RP server.
 """
 import os
 import sys
+import re
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 
@@ -59,30 +60,43 @@ def test_core_resources():
         res_dir = os.path.join(roleplay_dir, res)
         assert os.path.exists(res_dir), f"Missing core resource {res}"
         assert os.path.exists(os.path.join(res_dir, 'fxmanifest.lua')), f"Missing manifest for {res}"
-    expected_functions = ['rp_ui', 'rp_inventory', 'rp_interactions', 'rp_clothing', 'rp_economy', 'rp_jobs', 'rp_loadscreen', 'rp_tablet_admin', 'rp_anticheat', 'rp_drivingschool']
-    for res in expected_functions:
+    function_resources = sorted(
+        name for name in os.listdir(function_dir)
+        if os.path.isdir(os.path.join(function_dir, name))
+    )
+    assert len(function_resources) == 23, (
+        f"Expected 23 function resources, found {len(function_resources)}"
+    )
+    for res in function_resources:
         res_dir = os.path.join(function_dir, res)
-        assert os.path.exists(res_dir), f"Missing function resource {res}"
-        assert os.path.exists(os.path.join(res_dir, 'fxmanifest.lua')), f"Missing manifest for {res}"
-    print(f"✓ All {len(expected_resources) + len(expected_functions)} core/function resources verified successfully.")
+        assert os.path.isfile(os.path.join(res_dir, 'fxmanifest.lua')), f"Missing manifest for {res}"
+    print(f"✓ All {len(expected_resources) + len(function_resources)} core/function resources verified successfully.")
 
 
 def test_all_resources_are_started_by_resource_name():
     resources_dir = os.path.join(BASE_DIR, 'resources')
     with open(os.path.join(BASE_DIR, 'server.cfg'), encoding='utf-8') as cfg_file:
         cfg = cfg_file.read()
+    started_resources = set(re.findall(r'^\\s*ensure\\s+([^\\s#]+)', cfg, re.MULTILINE))
     manifests = []
-    for category in ('[CORE]', '[JOB]', '[FUNCTION]'):
+    expected_counts = {'[CORE]': 2, '[JOB]': 50, '[FUNCTION]': 23}
+    for category, expected_count in expected_counts.items():
         category_dir = os.path.join(resources_dir, category)
         assert os.path.isdir(category_dir), f"Missing category {category}"
-        for name in os.listdir(category_dir):
+        resource_names = sorted(
+            name for name in os.listdir(category_dir)
+            if os.path.isdir(os.path.join(category_dir, name))
+        )
+        assert len(resource_names) == expected_count, (
+            f"Expected {expected_count} resources in {category}, found {len(resource_names)}"
+        )
+        for name in resource_names:
             resource_dir = os.path.join(category_dir, name)
-            if os.path.isdir(resource_dir) and os.path.isfile(os.path.join(resource_dir, 'fxmanifest.lua')):
-                manifests.append(name)
-    missing = [name for name in manifests if f"ensure {name}" not in cfg]
-    assert not missing, f"Resources not started by server.cfg: {missing}"
-    assert len([name for name in manifests if name.startswith('job_')]) == 50
-    print(f"✓ All {len(manifests)} categorized resources are referenced in server.cfg.")
+            manifest_path = os.path.join(resource_dir, 'fxmanifest.lua')
+            assert os.path.isfile(manifest_path), f"{category}/{name} missing fxmanifest.lua"
+            assert name in started_resources, f"{name} is not started by server.cfg"
+            manifests.append(name)
+    print(f"✓ All {len(manifests)} categorized resources have manifests and are started by server.cfg.")
 
 if __name__ == '__main__':
     print("========================================")
