@@ -177,9 +177,7 @@ RegisterNetEvent('rp_vehicle_rental:server:registerVehicle', function(netId)
         or NetworkGetEntityOwner(entity) ~= src
         or #(GetEntityCoords(entity) - vector3(Config.Locations[rental.location].vehicle.x,
             Config.Locations[rental.location].vehicle.y, Config.Locations[rental.location].vehicle.z)) > 60.0 then
-        if entity ~= 0 and DoesEntityExist(entity) and NetworkGetEntityOwner(entity) == src then
-            DeleteEntity(entity)
-        end
+        -- Never delete an arbitrary client-owned entity from an untrusted netId.
         closeRental(src, 'Le véhicule n’a pas pu être enregistré. Paiement remboursé.', rental.amount)
         return
     end
