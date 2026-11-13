@@ -8,22 +8,24 @@
 <body>
 <main id="tablet" class="hidden">
   <header><div class="brand"><i class="fa-solid fa-crown"></i><div><strong>CREATOR CONTROL</strong><small>LOS SANTOS STORIES · <span id="role">CRÉATEUR</span></small></div></div><button id="close" aria-label="Fermer"><i class="fa-solid fa-xmark"></i></button></header>
-  <nav class="creator-tabs" role="tablist" aria-label="Sections du Creator">
-    <button type="button" class="creator-tab active" data-tab="world">Environnement</button>
-    <button type="button" class="creator-tab" data-tab="mapping">Mapping & blips</button>
-    <button type="button" class="creator-tab" data-tab="management">Gestion & paramètres</button>
-    <button type="button" class="creator-tab" data-tab="organizations">Jobs & gangs</button>
-    <button type="button" class="creator-tab" data-tab="bank">Banque</button>
+    <nav class="creator-tabs" role="tablist" aria-label="Sections du Creator">
+    <button type="button" class="creator-tab active" data-tab="weather"><i class="fa-solid fa-cloud-sun"></i> Météo</button>
+    <button type="button" class="creator-tab" data-tab="announcement"><i class="fa-solid fa-bullhorn"></i> Annonce</button>
+    <button type="button" class="creator-tab" data-tab="mapping"><i class="fa-solid fa-cubes"></i> Map / Mapping</button>
+    <button type="button" class="creator-tab" data-tab="blips"><i class="fa-solid fa-map-pin"></i> Blips</button>
+    <button type="button" class="creator-tab" data-tab="configuration"><i class="fa-solid fa-sliders"></i> Configuration</button>
+    <button type="button" class="creator-tab" data-tab="players"><i class="fa-solid fa-users-gear"></i> Joueurs</button>
+    <button type="button" class="creator-tab" data-tab="jobs"><i class="fa-solid fa-briefcase"></i> Job</button>
+    <button type="button" class="creator-tab" data-tab="gangs"><i class="fa-solid fa-users"></i> Gang</button>
+    <button type="button" class="creator-tab" data-tab="bank"><i class="fa-solid fa-building-columns"></i> Banque Job</button>
+    <button type="button" class="creator-tab" data-tab="weapons"><i class="fa-solid fa-shield-halved"></i> Armes</button>
   </nav>
   <section class="intro"><span class="live"></span> CONSOLE CRÉATEUR <p>Contrôle de l'environnement serveur et communication globale.</p></section>
-  <section class="grid" data-tab-panel="world">
-    <article class="panel"><h2><i class="fa-solid fa-cloud-sun"></i> Météo & environnement</h2><div class="buttons">
+<section class="grid" data-tab-panel="weather"><article class="panel"><h2><i class="fa-solid fa-cloud-sun"></i> Météo & environnement</h2><div class="buttons">
       <button data-weather="EXTRASUNNY">Soleil</button><button data-weather="CLEAR">Dégagé</button><button data-weather="CLOUDS">Nuageux</button><button data-weather="RAIN">Pluie</button><button data-weather="THUNDER">Orage</button><button data-weather="SNOW">Neige</button>
-    </div><label>Heure du serveur</label><div class="time-row"><input id="hours" type="number" min="0" max="23" value="12"><span>:</span><input id="minutes" type="number" min="0" max="59" value="0"><button id="apply-time">Appliquer</button></div></article>
-    <article class="panel"><h2><i class="fa-solid fa-bullhorn"></i> Annonce globale</h2><textarea id="announcement" maxlength="300" placeholder="Écrire une annonce pour tous les citoyens..."></textarea><button id="send" class="primary"><i class="fa-solid fa-paper-plane"></i> Diffuser l'annonce</button></article>
-  </section>
-  <section class="grid creator-tools-grid" data-tab-panel="mapping">
-    <article class="panel">
+    </div><label>Heure du serveur</label><div class="time-row"><input id="hours" type="number" min="0" max="23" value="12"><span>:</span><input id="minutes" type="number" min="0" max="59" value="0"><button id="apply-time">Appliquer</button></div></article></section>
+<section class="grid" data-tab-panel="announcement" hidden><article class="panel"><h2><i class="fa-solid fa-bullhorn"></i> Annonce globale</h2><textarea id="announcement" maxlength="300" placeholder="Écrire une annonce pour tous les citoyens..."></textarea><button id="send" class="primary"><i class="fa-solid fa-paper-plane"></i> Diffuser l'annonce</button></article></section>
+<section class="grid creator-tools-grid" data-tab-panel="mapping" hidden><article class="panel">
       <h2><i class="fa-solid fa-cubes"></i> Mapping en direct</h2>
       <p class="panel-help">Sélectionnez un objet du catalogue FiveM puis placez-le devant votre personnage. Les objets sont synchronisés et sauvegardés.</p>
       <label for="mapping-search">Rechercher dans le catalogue de props</label>
@@ -32,8 +34,8 @@
       <select id="mapping-prop"></select>
       <button id="place-prop" class="primary"><i class="fa-solid fa-plus"></i> Placer l'objet devant moi</button>
       <div class="mapping-list" id="mapping-list"><small>Chargement des objets sauvegardés…</small></div>
-    </article>
-    <article class="panel">
+    </article></section>
+<section class="grid creator-tools-grid" data-tab-panel="blips" hidden><article class="panel">
       <h2><i class="fa-solid fa-map-pin"></i> Blips par métier</h2>
       <p class="panel-help">Activez ou désactivez un repère et modifiez son emplacement, son icône et sa couleur. Il sera visible uniquement par le métier concerné.</p>
       <label for="blip-job">Métier</label><select id="blip-job"></select>
@@ -51,10 +53,8 @@
       <label class="check-line"><input id="blip-enabled" type="checkbox" checked> Blip activé pour ce métier</label>
       <button id="save-blip" class="primary"><i class="fa-solid fa-floppy-disk"></i> Enregistrer le blip</button>
       <small id="blip-help">Sélectionnez un métier pour charger sa configuration.</small>
-    </article>
-  </section>
-  <section class="grid creator-admin-grid" data-tab-panel="management">
-    <article class="panel">
+    </article></section>
+<section class="grid creator-admin-grid" data-tab-panel="configuration" hidden><article class="panel">
       <h2><i class="fa-solid fa-server"></i> Configuration du serveur</h2>
       <p class="panel-help">Le nom est appliqué immédiatement. Le nombre de slots est enregistré ; un redémarrage peut être nécessaire pour appliquer la capacité.</p>
       <label for="creator-server-name">Nom affiché du serveur</label>
@@ -74,8 +74,8 @@
       <div class="module-heading"><strong>Modules activables</strong><button id="creator-refresh" type="button">Actualiser</button></div>
       <div id="creator-module-list" class="module-list"><small>Chargement des modules…</small></div>
       <p class="panel-help">Les modules essentiels, les tablettes staff, l'inventaire, l'économie et l'anticheat sont protégés contre l'arrêt depuis cette liste.</p>
-    </article>
-    <article class="panel">
+    </article></section>
+<section class="grid creator-admin-grid" data-tab-panel="players" hidden><article class="panel">
       <h2><i class="fa-solid fa-users-gear"></i> Gestion des joueurs connectés</h2>
       <label for="creator-player">Joueur à modifier</label>
       <select id="creator-player"><option value="">Chargement des joueurs…</option></select>
@@ -118,32 +118,8 @@
         <label><input id="creator-access-creator" type="checkbox" checked> Créateur (F11)</label>
       </div>
       <button id="creator-save-access" class="primary">Enregistrer les accès aux tablettes</button>
-    </article>
-  </section>
-
-  <section class="grid creator-bank-grid" data-tab-panel="bank" hidden>
-    <article class="panel">
-      <h2><i class="fa-solid fa-building-columns"></i> Comptes bancaires des métiers</h2>
-      <p class="panel-help">Chaque métier possède son propre compte partagé. Les soldes et autorisations sont conservés en base de données.</p>
-      <label for="creator-bank-job">Métier à configurer</label>
-      <select id="creator-bank-job"></select>
-      <div class="job-bank-balance-card"><small>SOLDE DU COMPTE</small><strong id="creator-bank-balance">0 $</strong><span id="creator-bank-account-name">Sélectionnez un métier</span></div>
-      <h3 class="subheading">Autorisations des employés</h3>
-      <label class="check-line"><input id="creator-bank-allow-deposit" type="checkbox" checked> Autoriser les dépôts sur le compte</label>
-      <label class="check-line"><input id="creator-bank-allow-withdraw" type="checkbox" checked> Autoriser les retraits depuis le compte</label>
-      <button id="creator-bank-save" class="primary"><i class="fa-solid fa-floppy-disk"></i> Enregistrer les autorisations</button>
-      <button id="creator-bank-refresh" type="button">Actualiser les comptes</button>
-      <small>Les changements sont appliqués immédiatement côté serveur et contrôlés à chaque transaction.</small>
-    </article>
-    <article class="panel">
-      <h2><i class="fa-solid fa-clock-rotate-left"></i> Historique bancaire</h2>
-      <p class="panel-help">Dépôts et retraits effectués par les employés du métier sélectionné.</p>
-      <div id="creator-bank-history" class="creator-bank-history"><small>Chargement de l'historique…</small></div>
-    </article>
-  </section>
-
-  <section class="grid creator-org-grid" data-tab-panel="organizations" hidden>
-    <article class="panel">
+    </article></section>
+<section class="grid creator-org-grid" data-tab-panel="jobs" hidden><article class="panel">
       <h2><i class="fa-solid fa-briefcase"></i> Créer un métier</h2>
       <p class="panel-help">Enregistrement MySQL et ajout au catalogue des métiers en direct.</p>
       <label for="new-job-name">Identifiant technique</label><input id="new-job-name" maxlength="40" placeholder="ex. pizzaiolo">
@@ -168,7 +144,7 @@
       <h3 class="subheading">Métiers personnalisés enregistrés</h3>
       <div id="creator-job-list" class="org-list">Chargement…</div>
     </article>
-    <article class="panel">
+<article class="panel">
       <h2><i class="fa-solid fa-warehouse"></i> Garages et flotte des métiers</h2>
       <p class="panel-help">Placez-vous à l'emplacement du garage souhaité, choisissez le métier et configurez les modèles autorisés et le grade minimum. L'emplacement de sortie est calculé automatiquement devant vous.</p>
       <label for="job-garage-job">Métier concerné</label>
@@ -193,7 +169,7 @@
       </div>
       <small id="job-garage-status">La configuration est sauvegardée en base de données.</small>
     </article>
-    <article class="panel">
+<article class="panel">
       <h2><i class="fa-solid fa-boxes-stacked"></i> Coffre et armurerie des métiers</h2>
       <p class="panel-help">Placez-vous à l’emplacement souhaité. Le coffre partagé conserve les objets du métier ; l’armurerie ne propose que les armes autorisées selon le grade.</p>
       <label for="job-storage-job">Métier concerné</label>
@@ -222,8 +198,8 @@
       </div>
       <h3 class="subheading">Historique des mouvements · 100 dernières opérations</h3>
       <div id="job-storage-history" class="org-list" aria-live="polite">Sélectionnez un métier puis consultez son historique.</div>
-    </article>
-    <article class="panel">
+    </article></section>
+<section class="grid creator-org-grid" data-tab-panel="gangs" hidden><article class="panel">
       <h2><i class="fa-solid fa-users"></i> Créer un gang</h2>
       <p class="panel-help">Registre persistant avec identifiant unique et couleur personnalisée.</p>
       <label for="new-gang-name">Identifiant technique</label><input id="new-gang-name" maxlength="40" placeholder="ex. families">
@@ -232,8 +208,44 @@
       <label for="new-gang-description">Description</label><textarea id="new-gang-description" maxlength="255" placeholder="Territoire, activités et identité du gang"></textarea>
       <div class="buttons"><button id="create-gang" class="primary"><i class="fa-solid fa-plus"></i> Créer le gang</button><button id="cancel-gang-edit" type="button" hidden>Annuler la modification</button></div>
       <h3 class="subheading">Gangs enregistrés</h3><div id="creator-gang-list" class="org-list">Chargement…</div>
+    </article></section>
+<section class="grid creator-bank-grid" data-tab-panel="bank" hidden>
+    <article class="panel">
+      <h2><i class="fa-solid fa-building-columns"></i> Comptes bancaires des métiers</h2>
+      <p class="panel-help">Chaque métier possède son propre compte partagé. Les soldes et autorisations sont conservés en base de données.</p>
+      <label for="creator-bank-job">Métier à configurer</label>
+      <select id="creator-bank-job"></select>
+      <div class="job-bank-balance-card"><small>SOLDE DU COMPTE</small><strong id="creator-bank-balance">0 $</strong><span id="creator-bank-account-name">Sélectionnez un métier</span></div>
+      <h3 class="subheading">Autorisations des employés</h3>
+      <label class="check-line"><input id="creator-bank-allow-deposit" type="checkbox" checked> Autoriser les dépôts sur le compte</label>
+      <label class="check-line"><input id="creator-bank-allow-withdraw" type="checkbox" checked> Autoriser les retraits depuis le compte</label>
+      <button id="creator-bank-save" class="primary"><i class="fa-solid fa-floppy-disk"></i> Enregistrer les autorisations</button>
+      <button id="creator-bank-refresh" type="button">Actualiser les comptes</button>
+      <small>Les changements sont appliqués immédiatement côté serveur et contrôlés à chaque transaction.</small>
+    </article>
+    <article class="panel">
+      <h2><i class="fa-solid fa-clock-rotate-left"></i> Historique bancaire</h2>
+      <p class="panel-help">Dépôts et retraits effectués par les employés du métier sélectionné.</p>
+      <div id="creator-bank-history" class="creator-bank-history"><small>Chargement de l'historique…</small></div>
     </article>
   </section>
+<section class="grid creator-admin-grid" data-tab-panel="weapons" hidden>
+ <article class="panel">
+  <h2><i class="fa-solid fa-shield-halved"></i> Politique des armes du serveur</h2>
+  <p class="panel-help">Activez les armes autorisées. Les armes désactivées sont bloquées et détectées par l'anticheat.</p>
+  <div class="weapon-policy-toolbar"><input id="creator-weapon-search" type="search" placeholder="Rechercher une arme…"><span id="creator-weapon-summary">Chargement du catalogue…</span></div>
+  <div id="creator-weapon-list" class="weapon-policy-list"><small>Chargement du catalogue des armes…</small></div>
+  <div class="buttons"><button id="creator-weapon-save" class="primary" type="button"><i class="fa-solid fa-floppy-disk"></i> Enregistrer la politique</button></div>
+ </article>
+</section>
+
+  
+  
+  
+
+  
+
+  
 
     <footer><span id="status">Prêt · Les actions sont contrôlées côté serveur.</span><kbd>ÉCHAP</kbd></footer>
 </main><script src="app.js"></script>
