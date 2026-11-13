@@ -44,6 +44,18 @@ def test_job_transactions_move_cash_and_shared_balance_and_write_history():
     assert "rp_jobbank:server:withdraw" in service
 
 
+def test_creator_uses_the_economy_bank_schema_without_recreating_tables_on_menu_open():
+    server = read("resources/[FUNCTION]/rp_tablet_creator/server/main.lua")
+    manifest = read("resources/[FUNCTION]/rp_tablet_creator/fxmanifest.lua")
+    start = server.index("RegisterNetEvent('rp_tablet_creator:server:requestJobBankData'")
+    end = server.index("RegisterNetEvent('rp_tablet_creator:server:saveJobBankPermissions'", start)
+    request_handler = server[start:end]
+    assert "rp_economy" in manifest
+    assert "GetResourceState('rp_economy') ~= 'started'" in request_handler
+    assert "CREATE TABLE IF NOT EXISTS rp_job_bank_" not in request_handler
+    assert "INSERT IGNORE INTO rp_job_bank_accounts (job) VALUES (?)" in request_handler
+
+
 def test_creator_can_configure_each_job_and_review_auditable_history():
     server = read("resources/[FUNCTION]/rp_tablet_creator/server/main.lua")
     client = read("resources/[FUNCTION]/rp_tablet_creator/client/main.lua")
