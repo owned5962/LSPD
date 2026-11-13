@@ -1,4 +1,5 @@
 from pathlib import Path
+import re
 
 ROOT = Path(__file__).resolve().parents[1]
 CORE = ROOT / "resources/[CORE]/rp_core"
@@ -218,6 +219,28 @@ def test_character_spawn_uses_validated_coordinates_and_wrap_safe_timeouts():
     assert "GetGameTimer() < fadeDeadline" not in character_client
     assert "GetGameTimer() < collisionDeadline" not in character_client
 
+def test_every_declared_resource_dependency_starts_before_its_consumer():
+    cfg = (ROOT / "server.cfg").read_text(encoding="utf-8")
+    ensure_lines = [line.strip().split()[1] for line in cfg.splitlines()
+                    if line.strip().startswith("ensure ")]
+    assert len(ensure_lines) == len(set(ensure_lines)), "Duplicate ensure entries in server.cfg"
+    order = {name: index for index, name in enumerate(ensure_lines)}
+
+    for manifest_path in (ROOT / "resources").rglob("fxmanifest.lua"):
+        resource = manifest_path.parent.name
+        if resource not in order:
+            continue
+        manifest = manifest_path.read_text(encoding="utf-8")
+        dependencies = re.findall(r"^\s*dependency\s+['\"]([^'\"]+)['\"]", manifest, re.MULTILINE)
+        block = re.search(r"dependencies\s*\{([\s\S]*?)\}", manifest)
+        if block:
+            dependencies.extend(re.findall(r"['\"]([^'\"]+)['\"]", block.group(1)))
+        for dependency in set(dependencies):
+            if dependency in order:
+                assert order[dependency] < order[resource], (
+                    f"{resource} starts before its dependency {dependency}"
+                )
+
 
 if __name__ == "__main__":
     test_server_player_registry_only_exposes_fully_loaded_characters()
@@ -237,4 +260,5 @@ if __name__ == "__main__":
     test_character_creation_is_server_validated_and_slot_uniqueness_is_database_enforced()
     test_core_startup_order_does_not_depend_on_private_server_keys()
     test_character_spawn_uses_validated_coordinates_and_wrap_safe_timeouts()
+    test_every_declared_resource_dependency_starts_before_its_consumer()
     print("Player session, core architecture and SQL dependency checks passed.")
