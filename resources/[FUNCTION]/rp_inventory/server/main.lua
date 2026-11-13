@@ -949,3 +949,283 @@ end
 
 exports('AdminSetItem', AdminSetItem)
 exports('GetItemCatalog', GetItemCatalog)
+
+
+-- Shared job lockers and grade-restricted armories.
+local jobStorageConfigs = {}
+local jobStorageLocks = {}
+
+local function loadJobStorageConfigs()
+    local rows = MySQL.query.await('SELECT job, x, y, z, stash_enabled, armory_enabled, armory_items FROM rp_creator_job_storage') or {}
+    local loaded = {}
+    for _, row in ipairs(rows) do
+        local ok, allowed = pcall(json.decode, row.armory_items or '[]')
+        if ok and type(allowed) == 'table' then
+            local weapons = {}
+            for _, entry in ipairs(allowed) do
+                if type(entry) == 'table' and type(entry.name) == 'string'
+                    and Config.DefaultItems[entry.name] and Config.DefaultItems[entry.name].type == 'weapon' then
+                    weapons[entry.name] = tonumber(entry.minGrade) or 0
+                end
+            end
+            loaded[row.job] = {
+                job = row.job, coords = vector3(tonumber(row.x), tonumber(row.y), tonumber(row.z)),
+                stashEnabled = tonumber(row.stash_enabled) == 1,
+                armoryEnabled = tonumber(row.armory_enabled) == 1,
+                armoryItems = weapons
+            }
+        end
+    end
+    jobStorageConfigs = loaded
+    print(('[rp_inventory] %d coffre(s)/armurerie(s) métier chargé(s).'):format(#rows))
+end
+
+MySQL.ready(function()
+    CreateThread(function()
+        local ok, err = pcall(function()
+            MySQL.query.await([[CREATE TABLE IF NOT EXISTS rp_creator_job_storage (
+                job VARCHAR(64) NOT NULL PRIMARY KEY,
+                x DOUBLE NOT NULL, y DOUBLE NOT NULL, z DOUBLE NOT NULL,
+                stash_enabled TINYINT(1) NOT NULL DEFAULT 1,
+                armory_enabled TINYINT(1) NOT NULL DEFAULT 1,
+                armory_items LONGTEXT NOT NULL,
+                updated_by VARCHAR(80) NOT NULL,
+                updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4]])
+            MySQL.query.await([[CREATE TABLE IF NOT EXISTS rp_job_storage_items (
+                job VARCHAR(64) NOT NULL,
+                storage_type ENUM('stash','armory') NOT NULL,
+                item_name VARCHAR(64) NOT NULL,
+                count INT UNSIGNED NOT NULL DEFAULT 0,
+                PRIMARY KEY (job, storage_type, item_name)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4]])
+            MySQL.query.await([[CREATE TABLE IF NOT EXISTS rp_job_storage_logs (
+                id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                job VARCHAR(64) NOT NULL,
+                storage_type VARCHAR(16) NOT NULL,
+                character_id INT NOT NULL,
+                player_name VARCHAR(128) NOT NULL,
+                direction VARCHAR(16) NOT NULL,
+                item_name VARCHAR(64) NOT NULL,
+                item_count INT UNSIGNED NOT NULL,
+                created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                KEY idx_job_storage_logs_job_created (job, created_at)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4]])
+            loadJobStorageConfigs()
+        end)
+        if not ok then print('[rp_inventory] Job storage initialization failed: ' .. tostring(err)) end
+    end)
+end)
+
+RegisterNetEvent('rp_inventory:server:reloadJobStorageConfigs', function()
+    if source ~= 0 then return end
+    local ok, err = pcall(loadJobStorageConfigs)
+    if not ok then print('[rp_inventory] Job storage reload failed: ' .. tostring(err)) end
+end)
+
+local function getJobStorageAccess(src, storageType)
+    local player = exports['rp_core']:GetPlayerFromId(src)
+    if not player or type(player.job) ~= 'string' then return nil end
+    local config = jobStorageConfigs[player.job]
+    if not config then return nil end
+    if storageType == 'stash' and not config.stashEnabled then return nil end
+    if storageType == 'armory' and not config.armoryEnabled then return nil end
+    local ped = GetPlayerPed(src)
+    if ped == 0 or not DoesEntityExist(ped) or #(GetEntityCoords(ped) - config.coords) > 3.5 then return nil end
+    return player, config
+end
+
+local function getStorageItems(job, storageType)
+    local rows = MySQL.query.await(
+        'SELECT item_name, count FROM rp_job_storage_items WHERE job = ? AND storage_type = ? AND count > 0 ORDER BY item_name ASC',
+        { job, storageType }) or {}
+    local result = {}
+    for _, row in ipairs(rows) do
+        local def = Config.DefaultItems[row.item_name]
+        if def then
+            result[#result + 1] = { name = row.item_name, label = def.label or row.item_name, count = tonumber(row.count) or 0 }
+        end
+    end
+    return result
+end
+
+local function sendJobStorageData(src, storageType)
+    local player, config = getJobStorageAccess(src, storageType)
+    if not player or not config then
+        notify(src, 'error', 'Accès au coffre métier refusé ou trop éloigné.')
+        return false
+    end
+    if not playerInventories[src] or inventoryCharacterIds[src] ~= player.charId then
+        local ok = pcall(loadInventory, player)
+        if not ok then notify(src, 'error', 'Inventaire indisponible.'); return false end
+    end
+    local storageItems = getStorageItems(player.job, storageType)
+    local inventory = {}
+    for _, item in ipairs(normalizeInventory(playerInventories[src])) do
+        local def = Config.DefaultItems[item.name]
+        local allowed = storageType == 'stash'
+            or (def and def.type == 'weapon' and config.armoryItems[item.name] ~= nil
+                and (tonumber(player.jobGrade) or 0) >= config.armoryItems[item.name])
+        if allowed then
+            inventory[#inventory + 1] = { name = item.name, label = item.label or item.name, count = item.count }
+        end
+    end
+    TriggerClientEvent('rp_inventory:client:jobStorageData', src, {
+        job = player.job, storageType = storageType, storageItems = storageItems,
+        inventoryItems = inventory
+    })
+    return true
+end
+
+RegisterNetEvent('rp_inventory:server:requestJobStorageMarker', function()
+    local src = source
+    local player = exports['rp_core']:GetPlayerFromId(src)
+    local config = player and jobStorageConfigs[player.job]
+    if not config then
+        TriggerClientEvent('rp_inventory:client:jobStorageMarker', src, nil)
+        return
+    end
+    TriggerClientEvent('rp_inventory:client:jobStorageMarker', src, {
+        x = config.coords.x, y = config.coords.y, z = config.coords.z,
+        stashEnabled = config.stashEnabled, armoryEnabled = config.armoryEnabled
+    })
+end)
+
+RegisterNetEvent('rp_inventory:server:openJobStorage', function(storageType)
+    local src = source
+    if not exports['rp_core']:CanPerformAction(src, 'inventory:open_job_storage', 900) then return end
+    if storageType ~= 'stash' and storageType ~= 'armory' then return end
+    sendJobStorageData(src, storageType)
+end)
+
+RegisterNetEvent('rp_inventory:server:transferJobStorage', function(storageType, direction, itemName, rawCount)
+    local src = source
+    if not exports['rp_core']:CanPerformAction(src, 'inventory:transfer_job_storage', 700) then return end
+    if (storageType ~= 'stash' and storageType ~= 'armory')
+        or (direction ~= 'deposit' and direction ~= 'withdraw')
+        or type(itemName) ~= 'string' or #itemName > 64 then return end
+    local count = tonumber(rawCount)
+    if not count or count % 1 ~= 0 or count < 1 or count > 20 then return end
+    local player, config = getJobStorageAccess(src, storageType)
+    local definition = Config.DefaultItems[itemName]
+    if not player or not config or not definition then
+        notify(src, 'error', 'Objet ou accès au coffre invalide.')
+        return
+    end
+    if storageType == 'armory' then
+        local minimum = config.armoryItems[itemName]
+        if definition.type ~= 'weapon' or minimum == nil or (tonumber(player.jobGrade) or 0) < minimum then
+            notify(src, 'error', 'Cette arme n’est pas autorisée pour ton grade.')
+            return
+        end
+        if direction == 'withdraw' then
+            local allowedOk, allowed = pcall(function()
+                return exports['rp_anticheat']:IsWeaponAllowed(definition.weapon)
+            end)
+            if not allowedOk or allowed ~= true then
+                notify(src, 'error', 'Cette arme est désactivée par la politique du serveur.')
+                return
+            end
+        end
+    end
+    if transferLocks[src] or jobStorageLocks[player.job] then
+        notify(src, 'error', 'Une opération sur ce coffre est déjà en cours.')
+        return
+    end
+    if not playerInventories[src] or inventoryCharacterIds[src] ~= player.charId then
+        local loaded = pcall(loadInventory, player)
+        if not loaded then notify(src, 'error', 'Inventaire indisponible.'); return end
+    end
+
+    local inventory = normalizeInventory(playerInventories[src])
+    local playerIndex, playerCount
+    for index, entry in ipairs(inventory) do
+        if entry.name == itemName then playerIndex, playerCount = index, entry.count; break end
+    end
+    playerCount = playerCount or 0
+    local storageRow = MySQL.single.await(
+        'SELECT count FROM rp_job_storage_items WHERE job = ? AND storage_type = ? AND item_name = ?',
+        { player.job, storageType, itemName })
+    local storageCount = storageRow and tonumber(storageRow.count) or 0
+    local nextPlayerCount, nextStorageCount
+    if direction == 'deposit' then
+        if playerCount < count then notify(src, 'error', 'Quantité insuffisante dans ton inventaire.'); return end
+        nextPlayerCount, nextStorageCount = playerCount - count, storageCount + count
+        if nextStorageCount > 10000 then notify(src, 'error', 'Capacité de stockage atteinte.'); return end
+    else
+        if storageCount < count then notify(src, 'error', 'Quantité insuffisante dans le coffre.'); return end
+        nextPlayerCount, nextStorageCount = playerCount + count, storageCount - count
+        local projected = normalizeInventory(inventory)
+        local found = false
+        for _, entry in ipairs(projected) do
+            if entry.name == itemName then entry.count = nextPlayerCount; found = true; break end
+        end
+        if not found then projected[#projected + 1] = {
+            name = itemName, count = count, label = definition.label, weight = definition.weight
+        } end
+        if getInventoryWeight(projected) > Config.MaxWeight then
+            notify(src, 'error', 'Ton inventaire est trop lourd pour récupérer cet objet.')
+            return
+        end
+    end
+
+    if not exports['rp_core']:AcquireCharacterLock({ player.charId }) then
+        notify(src, 'error', 'Sauvegarde du personnage en cours. Réessaie.')
+        return
+    end
+    transferLocks[src] = true
+    jobStorageLocks[player.job] = src
+    local updated = normalizeInventory(inventory)
+    if direction == 'deposit' then
+        if nextPlayerCount == 0 then
+            if playerIndex then table.remove(updated, playerIndex) end
+        else
+            updated[playerIndex].count = nextPlayerCount
+        end
+    else
+        local found = false
+        for _, entry in ipairs(updated) do
+            if entry.name == itemName then entry.count = nextPlayerCount; found = true; break end
+        end
+        if not found then updated[#updated + 1] = {
+            name = itemName, count = count, label = definition.label, weight = definition.weight
+        } end
+    end
+
+    local persisted, persistError = pcall(function()
+        local queries = {
+            { query = 'INSERT INTO player_inventories (character_id, items) VALUES (?, ?) ON DUPLICATE KEY UPDATE items = VALUES(items)',
+                values = { player.charId, json.encode(updated) } },
+            { query = [[INSERT INTO rp_job_storage_items (job, storage_type, item_name, count)
+                VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE count = VALUES(count)]],
+                values = { player.job, storageType, itemName, nextStorageCount } },
+            { query = 'INSERT INTO rp_job_storage_logs (job, storage_type, character_id, player_name, direction, item_name, item_count) VALUES (?, ?, ?, ?, ?, ?, ?)',
+                values = { player.job, storageType, player.charId, (GetPlayerName(src) or 'Inconnu'):sub(1, 128),
+                    direction, itemName, count } }
+        }
+        if not MySQL.transaction.await(queries) then error('Job storage transaction rejected') end
+        if nextStorageCount == 0 then
+            MySQL.update.await('DELETE FROM rp_job_storage_items WHERE job = ? AND storage_type = ? AND item_name = ? AND count = 0',
+                { player.job, storageType, itemName })
+        end
+    end)
+    transferLocks[src] = nil
+    jobStorageLocks[player.job] = nil
+    exports['rp_core']:ReleaseCharacterLock({ player.charId })
+    if not persisted then
+        print(('[rp_inventory] Job storage transfer failed for character %s: %s'):format(player.charId, tostring(persistError)))
+        notify(src, 'error', 'La transaction a échoué. Aucun transfert confirmé.')
+        return
+    end
+    playerInventories[src] = updated
+    sendInventory(src, player)
+    notify(src, 'success', (direction == 'deposit' and 'Objet déposé.' or 'Objet récupéré.'))
+    sendJobStorageData(src, storageType)
+end)
+
+AddEventHandler('playerDropped', function()
+    local src = source
+    for job, owner in pairs(jobStorageLocks) do
+        if owner == src then jobStorageLocks[job] = nil end
+    end
+end)
