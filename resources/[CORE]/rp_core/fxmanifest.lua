@@ -4,7 +4,7 @@ lua54 'yes'
 
 author 'FiveM RP Team'
 description 'Core system for GTA 5 Roleplay (events, sessions, permissions, notifications)'
-version '1.1.4'
+version '1.1.5'
 
 dependency 'oxmysql'
 
@@ -28,9 +28,11 @@ server_scripts {
 
 server_exports {
     'CanPerformAction',
-    'GetActionCooldownRemaining',
-    'ClearPlayerRateLimits',
     'PeekCanPerformAction',
+    'GetActionCooldownRemaining',
+    'GetRateLimitStatus',
+    'ClearPlayerRateLimits',
+    'ClearIdentityRateLimits',
     'IsCharacterSavePending',
     'WaitForPlayerLoaded',
     'IsPlayerLoaded',
