@@ -21,7 +21,9 @@ jobs:
         with:
           python-version: "3.12"
       - name: Integrity checks (truncated files, manifests, CSS imports)
-        run: python tests/test_repo_integrity.py
+        run: |
+          python tests/test_repo_integrity.py
+          python tests/test_css_loading.py
 
   static:
     name: Lua / JS / core tests
