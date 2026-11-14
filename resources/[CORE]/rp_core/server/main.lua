@@ -5,9 +5,11 @@ local pendingDisconnectPlayers = {}
 
 local TIMER_MODULUS = 4294967296
 
--- Rate limiting lives in server/rate_limit.lua (loaded first).
--- Keep a local alias so existing main.lua call sites stay readable.
+-- Prefer the in-resource global published by rate_limit.lua (no export hop).
 local function CanPerformAction(src, action, cooldownMs, opts)
+    if type(RPCoreCanPerformAction) == 'function' then
+        return RPCoreCanPerformAction(src, action, cooldownMs, opts)
+    end
     return exports['rp_core']:CanPerformAction(src, action, cooldownMs, opts)
 end
 
@@ -120,21 +122,28 @@ local function RegisterPlayer(source, player)
         and identifier:match('^license:[%w_%-]+$') ~= nil
         and #identifier >= 10 and #identifier <= 80
 
-    if not src or src < 1 or src % 1 ~= 0 or not GetPlayerName(src) or type(player) ~= 'table'
-        or tonumber(player.source) ~= src or not validIdentifier
-        or not characterId or characterId < 1 or characterId % 1 ~= 0
-        or not slot or slot < 1 or slot > 3 or slot % 1 ~= 0
-        or player.isLoaded ~= true then
+    local function reject(reason)
+        print(('[rp_core] RegisterPlayer rejected src=%s reason=%s charId=%s slot=%s ident=%s')
+            :format(tostring(src), reason, tostring(characterId), tostring(slot), tostring(identifier)))
         return false
     end
 
+    if not src or src < 1 or src % 1 ~= 0 then return reject('bad_source') end
+    if not GetPlayerName(src) then return reject('player_not_connected') end
+    if type(player) ~= 'table' then return reject('player_not_table') end
+    if tonumber(player.source) ~= src then return reject('source_mismatch') end
+    if not validIdentifier then return reject('invalid_identifier') end
+    if not characterId or characterId < 1 or characterId % 1 ~= 0 then return reject('bad_charId') end
+    if not slot or slot < 1 or slot > 3 or slot % 1 ~= 0 then return reject('bad_slot') end
+    if player.isLoaded ~= true then return reject('not_loaded_flag') end
+
     if pendingDisconnectSaves[characterId] == true then
-        return false
+        return reject('disconnect_save_pending')
     end
 
     for otherSrc, other in pairs(Players) do
         if other and otherSrc ~= src and other.identifier == identifier then
-            return false
+            return reject('identifier_already_online')
         end
     end
 
@@ -179,7 +188,6 @@ RegisterNetEvent('rp_core:server:requestPlayerDataSync', function()
     end
 end)
 
--- Sequential autosave (no parallel workers): avoids saveLocks races.
 CreateThread(function()
     local lastFailureLog = {}
     while true do
@@ -222,7 +230,6 @@ CreateThread(function()
     end
 end)
 
--- Compact categorized boot status.
 CreateThread(function()
     Wait(8000)
     local groups = {
