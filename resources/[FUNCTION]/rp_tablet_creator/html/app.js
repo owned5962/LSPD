@@ -501,7 +501,7 @@ function updateCreatorInventory(operation) {
 }
 document.getElementById('creator-item-add').addEventListener('click', () => updateCreatorInventory('add'));
 document.getElementById('creator-item-remove').addEventListener('click', () => updateCreatorInventory('remove'));
-document.querySelectorAll('.creator-tab').forEach(button => button.addEventListener('click', () => activateCreatorTab(button.dataset.tab)));
+document.querySelectorAll('.creator-tab').forEach(button => button.addEventListener('click', () => { activateCreatorTab(button.dataset.tab); if (button.dataset.tab === 'statistics') requestAnimationFrame(renderCreatorStatistics); }));
 document.getElementById('creator-noclip').addEventListener('click', event => {
     const button=event.currentTarget;
     button.disabled=true;
