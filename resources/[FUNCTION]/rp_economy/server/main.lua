@@ -271,8 +271,8 @@ RegisterNetEvent('rp_economy:server:transfer', function(rawTargetId, rawAmount)
         return
     end
 
-    TriggerEvent('rp_economy:server:logTransaction', player.charId, 'transfer_send', amount, target.firstname .. ' ' .. target.lastname, 'Virement envoyé')
-    TriggerEvent('rp_economy:server:logTransaction', target.charId, 'transfer_receive', amount, player.firstname .. ' ' .. player.lastname, 'Virement reçu')
+    TriggerEvent('rp_economy:server:logTransaction', player.charId, 'transfer_send', amount, (tostring(target.firstname or '') .. ' ' .. tostring(target.lastname or '')):sub(1, 128), 'Virement envoyé')
+    TriggerEvent('rp_economy:server:logTransaction', target.charId, 'transfer_receive', amount, (tostring(player.firstname or '') .. ' ' .. tostring(player.lastname or '')):sub(1, 128), 'Virement reçu')
     TriggerClientEvent('rp_core:client:updateBank', src, player.bank)
     TriggerClientEvent('rp_core:client:updateBank', targetId, target.bank)
     TriggerClientEvent('rp_economy:client:refreshBalances', src, player.cash, player.bank)
@@ -300,18 +300,18 @@ CreateThread(function()
                     gradeData = nil
                 end
 
-                local salary = validAmount(type(gradeData) == 'table' and gradeData.salary or 150)
+                local salary = type(gradeData) == 'table' and validAmount(gradeData.salary) or nil
                 if salary then
-                    -- Isolate player-specific payment failures so one bad return/error object
-                    -- cannot terminate the recurring salary thread for every online player.
+                    -- addBank owns persistence, transaction history and the player notification.
+                    -- Avoid a duplicate notification and never invent a fallback salary if the
+                    -- job catalogue cannot provide a valid grade amount.
                     local paidOk, paid = pcall(player.addBank, salary,
                         'Salaire - ' .. tostring(player.job or 'Civil'), 'salary')
-                    if not paidOk then
+                    if not paidOk or paid ~= true then
                         print(('[rp_economy] Salary payment failed for player %s: %s'):format(
                             tostring(src), tostring(paid)))
-                    elseif paid == true then
-                        notify(src, 'Salaire reçu : ' .. formatCurrency(salary), 'success')
                     end
+                end
                 end
             end
         end
