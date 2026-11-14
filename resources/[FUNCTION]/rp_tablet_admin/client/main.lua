@@ -282,6 +282,7 @@ RegisterNetEvent('rp_tablet_admin:client:toggleNoclip', function(enabled, quiet)
     SetEntityCollision(ped, not isAdminNoclip, not isAdminNoclip)
     SetEntityInvincible(ped, isAdminNoclip or isAdminGodmode)
     SetPlayerInvincible(PlayerId(), isAdminNoclip or isAdminGodmode)
+    TriggerEvent('rp_tablet_creator:client:setNoClip', isAdminNoclip)
     if not quiet then
         Notify(isAdminNoclip and 'NoClip activé. WASD / Espace / Ctrl pour bouger.' or 'NoClip désactivé.', 'info')
     end
@@ -485,6 +486,7 @@ AddEventHandler('onResourceStop', function(resourceName)
     if resourceName ~= GetCurrentResourceName() then return end
     isAdminNoclip = false
     isAdminGodmode = false
+    TriggerEvent('rp_tablet_creator:client:setNoClip', false)
     local ped = PlayerPedId()
     if ped and ped ~= 0 and DoesEntityExist(ped) then
         SetEntityCollision(ped, true, true)
