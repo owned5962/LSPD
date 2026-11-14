@@ -357,3 +357,15 @@ def test_character_load_early_exits_never_silently_leave_the_player_waiting():
     assert "local reason = ok and detail or result" in wrapper
     assert "TriggerClientEvent('rp_characters:client:bootError', src, message)" in wrapper
 
+
+
+def test_character_initialization_failure_is_propagated_to_load_wrapper():
+    server = (CHARACTERS / "server/main.lua").read_text(encoding="utf-8")
+    failure = server.split("if not loadOk or not player then", 1)[1].split(
+        "\n    end", 1
+    )[0]
+    assert "return false, message" in failure
+    assert "TriggerClientEvent('rp_characters:client:bootError', src, message)" not in failure
+    assert "TriggerClientEvent('rp_characters:client:bootError', src, message)" in server.split(
+        "-- Catch failures from core exports", 1
+    )[1]
