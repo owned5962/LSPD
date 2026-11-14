@@ -1,46 +1,14 @@
-local RESOURCE = GetCurrentResourceName()
-local CLIENT_PARTS = { 2, 25, 26, 27, 28 }
-local PART_COUNT = #CLIENT_PARTS
-local parts, lineMap = {}, {}
-local nextCombinedLine = 1
-
-local function countSourceLines(source)
-    local _, count = source:gsub("\n", "")
-    if source == "" then return 0 end
-    return count + (source:sub(-1) == "\n" and 0 or 1)
-end
-
-local function mapCombinedLine(line)
-    local entry = lineMap[tonumber(line)]
-    if entry then return entry.file, entry.line end
-    return "client/main.lua", tonumber(line) or 0
-end
-
-local function mapTraceback(traceback)
-    local output = {}
-    for sourceLine in tostring(traceback or ""):gmatch("[^\n]+") do
-        local combined = sourceLine:match("client/main%.lua:(%d+)")
-        if combined then
-            local file, line = mapCombinedLine(combined)
-            output[#output + 1] = sourceLine .. "  ==>  " .. file .. ":" .. tostring(line)
-        else
-            output[#output + 1] = sourceLine
-        end
-    end
-    return table.concat(output, "\n")
-end
-
 local reportWindow, reportCount = GetGameTimer(), 0
+
 local function reportClientError(context, err)
-    local trace = mapTraceback(err)
-    local file, line = trace:match("==>  ([^\n]+):(%d+)")
-    file, line = file or "client/main.lua", tonumber(line) or 0
-    local message = tostring(err):sub(1, 2000)
-    print(("^1[rp_characters][CLIENT ERROR] %s:%d | %s | %s^7"):format(file, line, tostring(context), message))
+    local trace = debug.traceback(tostring(err), 2)
+    print(("^1[rp_characters][CLIENT ERROR] %s | %s^7"):format(tostring(context), tostring(err):sub(1, 2000)))
     print("^1" .. trace:sub(1, 6000) .. "^7")
+
     local now = GetGameTimer()
-    if now - reportWindow > 10000 then reportWindow, reportCount = now, 0 end
-    if reportCount >= 8 then return end
+    if now - reportWindow > 10000 then
+        reportWindow, reportCount = now, 0
+    end
     reportCount = reportCount + 1
 end
 
@@ -104,6 +72,8 @@ RegisterNUICallback = function(name, callback)
 end
 
 -- Character creator implementation consolidated in this file.
+-- No runtime dependency on external p*.lua fragments.
+
 -- No runtime LoadResourceFile dependency on split p*.lua fragments.
 
 local isCreating = false
