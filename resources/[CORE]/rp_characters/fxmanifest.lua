@@ -3,7 +3,7 @@ game 'gta5'
 lua54 'yes'
 author 'FiveM RP Team'
 description 'Character registration and character creator for FiveM'
-version '1.1.6'
+version '1.1.7'
 dependencies { 'oxmysql', 'rp_core', 'rp_jobs' }
 ui_page 'html/index.html'
 files {
@@ -40,4 +40,9 @@ files {
     'client/p28.lua'
 }
 client_scripts { 'client/main.lua' }
-server_scripts { 'server/diagnostics.lua', '@oxmysql/lib/MySQL.lua', 'server/main.lua' }
+server_scripts {
+    'server/diagnostics.lua',
+    '@oxmysql/lib/MySQL.lua',
+    'server/main.lua',
+    'server/bootstrap_hook.lua'
+}
