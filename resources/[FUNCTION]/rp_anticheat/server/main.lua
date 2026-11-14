@@ -432,9 +432,14 @@ local function recordDetection(src, reason, trustedServerEvent)
     alert.jobGrade, alert.jobGradeLabel = snapshot.jobGrade, snapshot.jobGradeLabel
     alert.snapshotAvailable = alert.snapshot ~= nil
     local persisted, persistError = pcall(function()
-        MySQL.insert.await('INSERT INTO anticheat_detections (player_name, detection_type, reason, severity) VALUES (?, ?, ?, ?)',
-            { alert.playerName, alert.category, alert.reason, alert.severity })
-        alert.id = MySQL.insert.await([[
+        local detectionId = MySQL.insert.await(
+            'INSERT INTO anticheat_detections (player_name, detection_type, reason, severity) VALUES (?, ?, ?, ?)',
+            { alert.playerName, alert.category, alert.reason, alert.severity }
+        )
+        if not tonumber(detectionId) or tonumber(detectionId) < 1 then
+            error('anticheat_detections insert returned no row id')
+        end
+        local eventId = MySQL.insert.await([[
             INSERT INTO anticheat_event_log
                 (player_id, player_identifier, player_name, detection_type, reason, severity, sanction, source_type,
                  items_snapshot, weapons_snapshot, cash_snapshot, bank_snapshot,
@@ -446,8 +451,13 @@ local function recordDetection(src, reason, trustedServerEvent)
             snapshot.cash, snapshot.bank, snapshot.job, snapshot.jobLabel,
             snapshot.jobGrade, snapshot.jobGradeLabel
         })
+        if not tonumber(eventId) or tonumber(eventId) < 1 then
+            error('anticheat_event_log insert returned no row id')
+        end
+        alert.id = tonumber(eventId)
     end)
     if not persisted then
+        alert.sanction = 'review'
         print('[rp_anticheat][logs] Échec enregistrement du registre: ' .. tostring(persistError))
     else
         totalDetections = totalDetections + 1
@@ -461,7 +471,7 @@ local function recordDetection(src, reason, trustedServerEvent)
             TriggerClientEvent('rp_anticheat:notifyStaff', staffId, alert, totalDetections)
         end
     end
-    if trustedServerEvent == true then
+    if trustedServerEvent == true and persisted then
         applyConfiguredSanction(src, alert)
     end
     return true
@@ -735,7 +745,7 @@ RegisterNetEvent('rp_anticheat:requestLogs', function()
     local ok, rows = pcall(function()
         return MySQL.query.await([[
             SELECT id, player_id AS playerId, player_name AS playerName,
-                   detection_type AS category, reason, severity, sanction,
+                   detection_type AS category, reason, severity, sanction, source_type AS sourceType,
                    items_snapshot AS itemsSnapshot, weapons_snapshot AS weaponsSnapshot,
                    cash_snapshot AS cash, bank_snapshot AS bank,
                    job_name AS job, job_label AS jobLabel,
