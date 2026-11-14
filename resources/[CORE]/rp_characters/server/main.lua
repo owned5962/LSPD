@@ -7,7 +7,7 @@ local MODULES = {
 }
 
 local buffer = {}
-for i, rel in ipairs(MODULES) do
+for _, rel in ipairs(MODULES) do
     local src = LoadResourceFile(RESOURCE, rel)
     if not src or src == '' then
         print(('[rp_characters] FATAL missing server module %s'):format(rel))
