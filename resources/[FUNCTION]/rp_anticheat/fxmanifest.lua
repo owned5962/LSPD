@@ -23,7 +23,8 @@ server_scripts {
 files {
     'html/index.html',
     'html/css/style.css',
-    'html/js/app.js'
+    'html/js/app.js',
+    'html/images/anticheat-hero.svg'
 }
 
 dependencies { 'oxmysql', 'rp_tablet_creator', 'rp_inventory', 'rp_core', 'rp_jobs' }
