@@ -109,6 +109,7 @@ RegisterNetEvent('rp_tablet_creator:client:open', function(role)
     isOpen = true
     SetNuiFocus(true, true)
     SendNUIMessage({ action = 'open', role = role or 'Créateur' })
+    SendNUIMessage({ action = 'noClipState', enabled = noClipEnabled })
     TriggerServerEvent('rp_tablet_creator:server:requestTools')
     TriggerServerEvent('rp_tablet_creator:server:requestAdminTools')
     TriggerServerEvent('rp_tablet_creator:server:requestOrganizations')
