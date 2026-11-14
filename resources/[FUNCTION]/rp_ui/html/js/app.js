@@ -37,8 +37,12 @@ window.addEventListener('message', function(event) {
         document.getElementById('client-diagnostics')?.classList.add('hidden');
     } else if (data.action === 'updateDiagnostics') {
         const setDiag = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = String(value); };
-        setDiag('diag-fps', Math.max(0, Number(data.fps) || 0));
-        setDiag('diag-ping', Math.max(0, Number(data.ping) || 0) + ' ms');
+        const fps = Math.max(0, Number(data.fps) || 0);
+        const ping = Math.max(0, Number(data.ping) || 0);
+        setDiag('diag-fps', fps);
+        setDiag('diag-ping', ping + ' ms');
+        pushDiagnosticSample(fpsSamples, fps, 'diag-fps-chart', '', 'En attente de FPS…');
+        pushDiagnosticSample(pingSamples, ping, 'diag-ping-chart', ' ms', 'En attente de ping…');
         const frameMs = Math.max(0, Number(data.frameMs) || 0);
         setDiag('diag-frame-ms', frameMs.toFixed(2) + ' ms');
         setDiag('diag-frame-current', frameMs.toFixed(2) + ' ms');
@@ -159,7 +163,13 @@ document.getElementById('close-diagnostics')?.addEventListener('click', () => {
 
 
 // Lightweight local charts for the F12 diagnostics panel.
-const frameSamples = [];
+const frameSamples = [], fpsSamples = [], pingSamples = [];
+function pushDiagnosticSample(target, value, canvasId, suffix, emptyLabel) {
+    if (!Number.isFinite(value)) return;
+    target.push({ label: new Date().toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit', second:'2-digit'}), value });
+    if (target.length > 30) target.shift();
+    drawLineChart(canvasId, target, suffix, emptyLabel);
+}
 function drawLineChart(canvasId, values, suffix, emptyLabel) {
     const canvas = document.getElementById(canvasId);
     if (!canvas) return;
