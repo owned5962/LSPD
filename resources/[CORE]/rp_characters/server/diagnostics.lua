@@ -81,7 +81,7 @@ RegisterNetEvent("rp_characters:server:reportClientError", function(payload)
 
     print(("^3[rp_characters][CLIENT-REPORTED ERROR] player=%s %s:%d | %s | %s^7")
         :format(tostring(src), file, line, clean(payload.context, 128), clean(payload.message, 2000)))
-    local trace = clean(payload.traceback, 6000)
+    local trace = type(payload.traceback) == "string" and payload.traceback:gsub("\r", ""):sub(1, 6000) or ""
     if trace ~= "" then print("^3" .. trace .. "^7") end
 end)
 
