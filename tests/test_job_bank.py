@@ -80,6 +80,19 @@ def test_fleeca_terminal_exposes_job_bank_only_after_biometric_authentication_at
     assert "'server/jobbank.lua'" in manifest
 
 
+
+def test_job_bank_history_failure_rolls_back_before_releasing_character_lock():
+    service = read("resources/[FUNCTION]/rp_economy/server/jobbank.lua")
+    start = service.index("local sqlOk, affected = pcall(MySQL.update.await, query, params)")
+    end = service.index("TriggerClientEvent('rp_core:client:updateCash', src, player.cash)", start)
+    transaction = service[start:end]
+    assert transaction.index("MySQL.insert.await") < transaction.index("rollbackQuery")
+    assert "SET c.cash = c.cash + ?, a.balance = a.balance - ?" in transaction
+    assert "SET c.cash = c.cash - ?, a.balance = a.balance + ?" in transaction
+    assert transaction.index("rollbackQuery") < transaction.rindex("ReleaseCharacterLock")
+    assert "Opération annulée : historique bancaire indisponible." in transaction
+
+
 if __name__ == "__main__":
     checks = [
         test_job_accounts_are_persistent_and_seeded_from_the_job_catalog,
@@ -87,6 +100,7 @@ if __name__ == "__main__":
         test_job_transactions_move_cash_and_shared_balance_and_write_history,
         test_creator_can_configure_each_job_and_review_auditable_history,
         test_fleeca_terminal_exposes_job_bank_only_after_biometric_authentication_at_a_branch,
+        test_job_bank_history_failure_rolls_back_before_releasing_character_lock,
     ]
     for check in checks:
         check()
