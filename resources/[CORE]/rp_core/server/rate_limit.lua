@@ -1,43 +1,24 @@
 -- Distributed server-side rate limiting for FiveM resources.
---
--- "Distributed" here means limits are shared across:
---   - player source sessions (reconnect / source reuse)
---   - stable license identifiers
---   - action categories (economy, inventory, characters, admin, ...)
---   - a global per-identity budget
---
--- Algorithm mix:
---   1) min interval per action key
---   2) fixed window counters per action key
---   3) token buckets per category and per identity (smooth burst control)
---
--- API (backward compatible):
---   exports['rp_core']:CanPerformAction(src, 'inventory:use_item', 1000)
---   exports['rp_core']:CanPerformAction(src, 'character:select', 3000, {
---       maxPerWindow = 3, windowMs = 15000, category = 'characters', cost = 1
---   })
+-- Identity + category token buckets. See exports below.
 
 local TIMER_MODULUS = 4294967296
 
--- Identity-scoped stores (survive source id changes while the player is online).
--- key = license:xxx or src:N fallback
-local lastActionAt = {}      -- [identity][action] = ts
-local actionWindows = {}     -- [identity][action] = { count, startedAt }
-local categoryBuckets = {}   -- [identity][category] = { tokens, updatedAt }
-local identityBuckets = {}   -- [identity] = { tokens, updatedAt }
-local srcToIdentity = {}     -- [src] = identity
+local lastActionAt = {}
+local actionWindows = {}
+local categoryBuckets = {}
+local identityBuckets = {}
+local srcToIdentity = {}
 local lastDenyLogAt = {}
 
 local DEFAULT_MIN_INTERVAL = 1000
 local DEFAULT_MAX_PER_WINDOW = 12
 local DEFAULT_WINDOW_MS = 10000
-local DEFAULT_CATEGORY_RATE = 8          -- tokens regenerated per second
-local DEFAULT_CATEGORY_BURST = 16        -- bucket capacity
+local DEFAULT_CATEGORY_RATE = 8
+local DEFAULT_CATEGORY_BURST = 16
 local DEFAULT_IDENTITY_RATE = 20
 local DEFAULT_IDENTITY_BURST = 60
 local DENY_LOG_COOLDOWN_MS = 15000
 
--- Category presets (override rate/burst). Unknown categories use defaults.
 local CATEGORY_PRESETS = {
     characters = { rate = 2, burst = 4 },
     economy    = { rate = 3, burst = 8 },
@@ -174,8 +155,6 @@ local function LogDeny(identity, action, reason)
         :format(tostring(identity), tostring(action), tostring(reason)))
 end
 
---- Distributed rate-limit check + consume.
---- @return boolean allowed
 local function CanPerformAction(src, action, cooldownMs, opts)
     src = ValidSource(src)
     action = ValidAction(action)
@@ -189,7 +168,6 @@ local function CanPerformAction(src, action, cooldownMs, opts)
     local now = Now()
     local cost = conf.cost
 
-    -- 1) Min interval (per identity + action)
     lastActionAt[identity] = lastActionAt[identity] or {}
     local last = lastActionAt[identity][action]
     if last ~= nil and Elapsed(now, last) < minInterval then
@@ -197,7 +175,6 @@ local function CanPerformAction(src, action, cooldownMs, opts)
         return false
     end
 
-    -- 2) Fixed window counter (per identity + action)
     actionWindows[identity] = actionWindows[identity] or {}
     local win = actionWindows[identity][action]
     if not win or Elapsed(now, win.startedAt) >= conf.windowMs then
@@ -209,32 +186,21 @@ local function CanPerformAction(src, action, cooldownMs, opts)
         return false
     end
 
-    -- 3) Category token bucket (distributed across actions in the same category)
     categoryBuckets[identity] = categoryBuckets[identity] or {}
     local catOk = TryConsumeBucket(
-        categoryBuckets[identity],
-        conf.category,
-        conf.categoryRate,
-        conf.categoryBurst,
-        cost,
-        now
+        categoryBuckets[identity], conf.category,
+        conf.categoryRate, conf.categoryBurst, cost, now
     )
     if not catOk then
         if not conf.silent then LogDeny(identity, action, 'category_bucket:' .. conf.category) end
         return false
     end
 
-    -- 4) Identity token bucket (all categories share this ceiling)
     local idOk = TryConsumeBucket(
-        identityBuckets,
-        identity,
-        conf.identityRate,
-        conf.identityBurst,
-        cost,
-        now
+        identityBuckets, identity,
+        conf.identityRate, conf.identityBurst, cost, now
     )
     if not idOk then
-        -- refund category token roughly (best-effort)
         local catBucket = categoryBuckets[identity][conf.category]
         if catBucket then
             catBucket.tokens = math.min(conf.categoryBurst, (catBucket.tokens or 0) + cost)
@@ -243,7 +209,6 @@ local function CanPerformAction(src, action, cooldownMs, opts)
         return false
     end
 
-    -- Commit interval + window counters
     lastActionAt[identity][action] = now
     win.count = win.count + 1
     return true
@@ -271,7 +236,6 @@ local function PeekCanPerformAction(src, action, cooldownMs, opts)
         return false
     end
 
-    -- Peek category bucket without mutate via local copy
     local catStore = categoryBuckets[identity] or {}
     local catBucket = RefillBucket(catStore[conf.category], conf.categoryRate, conf.categoryBurst, now)
     if (catBucket.tokens or 0) < conf.cost then return false end
@@ -327,7 +291,6 @@ local function ClearPlayerRateLimits(src)
     srcToIdentity[src] = nil
     if not identity then return true end
 
-    -- Only clear if no other source still mapped to this identity
     for otherSrc, otherId in pairs(srcToIdentity) do
         if otherId == identity and otherSrc ~= src then
             return true
@@ -353,6 +316,7 @@ local function ClearIdentityRateLimits(identity)
     return true
 end
 
+RPCoreCanPerformAction = CanPerformAction
 exports('CanPerformAction', CanPerformAction)
 exports('PeekCanPerformAction', PeekCanPerformAction)
 exports('GetActionCooldownRemaining', GetActionCooldownRemaining)
@@ -360,15 +324,9 @@ exports('GetRateLimitStatus', GetRateLimitStatus)
 exports('ClearPlayerRateLimits', ClearPlayerRateLimits)
 exports('ClearIdentityRateLimits', ClearIdentityRateLimits)
 
--- Cleanup orphaned identities every 2 minutes
 CreateThread(function()
     while true do
         Wait(120000)
-        local live = {}
-        for _, id in pairs(srcToIdentity) do
-            live[id] = true
-        end
-        -- Drop cached maps for sources that left
         for src in pairs(srcToIdentity) do
             if not GetPlayerName(src) then
                 local identity = srcToIdentity[src]
