@@ -20,7 +20,7 @@ def test_all_declared_jobs_have_five_runtime_grades():
 def test_job_database_migration_seeds_every_job_and_five_grades_without_overwriting():
     database_sql = (ROOT / "database.sql").read_text(encoding="utf-8")
     catalogue_comment = database_sql.index("-- Catalogue initial des métiers et de leurs grades.")
-    seed_start = database_sql.rindex("START TRANSACTION;", 0, catalogue_comment)
+    seed_start = database_sql.index("START TRANSACTION;", catalogue_comment)
     seed_end = database_sql.index("COMMIT;", catalogue_comment) + len("COMMIT;")
     seed = database_sql[seed_start:seed_end]
     source = (ROOT / "resources/[FUNCTION]/rp_jobs/shared/jobs_list.lua").read_text(encoding="utf-8")
