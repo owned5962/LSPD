@@ -199,12 +199,3 @@ RegisterNetEvent('rp_characters:server:checkPlayer', function()
         TriggerClientEvent('rp_characters:client:bootError', src, message)
     end
 end)
-
-AddEventHandler('rp_characters:server:forceBootstrap', function(src)
-    src = tonumber(src)
-    if not src or src < 1 or not GetPlayerName(src) then return end
-    local ok, err = xpcall(CheckPlayerBootstrap, debug.traceback, src)
-    if not ok then
-        print(('[rp_characters] forceBootstrap crashed for player %s: %s'):format(tostring(src), tostring(err)))
-    end
-end)
