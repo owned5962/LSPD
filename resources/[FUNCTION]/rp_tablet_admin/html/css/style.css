@@ -58,3 +58,25 @@ body{background:transparent;width:100vw;height:100vh;overflow:hidden;color:#e8ee
 .player-entry:hover,.player-entry.selected{border-color:#1d4ed8;background:rgba(29,78,216,.18)}
 .player-report-overlay.hidden{display:none!important}
 @media(max-width:960px){#tablet-wrapper{inset:3vh 2vw}#view-admin>.admin-subnav{width:72px;min-width:72px;max-width:72px;padding:16px 8px}#view-admin>.admin-subnav::before{font-size:0;padding:0 0 12px;min-height:44px}#view-admin .admin-subnav-btn{justify-content:center;font-size:0;padding:12px 0}#view-admin .admin-subnav-btn span{display:none}#view-admin>.admin-subview{padding:16px}}
+
+
+/* AEGIS / F9 visual system — F10 */
+:root{--aegis-accent:#f05260;--aegis-accent-soft:rgba(240,82,96,.18);--aegis-bg:#080c14;--aegis-panel:#101827;--aegis-line:rgba(148,163,184,.14)}
+body{display:flex!important;align-items:center!important;justify-content:center!important;background:transparent!important;color:#edf3fb!important}
+#tablet-wrapper{position:relative!important;inset:auto!important;width:min(1450px,96vw)!important;height:min(880px,94vh)!important;max-height:94vh!important;margin:auto!important}
+#tablet-wrapper.is-open{display:flex!important;align-items:stretch!important}
+.tablet-frame,.tablet-screen{width:100%!important;height:100%!important;min-height:0!important;max-height:none!important;border:1px solid rgba(148,163,184,.2)!important;border-radius:20px!important;background:#080c14!important;box-shadow:0 30px 100px rgba(0,0,0,.75),0 0 55px rgba(240,82,96,.08)!important}
+.tablet-content{height:100%!important;background:#080c14!important}
+#view-admin.view-panel.active{background:#080c14!important}
+#view-admin>.admin-subnav{width:245px!important;min-width:245px!important;max-width:245px!important;padding:25px 16px 18px!important;background:#0c1320!important;border-right:1px solid rgba(148,163,184,.14)!important}
+#view-admin>.admin-subnav::before{content:"AEGIS\\AADMINISTRATION";padding:8px 8px 28px 56px!important;border-bottom:1px solid rgba(148,163,184,.14)!important;background:linear-gradient(145deg,#f05260,#a91e36) left 8px top 4px/40px 40px no-repeat!important}
+#view-admin .admin-subnav-btn:hover,#view-admin .admin-subnav-btn.active{background:linear-gradient(90deg,rgba(240,82,96,.18),rgba(240,82,96,.04))!important;color:#ff8790!important}
+#view-admin>.admin-subview{padding:26px 30px 20px!important;background:radial-gradient(ellipse at 80% 0%,rgba(31,67,103,.12),transparent 40%),#080c14!important}
+#view-admin>.admin-subview.active::before{border-color:rgba(148,163,184,.14)!important;background-color:#101827!important;background-position:16px center,0 0!important;border-radius:14px!important}
+#view-admin .admin-card,#view-admin .player-entry,#view-admin .give-card{background:linear-gradient(145deg,rgba(20,31,48,.94),rgba(13,22,35,.96))!important;border:1px solid rgba(148,163,184,.14)!important;border-radius:14px!important;color:#edf3fb!important}
+#view-admin .btn-red,#view-admin .action-btn-red{background:#d94355!important;color:#fff!important}
+#view-admin .btn-red.alert{background:#be123c!important}
+#btn-close-tablet{top:calc((100vh - min(880px,94vh))/2 + 14px)!important;right:calc((100vw - min(1450px,96vw))/2 + 14px)!important;background:#101827!important;border:1px solid rgba(148,163,184,.14)!important;color:#edf3fb!important}
+@media(max-width:960px){#tablet-wrapper{width:96vw!important;height:94vh!important}#view-admin>.admin-subnav{width:72px!important;min-width:72px!important;max-width:72px!important}}
+/* Color illustration tiles stay specific to each section title. */
+#view-admin>.admin-subview.active::before{background-size:48px,auto!important;background-repeat:no-repeat!important}
