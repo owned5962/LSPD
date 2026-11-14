@@ -4,7 +4,7 @@ lua54 'yes'
 
 author 'FiveM RP Team'
 description 'Core system for GTA 5 Roleplay (events, sessions, permissions, notifications)'
-version '1.1.2'
+version '1.1.3'
 
 dependency 'oxmysql'
 
@@ -25,7 +25,6 @@ server_scripts {
     'server/commands.lua'
 }
 
--- Explicit server exports so other resources always resolve them.
 server_exports {
     'CanPerformAction',
     'IsCharacterSavePending',
