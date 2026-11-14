@@ -139,8 +139,8 @@ local function RegisterPlayer(source, player)
     local slot = type(player) == 'table' and tonumber(player.slot) or nil
     local identifier = type(player) == 'table' and player.identifier or nil
     local validIdentifier = type(identifier) == 'string'
-        and identifier:match('^license:[%w]+') == identifier
-        and #identifier <= 64
+        and identifier:match('^license:[%w_%-]+$') ~= nil
+        and #identifier >= 10 and #identifier <= 80
 
     if not src or src < 1 or src % 1 ~= 0 or not GetPlayerName(src) or type(player) ~= 'table'
         or tonumber(player.source) ~= src or not validIdentifier
@@ -184,14 +184,21 @@ exports('GetPlayerByIdentifier', GetPlayerByIdentifier)
 exports('GetAllPlayers', GetAllPlayers)
 
 RegisterNetEvent('rp_core:server:requestPlayerDataSync', function()
-<fim-middle>    local src = source
-    if not CanPerformAction(src, 'core:request_player_data_sync', 500) then return end
-    local player = Players[tonumber(src)]
-    if not player or not tonumber(player.charId) or type(player.syncClient) ~= 'function' then
-        TriggerClientEvent('rp_core:client:requestCharacterBootstrap', src)
+    local src = source
+    if not CanPerformAction(src, 'core:request_player_data_sync', 750) then
         return
     end
-    player.syncClient()
+    local player = Players[tonumber(src)]
+    if player and tonumber(player.charId) and type(player.syncClient) == 'function' then
+        player.syncClient()
+        return
+    end
+    print(('[rp_core] No active character session for %s — requesting character bootstrap.')
+        :format(tostring(src)))
+    TriggerClientEvent('rp_core:client:requestCharacterBootstrap', src)
+    if GetResourceState('rp_characters') == 'started' then
+        TriggerEvent('rp_characters:server:forceBootstrap', src)
+    end
 end)
 
 -- Sequential autosave (no parallel workers): avoids saveLocks races.
@@ -327,4 +334,9 @@ AddEventHandler('onResourceStop', function(resourceName)
             end
         end
     end
+end)
+
+CreateThread(function()
+    Wait(500)
+    print('^2[rp_core] [OK] Exports ready: CanPerformAction, GetPlayerFromId, RegisterPlayer, CreateRPPlayer^7')
 end)
