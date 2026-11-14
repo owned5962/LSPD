@@ -310,3 +310,9 @@ def test_character_selector_only_receives_minimum_display_fields():
     server = (CHARACTERS / "server/main.lua").read_text(encoding="utf-8")
     assert "SELECT char_id, firstname, lastname, job FROM characters WHERE identifier = ?" in server
     assert "SELECT id, char_id, firstname, lastname, dateofbirth, sex, height, phone_number, cash, bank, job, job_grade, position, skin, metadata, is_dead FROM characters WHERE identifier = ? ORDER BY char_id ASC" not in server
+
+
+if __name__ == "__main__":
+    test_character_creation_is_serialized_and_uses_bounded_json_payloads()
+    test_character_creator_validates_form_and_recovers_after_server_rejection()
+    test_character_selector_only_receives_minimum_display_fields()
