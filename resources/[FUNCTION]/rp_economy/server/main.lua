@@ -310,7 +310,11 @@ CreateThread(function()
         for src, player in pairs(allPlayers) do
             if type(player) == 'table' and type(player.addBank) == 'function' then
                 local gradeOk, gradeData = pcall(function()
-                    return exports['rp_jobs']:GetJobGrade(player.job, player.jobGrade)
+                    if not exports['rp_jobs']:IsValidJob(player.job) then return nil end
+                    local job = exports['rp_jobs']:GetJob(player.job)
+                    local grade = tonumber(player.jobGrade)
+                    if type(job) ~= 'table' or type(job.grades) ~= 'table' or not grade then return nil end
+                    return job.grades[grade]
                 end)
                 if not gradeOk then
                     print(('[rp_economy] Salary grade lookup failed for player %s: %s'):format(
