@@ -21,17 +21,15 @@
 - Les 20 dernières opérations personnelles sont affichées dans le terminal bancaire. L'historique du compte métier affiche les 12 dernières opérations dans F4 et jusqu'à 250 dans Creator.
 - Les salaires sont versés toutes les 10 minutes aux personnages connectés, au montant défini par le grade du métier. Aucun salaire de secours arbitraire n'est payé si le catalogue ou le montant du grade est indisponible. La persistance, le journal et la notification du salaire sont gérés par `rp_core:addBank`.
 
-## Migration SQL
+## Base de données
 
-Pour une base déjà existante, exécuter une seule fois :
+Les schémas bancaires et les évolutions historiques (migrations 006, 008 et 009) sont regroupés dans `database.sql`. Pour une nouvelle installation ou une base existante sauvegardée, exécuter ce fichier sur la base cible :
 
 ```sql
-SOURCE migrations/009_bank_fuel_transaction_types.sql;
+SOURCE database.sql;
 ```
 
-Cette migration ajoute `fuel_refund` et `fuel` à l'ENUM `bank_transactions.type`, qui doit accepter tous les types émis par `rp_economy` et `rp_fuel`. Les nouvelles installations disposent aussi de cette définition dans `database.sql`.
-
-Les tables des comptes métiers sont définies dans `migrations/006_job_bank_accounts.sql` et initialisées par `rp_economy` au démarrage. Le Creator ne crée plus ces tables à chaque ouverture.
+Le catalogue métier et les comptes partagés sont créés sans écraser les paramètres déjà personnalisés. Les types `fuel_refund` et `fuel` ainsi que l'index des statistiques salariales sont vérifiés et ajoutés uniquement s'ils manquent.
 
 ## Vérifications
 

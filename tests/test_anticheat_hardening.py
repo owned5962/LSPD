@@ -48,7 +48,6 @@ def test_detection_audit_is_required_before_automatic_sanction():
 def test_protection_and_prison_settings_persist_and_sync_to_late_joiners():
     server = read(SERVER_PATH)
     database = read("database.sql")
-    migration = read("migrations/010_anticheat_hardening.sql")
     assert "CREATE TABLE IF NOT EXISTS anticheat_protection_config" in server
     assert "CREATE TABLE IF NOT EXISTS anticheat_runtime_config" in server
     assert "local function loadProtectionConfig()" in server
@@ -60,8 +59,10 @@ def test_protection_and_prison_settings_persist_and_sync_to_late_joiners():
     assert "syncProtections', src, Config.Protections" in server
     assert "anticheat_protection_config" in database
     assert "anticheat_runtime_config" in database
-    assert "source_type" in migration
-    assert "DEFAULT ''legacy''" in migration
+    assert "CREATE TABLE IF NOT EXISTS `anticheat_event_log`" in database
+    assert "`source_type` VARCHAR(16) NOT NULL DEFAULT 'legacy'" in database
+    assert "PREPARE rp_aegis_source_type_stmt" in database
+    assert not (ROOT / "migrations").exists()
 
 
 def test_moderation_protects_staff_hierarchy_and_writes_audit_logs():

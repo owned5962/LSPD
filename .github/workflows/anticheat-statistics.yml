@@ -8,7 +8,6 @@ on:
       - "tests/test_anticheat_statistics.py"
       - "tests/test_anticheat_hardening.py"
       - "database.sql"
-      - "migrations/**"
       - ".github/workflows/anticheat-statistics.yml"
   pull_request:
     branches: [main]
@@ -66,13 +65,13 @@ jobs:
         run: |
           docker exec "$MYSQL_CONTAINER_ID" mysql -uroot -proot -e "CREATE DATABASE aegis_legacy CHARACTER SET utf8mb4"
           docker exec "$MYSQL_CONTAINER_ID" mysql -uroot -proot aegis_legacy -e "CREATE TABLE anticheat_event_log (id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY, player_id INT NOT NULL, player_name VARCHAR(100) NOT NULL, detection_type VARCHAR(40) NOT NULL, reason VARCHAR(180) NOT NULL, severity VARCHAR(16) NOT NULL, sanction VARCHAR(16) NOT NULL DEFAULT 'warn') ENGINE=InnoDB"
-      - name: Apply migration twice to legacy and fresh databases
+      - name: Apply consolidated database.sql twice to legacy and fresh databases
         run: |
           docker exec "$MYSQL_CONTAINER_ID" mysql -uroot -proot -e "CREATE DATABASE aegis_fresh CHARACTER SET utf8mb4"
-          docker exec -i "$MYSQL_CONTAINER_ID" mysql -uroot -proot aegis_legacy < migrations/010_anticheat_hardening.sql
-          docker exec -i "$MYSQL_CONTAINER_ID" mysql -uroot -proot aegis_legacy < migrations/010_anticheat_hardening.sql
-          docker exec -i "$MYSQL_CONTAINER_ID" mysql -uroot -proot aegis_fresh < migrations/010_anticheat_hardening.sql
-          docker exec -i "$MYSQL_CONTAINER_ID" mysql -uroot -proot aegis_fresh < migrations/010_anticheat_hardening.sql
+          docker exec -i "$MYSQL_CONTAINER_ID" mysql -uroot -proot aegis_legacy < database.sql
+          docker exec -i "$MYSQL_CONTAINER_ID" mysql -uroot -proot aegis_legacy < database.sql
+          docker exec -i "$MYSQL_CONTAINER_ID" mysql -uroot -proot aegis_fresh < database.sql
+          docker exec -i "$MYSQL_CONTAINER_ID" mysql -uroot -proot aegis_fresh < database.sql
       - name: Verify migration tables and legacy provenance
         run: |
           docker exec "$MYSQL_CONTAINER_ID" mysql -uroot -proot aegis_legacy -e "INSERT INTO anticheat_event_log (player_id, player_name, detection_type, reason, severity) VALUES (1, 'Legacy test', 'other', 'legacy record', 'low'); SELECT source_type FROM anticheat_event_log WHERE player_name = 'Legacy test'; SHOW TABLES LIKE 'anticheat_runtime_config'; SHOW TABLES LIKE 'anticheat_protection_config';"
