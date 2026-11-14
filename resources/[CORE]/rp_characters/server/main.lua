@@ -127,18 +127,34 @@ local function LoadCharacterUnsafe(src, identifier, userGroup, char)
         return false, message
     end
 
+    -- A bootstrap/selection request can arrive after the server has already
+    -- registered this player's character. Merely unfreezing the preview ped
+    -- leaves the player at the creator coordinates (or behind a black screen).
+    -- Always replay the authoritative spawn when an active session is found.
+    local function ResumeRegisteredCharacter()
+        local snapshot = exports['rp_core']:GetPlayerSnapshot(src)
+        if type(snapshot) ~= 'table' or tonumber(snapshot.charId) == nil then
+            return false, 'Session active détectée mais instantané du personnage indisponible.'
+        end
+        local position = DecodeJson(snapshot.position, DefaultSpawn)
+        local skin = DecodeJson(snapshot.skin, {})
+        TriggerClientEvent('rp_characters:client:closeMenu', src)
+        TriggerClientEvent('rp_characters:client:spawnPlayer', src, position, snapshot.sex, skin)
+        print(('[rp_characters] Existing character session resumed through spawn pipeline for player %s (character %s).')
+            :format(tostring(src), tostring(snapshot.charId)))
+        return true
+    end
+
     local currentSession = exports['rp_core']:GetPlayerByIdentifier(identifier)
     if currentSession then
-        if currentSession.source ~= src then
+        if tonumber(currentSession.source) ~= tonumber(src) then
             DropPlayer(src, 'Une session est déjà active avec ce compte.')
             return false, 'Une session est déjà active avec ce compte.'
         end
-        TriggerClientEvent('rp_characters:client:resumeLoadedCharacter', src)
-        return true
+        return ResumeRegisteredCharacter()
     end
     if exports['rp_core']:GetPlayerFromId(src) then
-        TriggerClientEvent('rp_characters:client:resumeLoadedCharacter', src)
-        return true
+        return ResumeRegisteredCharacter()
     end
 
     char.position = DecodeJson(char.position, DefaultSpawn)
