@@ -844,17 +844,27 @@ RegisterNetEvent('rp_characters:client:spawnPlayer', function(coords, gender, sk
             DoScreenFadeIn(500)
         end)
 
-        -- Keep fighting black screen for several seconds (other resources may fade out late).
+        -- Some client resources can reapply a fade after the spawn event.
+        -- Keep a bounded recovery window and reset camera/timecycle state as well
+        -- as the ped, NUI focus and player controls.
         CreateThread(function()
-            for attempt = 1, 12 do
-                Wait(350)
+            local recoveredFrames = 0
+            for attempt = 1, 30 do
+                Wait(500)
                 SetNuiFocus(false, false)
+                SetNuiFocusKeepInput(false)
+                ClearFocus()
                 DisplayRadar(true)
                 SetPlayerControl(PlayerId(), true, 0)
+
                 if IsScreenFadedOut() or IsScreenFadingOut() then
                     DoScreenFadeIn(0)
-                    DoScreenFadeIn(250)
                 end
+                -- These are harmless when no modifier is active and recover
+                -- clients left with a black timecycle by another transition.
+                ClearTimecycleModifier()
+                ClearExtraTimecycleModifier()
+
                 local p = PlayerPedId()
                 if p and p ~= 0 and DoesEntityExist(p) then
                     SetEntityVisible(p, true, false)
@@ -862,11 +872,16 @@ RegisterNetEvent('rp_characters:client:spawnPlayer', function(coords, gender, sk
                     FreezeEntityPosition(p, false)
                     SetEntityCollision(p, true, true)
                 end
-                if not IsScreenFadedOut() and not IsScreenFadingOut() and characterSessionReady then
-                    -- still continue a few more passes in case something fades again
-                    if attempt >= 6 then break end
+
+                if not IsScreenFadedOut() and not IsScreenFadingOut() then
+                    recoveredFrames = recoveredFrames + 1
+                    if recoveredFrames >= 4 then break end
+                else
+                    recoveredFrames = 0
                 end
             end
+            print(('[rp_characters] Display recovery finished; fadedOut=%s fadingOut=%s.')
+                :format(tostring(IsScreenFadedOut()), tostring(IsScreenFadingOut())))
         end)
 
         Wait(900)
