@@ -164,7 +164,10 @@ local function LoadCharacterUnsafe(src, identifier, userGroup, char)
         end)
         print(('[rp_characters] Failed to initialize character for player %s: %s')
             :format(tostring(src), tostring(player)))
-        Notify(src, 'Impossible de finaliser le chargement du personnage. Consultez la console serveur.', 'error')
+        local message = 'Impossible de finaliser le chargement du personnage. Consultez la console serveur.'
+        Notify(src, message, 'error')
+        TriggerClientEvent('rp_characters:client:bootError', src, message)
+        TriggerClientEvent('rp_characters:client:creationResult', src, { ok = false, message = message })
         return
     end
 
@@ -305,8 +308,7 @@ RegisterNetEvent('rp_characters:server:checkPlayer', function()
     end
 end)
 
-\nRegisterNetEvent('rp_characters:server:selectCharacter', function(slot)
-    local src = source
+\nlocal function SelectCharacter(src, slot)
     if not exports['rp_core']:CanPerformAction(src, 'character:check_player', 5000) then
         -- Duplicate bootstrap requests are expected when core and character
         -- resources start together. Ignore them instead of showing a false error.
@@ -419,8 +421,19 @@ RegisterNetEvent('rp_characters:server:selectCharacter', function(slot)
     LoadCharacter(src, identifier, GetEffectiveUserGroup(src, user.group), char)
 end)
 
-RegisterNetEvent('rp_characters:server:createCharacter', function(data)
+RegisterNetEvent('rp_characters:server:selectCharacter', function(slot)
     local src = source
+    local ok, err = pcall(SelectCharacter, src, slot)
+    if not ok then
+        print(('[rp_characters] Character selection failed for player %s: %s')
+            :format(tostring(src), tostring(err)))
+        local message = 'La sélection du personnage a échoué côté serveur. Consultez la console FXServer.'
+        Notify(src, message, 'error')
+        TriggerClientEvent('rp_characters:client:bootError', src, message)
+    end
+end)
+
+local function CreateCharacter(src, data)
     if not exports['rp_core']:CanPerformAction(src, 'character:create', 5000) then
         CreationError(src, 'Veuillez patienter quelques secondes avant de réessayer.', 'warning')
         return
@@ -644,4 +657,17 @@ RegisterNetEvent('rp_characters:server:createCharacter', function(data)
         position = spawn, skin = skin
     }
     LoadCharacter(src, identifier, user.group, char)
+end
+
+RegisterNetEvent('rp_characters:server:createCharacter', function(data)
+    local src = source
+    local ok, err = pcall(CreateCharacter, src, data)
+    if not ok then
+        local identifier = GetLicenseIdentifier(src)
+        if identifier then creationLocks[identifier] = nil end
+        print(('[rp_characters] Character creation pipeline failed for player %s: %s')
+            :format(tostring(src), tostring(err)))
+        local message = 'La création du personnage a rencontré une erreur serveur. Consultez la console FXServer.'
+        CreationError(src, message)
+    end
 end)
