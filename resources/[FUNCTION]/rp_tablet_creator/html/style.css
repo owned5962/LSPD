@@ -69,3 +69,24 @@
 #tablet .org-list>*,#tablet .mapping-list>*,#tablet .module-list>*{padding:12px 14px;background:#0f1a2b;border:1px solid #25364d;border-radius:9px;font-size:12px}
 #close{position:absolute;top:calc(7vh + 14px);right:calc(8vw + 14px);z-index:30;border:0;background:#1b293d;color:#dbeafe;border-radius:9px;width:36px;height:36px;font-size:18px}
 @media(max-width:900px){#tablet:not(.hidden){inset:3vh 2vw}#tablet .creator-tabs{width:72px!important;min-width:72px!important;max-width:72px!important;padding:16px 8px!important}#tablet .creator-tabs::before{font-size:0;padding:0 0 12px;min-height:44px}#tablet .creator-tab{justify-content:center;font-size:0!important;padding:12px 0!important}#tablet .grid,#tablet section.grid{padding:16px!important}#tablet .coord-grid{grid-template-columns:1fr}}
+
+
+/* AEGIS / F9 visual system — F11 */
+:root{--aegis-accent:#f05260;--aegis-bg:#080c14;--aegis-panel:#101827;--aegis-line:rgba(148,163,184,.14)}
+body{display:flex!important;align-items:center!important;justify-content:center!important;background:transparent!important;color:#edf3fb!important}
+#tablet{position:relative!important;inset:auto!important;width:min(1450px,96vw)!important;height:min(880px,94vh)!important;max-height:94vh!important;margin:auto!important;border:1px solid rgba(148,163,184,.2)!important;border-radius:20px!important;background:#080c14!important;box-shadow:0 30px 100px rgba(0,0,0,.75),0 0 55px rgba(240,82,96,.08)!important}
+#tablet:not(.hidden){display:flex!important;flex-direction:row!important;align-items:stretch!important}
+#tablet .creator-tabs{width:245px!important;min-width:245px!important;max-width:245px!important;padding:25px 16px 18px!important;background:#0c1320!important;border-right:1px solid rgba(148,163,184,.14)!important}
+#tablet .creator-tabs::before{content:"AEGIS\\ACREATOR CONTROL"!important;padding:8px 8px 28px 56px!important;border-bottom:1px solid rgba(148,163,184,.14)!important;background:linear-gradient(145deg,#f05260,#a91e36) left 8px top 4px/40px 40px no-repeat!important}
+#tablet .creator-tab:hover,#tablet .creator-tab.active{background:linear-gradient(90deg,rgba(240,82,96,.18),rgba(240,82,96,.04))!important;color:#ff8790!important}
+#tablet .grid,#tablet section.grid{background:radial-gradient(ellipse at 80% 0%,rgba(31,67,103,.12),transparent 40%),#080c14!important;padding:26px 30px 20px!important}
+#tablet .panel{background:linear-gradient(145deg,rgba(20,31,48,.94),rgba(13,22,35,.96))!important;border:1px solid rgba(148,163,184,.14)!important;border-radius:14px!important;color:#edf3fb!important}
+#tablet .panel h2{font-size:17px!important;color:#f1f5f9!important}
+#tablet .panel h2 i{color:#ff8790!important}
+#tablet input:focus,#tablet select:focus,#tablet textarea:focus{border-color:#f05260!important;box-shadow:0 0 0 3px rgba(240,82,96,.18)!important}
+#tablet .buttons button,#tablet button.primary,#tablet .primary{background:#d94355!important}
+#tablet .buttons button:hover,#tablet button.primary:hover,#tablet .primary:hover{background:#ef5364!important}
+#close{top:14px!important;right:14px!important;background:#101827!important;border:1px solid rgba(148,163,184,.14)!important;color:#edf3fb!important}
+@media(max-width:900px){#tablet{width:96vw!important;height:94vh!important}#tablet .creator-tabs{width:72px!important;min-width:72px!important;max-width:72px!important}}
+/* Each Creator section gets its own vivid, title-matched illustration tile. */
+#tablet section.grid:not([hidden])>.panel:first-child::after{width:56px!important;height:56px!important;border-radius:13px!important;box-shadow:0 8px 24px rgba(0,0,0,.38)!important}
