@@ -3,23 +3,52 @@ local charCamera = nil
 local characterBootPending = false
 local characterSessionReady = false
 local creationSubmissionPending = false
+local selectWatchdogToken = 0
 
-local function FinishCharacterBoot()
-    characterBootPending = false
+local function ForceScreenVisible()
     pcall(ShutdownLoadingScreen)
     pcall(ShutdownLoadingScreenNui)
+    SetNuiFocus(false, false)
+    SendNUIMessage({ action = 'closeCharacterSelection' })
+    SendNUIMessage({ action = 'closeRegistration' })
+    if charCamera then
+        RenderScriptCams(false, false, 0, true, true)
+        DestroyCam(charCamera, false)
+        charCamera = nil
+    end
+    ClearFocus()
     if IsScreenFadedOut() or IsScreenFadingOut() then
         DoScreenFadeIn(0)
     end
-    DoScreenFadeIn(500)
+    DoScreenFadeIn(400)
+    local ped = PlayerPedId()
+    if ped and ped ~= 0 and DoesEntityExist(ped) then
+        SetEntityVisible(ped, true, false)
+        ResetEntityAlpha(ped)
+        SetEntityCollision(ped, true, true)
+    end
+    DisplayRadar(true)
+end
+
+local function FinishCharacterBoot()
+    characterBootPending = false
+    ForceScreenVisible()
 end
 
 local function ShowCharacterBootError(message)
-    FinishCharacterBoot()
+    characterBootPending = false
+    characterSessionReady = false
+    ForceScreenVisible()
+    -- Leave the player controllable so they are not stuck on a black frame.
+    SetPlayerControl(PlayerId(), true, 0)
+    local ped = PlayerPedId()
+    if ped and ped ~= 0 and DoesEntityExist(ped) then
+        FreezeEntityPosition(ped, false)
+    end
     TriggerEvent('chat:addMessage', {
         color = { 255, 90, 90 },
         multiline = true,
-        args = { 'LOS SANTOS RP', message or 'Le chargement du personnage a échoué. Consultez la console serveur.' }
+        args = { 'LOS SANTOS RP', message or 'Le chargement du personnage a échoué. Consultez la console serveur (F8) et reconnectez-vous.' }
     })
 end
 
