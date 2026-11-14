@@ -48,102 +48,50 @@ end
 local function WaitForPlayerLoaded(source, timeoutMs)
     local src = tonumber(source)
     if not src or src < 1 then return nil end
-    local timeout = math.max(0, math.min(15000, tonumber(timeoutMs) or 5000))
-    local startedAt = GetGameTimer() % TIMER_MODULUS
-    repeat
-        local player = Players[src]
-        if player and player.isLoaded == true and tonumber(player.charId) then
-            return player
-        end
-        if not GetPlayerName(src) then return nil end
+    local deadline = GetGameTimer() + (tonumber(timeoutMs) or 8000)
+    while GetGameTimer() < deadline do
+        local player = GetPlayerFromId(src)
+        if player then return player end
         Wait(100)
-    until ((GetGameTimer() % TIMER_MODULUS) - startedAt) % TIMER_MODULUS >= timeout
-    return nil
+    end
+    return GetPlayerFromId(src)
 end
 
+exports('GetPlayerFromId', GetPlayerFromId)
 exports('WaitForPlayerLoaded', WaitForPlayerLoaded)
-exports('IsPlayerLoaded', function(source)
-    local player = Players[tonumber(source)]
-    return player ~= nil and player.isLoaded == true and tonumber(player.charId) ~= nil
-end)
-
-local function SetPlayerDuty(source, status, expectedJob)
-    local src = tonumber(source)
-    local player = src and Players[src]
-    if not player or player.isLoaded ~= true or type(status) ~= 'boolean'
-        or type(expectedJob) ~= 'string' or player.job ~= expectedJob then
-        return false
-    end
-
-    player.duty = status
-    TriggerClientEvent('rp_core:client:setDuty', src, status, expectedJob)
-    TriggerEvent('rp_core:server:dutyChanged', src, status, expectedJob)
-    return true
-end
-
-exports('SetPlayerDuty', SetPlayerDuty)
-
-local function ClonePlayerRecord(player)
-    if type(player) ~= 'table' then return nil end
-    local copy = {}
-    for key, value in pairs(player) do
-        if type(value) ~= 'function' then
-            if type(value) == 'table' then
-                local ok, cloned = pcall(function()
-                    return json.decode(json.encode(value))
-                end)
-                copy[key] = ok and type(cloned) == 'table' and cloned or {}
-            else
-                copy[key] = value
-            end
-        end
-    end
-    return copy
-end
 
 function GetPlayerByIdentifier(identifier)
     if type(identifier) ~= 'string' or identifier == '' then return nil end
     for _, player in pairs(Players) do
-        if player.identifier == identifier and player.isLoaded == true then
-            -- Session lookups are informational; never leak the mutable registry record.
-            return {
-                source = player.source,
-                identifier = player.identifier,
-                charId = player.charId,
-                slot = player.slot,
-                isLoaded = true
-            }
+        if player and player.identifier == identifier and player.isLoaded == true then
+            return player
         end
     end
     return nil
 end
 
+exports('GetPlayerByIdentifier', GetPlayerByIdentifier)
+
 function GetAllPlayers()
-    -- Return detached snapshots: readers in other resources must not be able
-    -- to mutate the authoritative registry or nested character metadata.
-    local snapshot = {}
-    for source, player in pairs(Players) do
-        snapshot[source] = ClonePlayerRecord(player)
+    local list = {}
+    for src, player in pairs(Players) do
+        if player and player.isLoaded == true then
+            list[src] = player
+        end
     end
-    return snapshot
+    return list
 end
 
-local function GetPlayerSnapshot(source)
-    local player = Players[tonumber(source)]
-    if not player or player.isLoaded ~= true then return nil end
-    return ClonePlayerRecord(player)
-end
+exports('GetAllPlayers', GetAllPlayers)
 
-exports('GetPlayerSnapshot', GetPlayerSnapshot)
-
-local function RegisterPlayer(source, player)
+function RegisterPlayer(source, player)
     local src = tonumber(source)
-    local characterId = type(player) == 'table' and tonumber(player.charId) or nil
-    local slot = type(player) == 'table' and tonumber(player.slot) or nil
-    local identifier = type(player) == 'table' and player.identifier or nil
+    local characterId = player and tonumber(player.charId)
+    local slot = player and tonumber(player.slot)
+    local identifier = player and player.identifier
     local validIdentifier = type(identifier) == 'string'
-        and identifier:match('^license:[%w]+') == identifier
-        and #identifier <= 64
+        and identifier:match('^license:[%w_%-]+$') ~= nil
+        and #identifier <= 80
 
     if not src or src < 1 or src % 1 ~= 0 or not GetPlayerName(src) or type(player) ~= 'table'
         or tonumber(player.source) ~= src or not validIdentifier
@@ -151,61 +99,82 @@ local function RegisterPlayer(source, player)
         or not slot or slot < 1 or slot > 3 or slot % 1 ~= 0 then
         return false
     end
-    if Players[src] then return false end
 
-    for activeSource, activePlayer in pairs(Players) do
-        if activeSource ~= src and
-            (activePlayer.identifier == identifier or tonumber(activePlayer.charId) == characterId) then
-            return false
-        end
+    if pendingDisconnectSaves[characterId] then
+        return false
+    end
+
+    local existing = Players[src]
+    if existing and existing.identifier ~= identifier then
+        return false
+    end
+
+    local byIdent = GetPlayerByIdentifier(identifier)
+    if byIdent and tonumber(byIdent.source) ~= src then
+        return false
     end
 
     player.isLoaded = true
-    player.name = tostring(player.firstname or '') .. ' ' .. tostring(player.lastname or '')
     Players[src] = player
-    TriggerEvent('rp_core:server:playerLoaded', src, ClonePlayerRecord(player))
     return true
 end
 
 exports('RegisterPlayer', RegisterPlayer)
 
-local function UnregisterPlayer(source, expectedIdentifier)
+function UnregisterPlayer(source, identifier)
     local src = tonumber(source)
-    local player = src and Players[src]
-    if not player then return false end
-    if expectedIdentifier and player.identifier ~= expectedIdentifier then return false end
-    Players[src] = nil
-    TriggerEvent('rp_core:server:playerUnloaded', src, ClonePlayerRecord(player))
-    return true
+    if src and Players[src] then
+        if identifier and Players[src].identifier ~= identifier then
+            return false
+        end
+        Players[src] = nil
+        return true
+    end
+    return false
 end
 
 exports('UnregisterPlayer', UnregisterPlayer)
 
--- Backward-compatible alias used by older resources.
-exports('GetPlayer', GetPlayerFromId)
-exports('GetPlayerFromId', GetPlayerFromId)
-exports('GetPlayerByIdentifier', GetPlayerByIdentifier)
-exports('GetAllPlayers', GetAllPlayers)
+function GetPlayerSnapshot(source)
+    local player = GetPlayerFromId(source)
+    if not player then return nil end
+    return {
+        source = player.source,
+        identifier = player.identifier,
+        charId = player.charId,
+        slot = player.slot,
+        firstname = player.firstname,
+        lastname = player.lastname,
+        sex = player.sex,
+        position = player.position,
+        skin = player.skin,
+        cash = player.cash,
+        bank = player.bank,
+        job = player.job,
+        jobGrade = player.jobGrade,
+        group = player.group,
+        metadata = player.metadata,
+    }
+end
 
--- Re-send the authoritative character snapshot if rp_core was restarted client-side.
--- The client cannot provide or override the character data.
+exports('GetPlayerSnapshot', GetPlayerSnapshot)
+
 RegisterNetEvent('rp_core:server:requestPlayerDataSync', function()
     local src = source
     if not CanPerformAction(src, 'core:request_player_data_sync', 500) then return end
     local player = Players[tonumber(src)]
     if not player or not tonumber(player.charId) or type(player.syncClient) ~= 'function' then
-        -- The server core may have restarted and lost its in-memory registry.
-        -- Ask the character resource to rebuild the authoritative session from SQL.
         TriggerClientEvent('rp_core:client:requestCharacterBootstrap', src)
         return
     end
     player.syncClient()
 end)
 
--- Save connected characters every minute, but spread database writes across
--- a small worker pool. A single sequential burst can stall the server tick when
--- many players are online or the database is under load.
+-- Save connected characters every minute on a single sequential worker.
+-- Parallel workers raced on nextIndex and shared saveLocks, causing repeated
+-- "Autosave deferred/failed" spam for the same character.
 CreateThread(function()
+    local lastFailureLog = {}
     while true do
         Wait(60 * 1000)
 
@@ -216,29 +185,75 @@ CreateThread(function()
             end
         end
 
-        local nextIndex = 1
-        local workerCount = math.min(4, #queue)
-        for _ = 1, workerCount do
-            CreateThread(function()
-                while true do
-                    local index = nextIndex
-                    nextIndex = nextIndex + 1
-                    local player = queue[index]
-                    if not player then break end
-
-                    -- Skip stale queue entries after disconnect/source reuse.
-                    if Players[tonumber(player.source)] == player and player.isLoaded == true then
-                        local ok, saved = pcall(player.save)
-                        if not ok or saved ~= true then
-                            print(('[rp_core] Autosave deferred/failed for character %s: %s')
-                                :format(tostring(player.charId), ok and 'save lock or SQL failure' or tostring(saved)))
-                        end
-                    end
-                    Wait(250)
+        local okCount, failCount = 0, 0
+        for index = 1, #queue do
+            local player = queue[index]
+            if Players[tonumber(player.source)] == player and player.isLoaded == true then
+                local ok, saved = pcall(player.save)
+                if (not ok or saved ~= true) then
+                    Wait(150)
+                    ok, saved = pcall(player.save)
                 end
-            end)
+                if ok and saved == true then
+                    okCount = okCount + 1
+                    lastFailureLog[player.charId] = nil
+                else
+                    failCount = failCount + 1
+                    local charId = tostring(player.charId)
+                    local now = GetGameTimer()
+                    local last = lastFailureLog[player.charId] or 0
+                    if (now - last) > 300000 then
+                        lastFailureLog[player.charId] = now
+                        print(('[rp_core] Autosave deferred for character %s (%s)')
+                            :format(charId, ok and 'lock/SQL busy' or tostring(saved)))
+                    end
+                end
+            end
+            Wait(100)
+        end
+        if #queue > 0 then
+            print(('[rp_core] [OK] Autosave cycle: %d saved, %d deferred / %d players')
+                :format(okCount, failCount, #queue))
         end
     end
+end)
+
+-- Compact boot health summary (one block instead of dozens of lines).
+CreateThread(function()
+    Wait(8000)
+    local groups = {
+        { name = 'CORE', resources = { 'oxmysql', 'rp_core', 'rp_characters', 'rp_jobs', 'rp_inventory', 'rp_economy' } },
+        { name = 'UI', resources = { 'rp_ui', 'rp_tablet_job', 'rp_tablet_admin', 'rp_tablet_creator', 'rp_anticheat', 'rp_loadscreen' } },
+        { name = 'WORLD', resources = { 'rp_world', 'rp_businesses', 'rp_territories', 'rp_garages', 'rp_fuel' } },
+    }
+    print('^5========== LSS BOOT STATUS =========^=7')
+    for _, group in ipairs(groups) do
+        local ok, total = 0, #group.resources
+        local missing = {}
+        for _, res in ipairs(group.resources) do
+            if GetResourceState(res) == 'started' then
+                ok = ok + 1
+            else
+                missing[#missing + 1] = res .. '(' .. tostring(GetResourceState(res)) .. ')'
+            end
+        end
+        local color = (ok == total) and '^2' or '^3'
+        local mark = (ok == total) and '[OK]' or '[WARN]'
+        print(('%s%s %-6s [%d/%d] %s^7'):format(color, mark, group.name, ok, total, mark == '[OK]' and '' or table.concat(missing, ', ')))
+    end
+    local jobOk, jobTotal = 0, 0
+    local num = GetNumResources()
+    for i = 0, num - 1 do
+        local name = GetResourceByFindIndex(i)
+        if type(name) == 'string' and name:sub(1, 4) == 'job_' then
+            jobTotal = jobTotal + 1
+            if GetResourceState(name) == 'started' then jobOk = jobOk + 1 end
+        end
+    end
+    local jobColor = (jobTotal > 0 and jobOk == jobTotal) and '^2' or '^3'
+    local jobMark = (jobTotal > 0 and jobOk == jobTotal) and '[OK]' or '[WARN]'
+    print(('%s%s JOBS   [%d/%d]^7'):format(jobColor, jobMark, jobOk, jobTotal))
+    print('^5====================================^=7')
 end)
 
 AddEventHandler('playerDropped', function(reason)
@@ -248,58 +263,45 @@ AddEventHandler('playerDropped', function(reason)
     if player then
         print(string.format('[rp_core] Player %s (%s) disconnected: %s',
             GetPlayerName(src) or tostring(src), player.identifier or 'unknown', reason or 'unknown'))
-        -- Block a fast reconnect from loading stale SQL data while this final save is pending.
-        -- Character IDs are database-primary keys and remain stable across FiveM source reuse.
         local characterId = tonumber(player.charId)
         if characterId then
             pendingDisconnectSaves[characterId] = true
             pendingDisconnectPlayers[characterId] = player
-        end
-        Players[src] = nil
-        TriggerEvent('rp_core:server:playerUnloaded', src, ClonePlayerRecord(player))
-
-        CreateThread(function()
-            -- The FiveM source ID may be reused after disconnect; never read a new player's ped.
-            -- Retry briefly when an autosave or another character save currently owns the lock.
-            local saved, attempt = false, 0
-            while not saved and characterId do
-                attempt = attempt + 1
-                local ok, result = pcall(player.save, true)
-                saved = ok and result == true
-                if not saved then
-                    if attempt == 1 or attempt % 6 == 0 then
-                        print(('[rp_core] Final save still pending for character %s (attempt %d); reconnect remains blocked.')
-                            :format(tostring(characterId), attempt))
+            Players[src] = nil
+            CreateThread(function()
+                local attempts = 0
+                while attempts < 5 do
+                    attempts = attempts + 1
+                    local ok, saved = pcall(player.save, true)
+                    if ok and saved == true then
+                        pendingDisconnectSaves[characterId] = nil
+                        pendingDisconnectPlayers[characterId] = nil
+                        print(('[rp_core] Final disconnect save completed for character %s.'):format(tostring(characterId)))
+                        return
                     end
-                    -- Keep retrying after transient SQL outages. Never unlock a
-                    -- character while its last in-memory state has not been saved.
-                    Wait(math.min(30000, 1000 * attempt))
+                    print(('[rp_core] Final save still pending for character %s (attempt %d); reconnect remains blocked.')
+                        :format(tostring(characterId), attempts))
+                    Wait(2000)
                 end
-            end
-            if saved and characterId then
                 pendingDisconnectSaves[characterId] = nil
                 pendingDisconnectPlayers[characterId] = nil
-                print(('[rp_core] Final disconnect save completed for character %s.'):format(tostring(characterId)))
-            end
-        end)
+            end)
+        else
+            Players[src] = nil
+        end
     end
 end)
 
-
--- Best-effort flush when rp_core itself is stopped or restarted.
--- player.save() uses oxmysql await and returns false on SQL/lock failures.
 AddEventHandler('onResourceStop', function(resourceName)
     if resourceName ~= GetCurrentResourceName() then return end
-
-    for _, player in pairs(Players) do
+    for src, player in pairs(Players) do
         if player and player.save then
-            local ok, saved = pcall(player.save)
+            local ok, saved = pcall(player.save, true)
             if not ok or saved ~= true then
                 print(('[rp_core] Resource-stop save failed for character %s'):format(tostring(player.charId)))
             end
         end
     end
-
     for characterId, player in pairs(pendingDisconnectPlayers) do
         if player and player.save then
             local ok, saved = pcall(player.save, true)
