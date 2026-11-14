@@ -38,5 +38,8 @@ if #missing > 0 then
     return
 end
 local fn, err = load(table.concat(parts), '@rp_characters/client/main.lua')
-if not fn then print('[rp_characters] load error: '..tostring(err)) return end
+if not fn then
+    print('[rp_characters] load error: ' .. tostring(err))
+    return
+end
 fn()

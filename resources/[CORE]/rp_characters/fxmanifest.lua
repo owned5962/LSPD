@@ -3,7 +3,7 @@ game 'gta5'
 lua54 'yes'
 author 'FiveM RP Team'
 description 'Character registration and character creator for FiveM'
-version '1.1.4'
+version '1.1.5'
 dependencies { 'oxmysql', 'rp_core', 'rp_jobs' }
 ui_page 'html/index.html'
 files {
