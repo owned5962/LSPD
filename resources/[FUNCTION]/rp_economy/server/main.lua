@@ -312,7 +312,6 @@ CreateThread(function()
                             tostring(src), tostring(paid)))
                     end
                 end
-                end
             end
         end
     end
