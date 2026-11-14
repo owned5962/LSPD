@@ -212,8 +212,8 @@ local function CheckPlayerBootstrap(src)
         error('rp_core CanPerformAction export failed: ' .. tostring(allowed))
     end
     if not allowed then
-        -- A duplicate request can arrive from rp_core while its initial sync
-        -- is already in flight. Ignore it; the first request owns the response.
+        -- Duplicate bootstrap requests are expected when rp_core and rp_characters start together.
+        -- Ignore them; the first request owns the response.
         print(('[rp_characters] Duplicate bootstrap ignored for player %s'):format(tostring(src)))
         return
     end
