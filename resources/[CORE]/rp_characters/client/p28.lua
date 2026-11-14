@@ -1,6 +1,6 @@
         -- the second request hit the 5s cooldown and falsely timed out after
         -- the first request had already opened the creator.
-        print('[rp_characters] Requesting account bootstrap through rp_core...')
+        print('[rp_characters] Requesting account initialization through rp_core...')
         TriggerServerEvent('rp_core:server:requestPlayerDataSync')
 
         -- Never leave the loading screen covering the UI indefinitely.
