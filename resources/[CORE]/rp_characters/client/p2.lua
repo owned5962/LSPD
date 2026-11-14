@@ -341,3 +341,196 @@ end
 local function CloseCharacterUI()
     SetNuiFocus(false, false)
     SendNUIMessage({ action = 'closeRegistration' })
+    SendNUIMessage({ action = 'closeCharacterSelection' })
+    if charCamera then
+        RenderScriptCams(false, true, 500, true, true)
+        DestroyCam(charCamera, false)
+        charCamera = nil
+    end
+    FreezeEntityPosition(PlayerPedId(), not characterSessionReady)
+    isCreating = false
+end
+
+RegisterNUICallback('beginCreation', function(data, cb)
+    CloseCharacterUI()
+    OpenCreator(3)
+    cb({ status = 'ok' })
+end)
+
+RegisterNUICallback('saveCharacter', function(data, cb)
+    if not isCreating or creationSubmissionPending or type(data) ~= 'table' then
+        cb({ status = 'error' })
+        return
+    end
+    creationSubmissionPending = true
+    TriggerServerEvent('rp_characters:server:createCharacter', data)
+    cb({ status = 'submitted' })
+end)
+
+RegisterNetEvent('rp_characters:client:creationResult', function(result)
+    if type(result) ~= 'table' or result.ok == true then return end
+    creationSubmissionPending = false
+    SendNUIMessage({
+        action = 'creationResult',
+        ok = false,
+        message = type(result.message) == 'string' and result.message or 'La création a échoué. Vérifiez les informations puis réessayez.'
+    })
+end)
+
+RegisterNUICallback('selectCharacter', function(data, cb)
+    local slot = type(data) == 'table' and tonumber(data.slot) or nil
+    if not slot or slot < 1 then
+        cb({ status = 'error' })
+        return
+    end
+
+    -- Close selector immediately so the player is never left on a black NUI layer
+    -- while waiting for CreateRPPlayer / spawnPlayer.
+    SetNuiFocus(false, false)
+    SendNUIMessage({ action = 'closeCharacterSelection' })
+    SendNUIMessage({ action = 'closeRegistration' })
+    if charCamera then
+        RenderScriptCams(false, false, 0, true, true)
+        DestroyCam(charCamera, false)
+        charCamera = nil
+    end
+    ClearFocus()
+    characterSessionReady = false
+    isCreating = false
+
+    selectWatchdogToken = selectWatchdogToken + 1
+    local token = selectWatchdogToken
+
+    TriggerServerEvent('rp_characters:server:selectCharacter', slot)
+    cb({ status = 'submitted' })
+
+    CreateThread(function()
+        local started = GetGameTimer()
+        while token == selectWatchdogToken and not characterSessionReady do
+            if (GetGameTimer() - started) >= 15000 then
+                break
+            end
+            Wait(250)
+        end
+        if token ~= selectWatchdogToken or characterSessionReady then
+            return
+        end
+        print('[rp_characters] Spawn watchdog: no spawnPlayer within 15s after selectCharacter.')
+        ShowCharacterBootError('Le spawn n\'a pas répondu après la sélection. Vérifiez la console serveur (CreateRPPlayer / oxmysql), puis resélectionnez votre personnage avec /relog ou en vous reconnectant.')
+        -- Ask core to re-open the account / character selection path.
+        TriggerServerEvent('rp_core:server:requestPlayerDataSync')
+    end)
+end)
+
+RegisterNUICallback('updateSkinPreview', function(data, cb)
+    if type(data) == 'table' then
+        ApplyCharacterAppearance(data.gender, data.skin)
+        UpdateCreatorCamera()
+    end
+    cb({ status = 'ok' })
+end)
+
+RegisterNUICallback('rotateCharacter', function(data, cb)
+    local direction = type(data) == 'table' and tonumber(data.direction) or nil
+    if direction ~= -1 and direction ~= 1 then
+        cb({ status = 'error' })
+        return
+    end
+    local ped = PlayerPedId()
+    if ped and ped ~= 0 and DoesEntityExist(ped) and isCreating then
+        SetEntityHeading(ped, (GetEntityHeading(ped) + (direction * 15.0)) % 360.0)
+        UpdateCreatorCamera()
+    end
+    cb({ status = 'ok' })
+end)
+
+RegisterNetEvent('rp_characters:client:openMenu', function(maxCharacters)
+    creationSubmissionPending = false
+    -- The creator is the first screen for a new account. The loading screen
+    -- must be closed here, not only after a character is spawned.
+    FinishCharacterBoot()
+    OpenCreator(maxCharacters)
+end)
+
+RegisterNetEvent('rp_characters:client:openCharacterSelection', function(characters, maxCharacters)
+    -- Keep the player locked, but never hide the world behind the selector.
+    -- The previous implementation made the ped fully transparent and did not
+    -- create a preview camera, leaving the user with a black screen.
+    FinishCharacterBoot()
+    characterSessionReady = false
+    isCreating = false
+    SetPlayerControl(PlayerId(), false, 0)
+
+    local ped = PlayerPedId()
+    if not ped or ped == 0 or not DoesEntityExist(ped) then
+        print('[rp_characters] Character selector could not acquire a valid player ped.')
+        ShowCharacterBootError('Impossible de préparer l’aperçu du personnage. Réessayez de vous connecter.')
+        return
+    end
+
+    SetEntityVisible(ped, true, false)
+    ResetEntityAlpha(ped)
+    SetEntityCollision(ped, true, true)
+    FreezeEntityPosition(ped, true)
+
+    -- Display a visible freemode preview while the saved-character cards are open.
+    -- The real saved skin is applied by the normal server spawn pipeline on selection.
+    if not LoadFreemodeModel('m') then
+        print('[rp_characters] Character selector preview model could not be loaded; keeping current ped visible.')
+    end
+    ped = PlayerPedId()
+    if ped and ped ~= 0 and DoesEntityExist(ped) then
+        SetEntityVisible(ped, true, false)
+        ResetEntityAlpha(ped)
+        SetEntityCollision(ped, true, true)
+        FreezeEntityPosition(ped, true)
+    end
+
+    SetupCreatorCamera()
+    if IsScreenFadedOut() then DoScreenFadeIn(700) end
+    SetNuiFocus(true, true)
+    SendNUIMessage({ action = 'openCharacterSelection', characters = characters, maxCharacters = maxCharacters or 3 })
+end)
+
+RegisterNetEvent('rp_characters:client:bootError', function(message)
+    -- A boot/load failure can also occur after the initial menu has opened.
+    -- Do not silently discard it just because the first boot timer has ended.
+    ShowCharacterBootError(message)
+end)
+
+RegisterNetEvent('rp_characters:client:closeMenu', function()
+    CloseCharacterUI()
+end)
+
+local SPAWN_TIMER_MODULUS = 4294967296
+
+local function SpawnWaitExpired(startedAt, duration)
+    return ((GetGameTimer() % SPAWN_TIMER_MODULUS) - startedAt) % SPAWN_TIMER_MODULUS >= duration
+end
+
+local function NormalizeClientSpawn(coords)
+    local fallback = { x = -1037.7, y = -2737.8, z = 20.1, heading = 330.0 }
+    if type(coords) ~= 'table' then return fallback end
+
+    local x, y, z = tonumber(coords.x), tonumber(coords.y), tonumber(coords.z)
+    local heading = tonumber(coords.heading)
+    local function finite(value)
+        return value ~= nil and value == value and value ~= math.huge and value ~= -math.huge
+    end
+    if not finite(x) or not finite(y) or not finite(z)
+        or x < -6000 or x > 6000 or y < -6000 or y > 6000
+        or z < -500 or z > 2000 then
+        return fallback
+    end
+    if not finite(heading) then heading = fallback.heading end
+    return { x = x, y = y, z = z, heading = heading % 360 }
+end
+
+RegisterNetEvent('rp_characters:client:spawnPlayer', function(coords, gender, skin)
+    -- Run the entire transition in a protected thread. A Lua/native error during
+    -- skin application, camera teardown or streaming must never strand the
+    -- player in a faded-out, frozen state.
+    CreateThread(function()
+        print('[rp_characters] Spawn pipeline received from server.')
+        creationSubmissionPending = false
+        characterSessionReady = true
