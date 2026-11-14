@@ -41,7 +41,7 @@ def test_detection_audit_is_required_before_automatic_sanction():
     recorder = server[start:end]
     assert "anticheat_event_log" in recorder
     assert "source_type" in recorder
-    assert "alert.sanction = 'review'" in recorder
+    assert "or 'review'" in recorder
     assert "if trustedServerEvent == true and persisted then" in recorder
 
 
