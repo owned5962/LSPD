@@ -1,0 +1,24 @@
+  background: rgba(251,191,36,0.08) !important;
+  color: #f8fafc !important;
+}
+#tablet .creator-tab.active {
+  background: linear-gradient(135deg, rgba(251,191,36,0.18), rgba(245,158,11,0.12)) !important;
+  color: #fff7ed !important;
+  box-shadow: inset 3px 0 0 #f59e0b;
+}
+/* Main content */
+#tablet .tab-panels,
+#tablet .creator-content,
+#tablet > section,
+#tablet > main,
+#tablet .panel-host {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  padding: 18px 20px !important;
+  overflow: auto !important;
+}
+#tablet .tab-panel,
+#tablet [data-panel],
+#tablet .creator-panel {
+  animation: none !important;
+}
