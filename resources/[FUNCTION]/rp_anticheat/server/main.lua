@@ -164,11 +164,18 @@ local function isStaff(src)
         or (player and (player.group == 'admin' or player.group == 'superadmin' or player.group == 'fondateur'))
 end
 
+local function getStaffLevel(src)
+    local player = getPlayer(src)
+    if isFounder(src) then return 3 end
+    if player and player.group == 'superadmin' then return 2 end
+    if isStaff(src) then return 1 end
+    return 0
+end
+
 local function canModerateTarget(src, targetId)
     if not targetId or targetId == src or not GetPlayerName(targetId) then return false end
-    if isFounder(targetId) and not isFounder(src) then return false end
-    if isStaff(targetId) and not isFounder(src) then return false end
-    return true
+    local targetLevel = getStaffLevel(targetId)
+    return targetLevel == 0 or getStaffLevel(src) > targetLevel
 end
 
 local function canUseAnticheatTablet(src)
