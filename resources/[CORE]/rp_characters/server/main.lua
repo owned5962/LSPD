@@ -212,9 +212,9 @@ local function CheckPlayerBootstrap(src)
         error('rp_core CanPerformAction export failed: ' .. tostring(allowed))
     end
     if not allowed then
-        print(('[rp_characters] Bootstrap request rejected by cooldown for player %s'):format(tostring(src)))
-        TriggerClientEvent('rp_characters:client:bootError', src,
-            'La demande de chargement a été refusée par le contrôle de session. Reconnectez-vous.')
+        -- A duplicate request can arrive from rp_core while its initial sync
+        -- is already in flight. Ignore it; the first request owns the response.
+        print(('[rp_characters] Duplicate bootstrap ignored for player %s'):format(tostring(src)))
         return
     end
     print(('[rp_characters] Bootstrap started for player %s'):format(tostring(src)))
