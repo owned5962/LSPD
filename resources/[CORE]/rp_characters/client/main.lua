@@ -352,6 +352,17 @@ local function OpenCreator(maxCharacters)
     SetNuiFocus(true, true)
 
     local ped = PlayerPedId()
+    local pedDeadline = GetGameTimer() + 5000
+    while (not ped or ped == 0 or not DoesEntityExist(ped)) and GetGameTimer() < pedDeadline do
+        Wait(0)
+        ped = PlayerPedId()
+    end
+    if not ped or ped == 0 or not DoesEntityExist(ped) then
+        print('[rp_characters] Creator preview could not acquire a valid player ped.')
+        SetPlayerControl(PlayerId(), true, 0)
+        SetNuiFocus(false, false)
+        return
+    end
     SetEntityCoordsNoOffset(ped, -1042.0, -2745.0, 21.3, false, false, false)
     SetEntityHeading(ped, 330.0)
     FreezeEntityPosition(ped, true)
@@ -361,9 +372,20 @@ local function OpenCreator(maxCharacters)
 
     -- Apply the initial appearance after placing the ped. The model swap
     -- routine preserves this exact transform when the gender/model changes.
-    ApplyCharacterAppearance('m', { hairStyle = 4, hairColor = 0, clothing = 'casual' })
+    local previewReady = ApplyCharacterAppearance('m', { hairStyle = 4, hairColor = 0, clothing = 'casual' })
+    ped = PlayerPedId()
+    if ped and ped ~= 0 and DoesEntityExist(ped) then
+        SetEntityVisible(ped, true, false)
+        ResetEntityAlpha(ped)
+        SetEntityCollision(ped, true, true)
+        FreezeEntityPosition(ped, true)
+    end
+    if not previewReady then
+        print('[rp_characters] Default preview appearance failed; keeping the visible GTA ped.')
+    end
     isCreating = true
     SetupCreatorCamera()
+    if IsScreenFadedOut() then DoScreenFadeIn(500) end
     SendNUIMessage({ action = 'openRegistration', maxCharacters = maxCharacters or 3 })
 end
 
@@ -372,7 +394,7 @@ local function UpdateCreatorCamera()
     local ped = PlayerPedId()
     if not ped or ped == 0 or not DoesEntityExist(ped) then return end
     -- Keep the camera in front of the ped, centered on the face and upper body.
-    local cameraCoords = GetOffsetFromEntityInWorldCoords(ped, 0.0, 3.25, 0.9)
+    local cameraCoords = GetOffsetFromEntityInWorldCoords(ped, 0.0, 2.35, 0.85)
     SetCamCoord(charCamera, cameraCoords.x, cameraCoords.y, cameraCoords.z)
     PointCamAtEntity(charCamera, ped, 0.0, 0.0, 0.9, true)
 end
@@ -401,10 +423,18 @@ function SetupCreatorCamera()
         charCamera = nil
     end
     charCamera = CreateCam('DEFAULT_SCRIPTED_CAMERA', true)
+    if not charCamera or charCamera == 0 then
+        print('[rp_characters] Creator camera creation failed; falling back to gameplay camera.')
+        SetEntityVisible(ped, true, false)
+        ResetEntityAlpha(ped)
+        return
+    end
     UpdateCreatorCamera()
     SetCamFov(charCamera, 38.0)
     SetCamActive(charCamera, true)
     RenderScriptCams(true, true, 500, true, true)
+    print(('[rp_characters] Creator preview ready; ped=%s model=%s camera=%s')
+        :format(tostring(ped), tostring(GetEntityModel(ped)), tostring(charCamera)))
 end
 
 local function CloseCharacterUI()
@@ -511,7 +541,8 @@ RegisterNetEvent('rp_characters:client:resumeLoadedCharacter', function()
 end)
 
 RegisterNetEvent('rp_characters:client:bootError', function(message)
-    if not characterBootPending then return end
+    -- A boot/load failure can also occur after the initial menu has opened.
+    -- Do not silently discard it just because the first boot timer has ended.
     ShowCharacterBootError(message)
 end)
 
