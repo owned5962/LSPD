@@ -8,7 +8,7 @@
 - Les fenêtres anti-spam des signalements client et des événements serveur sont indépendantes : un faux signalement client ne peut pas masquer une détection serveur pendant son délai de refroidissement.
 - Les accès à la tablette, les changements de protections, la configuration des sanctions, les bannissements, les débanissements et la surveillance sont validés côté serveur et limités en fréquence.
 - Les demandes de politique d'armes sont limitées à une par joueur toutes les trois secondes. La politique et les protections effectives sont resynchronisées aux joueurs qui rejoignent après le démarrage.
-- Les sanctions manuelles respectent la hiérarchie : un membre du staff ne peut sanctionner qu'un rang inférieur ; seul le fondateur peut sanctionner les rangs staff supérieurs ou égaux.
+- Les sanctions manuelles respectent la hiérarchie : un membre du staff ne peut sanctionner qu'un rang strictement inférieur ; le fondateur peut sanctionner les administrateurs et superadministrateurs, mais pas un autre fondateur.
 - Les sanctions manuelles et automatiques, les changements de configuration et les débanissements sont inscrits dans `admin_logs`.
 - La prison est persistante et sa zone est contrôlée périodiquement par le serveur ; la libération est décidée par l'heure de fin enregistrée en SQL, pas par l'horloge seule du client.
 - Les identifiants SQL sont paramétrés. Les tables de configuration des protections et paramètres AEGIS sont initialisées et rechargées au démarrage.
