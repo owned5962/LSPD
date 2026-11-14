@@ -30,6 +30,7 @@ CREATE TABLE IF NOT EXISTS `characters` (
     `is_dead` TINYINT(1) NOT NULL DEFAULT 0,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE KEY `unique_user_char` (`identifier`, `char_id`),
+    UNIQUE KEY `uq_characters_one_per_account` (`identifier`),
     CONSTRAINT `fk_characters_users` FOREIGN KEY (`identifier`) REFERENCES `users` (`identifier`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -616,3 +617,68 @@ CREATE TABLE IF NOT EXISTS `rp_job_bank_transactions` (
     KEY `idx_job_bank_history` (`job`, `id`),
     KEY `idx_job_bank_character` (`character_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+
+-- Un seul personnage par compte : contrainte également appliquée par MySQL.
+-- Sur une base existante avec plusieurs personnages pour un même compte,
+-- l'index n'est ajouté qu'après résolution manuelle des doublons afin de ne supprimer aucune donnée.
+SET @rp_single_character_duplicates = (
+    SELECT COUNT(*) FROM (
+        SELECT identifier FROM characters GROUP BY identifier HAVING COUNT(*) > 1
+    ) AS duplicate_accounts
+);
+SET @rp_single_character_index_exists = (
+    SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = 'characters'
+      AND INDEX_NAME = 'uq_characters_one_per_account'
+);
+SET @rp_single_character_sql = IF(
+    @rp_single_character_index_exists = 0 AND @rp_single_character_duplicates = 0,
+    'ALTER TABLE `characters` ADD UNIQUE KEY `uq_characters_one_per_account` (`identifier`)',
+    'SELECT 1'
+);
+PREPARE rp_single_character_stmt FROM @rp_single_character_sql;
+EXECUTE rp_single_character_stmt;
+DEALLOCATE PREPARE rp_single_character_stmt;
+
+
+-- AEGIS : journal des détections et provenance des preuves.
+CREATE TABLE IF NOT EXISTS `anticheat_event_log` (
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `player_id` INT NOT NULL,
+    `player_identifier` VARCHAR(80) NULL,
+    `player_name` VARCHAR(100) NOT NULL,
+    `detection_type` VARCHAR(40) NOT NULL,
+    `reason` VARCHAR(180) NOT NULL,
+    `severity` VARCHAR(16) NOT NULL,
+    `sanction` VARCHAR(16) NOT NULL DEFAULT 'warn',
+    `source_type` VARCHAR(16) NOT NULL DEFAULT 'legacy',
+    `items_snapshot` LONGTEXT NULL,
+    `weapons_snapshot` LONGTEXT NULL,
+    `cash_snapshot` BIGINT NULL,
+    `bank_snapshot` BIGINT NULL,
+    `job_name` VARCHAR(50) NULL,
+    `job_label` VARCHAR(100) NULL,
+    `job_grade` INT NULL,
+    `job_grade_label` VARCHAR(100) NULL,
+    `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    INDEX `idx_anticheat_event_created` (`created_at`),
+    INDEX `idx_anticheat_event_player` (`player_identifier`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+SET @aegis_source_type_exists = (
+    SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = 'anticheat_event_log'
+      AND COLUMN_NAME = 'source_type'
+);
+SET @aegis_source_type_sql = IF(
+    @aegis_source_type_exists = 0,
+    'ALTER TABLE `anticheat_event_log` ADD COLUMN `source_type` VARCHAR(16) NOT NULL DEFAULT ''legacy'' AFTER `sanction`',
+    'SELECT 1'
+);
+PREPARE aegis_source_type_stmt FROM @aegis_source_type_sql;
+EXECUTE aegis_source_type_stmt;
+DEALLOCATE PREPARE aegis_source_type_stmt;
