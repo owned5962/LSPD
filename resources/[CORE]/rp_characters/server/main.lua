@@ -154,7 +154,7 @@ local function LoadCharacterUnsafe(src, identifier, userGroup, char)
         return ResumeRegisteredCharacter(src)
     end
     if exports['rp_core']:GetPlayerFromId(src) then
-        return ResumeRegisteredCharacter()
+        return ResumeRegisteredCharacter(src)
     end
 
     char.position = DecodeJson(char.position, DefaultSpawn)
