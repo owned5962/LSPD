@@ -74,7 +74,7 @@ end
 -- Character creator implementation consolidated in this file.
 -- No runtime dependency on external p*.lua fragments.
 
--- No runtime LoadResourceFile dependency on split p*.lua fragments.
+-- All character client logic is embedded below; no split-file loader is used.
 
 local isCreating = false
 local charCamera = nil
