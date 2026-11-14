@@ -318,8 +318,11 @@ local function InitializePlayerAccount(src)
     end
 end
 
-RegisterNetEvent('rp_characters:server:initializePlayer', function()
+RegisterNetEvent('rp_characters:server:initializePlayer', function(requestedSource)
     local src = source
+    -- Internal TriggerEvent calls have source 0; client network calls keep their real source.
+    if src == 0 then src = tonumber(requestedSource) end
+    if not src or src < 1 or not GetPlayerName(src) then return end
     local ok, err = xpcall(InitializePlayerAccount, debug.traceback, src)
     if not ok then
         print(('[rp_characters] Account initialization failed for player %s: %s')
