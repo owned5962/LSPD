@@ -33,6 +33,3 @@ local tutorialPages = {
         lines = {
             'Bienvenue dans la ville ! Ton personnage commence une nouvelle histoire.',
             'Prends le temps de découvrir la ville et de rencontrer les autres habitants.',
-            'Le plus important : joue ton personnage et laisse vivre les scènes RP.'
-        }
-    },

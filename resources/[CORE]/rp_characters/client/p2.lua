@@ -1,3 +1,6 @@
+            'Le plus important : joue ton personnage et laisse vivre les scènes RP.'
+        }
+    },
     {
         title = 'TON INVENTAIRE',
         lines = {
@@ -25,4 +28,3 @@
     {
         title = 'INTERAGIR AVEC LES AUTRES',
         lines = {
-            'Approche-toi des autres citoyens pour échanger et créer des scènes RP.',
