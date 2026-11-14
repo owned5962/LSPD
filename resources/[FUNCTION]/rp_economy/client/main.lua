@@ -209,9 +209,9 @@ RegisterNetEvent('rp_economy:client:sessionExpired', function()
     SendNUIMessage({ action = 'authenticationExpired' })
 end)
 
-RegisterNetEvent('rp_economy:client:refreshBalances', function(cash, bank)
+RegisterNetEvent('rp_economy:client:refreshBalances', function(cash, bank, history)
     if isBankOpen and isAuthenticated then
-        SendNUIMessage({ action = 'updateBalances', cash = cash, bank = bank })
+        SendNUIMessage({ action = 'updateBalances', cash = cash, bank = bank, history = history or {} })
     end
 end)
 
