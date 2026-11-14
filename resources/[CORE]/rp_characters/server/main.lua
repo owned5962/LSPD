@@ -124,8 +124,10 @@ RegisterNetEvent('rp_characters:server:completeTutorial', function()
 end)
 
 AddEventHandler('playerDropped', function()
-    tutorialStarted[source] = nil
-    creationLocks[source] = nil
+    local src = source
+    tutorialStarted[src] = nil
+    local identifier = GetLicenseIdentifier(src)
+    if identifier then creationLocks[identifier] = nil end
 end)
 
 local function ResumeRegisteredCharacter(src)
@@ -203,6 +205,7 @@ local function LoadCharacterUnsafe(src, identifier, userGroup, char)
     TriggerClientEvent('rp_characters:client:closeMenu', src)
     TriggerClientEvent('rp_characters:client:spawnPlayer', src, player.position, char.sex, char.skin)
     Notify(src, ('Bienvenue %s %s !'):format(char.firstname, char.lastname), 'success')
+    return true
 end
 
 local function LoadCharacter(src, identifier, userGroup, char)
@@ -383,12 +386,11 @@ RegisterNetEvent('rp_characters:server:selectCharacter', function(slot)
     end
 end)
 
-local function CreateCharacter(src, data)
+local function CreateCharacterUnsafe(src, data, identifier)
     if not exports['rp_core']:CanPerformAction(src, 'character:create', 5000) then
         CreationError(src, 'Veuillez patienter quelques secondes avant de réessayer.', 'warning')
         return
     end
-    local identifier = GetLicenseIdentifier(src)
     if not identifier or type(data) ~= 'table' then
         CreationError(src, 'Données de création invalides.')
         return
@@ -440,12 +442,6 @@ local function CreateCharacter(src, data)
         return
     end
 
-    if creationLocks[identifier] then
-        CreationError(src, 'Une création est déjà en cours pour ce compte.', 'warning')
-        return
-    end
-    creationLocks[identifier] = true
-
     local slot = 1
 
     local allowedSpawns = {
@@ -463,7 +459,6 @@ local function CreateCharacter(src, data)
     end)
     if not encodeOk or type(encodedPosition) ~= 'string' or type(encodedSkin) ~= 'string'
         or #encodedPosition > 1024 or #encodedSkin > 16384 then
-        creationLocks[identifier] = nil
         CreationError(src, 'L\'apparence du personnage contient trop de données. Réduisez les options et réessayez.')
         return
     end
@@ -473,7 +468,6 @@ local function CreateCharacter(src, data)
         { identifier, slot, firstname, lastname, data.dateofbirth, data.gender, height,
           2500, 10000, 'unemployed', 0, encodedPosition, encodedSkin }
     )
-    creationLocks[identifier] = nil
     if not insertOk or not charId then
         if not insertOk then
             print(('[rp_characters] Character insert failed for %s: %s'):format(identifier, tostring(charId)))
@@ -489,7 +483,32 @@ local function CreateCharacter(src, data)
         cash = 2500, bank = 10000, job = 'unemployed', job_grade = 0,
         position = spawn, skin = skin
     }
-    LoadCharacter(src, identifier, GetEffectiveUserGroup(src, user.group), char)
+    local loaded = LoadCharacter(src, identifier, GetEffectiveUserGroup(src, user.group), char)
+    if not loaded then return end
+
+    TriggerClientEvent('rp_characters:client:creationResult', src, {
+        ok = true,
+        message = 'Personnage créé et chargé avec succès.'
+    })
+end
+
+local function CreateCharacter(src, data)
+    local identifier = GetLicenseIdentifier(src)
+    if not identifier or type(data) ~= 'table' then
+        return CreateCharacterUnsafe(src, data, identifier)
+    end
+
+    if creationLocks[identifier] then
+        CreationError(src, 'Une création est déjà en cours pour ce compte.', 'warning')
+        return
+    end
+
+    -- Acquire the per-account lock before the first awaited SQL query so two
+    -- concurrent NUI submissions cannot both pass the character-count check.
+    creationLocks[identifier] = true
+    local ok, err = xpcall(CreateCharacterUnsafe, debug.traceback, src, data, identifier)
+    creationLocks[identifier] = nil
+    if not ok then error(err, 0) end
 end
 
 RegisterNetEvent('rp_characters:server:createCharacter', function(data)
