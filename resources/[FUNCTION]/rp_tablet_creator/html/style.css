@@ -169,3 +169,32 @@
 #creator-noclip.is-active { background:#991b1b; border-color:#ef4444; }
 #creator-noclip:disabled,#creator-spawn-vehicle:disabled { opacity:.65; cursor:wait; }
 #creator-vehicle-model { width:100%; padding:11px; border:1px solid #334761; border-radius:8px; background:#0b1525; color:#e8eef8; }
+
+
+
+/* F11 — thème violet et identité visuelle de la tablette Creator */
+:root{--creator-accent:#a78bfa;--creator-accent-strong:#8b5cf6;--creator-accent-soft:rgba(167,139,250,.16)}
+#tablet{border-color:rgba(167,139,250,.42);background:linear-gradient(145deg,rgba(11,13,29,.985),rgba(26,17,48,.985));box-shadow:0 24px 80px #000b,0 0 42px rgba(139,92,246,.12)}
+.brand>i,.panel h2 i,.intro{color:#c4b5fd}
+header{border-color:rgba(167,139,250,.22)}
+.creator-tabs{border-color:rgba(167,139,250,.2)}
+.creator-tab.active,.creator-tab:hover{color:#ddd6fe;border-color:#a78bfa;background:rgba(139,92,246,.16)}
+#close:hover{background:#6d28d9}
+.primary,.buttons button:hover,.time-row button:hover{border-color:#a78bfa;background:linear-gradient(135deg,#7c3aed,#5b21b6);color:#fff}
+.panel{border-color:rgba(167,139,250,.18);background:linear-gradient(145deg,rgba(25,22,45,.97),rgba(16,19,36,.98))}
+.panel h2{color:#ede9fe}
+.panel h2 i{color:#c4b5fd}
+.intro{position:relative;isolation:isolate;min-height:104px;padding:18px 22px;border:1px solid rgba(167,139,250,.24);border-radius:15px;background:linear-gradient(90deg,rgba(12,14,30,.98),rgba(12,14,30,.8) 58%,rgba(12,14,30,.22)),url('images/creator-hero.svg') right center/auto 100% no-repeat;display:flex;flex-direction:column;justify-content:center}
+.intro p{max-width:520px}
+.creator-statistics-grid{grid-template-columns:repeat(2,minmax(0,1fr));overflow:auto;align-content:start}
+.creator-stats-summary{grid-column:1/-1}
+.creator-stat-cards{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:9px;margin-top:15px}
+.creator-stat-cards>div{padding:12px;border:1px solid rgba(167,139,250,.2);border-radius:10px;background:rgba(139,92,246,.08);min-width:0}
+.creator-stat-cards small{display:block;color:#a5a2bd;font-size:9px;margin-bottom:7px}
+.creator-stat-cards strong{display:block;color:#ddd6fe;font-size:20px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.creator-statistics-grid canvas{display:block;width:100%;height:190px}
+#status.creator-toast{border-color:rgba(167,139,250,.48)}
+#status.creator-toast.is-visible{box-shadow:0 12px 36px rgba(76,29,149,.3)}
+@media(max-width:900px){.creator-stat-cards{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:700px){.creator-statistics-grid{grid-template-columns:1fr}.creator-stat-cards{grid-template-columns:repeat(2,minmax(0,1fr))}.intro{background-position:center,right center}}
+

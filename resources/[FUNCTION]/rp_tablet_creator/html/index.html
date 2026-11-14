@@ -19,6 +19,7 @@
     <button type="button" class="creator-tab" data-tab="gangs"><i class="fa-solid fa-users"></i> Gang</button>
     <button type="button" class="creator-tab" data-tab="bank"><i class="fa-solid fa-building-columns"></i> Banque Job</button>
     <button type="button" class="creator-tab" data-tab="weapons"><i class="fa-solid fa-shield-halved"></i> Armes</button>
+    <button type="button" class="creator-tab" data-tab="statistics"><i class="fa-solid fa-chart-pie"></i> Statistiques</button>
   </nav>
   <section class="intro"><span class="live"></span> CONSOLE CRÉATEUR <p>Contrôle de l'environnement serveur et communication globale.</p></section>
 <section class="grid" data-tab-panel="weather"><article class="panel"><h2><i class="fa-solid fa-cloud-sun"></i> Météo & environnement</h2><div class="buttons">
@@ -255,6 +256,21 @@
 
   
 
-    <footer><span id="status">Prêt · Les actions sont contrôlées côté serveur.</span><kbd>ÉCHAP</kbd></footer>
+  <section class="grid creator-statistics-grid" data-tab-panel="statistics" hidden>
+ <article class="panel creator-stats-summary">
+  <h2><i class="fa-solid fa-chart-line"></i> Vue d'ensemble du serveur</h2>
+  <div class="creator-stat-cards">
+   <div><small>Joueurs chargés</small><strong id="creator-stat-players">0</strong></div>
+   <div><small>Métiers connus</small><strong id="creator-stat-jobs">0</strong></div>
+   <div><small>Gangs enregistrés</small><strong id="creator-stat-gangs">0</strong></div>
+   <div><small>Modules actifs</small><strong id="creator-stat-modules">0 / 0</strong></div>
+   <div><small>Trésorerie métiers</small><strong id="creator-stat-bank">0 $</strong></div>
+  </div>
+ </article>
+ <article class="panel"><h2><i class="fa-solid fa-users"></i> Joueurs par métier</h2><canvas id="creator-job-chart" height="190" aria-label="Graphique des joueurs par métier"></canvas></article>
+ <article class="panel"><h2><i class="fa-solid fa-server"></i> État des modules</h2><canvas id="creator-module-chart" height="190" aria-label="Graphique de l’état des modules"></canvas></article>
+ <article class="panel"><h2><i class="fa-solid fa-building-columns"></i> Soldes des banques métiers</h2><canvas id="creator-bank-chart" height="190" aria-label="Graphique des soldes bancaires par métier"></canvas></article>
+ </section>
+  <footer><span id="status">Prêt · Les actions sont contrôlées côté serveur.</span><kbd>ÉCHAP</kbd></footer>
 </main><script src="app.js"></script>
 </body></html>

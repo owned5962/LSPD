@@ -280,7 +280,7 @@ def test_creator_nui_contract_has_unique_ids_all_tabs_and_live_callbacks():
 
     tabs = set(re.findall(r"""data-tab=["']([^"']+)["']""", html))
     panels = set(re.findall(r"""data-tab-panel=["']([^"']+)["']""", html))
-    assert tabs == panels and len(tabs) == 10
+    assert tabs == panels and len(tabs) == 11
 
     callbacks = re.findall(r"""RegisterNUICallback\(['"]([^'"]+)['"]""", client)
     assert len(callbacks) == len(set(callbacks)), "Creator has duplicate NUI callbacks"

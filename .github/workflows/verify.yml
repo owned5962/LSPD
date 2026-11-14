@@ -51,6 +51,7 @@ jobs:
           python tests/test_player_session_contract.py
           python -m pytest -q tests/test_inventory_workflow.py tests/test_inventory_backups.py
           python -m pytest -q tests/test_f4_tablet.py
+          python -m pytest -q tests/test_staff_tablet_visual_consistency.py
 
       - name: Compile every Lua file
         shell: bash

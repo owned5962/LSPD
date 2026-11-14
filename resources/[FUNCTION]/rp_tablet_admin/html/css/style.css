@@ -1027,3 +1027,25 @@ button:disabled {
 .give-equipment-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
 .give-equipment-grid .give-card { margin:0; min-width:0; }
 @media(max-width:850px){.admin-give-groups,.give-equipment-grid{grid-template-columns:1fr}.give-category.equipment{grid-column:auto}}
+
+
+
+/* F10 — tablette staff unifiée, identité rouge et illustration locale */
+.panel-header.admin-accent{background-image:linear-gradient(90deg,rgba(10,10,14,.98) 0%,rgba(10,10,14,.87) 58%,rgba(10,10,14,.28) 100%),url('../images/admin-hero.svg');background-position:center,right center;background-size:cover,auto 100%;background-repeat:no-repeat;border:1px solid rgba(239,68,68,.24);border-radius:16px;min-height:108px;padding:18px 22px}
+.admin-visual-overview{display:grid;grid-template-columns:minmax(180px,1fr) auto minmax(230px,1.1fr);align-items:center;gap:18px;margin:0 0 15px;padding:15px 18px;border:1px solid rgba(239,68,68,.22);border-radius:15px;background:linear-gradient(115deg,rgba(25,12,18,.96),rgba(15,17,25,.96) 60%,rgba(50,10,16,.76));box-shadow:0 12px 34px rgba(0,0,0,.2)}
+.admin-overview-copy{display:flex;flex-direction:column;gap:5px}.overview-kicker{font-size:9px;font-weight:900;letter-spacing:1.6px;color:#f87171}.admin-overview-copy strong{font-size:16px;color:#fff}.admin-overview-copy small,.admin-overview-metrics small{font-size:9px;color:#94a3b8}
+.admin-overview-metrics{display:flex;gap:16px}.admin-overview-metrics>div{display:flex;flex-direction:column;gap:5px;min-width:64px}.admin-overview-metrics b{font-size:19px;color:#fca5a5;font-variant-numeric:tabular-nums}
+.admin-overview-chart{min-width:0}.admin-overview-chart>span{display:block;margin-bottom:4px;font-size:9px;color:#cbd5e1;font-weight:800;letter-spacing:.4px}.admin-overview-chart canvas{display:block;width:100%;height:76px}
+.admin-subnav-btn.active,.admin-subnav-btn:hover{border-color:rgba(239,68,68,.5);color:#fca5a5}
+.btn-red,.action-btn-red{background:linear-gradient(135deg,#ef4444,#991b1b)}
+.admin-card,.give-card{border-color:rgba(239,68,68,.16)}
+@media(max-width:1000px){.admin-visual-overview{grid-template-columns:1fr 1fr}.admin-overview-chart{grid-column:1/-1}}
+@media(max-width:650px){.admin-visual-overview{grid-template-columns:1fr}.admin-overview-metrics{justify-content:space-between}.admin-overview-chart{grid-column:auto}.panel-header.admin-accent{background-position:center,right center}}
+
+
+/* Red accent consistency across administration cards and form controls */
+.give-category{border-color:rgba(239,68,68,.22);background:rgba(40,12,18,.45)}
+.give-category-heading{color:#fca5a5}
+.give-category-heading i{color:#f87171}
+.give-category.equipment{border-color:rgba(239,68,68,.28)}
+.give-card input:focus,.give-card select:focus,.admin-page-card input:focus,.admin-page-card select:focus,.admin-page-card textarea:focus{border-color:rgba(239,68,68,.65);outline-color:rgba(239,68,68,.35)}
