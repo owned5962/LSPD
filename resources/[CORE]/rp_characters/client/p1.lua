@@ -6,8 +6,12 @@ local creationSubmissionPending = false
 
 local function FinishCharacterBoot()
     characterBootPending = false
-    ShutdownLoadingScreen()
-    ShutdownLoadingScreenNui()
+    -- Aggressive loadscreen shutdown to avoid black screen on selector/creator
+    pcall(ShutdownLoadingScreen)
+    pcall(ShutdownLoadingScreenNui)
+    if IsScreenFadedOut() or IsScreenFadingOut() then
+        DoScreenFadeIn(0)
+    end
     DoScreenFadeIn(500)
 end
 
@@ -49,7 +53,3 @@ local tutorialPages = {
             'Les principales banques sont indiquées sur ta carte.'
         }
     },
-    {
-        title = 'TROUVER UN MÉTIER',
-        lines = {
-            'Rends-toi au Pôle Emploi ou utilise /jobcenter pour découvrir les métiers.',
