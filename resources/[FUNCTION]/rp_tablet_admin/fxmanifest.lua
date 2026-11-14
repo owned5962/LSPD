@@ -4,7 +4,7 @@ lua54 'yes'
 
 author 'FiveM RP Team'
 description 'Modern Tablet-Style Admin Menu OS with Player Management, Economy, Jobs, Weather & Vehicles'
-version '1.0.1'
+version '1.0.2'
 
 dependencies { 'oxmysql', 'rp_core', 'rp_jobs', 'rp_inventory', 'rp_tablet_creator', 'rp_anticheat' }
 
@@ -15,17 +15,7 @@ files {
     'html/css/style.css',
     'html/css/f10-sidebar.css',
     'html/js/app.js',
-    'html/images/los_santos_map.svg',
-    'html/images/admin-hero.svg',
-    'html/images/tab-players.svg',
-    'html/images/tab-gives.svg',
-    'html/images/tab-sanctions.svg',
-    'html/images/tab-functions.svg',
-    'html/images/tab-jobs.svg',
-    'html/images/tab-weather.svg',
-    'html/images/tab-map.svg',
-    'html/images/tab-reports.svg',
-    'html/images/tab-audit.svg'
+    'html/images/los_santos_map.svg'
 }
 
 client_scripts {
