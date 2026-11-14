@@ -692,6 +692,7 @@ exports('SaveWeaponPolicy', function(src, rawPolicy)
     end
     Config.WeaponPolicy = clean
     rebuildWeaponLookups()
+    recordAdminAudit(src, 'anticheat_save_weapon_policy', nil, json.encode(clean))
     TriggerClientEvent('rp_anticheat:syncWeaponPolicy', -1, Config.WeaponPolicy)
     return true, getWeaponPolicyList()
 end)
