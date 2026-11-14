@@ -16,7 +16,16 @@ files {
     'html/css/f10-sidebar.css',
     'html/js/app.js',
     'html/images/los_santos_map.svg',
-    'html/images/admin-hero.svg'
+    'html/images/admin-hero.svg',
+    'html/images/tab-players.svg',
+    'html/images/tab-gives.svg',
+    'html/images/tab-sanctions.svg',
+    'html/images/tab-functions.svg',
+    'html/images/tab-jobs.svg',
+    'html/images/tab-weather.svg',
+    'html/images/tab-map.svg',
+    'html/images/tab-reports.svg',
+    'html/images/tab-audit.svg'
 }
 
 client_scripts {

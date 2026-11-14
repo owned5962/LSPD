@@ -14,7 +14,18 @@ files {
     'html/index.html',
     'html/style.css',
     'html/app.js',
-    'html/images/creator-hero.svg'
+    'html/images/creator-hero.svg',
+    'html/images/tab-weather.svg',
+    'html/images/tab-announcement.svg',
+    'html/images/tab-mapping.svg',
+    'html/images/tab-blips.svg',
+    'html/images/tab-configuration.svg',
+    'html/images/tab-players.svg',
+    'html/images/tab-jobs.svg',
+    'html/images/tab-gangs.svg',
+    'html/images/tab-bank.svg',
+    'html/images/tab-weapons.svg',
+    'html/images/tab-statistics.svg'
 }
 
 client_scripts { 'client/main.lua' }
