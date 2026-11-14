@@ -537,6 +537,13 @@ function renderLogs() {
         player.textContent = `${log.playerName || 'Joueur inconnu'} (ID ${log.playerId ?? '?'})`;
         const reason = document.createElement('td');
         reason.textContent = log.reason || 'Détection';
+        const source = document.createElement('small');
+        source.className = 'detection-source';
+        source.textContent = log.sourceType === 'server'
+            ? 'Preuve observée côté serveur'
+            : 'Signalement client — vérification manuelle requise';
+        reason.appendChild(document.createElement('br'));
+        reason.appendChild(source);
         const severity = document.createElement('td');
         const badge = document.createElement('span');
         badge.className = 'severity';
@@ -545,7 +552,7 @@ function renderLogs() {
         const action = document.createElement('td');
         const sanction = document.createElement('span');
         sanction.className = 'severity severity-' + (log.sanction === 'ban' || log.sanction === 'kick' ? 'critical' : log.sanction === 'prison' ? 'high' : 'low');
-        sanction.textContent = ({ warn: 'Avertissement', kick: 'Kick', ban: 'Ban', prison: 'Prison' })[log.sanction] || 'Non défini';
+        sanction.textContent = ({ warn: 'Avertissement', kick: 'Kick', ban: 'Ban', prison: 'Prison', review: 'À vérifier' })[log.sanction] || 'Non défini';
         action.appendChild(sanction);
         const details = document.createElement('td');
         const detailsButton = document.createElement('button');
