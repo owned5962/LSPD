@@ -1,5 +1,6 @@
 local RESOURCE = GetCurrentResourceName()
-local PART_COUNT = 28
+local PART_COUNT = 4
+local PART_PREFIX = "client/c"
 local parts, lineMap = {}, {}
 local nextCombinedLine = 1
 
@@ -37,16 +38,10 @@ local function reportClientError(context, err)
     local message = tostring(err):sub(1, 2000)
     print(("^1[rp_characters][CLIENT ERROR] %s:%d | %s | %s^7"):format(file, line, tostring(context), message))
     print("^1" .. trace:sub(1, 6000) .. "^7")
-
     local now = GetGameTimer()
     if now - reportWindow > 10000 then reportWindow, reportCount = now, 0 end
     if reportCount >= 8 then return end
     reportCount = reportCount + 1
-    pcall(TriggerServerEvent, "rp_characters:server:reportClientError", {
-        resource = RESOURCE, file = file, line = line,
-        context = tostring(context):sub(1, 128),
-        message = message, traceback = trace:sub(1, 6000)
-    })
 end
 
 local function tracebackHandler(err)
@@ -67,8 +62,6 @@ local function guarded(context, callback)
     end
 end
 
--- Protect all client-side asynchronous entry points declared by the 28 source
--- fragments. The combined chunk's line numbers are mapped back to each fragment.
 local originalRegisterNetEvent = RegisterNetEvent
 local originalAddEventHandler = AddEventHandler
 local originalCreateThread = CreateThread
@@ -79,49 +72,65 @@ RegisterNetEvent = function(name, callback)
     if type(callback) == "function" then
         return originalRegisterNetEvent(name, guarded("net-event:" .. tostring(name), callback))
     end
-    return originalRegisterNetEvent(name)
+    return originalRegisterNetEvent(name, callback)
 end
+
 AddEventHandler = function(name, callback)
-    return originalAddEventHandler(name, guarded("event:" .. tostring(name), callback))
-end
-CreateThread = function(callback)
-    return originalCreateThread(guarded("thread", callback))
-end
-if type(originalSetTimeout) == "function" then
-    SetTimeout = function(delay, callback)
-        return originalSetTimeout(delay, guarded("timeout:" .. tostring(delay), callback))
+    if type(callback) == "function" then
+        return originalAddEventHandler(name, guarded("event:" .. tostring(name), callback))
     end
+    return originalAddEventHandler(name, callback)
 end
+
+CreateThread = function(callback)
+    if type(callback) == "function" then
+        return originalCreateThread(guarded("thread", callback))
+    end
+    return originalCreateThread(callback)
+end
+
+SetTimeout = function(msec, callback)
+    if type(callback) == "function" then
+        return originalSetTimeout(msec, guarded("timeout", callback))
+    end
+    return originalSetTimeout(msec, callback)
+end
+
 RegisterNUICallback = function(name, callback)
-    return originalRegisterNUICallback(name, guarded("nui:" .. tostring(name), callback))
+    if type(callback) == "function" then
+        return originalRegisterNUICallback(name, guarded("nui:" .. tostring(name), callback))
+    end
+    return originalRegisterNUICallback(name, callback)
 end
 
 for i = 1, PART_COUNT do
-    local name = ("client/p%d.lua"):format(i)
-    local part = LoadResourceFile(RESOURCE, name)
-    if not part or part == "" then
-        local message = "Missing or empty source file: " .. name
-        print("^1[rp_characters][FATAL] " .. message .. "^7")
-        reportClientError("loader", message)
+    local rel = ("%s%d.lua"):format(PART_PREFIX, i)
+    local src = LoadResourceFile(RESOURCE, rel)
+    if not src or src == "" or #src < 32 or src:match("^%s*%-%-%s*truncated") then
+        print(("[rp_characters] FATAL missing/truncated client module %s"):format(rel))
         return
     end
-    parts[i] = part
-    local count = countSourceLines(part)
-    for sourceLine = 1, count do
-        lineMap[nextCombinedLine + sourceLine - 1] = { file = name, line = sourceLine }
+    local lineCount = countSourceLines(src)
+    for line = 1, lineCount do
+        lineMap[nextCombinedLine] = { file = rel, line = line }
+        nextCombinedLine = nextCombinedLine + 1
     end
-    nextCombinedLine = nextCombinedLine + count + (part:sub(-1) == "\n" and 1 or 0)
+    parts[#parts + 1] = src
+    if src:sub(-1) ~= "\n" then parts[#parts + 1] = "\n" end
 end
 
-local chunk, compileError = load(table.concat(parts, "\n"), "@rp_characters/client/main.lua")
+local combined = table.concat(parts)
+local chunk, err = load(combined, ("@@%s/client/main.lua"):format(RESOURCE))
 if not chunk then
-    local combined = tostring(compileError):match("client/main%.lua:(%d+)")
-    local file, line = mapCombinedLine(combined)
-    local message = ("Lua compilation error at %s:%d: %s"):format(file, line, tostring(compileError))
-    print("^1[rp_characters][COMPILE ERROR] " .. message .. "^7")
-    reportClientError("compile", message)
+    print(("[rp_characters] FATAL client compile: %s"):format(tostring(err)))
     return
 end
 
-local ok, runtimeError = xpcall(chunk, tracebackHandler)
-if not ok then reportClientError("top-level", runtimeError) end
+local ok, runtimeErr = xpcall(chunk, tracebackHandler)
+if not ok then
+    reportClientError("client-boot", runtimeErr)
+    print(("[rp_characters] FATAL client runtime: %s"):format(tostring(runtimeErr)))
+    return
+end
+
+print(("[rp_characters] [OK] Client loaded (%d modules, %d bytes)"):format(PART_COUNT, #combined))
