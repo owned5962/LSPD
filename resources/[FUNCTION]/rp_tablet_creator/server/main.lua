@@ -417,8 +417,9 @@ RegisterNetEvent('rp_tablet_creator:server:requestJobBankData', function()
     if not creatorAccessAllowed(src) then return end
     local ok, result = pcall(function()
         -- Le schéma bancaire est initialisé par rp_economy, jamais par l'ouverture de l'interface.
-        if GetResourceState('rp_economy') ~= 'started' then
-            error('Le service bancaire rp_economy n’est pas démarré.')
+        if GetResourceState('rp_economy') ~= 'started'
+            or exports['rp_economy']:IsJobBankReady() ~= true then
+            error('Le service bancaire rp_economy n’est pas encore prêt.')
         end
         local jobs = exports['rp_jobs']:GetAllJobs() or {}
         local jobList = {}
