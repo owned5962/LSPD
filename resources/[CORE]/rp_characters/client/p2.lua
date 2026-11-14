@@ -1,4 +1,20 @@
     {
+        title = 'TON INVENTAIRE',
+        lines = {
+            'Appuie sur F2 pour ouvrir ton inventaire.',
+            'Tu peux consulter tes objets et utiliser les objets autorisés.',
+            'Tu peux donner ou déposer certains objets depuis cette interface.'
+        }
+    },
+    {
+        title = 'TON ARGENT',
+        lines = {
+            'Tu commences avec 2 500 $ en poche et 10 000 $ en banque.',
+            'Appuie sur E devant un guichet bancaire ou un distributeur pour accéder à ton compte.',
+            'Les principales banques sont indiquées sur ta carte.'
+        }
+    },
+    {
         title = 'TROUVER UN MÉTIER',
         lines = {
             'Rends-toi au Pôle Emploi ou utilise /jobcenter pour découvrir les métiers.',
@@ -10,38 +26,3 @@
         title = 'INTERAGIR AVEC LES AUTRES',
         lines = {
             'Approche-toi des autres citoyens pour échanger et créer des scènes RP.',
-            'Certaines actions nécessitent d’être proche de la personne concernée.',
-            'Respecte les scènes en cours et privilégie toujours le dialogue.'
-        }
-    },
-    {
-        title = 'LES RÈGLES ESSENTIELLES',
-        lines = {
-            'Pas de méta-gaming : ne te sers pas d’informations obtenues hors RP.',
-            'Pas de power-gaming : laisse aux autres la possibilité de réagir.',
-            'Pas de free-kill : toute action doit avoir un contexte RP cohérent.'
-        }
-    },
-    {
-        title = 'TU ES PRÊT !',
-        lines = {
-            'Tu connais maintenant les premières bases pour commencer ton aventure.',
-            'Explore la ville, trouve ton activité et construis ton histoire.',
-            'Bon jeu et bienvenue sur Los Santos Roleplay !'
-        }
-    }
-}
-
-local function DrawTutorialText(value, x, y, scale, r, g, b, centered)
-    SetTextFont(4)
-    SetTextScale(scale, scale)
-    SetTextColour(r or 245, g or 247, b or 250, 255)
-    SetTextCentre(centered == true)
-    SetTextOutline()
-    BeginTextCommandDisplayText('STRING')
-    AddTextComponentSubstringPlayerName(value)
-    EndTextCommandDisplayText(x, y)
-end
-
-local function FinishTutorial()
-    tutorialActive = false
