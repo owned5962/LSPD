@@ -21,7 +21,7 @@ SET @aegis_source_type_exists = (
 );
 SET @aegis_source_type_sql = IF(
     @aegis_source_type_exists = 0,
-    'ALTER TABLE `anticheat_event_log` ADD COLUMN `source_type` VARCHAR(16) NOT NULL DEFAULT ''client'' AFTER `sanction`',
+    'ALTER TABLE `anticheat_event_log` ADD COLUMN `source_type` VARCHAR(16) NOT NULL DEFAULT ''legacy'' AFTER `sanction`',
     'SELECT 1'
 );
 PREPARE aegis_source_type_stmt FROM @aegis_source_type_sql;
