@@ -80,7 +80,9 @@ local isCreating = false
 local charCamera = nil
 local characterBootPending = false
 local characterSessionReady = false
+local characterBootFailed = false
 local creationSubmissionPending = false
+local creationSubmissionToken = 0
 local selectWatchdogToken = 0
 
 local function ForceScreenVisible()
@@ -116,6 +118,9 @@ end
 local function ShowCharacterBootError(message)
     characterBootPending = false
     characterSessionReady = false
+    characterBootFailed = true
+    creationSubmissionPending = false
+    creationSubmissionToken = creationSubmissionToken + 1
     ForceScreenVisible()
     -- Leave the player controllable so they are not stuck on a black frame.
     SetPlayerControl(PlayerId(), true, 0)
@@ -561,13 +566,41 @@ RegisterNUICallback('saveCharacter', function(data, cb)
         return
     end
     creationSubmissionPending = true
+    creationSubmissionToken = creationSubmissionToken + 1
+    local submissionToken = creationSubmissionToken
     TriggerServerEvent('rp_characters:server:createCharacter', data)
+    SetTimeout(20000, function()
+        if submissionToken ~= creationSubmissionToken or not creationSubmissionPending then return end
+        creationSubmissionPending = false
+        SendNUIMessage({
+            action = 'creationResult',
+            ok = false,
+            message = 'Le serveur ne confirme pas la création après 20 secondes. Vérifiez la console FXServer et oxmysql avant de réessayer.'
+        })
+    end)
     cb({ status = 'submitted' })
 end)
 
 RegisterNetEvent('rp_characters:client:creationResult', function(result)
-    if type(result) ~= 'table' or result.ok == true then return end
+    if type(result) ~= 'table' then
+        creationSubmissionPending = false
+        creationSubmissionToken = creationSubmissionToken + 1
+        SendNUIMessage({
+            action = 'creationResult',
+            ok = false,
+            message = 'Réponse serveur invalide pendant la création du personnage.'
+        })
+        return
+    end
+
     creationSubmissionPending = false
+    creationSubmissionToken = creationSubmissionToken + 1
+
+    if result.ok == true then
+        print('[rp_characters] Server confirmed character creation and load.')
+        return
+    end
+
     SendNUIMessage({
         action = 'creationResult',
         ok = false,
@@ -594,6 +627,8 @@ RegisterNUICallback('selectCharacter', function(data, cb)
     end
     ClearFocus()
     characterSessionReady = false
+    characterBootFailed = false
+    creationSubmissionPending = false
     isCreating = false
 
     selectWatchdogToken = selectWatchdogToken + 1
@@ -604,13 +639,13 @@ RegisterNUICallback('selectCharacter', function(data, cb)
 
     CreateThread(function()
         local started = GetGameTimer()
-        while token == selectWatchdogToken and not characterSessionReady do
+        while token == selectWatchdogToken and not characterSessionReady and not characterBootFailed do
             if (GetGameTimer() - started) >= 15000 then
                 break
             end
             Wait(250)
         end
-        if token ~= selectWatchdogToken or characterSessionReady then
+        if token ~= selectWatchdogToken or characterSessionReady or characterBootFailed then
             return
         end
         print('[rp_characters] Spawn watchdog: no spawnPlayer within 15s after selectCharacter.')
@@ -643,7 +678,10 @@ RegisterNUICallback('rotateCharacter', function(data, cb)
 end)
 
 RegisterNetEvent('rp_characters:client:openMenu', function(maxCharacters)
+    characterBootFailed = false
+    characterSessionReady = false
     creationSubmissionPending = false
+    creationSubmissionToken = creationSubmissionToken + 1
     -- The creator is the first screen for a new account. The loading screen
     -- must be closed here, not only after a character is spawned.
     FinishCharacterBoot()
@@ -651,6 +689,10 @@ RegisterNetEvent('rp_characters:client:openMenu', function(maxCharacters)
 end)
 
 RegisterNetEvent('rp_characters:client:openCharacterSelection', function(characters, maxCharacters)
+    characterBootFailed = false
+    characterSessionReady = false
+    creationSubmissionPending = false
+    creationSubmissionToken = creationSubmissionToken + 1
     -- Keep the player locked, but never hide the world behind the selector.
     -- The previous implementation made the ped fully transparent and did not
     -- create a preview camera, leaving the user with a black screen.
@@ -731,7 +773,9 @@ RegisterNetEvent('rp_characters:client:spawnPlayer', function(coords, gender, sk
     CreateThread(function()
         print('[rp_characters] Spawn pipeline received from server.')
         creationSubmissionPending = false
-        characterSessionReady = true
+        creationSubmissionToken = creationSubmissionToken + 1
+        characterBootFailed = false
+        characterSessionReady = false
         coords = NormalizeClientSpawn(coords)
 
         local spawnX, spawnY, spawnZ = coords.x, coords.y, coords.z
@@ -797,6 +841,11 @@ RegisterNetEvent('rp_characters:client:spawnPlayer', function(coords, gender, sk
                 print('[rp_characters] Spawn collision streaming timed out; recovering with a visible player.')
             end
         end, debug.traceback)
+
+        -- Stop the startup lock only after the spawn work has reached its
+        -- recovery phase. Setting this before the pipeline completes allowed
+        -- the startup thread and spawn finalizer to race over player control.
+        characterSessionReady = true
 
         -- Mandatory finalizer: execute each recovery action independently so
         -- one failed native cannot prevent the remaining display/control fixes.
@@ -911,7 +960,7 @@ AddEventHandler('onClientResourceStart', function(resourceName)
     SetPlayerControl(PlayerId(), false, 0)
     CreateThread(function()
         -- Re-assert the lock if spawnmanager or a reconnect flow restores player control.
-        while not characterSessionReady do
+        while not characterSessionReady and not characterBootFailed do
             SetPlayerControl(PlayerId(), false, 0)
             local ped = PlayerPedId()
 
