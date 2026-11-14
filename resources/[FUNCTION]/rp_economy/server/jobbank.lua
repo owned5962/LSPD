@@ -2,6 +2,10 @@ local MAX_JOB_BANK_TRANSACTION = 1000000
 local jobLocks = {}
 local initialized = false
 
+exports('IsJobBankReady', function()
+    return initialized
+end)
+
 local function notify(src, message, kind)
     TriggerClientEvent('rp_core:client:notify', src, message, kind or 'info')
     TriggerClientEvent('rp_economy:client:bankNotice', src, message, kind or 'info')
