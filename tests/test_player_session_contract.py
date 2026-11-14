@@ -336,3 +336,8 @@ def test_character_preview_restores_visible_ped_and_checks_camera():
     assert "ResetEntityAlpha(ped)" in client
     assert "Creator camera creation failed" in client
     assert "Creator preview ready" in client
+
+
+if __name__ == "__main__":
+    test_character_bootstrap_has_one_owner_and_ignores_duplicate_requests()
+    test_character_preview_restores_visible_ped_and_checks_camera()
