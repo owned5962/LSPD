@@ -1094,6 +1094,7 @@ def test_character_boot_resumes_only_when_core_already_has_a_loaded_player():
         "RegisterNetEvent('rp_characters:server:checkPlayer'", 1
     )[0]
     assert "ResumeRegisteredCharacter(src)" in bootstrap
+    assert "return ResumeRegisteredCharacter()" not in server
     assert "resumeLoadedCharacter" not in bootstrap
 
 
