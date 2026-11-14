@@ -646,6 +646,9 @@ end)
 
 AddEventHandler('onClientResourceStart', function(resourceName)
     if GetCurrentResourceName() ~= resourceName then return end
+    -- Mark the bootstrap pending before waiting for the network session so an
+    -- early rp_core response cannot be overwritten by a later timeout thread.
+    characterBootPending = true
     characterSessionReady = false
     SetPlayerControl(PlayerId(), false, 0)
     CreateThread(function()
@@ -669,8 +672,10 @@ AddEventHandler('onClientResourceStart', function(resourceName)
             ShowCharacterBootError('La session FiveM ne répond pas. Reconnectez-vous au serveur.')
             return
         end
+        -- The creator/selector may already have opened while this thread was
+        -- waiting for NetworkIsSessionStarted. Never restart its boot timer.
+        if not characterBootPending then return end
 
-        characterBootPending = true
         pcall(SendLoadingScreenMessage, json.encode({
             eventName = 'lssStage',
             stage = 'player',
