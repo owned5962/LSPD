@@ -195,7 +195,8 @@ RegisterNetEvent('rp_economy:client:authenticationResult', function(result)
         cash = tonumber(result.cash) or 0,
         bank = tonumber(result.bank) or 0,
         playerName = result.playerName or 'Citoyen',
-        accountNumber = result.accountNumber or 'Compte LSS'
+        accountNumber = result.accountNumber or 'Compte LSS',
+        history = result.history or {}
     })
 end)
 
