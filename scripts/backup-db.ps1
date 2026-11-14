@@ -27,12 +27,12 @@ $sqlTemp = Join-Path $BackupDirectory ([guid]::NewGuid().ToString() + ".sql.tmp"
 $gzipTemp = "$base.tmp"
 
 try {
-    $args = @(
+    $dumpArgs = @(
         "--host=$dbHost", "--port=$dbPort", "--user=$($env:DB_USER)",
         "--single-transaction", "--quick", "--routines", "--triggers", "--events",
         "--hex-blob", "--default-character-set=utf8mb4", "--no-tablespaces", $dbName
     )
-    $process = Start-Process -FilePath $dump -ArgumentList $args -NoNewWindow -Wait -PassThru -RedirectStandardOutput $sqlTemp
+    $process = Start-Process -FilePath $dump -ArgumentList $dumpArgs -NoNewWindow -Wait -PassThru -RedirectStandardOutput $sqlTemp
     if ($process.ExitCode -ne 0 -or -not (Test-Path $sqlTemp) -or (Get-Item $sqlTemp).Length -eq 0) {
         throw "mysqldump failed with exit code $($process.ExitCode)."
     }
