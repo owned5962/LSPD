@@ -31,13 +31,19 @@ local function buildData(src)
     end
     table.sort(roster, function(a, b) return a.name < b.name end)
 
+    local mission = activeMissions[src]
+    if mission and (tonumber(mission.characterId) ~= tonumber(player.charId) or mission.jobName ~= player.job) then
+        activeMissions[src] = nil
+        mission = nil
+    end
+
     return {
-        job = tostring(job.label or player.job or 'Sans emploi'),
+        job = tostring(job and job.label or player.job or 'Sans emploi'),
         jobName = tostring(player.job or 'unemployed'),
         grade = tostring(grade.label or 'Employé'),
         duty = player.duty == true,
         roster = roster,
-        mission = activeMissions[src],
+        mission = mission,
         missionAvailable = player.job ~= 'unemployed'
     }
 end
