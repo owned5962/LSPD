@@ -15,8 +15,15 @@ body {
     padding: 24px;
 }
 .hidden { display: none !important; }
-#registration-app {
+
+.creator-wrapper {
+    width: min(520px, 96vw);
+}
+
+#registration-app,
+#character-selection {
     width: 480px;
+    max-width: 96vw;
     background: rgba(18, 22, 33, 0.95);
     border-radius: 20px;
     box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255,255,255,0.05);
@@ -26,27 +33,37 @@ body {
     display: flex;
     flex-direction: column;
 }
-#registration-app .header {
+
+#registration-app .header,
+#character-selection .header {
     padding: 18px 22px;
     background: linear-gradient(135deg, #0f172a, #1e293b);
     border-bottom: 1px solid rgba(148,163,184,0.15);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
 }
-#registration-app .header h1 {
+#registration-app .header h1,
+#character-selection .header h1 {
     font-size: 16px;
     font-weight: 800;
     letter-spacing: 0.5px;
+    margin: 6px 0 4px;
 }
-#registration-app .badge {
+#registration-app .header p,
+#character-selection .header p {
+    font-size: 12px;
+    color: #94a3b8;
+    margin: 0;
+}
+#registration-app .badge,
+#character-selection .badge {
     font-size: 10px;
     font-weight: 700;
     padding: 4px 10px;
     border-radius: 20px;
     background: rgba(14,165,233,0.15);
     color: #7dd3fc;
+    display: inline-block;
 }
+
 #registration-app .tabs {
     display: flex;
     gap: 4px;
@@ -116,7 +133,8 @@ body {
     border-top: 1px solid rgba(148,163,184,0.12);
     background: #0f141f;
 }
-#registration-app .btn {
+#registration-app .btn,
+#character-selection .btn {
     border: 0;
     border-radius: 10px;
     padding: 12px 16px;
@@ -125,7 +143,8 @@ body {
     cursor: pointer;
     flex: 1;
 }
-#registration-app .btn.primary {
+#registration-app .btn.primary,
+#character-selection .btn.primary {
     background: linear-gradient(135deg, #0ea5e9, #2563eb);
     color: #fff;
 }
@@ -133,17 +152,66 @@ body {
     background: #1e293b;
     color: #cbd5e1;
 }
-#registration-app .btn.success {
+#registration-app .btn.success,
+#character-selection .btn.success {
     background: linear-gradient(135deg, #10b981, #059669);
     color: #fff;
 }
-#registration-app .character-list {
+#registration-app .btn:disabled,
+#character-selection .btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+#character-selection {
+    padding: 0 0 18px;
+}
+#character-selection .creator-wrapper {
+    width: 100%;
+    padding: 0 18px;
+}
+#character-selection .header {
+    margin: 0 -18px 12px;
+}
+.selection-count {
+    font-size: 12px;
+    color: #64748b;
+    margin: 8px 0 12px;
+}
+.character-list {
     display: flex;
     flex-direction: column;
     gap: 10px;
     max-height: 360px;
     overflow-y: auto;
 }
+.character-card {
+    width: 100%;
+    text-align: left;
+    background: #121826;
+    border: 1px solid #26354a;
+    border-radius: 12px;
+    padding: 14px;
+    color: #e8eef7;
+    cursor: pointer;
+}
+.character-card strong { display: block; font-size: 14px; margin-bottom: 4px; }
+.character-card span { font-size: 12px; color: #94a3b8; }
+.character-card.selected,
+.character-card:hover:not(.empty) {
+    border-color: #0ea5e9;
+    background: rgba(14,165,233,0.08);
+}
+.character-card.empty {
+    opacity: 0.55;
+    cursor: default;
+}
+.selection-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 14px;
+}
+
 #registration-app .spawn-card {
     background: #121826;
     border: 1px solid #26354a;
@@ -151,6 +219,7 @@ body {
     padding: 14px;
     cursor: pointer;
     transition: border-color .15s, background .15s;
+    margin-bottom: 8px;
 }
 #registration-app .spawn-card:hover,
 #registration-app .spawn-card.active {
@@ -165,16 +234,6 @@ body {
 #registration-app .spawn-desc {
     font-size: 12px;
     color: #94a3b8;
-}
-#registration-app .selection-actions {
-    display: flex;
-    gap: 10px;
-    margin-top: 14px;
-}
-#registration-app .selection-count {
-    font-size: 12px;
-    color: #64748b;
-    margin-bottom: 10px;
 }
 #registration-app .appearance-editor {
     display: flex;
@@ -206,9 +265,14 @@ body {
 #registration-app .preview-controls {
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: space-between;
     gap: 10px;
-    margin-top: 10px;
+    margin: 10px 16px 0;
+    padding: 10px 12px;
+    background: #0f141f;
+    border-radius: 10px;
+    font-size: 11px;
+    color: #94a3b8;
 }
 #registration-app .preview-controls button {
     width: 42px;
@@ -225,11 +289,9 @@ body {
     margin-bottom: 12px;
     line-height: 1.4;
 }
-.creator-wrapper {
-    width: min(520px, 96vw);
-}
+
 @media (max-width: 520px) {
-    #registration-app { width: 100%; border-radius: 14px; }
+    #registration-app, #character-selection { width: 100%; border-radius: 14px; }
     #registration-app .form-row { flex-direction: column; gap: 0; }
     #registration-app .preview-controls span {
         max-width: 48vw;

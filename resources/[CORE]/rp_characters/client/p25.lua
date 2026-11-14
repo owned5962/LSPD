@@ -19,11 +19,34 @@
             ShutdownLoadingScreenNui()
         end)
         recover('screen-fade', function()
-            -- Always force a visible world after creation/selection (anti black-screen).
+            -- Aggressive anti black-screen: force immediate then animated fade-in.
             if IsScreenFadedOut() or IsScreenFadingOut() then
                 DoScreenFadeIn(0)
             end
-            DoScreenFadeIn(800)
+            DoScreenFadeIn(500)
+        end)
+
+        -- Second recovery pass after a short delay (handles late fade-out from other resources).
+        CreateThread(function()
+            for attempt = 1, 5 do
+                Wait(400)
+                if IsScreenFadedOut() or IsScreenFadingOut() then
+                    DoScreenFadeIn(0)
+                    DoScreenFadeIn(300)
+                end
+                SetNuiFocus(false, false)
+                DisplayRadar(true)
+                SetPlayerControl(PlayerId(), true, 0)
+                local p = PlayerPedId()
+                if p and p ~= 0 and DoesEntityExist(p) then
+                    SetEntityVisible(p, true, false)
+                    ResetEntityAlpha(p)
+                    FreezeEntityPosition(p, false)
+                end
+                if not IsScreenFadedOut() and not IsScreenFadingOut() then
+                    break
+                end
+            end
         end)
 
         Wait(1200)
