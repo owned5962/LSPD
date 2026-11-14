@@ -120,29 +120,29 @@ AddEventHandler('playerDropped', function()
     tutorialStarted[source] = nil
 end)
 
+-- Reuse the core's authoritative, detached player snapshot for every
+-- bootstrap/resume path. Never just unfreeze the creator ped: a resource
+-- restart can leave the player at the preview location behind a black screen.
+local function ResumeRegisteredCharacter(src)
+    local snapshot = exports['rp_core']:GetPlayerSnapshot(src)
+    if type(snapshot) ~= 'table' or tonumber(snapshot.charId) == nil then
+        return false, 'Session active détectée mais instantané du personnage indisponible.'
+    end
+
+    local position = DecodeJson(snapshot.position, DefaultSpawn)
+    local skin = DecodeJson(snapshot.skin, {})
+    TriggerClientEvent('rp_characters:client:closeMenu', src)
+    TriggerClientEvent('rp_characters:client:spawnPlayer', src, position, snapshot.sex, skin)
+    print(('[rp_characters] Existing character session resumed through spawn pipeline for player %s (character %s).')
+        :format(tostring(src), tostring(snapshot.charId)))
+    return true
+end
+
 local function LoadCharacterUnsafe(src, identifier, userGroup, char)
     if exports['rp_core']:IsCharacterSavePending(char.id) then
         local message = 'Votre dernière sauvegarde est encore en cours. Réessayez dans quelques secondes.'
         Notify(src, message, 'warning')
         return false, message
-    end
-
-    -- A bootstrap/selection request can arrive after the server has already
-    -- registered this player's character. Merely unfreezing the preview ped
-    -- leaves the player at the creator coordinates (or behind a black screen).
-    -- Always replay the authoritative spawn when an active session is found.
-    local function ResumeRegisteredCharacter()
-        local snapshot = exports['rp_core']:GetPlayerSnapshot(src)
-        if type(snapshot) ~= 'table' or tonumber(snapshot.charId) == nil then
-            return false, 'Session active détectée mais instantané du personnage indisponible.'
-        end
-        local position = DecodeJson(snapshot.position, DefaultSpawn)
-        local skin = DecodeJson(snapshot.skin, {})
-        TriggerClientEvent('rp_characters:client:closeMenu', src)
-        TriggerClientEvent('rp_characters:client:spawnPlayer', src, position, snapshot.sex, skin)
-        print(('[rp_characters] Existing character session resumed through spawn pipeline for player %s (character %s).')
-            :format(tostring(src), tostring(snapshot.charId)))
-        return true
     end
 
     local currentSession = exports['rp_core']:GetPlayerByIdentifier(identifier)
@@ -151,7 +151,7 @@ local function LoadCharacterUnsafe(src, identifier, userGroup, char)
             DropPlayer(src, 'Une session est déjà active avec ce compte.')
             return false, 'Une session est déjà active avec ce compte.'
         end
-        return ResumeRegisteredCharacter()
+        return ResumeRegisteredCharacter(src)
     end
     if exports['rp_core']:GetPlayerFromId(src) then
         return ResumeRegisteredCharacter()
@@ -250,7 +250,14 @@ local function CheckPlayerBootstrap(src)
         return
     end
     if exports['rp_core']:GetPlayerFromId(src) then
-        TriggerClientEvent('rp_characters:client:resumeLoadedCharacter', src)
+        local resumed, reason = ResumeRegisteredCharacter(src)
+        if not resumed then
+            print(('[rp_characters] Existing session resume failed for player %s: %s')
+                :format(tostring(src), tostring(reason)))
+            local message = 'Votre personnage est chargé côté serveur, mais son apparition a échoué. Reconnectez-vous ou contactez un administrateur.'
+            Notify(src, message, 'error')
+            TriggerClientEvent('rp_characters:client:bootError', src, message)
+        end
         return
     end
 
