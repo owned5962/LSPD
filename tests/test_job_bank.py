@@ -91,6 +91,7 @@ def test_job_bank_history_failure_rolls_back_before_releasing_character_lock():
     assert "SET c.cash = c.cash - ?, a.balance = a.balance + ?" in transaction
     assert transaction.index("rollbackQuery") < transaction.rindex("ReleaseCharacterLock")
     assert "Opération annulée : historique bancaire indisponible." in transaction
+    assert "local logOk = logCallOk and tonumber(logResult) ~= nil and tonumber(logResult) > 0" in transaction
 
 
 if __name__ == "__main__":
