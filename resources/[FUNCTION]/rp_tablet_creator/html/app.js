@@ -1,5 +1,6 @@
 const post=(name,data={})=>fetch('https://rp_tablet_creator/'+name,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)}).then(response=>{if(!response.ok)throw new Error('HTTP '+response.status);return response.json().catch(()=>({ok:true}));});
 const tablet=document.getElementById('tablet'),status=document.getElementById('status');
+status.classList.add('creator-toast');
 let statusTimer=null,lastStatusMessage='',lastStatusAt=0;
 function showStatus(message,success=false){
     const text=String(message||'').trim();if(!text)return;
