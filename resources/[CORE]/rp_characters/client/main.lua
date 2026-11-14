@@ -684,7 +684,7 @@ AddEventHandler('onClientResourceStart', function(resourceName)
         TriggerServerEvent('rp_core:server:requestPlayerDataSync')
 
         -- Never leave the loading screen covering the UI indefinitely.
-        Wait(25000)
+        Wait(20000)
         if characterBootPending then
             ShowCharacterBootError('Le serveur ne répond pas au chargement du compte. Vérifiez oxmysql et la console serveur, puis reconnectez-vous.')
             print('[rp_characters] Character boot timed out waiting for server response.')
