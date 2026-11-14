@@ -30,5 +30,6 @@ files {
     'html/images/los_santos_downtown.svg',
     'html/images/los_santos_ems.svg',
     'html/images/los_santos_jobs.svg',
-    'html/images/los_santos_coast.svg'
+    'html/images/los_santos_coast.svg',
+    'html/images/los_santos_illegal.svg'
 }
