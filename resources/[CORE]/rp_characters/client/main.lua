@@ -140,5 +140,3 @@ if not ok then
     print(("[rp_characters] FATAL client runtime: %s"):format(tostring(runtimeErr)))
     return
 end
-
-print(("[rp_characters] [OK] Client loaded (%d parts, %d bytes)"):format(PART_COUNT, #combined))
