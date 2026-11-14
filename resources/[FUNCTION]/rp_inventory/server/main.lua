@@ -853,13 +853,21 @@ local function AddItem(source, itemName, rawCount)
     local player = src and exports['rp_core']:GetPlayerFromId(src)
     if not player or type(itemName) ~= 'string' or not count or count % 1 ~= 0 or count < 1 or count > 20 then return false end
     local definition = Config.DefaultItems[itemName]
-    if not definition then return false end
+    if not definition or transferLocks[src] then return false end
+
     if not playerInventories[src] or inventoryCharacterIds[src] ~= player.charId then
         local ok = pcall(loadInventory, player)
         if not ok then return false end
     end
+    if exports['rp_core']:GetPlayerFromId(src) ~= player
+        or inventoryCharacterIds[src] ~= player.charId then return false end
+
+    if not exports['rp_core']:AcquireCharacterLock({ player.charId }) then return false end
+    transferLocks[src] = true
     local current = normalizeInventory(playerInventories[src])
     if getInventoryWeight(current) + definition.weight * count > Config.MaxWeight then
+        transferLocks[src] = nil
+        exports['rp_core']:ReleaseCharacterLock({ player.charId })
         notify(src, 'error', 'Inventaire trop lourd : le butin a été laissé sur place.')
         return false
     end
@@ -868,11 +876,19 @@ local function AddItem(source, itemName, rawCount)
         if item.name == itemName then item.count = item.count + count; found = true; break end
     end
     if not found then current[#current + 1] = { name = itemName, count = count, label = definition.label, weight = definition.weight } end
-    local ok = pcall(function()
-        MySQL.insert.await('INSERT INTO player_inventories (character_id, items) VALUES (?, ?) ON DUPLICATE KEY UPDATE items = VALUES(items)',
-            { player.charId, json.encode(current) })
+
+    local ok, err = pcall(function()
+        MySQL.update.await(
+            'INSERT INTO player_inventories (character_id, items) VALUES (?, ?) ON DUPLICATE KEY UPDATE items = VALUES(items)',
+            { player.charId, json.encode(current) }
+        )
     end)
-    if not ok then return false end
+    transferLocks[src] = nil
+    exports['rp_core']:ReleaseCharacterLock({ player.charId })
+    if not ok then
+        print(('[rp_inventory] AddItem failed for character %s: %s'):format(player.charId, tostring(err)))
+        return false
+    end
     playerInventories[src] = current
     sendInventory(src, player)
     return true
@@ -888,7 +904,8 @@ local function AdminSetItem(source, itemName, operation, rawCount)
     local player = src and exports['rp_core']:GetPlayerFromId(src)
     if not player or type(itemName) ~= 'string' or not Config.DefaultItems[itemName]
         or (operation ~= 'add' and operation ~= 'remove')
-        or not count or count % 1 ~= 0 or count < 1 or count > 1000 then
+        or not count or count % 1 ~= 0 or count < 1 or count > 1000
+        or transferLocks[src] then
         return false
     end
 
@@ -896,7 +913,11 @@ local function AdminSetItem(source, itemName, operation, rawCount)
         local ok = pcall(loadInventory, player)
         if not ok then return false end
     end
+    if exports['rp_core']:GetPlayerFromId(src) ~= player
+        or inventoryCharacterIds[src] ~= player.charId then return false end
+    if not exports['rp_core']:AcquireCharacterLock({ player.charId }) then return false end
 
+    transferLocks[src] = true
     local inventory = normalizeInventory(playerInventories[src])
     local definition = Config.DefaultItems[itemName]
     local foundIndex, currentCount
@@ -905,7 +926,11 @@ local function AdminSetItem(source, itemName, operation, rawCount)
     end
     currentCount = currentCount or 0
     local nextCount = operation == 'add' and (currentCount + count) or (currentCount - count)
-    if nextCount < 0 or nextCount > 10000 then return false end
+    if nextCount < 0 or nextCount > 10000 then
+        transferLocks[src] = nil
+        exports['rp_core']:ReleaseCharacterLock({ player.charId })
+        return false
+    end
 
     if nextCount == 0 then
         if foundIndex then table.remove(inventory, foundIndex) end
@@ -915,13 +940,19 @@ local function AdminSetItem(source, itemName, operation, rawCount)
         inventory[#inventory + 1] = { name = itemName, count = nextCount, label = definition.label, weight = definition.weight }
     end
 
-    if getInventoryWeight(inventory) > Config.MaxWeight then return false end
+    if getInventoryWeight(inventory) > Config.MaxWeight then
+        transferLocks[src] = nil
+        exports['rp_core']:ReleaseCharacterLock({ player.charId })
+        return false
+    end
     local ok, err = pcall(function()
         MySQL.update.await(
             'INSERT INTO player_inventories (character_id, items) VALUES (?, ?) ON DUPLICATE KEY UPDATE items = VALUES(items)',
             { player.charId, json.encode(inventory) }
         )
     end)
+    transferLocks[src] = nil
+    exports['rp_core']:ReleaseCharacterLock({ player.charId })
     if not ok then
         print(('[rp_inventory] Admin inventory update failed for character %s: %s'):format(player.charId, tostring(err)))
         return false
