@@ -16,14 +16,15 @@ class LoadscreenFeatureTests(unittest.TestCase):
         self.assertIn("'updates.lua'", manifest)
         self.assertIn("'html/images/los_santos_skyline.svg'", manifest)
 
-    def test_four_life_objective_banners_are_present(self):
+    def test_five_life_objective_banners_are_present(self):
         html = self.read("html/index.html")
-        self.assertEqual(html.count('class="objective-card '), 4)
+        self.assertEqual(html.count('class="objective-card '), 5)
         for phrase in (
             "Construire sa carrière",
             "Faire respecter la loi",
             "Prendre soin des autres",
             "Créer son histoire",
+            "Fonder son empire illégal",
         ):
             self.assertIn(phrase, html)
 
