@@ -728,3 +728,12 @@ body {
 #client-diagnostics [data-diagnostics-panel="overview"] .diagnostics-section-title h3::before{content:"▦";display:grid;place-items:center;color:#fff;font-size:22px;background:linear-gradient(145deg,#0f766e,#2dd4bf)}
 #client-diagnostics [data-diagnostics-panel="performance"] .diagnostics-section-title h3::before{content:"ϟ";display:grid;place-items:center;color:#fff;font-size:25px;background:linear-gradient(145deg,#b45309,#f59e0b)}
 #client-diagnostics [data-diagnostics-panel="community"] .diagnostics-section-title h3::before{content:"♟";display:grid;place-items:center;color:#fff;font-size:22px;background:linear-gradient(145deg,#6d28d9,#a78bfa)}
+
+
+
+/* AEGIS shared shell geometry — identical to F9 */
+#client-diagnostics:not(.hidden){position:fixed!important;top:50%!important;left:50%!important;right:auto!important;bottom:auto!important;inset:auto!important;transform:translate(-50%,-50%)!important;width:min(1450px,96vw)!important;height:min(880px,94vh)!important;max-width:96vw!important;max-height:94vh!important;margin:0!important;border-radius:20px!important}
+#client-diagnostics .diagnostics-shell{height:100%!important;min-height:0!important;grid-template-columns:245px minmax(0,1fr)!important}
+#client-diagnostics .diagnostics-sidebar{width:245px!important;min-width:245px!important}
+@media(max-width:900px){#client-diagnostics:not(.hidden){width:96vw!important;height:94vh!important}#client-diagnostics .diagnostics-shell{grid-template-columns:175px minmax(0,1fr)!important}#client-diagnostics .diagnostics-sidebar{width:175px!important;min-width:175px!important}}
+@media(max-width:620px){#client-diagnostics:not(.hidden){width:96vw!important;height:96vh!important}#client-diagnostics .diagnostics-shell{grid-template-columns:58px minmax(0,1fr)!important}#client-diagnostics .diagnostics-sidebar{width:58px!important;min-width:58px!important}}
