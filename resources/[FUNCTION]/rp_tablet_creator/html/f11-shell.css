@@ -1,0 +1,84 @@
+/* F11 Creator shell aligned on F9 vertical navigation */
+#tablet:not(.hidden) {
+  display: flex !important;
+  flex-direction: row !important;
+  width: min(1100px, 96vw) !important;
+  min-height: 620px !important;
+  max-height: 90vh !important;
+  background: #0b1220 !important;
+  color: #e5eef8 !important;
+  border-radius: 18px !important;
+  overflow: hidden !important;
+  box-shadow: 0 30px 80px rgba(0,0,0,0.55) !important;
+  border: 1px solid rgba(148,163,184,0.12) !important;
+}
+#tablet > header { display: none !important; }
+#tablet .creator-tabs {
+  display: flex !important;
+  flex-direction: column !important;
+  flex-wrap: nowrap !important;
+  width: 230px !important;
+  min-width: 230px !important;
+  gap: 6px !important;
+  padding: 18px 12px !important;
+  margin: 0 !important;
+  background: linear-gradient(180deg, #0f172a 0%, #111827 100%) !important;
+  border-right: 1px solid rgba(148,163,184,0.12) !important;
+  overflow-y: auto !important;
+}
+#tablet .creator-tabs::before {
+  content: "CREATOR CONTROL";
+  display: block;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: #fbbf24;
+  padding: 4px 10px 14px;
+  border-bottom: 1px solid rgba(148,163,184,0.12);
+  margin-bottom: 8px;
+}
+#tablet .creator-tab {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  width: 100% !important;
+  text-align: left !important;
+  border: 0 !important;
+  border-radius: 10px !important;
+  padding: 12px 12px !important;
+  background: transparent !important;
+  color: #94a3b8 !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+}
+#tablet .creator-tab i { width: 18px; text-align: center; }
+#tablet .creator-tab:hover {
+  background: rgba(251,191,36,0.08) !important;
+  color: #f8fafc !important;
+}
+#tablet .creator-tab.active {
+  background: linear-gradient(135deg, rgba(251,191,36,0.18), rgba(245,158,11,0.12)) !important;
+  color: #fff7ed !important;
+  box-shadow: inset 3px 0 0 #f59e0b;
+}
+#tablet .grid,
+#tablet section.grid,
+#tablet .intro {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  padding: 18px 20px !important;
+  overflow: auto !important;
+}
+#tablet .intro {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  width: auto;
+  max-width: 42%;
+  padding: 10px 12px !important;
+  background: rgba(15,23,42,0.9);
+  border-radius: 10px;
+  border: 1px solid rgba(148,163,184,0.12);
+  z-index: 2;
+}

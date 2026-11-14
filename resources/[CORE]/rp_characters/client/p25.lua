@@ -19,9 +19,11 @@
             ShutdownLoadingScreenNui()
         end)
         recover('screen-fade', function()
-            if IsScreenFadedOut() or not IsScreenFadingIn() then
-                DoScreenFadeIn(1000)
+            -- Always force a visible world after creation/selection (anti black-screen).
+            if IsScreenFadedOut() or IsScreenFadingOut() then
+                DoScreenFadeIn(0)
             end
+            DoScreenFadeIn(800)
         end)
 
         Wait(1200)
