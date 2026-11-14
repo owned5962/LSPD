@@ -1,5 +1,6 @@
 local RESOURCE = GetCurrentResourceName()
-local PART_COUNT = 28
+local PART_COUNT = 27
+local LAST_PART = 28
 local parts, lineMap = {}, {}
 local nextCombinedLine = 1
 
@@ -103,7 +104,8 @@ RegisterNUICallback = function(name, callback)
 end
 
 local missing = {}
-for i = 1, PART_COUNT do
+for i = 1, LAST_PART do
+    if i ~= 13 then
     local rel = ("client/p%d.lua"):format(i)
     local src = LoadResourceFile(RESOURCE, rel)
     if not src or src == "" or #src < 32 or src:match("^%s*%-%-%s*truncated") then
@@ -116,6 +118,7 @@ for i = 1, PART_COUNT do
         end
         parts[#parts + 1] = src
         if src:sub(-1) ~= "\n" then parts[#parts + 1] = "\n" end
+    end
     end
 end
 
