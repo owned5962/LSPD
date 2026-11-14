@@ -341,3 +341,19 @@ def test_character_preview_restores_visible_ped_and_checks_camera():
 if __name__ == "__main__":
     test_character_bootstrap_has_one_owner_and_ignores_duplicate_requests()
     test_character_preview_restores_visible_ped_and_checks_camera()
+
+def test_character_load_early_exits_never_silently_leave_the_player_waiting():
+    server = (CHARACTERS / "server/main.lua").read_text(encoding="utf-8")
+    load = server.split("local function LoadCharacterUnsafe", 1)[1].split(
+        "-- Catch failures from core exports", 1
+    )[0]
+    wrapper = server.split("local function LoadCharacter(src", 1)[1].split(
+        "local function CheckPlayerBootstrap", 1
+    )[0]
+
+    assert "return false, message" in load
+    assert "TriggerClientEvent('rp_characters:client:resumeLoadedCharacter', src)" in load
+    assert "if ok and result ~= false then return true end" in wrapper
+    assert "local reason = ok and detail or result" in wrapper
+    assert "TriggerClientEvent('rp_characters:client:bootError', src, message)" in wrapper
+
