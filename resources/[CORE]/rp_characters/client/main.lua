@@ -1,6 +1,5 @@
 local RESOURCE = GetCurrentResourceName()
-local PART_COUNT = 4
-local PART_PREFIX = "client/c"
+local PART_COUNT = 28
 local parts, lineMap = {}, {}
 local nextCombinedLine = 1
 
@@ -103,20 +102,26 @@ RegisterNUICallback = function(name, callback)
     return originalRegisterNUICallback(name, callback)
 end
 
+local missing = {}
 for i = 1, PART_COUNT do
-    local rel = ("%s%d.lua"):format(PART_PREFIX, i)
+    local rel = ("client/p%d.lua"):format(i)
     local src = LoadResourceFile(RESOURCE, rel)
     if not src or src == "" or #src < 32 or src:match("^%s*%-%-%s*truncated") then
-        print(("[rp_characters] FATAL missing/truncated client module %s"):format(rel))
-        return
+        missing[#missing + 1] = rel
+    else
+        local lineCount = countSourceLines(src)
+        for line = 1, lineCount do
+            lineMap[nextCombinedLine] = { file = rel, line = line }
+            nextCombinedLine = nextCombinedLine + 1
+        end
+        parts[#parts + 1] = src
+        if src:sub(-1) ~= "\n" then parts[#parts + 1] = "\n" end
     end
-    local lineCount = countSourceLines(src)
-    for line = 1, lineCount do
-        lineMap[nextCombinedLine] = { file = rel, line = line }
-        nextCombinedLine = nextCombinedLine + 1
-    end
-    parts[#parts + 1] = src
-    if src:sub(-1) ~= "\n" then parts[#parts + 1] = "\n" end
+end
+
+if #missing > 0 then
+    print("[rp_characters] FATAL missing client parts: " .. table.concat(missing, ", "))
+    return
 end
 
 local combined = table.concat(parts)
@@ -133,4 +138,4 @@ if not ok then
     return
 end
 
-print(("[rp_characters] [OK] Client loaded (%d modules, %d bytes)"):format(PART_COUNT, #combined))
+print(("[rp_characters] [OK] Client loaded (%d parts, %d bytes)"):format(PART_COUNT, #combined))
