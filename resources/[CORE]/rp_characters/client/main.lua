@@ -524,22 +524,6 @@ RegisterNetEvent('rp_characters:client:openCharacterSelection', function(charact
     SendNUIMessage({ action = 'openCharacterSelection', characters = characters, maxCharacters = maxCharacters or 3 })
 end)
 
-RegisterNetEvent('rp_characters:client:resumeLoadedCharacter', function()
-    characterSessionReady = true
-    FinishCharacterBoot()
-    SetPlayerControl(PlayerId(), true, 0)
-    local ped = PlayerPedId()
-    if ped and ped ~= 0 and DoesEntityExist(ped) then
-        FreezeEntityPosition(ped, false)
-        SetEntityVisible(ped, true, false)
-        ResetEntityAlpha(ped)
-        SetEntityCollision(ped, true, true)
-    end
-    ShutdownLoadingScreen()
-    ShutdownLoadingScreenNui()
-    DoScreenFadeIn(250)
-end)
-
 RegisterNetEvent('rp_characters:client:bootError', function(message)
     -- A boot/load failure can also occur after the initial menu has opened.
     -- Do not silently discard it just because the first boot timer has ended.
