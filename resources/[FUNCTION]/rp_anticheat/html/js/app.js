@@ -457,53 +457,58 @@ function requestStatistics() {
     state.statistics.period = period;
     nui('requestStatistics', { period }).catch(() => showToast('Impossible de charger les statistiques.', true));
 }
+function drawStatisticsChart(canvasId, entries, mode) {
+    const canvas = $(canvasId);
+    if (!canvas) return;
+    const width = Math.max(240, canvas.clientWidth || 320);
+    const height = Number(canvas.getAttribute('height')) || 230;
+    const ratio = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+    canvas.width = Math.round(width * ratio); canvas.height = Math.round(height * ratio);
+    const ctx = canvas.getContext('2d'); if (!ctx) return;
+    ctx.setTransform(ratio, 0, 0, ratio, 0, 0); ctx.clearRect(0, 0, width, height);
+    ctx.font = '10px Inter, sans-serif'; ctx.fillStyle = '#8493a8';
+    if (!entries.length) { ctx.fillText('Aucune donnée sur la période sélectionnée.', 10, 22); return; }
+    const pad = {left: mode === 'bar' ? 112 : 12, right: 12, top: 14, bottom: 28};
+    const plotW = Math.max(40, width - pad.left - pad.right), plotH = Math.max(40, height - pad.top - pad.bottom);
+    const max = Math.max(1, ...entries.map(item => Number(item.value) || 0));
+    ctx.strokeStyle = 'rgba(148,163,184,.16)'; ctx.lineWidth = 1;
+    for (let i=0;i<4;i++){const y=pad.top+plotH*i/3;ctx.beginPath();ctx.moveTo(pad.left,y);ctx.lineTo(width-pad.right,y);ctx.stroke();}
+    if (mode === 'bar') {
+        const gap=7, rowH=Math.max(12,(plotH-gap*(entries.length-1))/entries.length);
+        entries.forEach((item,index)=>{
+            const y=pad.top+index*(rowH+gap), value=Number(item.value)||0, barW=plotW*value/max;
+            ctx.fillStyle='#cbd5e1';ctx.textAlign='right';ctx.fillText(String(item.label).slice(0,18),pad.left-9,y+rowH*.72);
+            ctx.fillStyle='rgba(245,158,11,.15)';ctx.fillRect(pad.left,y,plotW,rowH);
+            ctx.fillStyle='#f59e0b';ctx.fillRect(pad.left,y,barW,rowH);
+            ctx.fillStyle='#fcd34d';ctx.textAlign='left';ctx.fillText(String(value),Math.min(width-20,pad.left+barW+5),y+rowH*.72);
+        });
+    } else {
+        const stepX=entries.length===1?0:plotW/(entries.length-1);
+        ctx.strokeStyle='#f59e0b';ctx.lineWidth=2.5;ctx.beginPath();
+        entries.forEach((item,index)=>{const x=pad.left+index*stepX,y=pad.top+plotH-(Number(item.value)||0)/max*plotH;if(index===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);});
+        ctx.stroke();
+        entries.forEach((item,index)=>{const x=pad.left+index*stepX,y=pad.top+plotH-(Number(item.value)||0)/max*plotH;ctx.fillStyle='#fcd34d';ctx.beginPath();ctx.arc(x,y,3,0,Math.PI*2);ctx.fill();if(index===0||index===entries.length-1||index%Math.ceil(entries.length/6)===0){ctx.fillStyle='#8493a8';ctx.textAlign='center';ctx.fillText(String(item.label).slice(-8),x,height-8);}});
+    }
+}
 function renderStatistics() {
     const rows = state.statistics.rows || [];
-    const totals = {};
-    const buckets = {};
+    const totals = {}, buckets = {};
     let total = 0, critical = 0;
     rows.forEach(item => {
-        const count = Number(item.total) || 0;
-        const category = item.category || 'other';
+        const count = Number(item.total) || 0, category = item.category || 'other';
         totals[category] = (totals[category] || 0) + count;
         buckets[item.bucket] = (buckets[item.bucket] || 0) + count;
-        total += count;
-        if (item.severity === 'critical') critical += count;
+        total += count; if (item.severity === 'critical') critical += count;
     });
     $('stats-total').textContent = total;
     $('stats-critical').textContent = critical;
     $('stats-buckets').textContent = Object.keys(buckets).length;
-    const categoryRoot = $('stats-categories');
-    categoryRoot.replaceChildren();
-    const colors = { low: '#39c98a', medium: '#e8c547', high: '#f39b38', critical: '#ef4658' };
-    Object.entries(statLabels).forEach(([key, label]) => {
-        const count = totals[key] || 0;
-        const line = document.createElement('div'); line.className = 'stats-category';
-        const head = document.createElement('div'); head.className = 'stats-category-head';
-        const name = document.createElement('span'); name.textContent = label;
-        const value = document.createElement('strong'); value.textContent = count;
-        head.append(name, value);
-        const bar = document.createElement('div'); bar.className = 'stats-bar';
-        const fill = document.createElement('i'); fill.style.width = total ? (count / total * 100) + '%' : '0%';
-        const severity = key === 'godmode' || key === 'money' || key === 'weapon_spawn' ? 'critical' : key === 'spam' ? 'medium' : 'high';
-        fill.style.background = colors[severity]; bar.appendChild(fill); line.append(head, bar); categoryRoot.appendChild(line);
-    });
-    const timeline = $('stats-timeline'); timeline.replaceChildren();
-    const entries = Object.entries(buckets).sort((a,b) => a[0].localeCompare(b[0])).slice(-14);
-    if (!entries.length) timeline.innerHTML = '<div class="empty-state">Aucune détection enregistrée pour cette période.</div>';
-    else {
-        const max = Math.max(1, ...entries.map(x => x[1]));
-        entries.forEach(([bucket, count]) => {
-            const line = document.createElement('div'); line.className = 'timeline-row';
-            const label = document.createElement('span'); label.textContent = bucket;
-            const bar = document.createElement('div'); bar.className = 'timeline-bar';
-            const fill = document.createElement('i'); fill.style.width = (count / max * 100) + '%'; bar.appendChild(fill);
-            const value = document.createElement('strong'); value.textContent = count;
-            line.append(label, bar, value); timeline.appendChild(line);
-        });
-    }
+    const categories = Object.entries(statLabels).map(([key,label])=>({label,value:totals[key]||0})).filter(item=>item.value>0).sort((a,b)=>b.value-a.value).slice(0,8);
+    const timeline = Object.entries(buckets).sort((a,b)=>a[0].localeCompare(b[0])).slice(-14).map(([label,value])=>({label,value}));
+    drawStatisticsChart('stats-category-chart', categories, 'bar');
+    drawStatisticsChart('stats-timeline-chart', timeline, 'line');
     const body = $('stats-table-body'); body.replaceChildren();
-    if (!rows.length) { const tr=document.createElement('tr'); const td=document.createElement('td'); td.colSpan=4; td.className='empty-state'; td.textContent='Aucune statistique disponible.'; tr.appendChild(td); body.appendChild(tr); return; }
+    if (!rows.length) { const tr=document.createElement('tr'), td=document.createElement('td'); td.colSpan=4; td.className='empty-state'; td.textContent='Aucune statistique disponible.'; tr.appendChild(td); body.appendChild(tr); return; }
     rows.forEach(item => {
         const tr=document.createElement('tr');
         const values=[item.bucket, statLabels[item.category] || item.category, severityLabels[item.severity] || item.severity, Number(item.total)||0];

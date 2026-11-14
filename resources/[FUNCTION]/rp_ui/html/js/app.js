@@ -33,12 +33,18 @@ window.addEventListener('message', function(event) {
         document.getElementById('hud-job-panel')?.classList.add('hidden');
     } else if (data.action === 'showDiagnostics') {
         document.getElementById('client-diagnostics')?.classList.remove('hidden');
+        activateDiagnosticsTab('overview');
     } else if (data.action === 'hideDiagnostics') {
         document.getElementById('client-diagnostics')?.classList.add('hidden');
     } else if (data.action === 'updateDiagnostics') {
         const setDiag = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = String(value); };
-        setDiag('diag-fps', Math.max(0, Number(data.fps) || 0));
-        setDiag('diag-ping', Math.max(0, Number(data.ping) || 0) + ' ms');
+        const fps = Math.max(0, Number(data.fps) || 0);
+        const ping = Math.max(0, Number(data.ping) || 0);
+        setDiag('diag-fps', fps);
+        setDiag('diag-fps-performance', fps);
+        setDiag('diag-ping', ping + ' ms');
+        pushDiagnosticSample(fpsSamples, fps, 'diag-fps-chart', '', 'En attente de FPS…');
+        pushDiagnosticSample(pingSamples, ping, 'diag-ping-chart', ' ms', 'En attente de ping…');
         const frameMs = Math.max(0, Number(data.frameMs) || 0);
         setDiag('diag-frame-ms', frameMs.toFixed(2) + ' ms');
         setDiag('diag-frame-current', frameMs.toFixed(2) + ' ms');
@@ -159,7 +165,13 @@ document.getElementById('close-diagnostics')?.addEventListener('click', () => {
 
 
 // Lightweight local charts for the F12 diagnostics panel.
-const frameSamples = [];
+const frameSamples = [], fpsSamples = [], pingSamples = [], registrationSamples = [];
+function pushDiagnosticSample(target, value, canvasId, suffix, emptyLabel) {
+    if (!Number.isFinite(value)) return;
+    target.push({ label: new Date().toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit', second:'2-digit'}), value });
+    if (target.length > 30) target.shift();
+    drawLineChart(canvasId, target, suffix, emptyLabel);
+}
 function drawLineChart(canvasId, values, suffix, emptyLabel) {
     const canvas = document.getElementById(canvasId);
     if (!canvas) return;
@@ -216,7 +228,8 @@ function renderServerDiagnostics(stats) {
     const updated = document.getElementById('diag-updated');
     if (updated) updated.textContent = 'Mis à jour ' + new Date().toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'});
     const history = Array.isArray(stats.registrationHistory) ? stats.registrationHistory.slice().reverse() : [];
-    drawLineChart('diag-registration-chart', history.map(row => ({ label: String(row.day || '').slice(5), value: Number(row.total) || 0 })), '', 'Aucune inscription sur la période');
+    registrationSamples.splice(0, registrationSamples.length, ...history.map(row => ({ label: String(row.day || '').slice(5), value: Number(row.total) || 0 })));
+    drawLineChart('diag-registration-chart', registrationSamples, '', 'Aucune inscription sur la période');
     const host = document.getElementById('diag-jobs-chart');
     if (!host) return;
     host.replaceChildren();
@@ -239,4 +252,32 @@ document.getElementById('open-resource-monitor')?.addEventListener('click', () =
     fetch('https://' + (window.GetParentResourceName ? GetParentResourceName() : 'rp_ui') + '/openResourceMonitor', {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}'
     }).catch(() => {});
+});
+
+
+// F12 navigation: keep the dashboard compact while preserving live metric updates.
+function activateDiagnosticsTab(tab) {
+    const allowed = ['overview', 'performance', 'community'];
+    const active = allowed.includes(tab) ? tab : 'overview';
+    document.querySelectorAll('[data-diagnostics-tab]').forEach(button => {
+        const selected = button.dataset.diagnosticsTab === active;
+        button.classList.toggle('active', selected);
+        if (selected) button.setAttribute('aria-current', 'page');
+        else button.removeAttribute('aria-current');
+    });
+    document.querySelectorAll('[data-diagnostics-panel]').forEach(panel => {
+        const selected = panel.dataset.diagnosticsPanel === active;
+        panel.hidden = !selected;
+        panel.classList.toggle('active', selected);
+    });
+    // Canvases inside a hidden tab have zero width; redraw after it becomes visible.
+    requestAnimationFrame(() => {
+        drawLineChart('diag-fps-chart', fpsSamples, '', 'En attente de FPS…');
+        drawLineChart('diag-ping-chart', pingSamples, ' ms', 'En attente de ping…');
+        drawLineChart('diag-frame-chart', frameSamples, ' ms', 'En attente de mesures…');
+        drawLineChart('diag-registration-chart', registrationSamples, '', 'Aucune inscription sur la période');
+    });
+}
+document.querySelectorAll('[data-diagnostics-tab]').forEach(button => {
+    button.addEventListener('click', () => activateDiagnosticsTab(button.dataset.diagnosticsTab));
 });

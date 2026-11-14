@@ -258,7 +258,8 @@ def test_creator_bank_uses_economy_owned_schema_and_founder_lockout_survives_rec
     assert "exports['rp_economy']:IsJobBankReady() ~= true" in handler
     assert "exports('IsJobBankReady'" in economy
     assert "CREATE TABLE IF NOT EXISTS rp_job_bank_" not in handler
-    assert "INSERT IGNORE INTO rp_job_bank_accounts (job) VALUES (?)" in handler
+    assert "'INSERT IGNORE INTO rp_job_bank_accounts (job) VALUES ' .. table.concat(bankPlaceholders, ',')" in handler
+    assert "bankValues[#bankValues + 1] = name" in handler
     assert "getFounderAttemptKey(src)" in server
     assert "identifier:sub(1, 8) == 'license:'" in server
     assert "windowStartedAt" in server and "> 900" in server
@@ -280,7 +281,7 @@ def test_creator_nui_contract_has_unique_ids_all_tabs_and_live_callbacks():
 
     tabs = set(re.findall(r"""data-tab=["']([^"']+)["']""", html))
     panels = set(re.findall(r"""data-tab-panel=["']([^"']+)["']""", html))
-    assert tabs == panels and len(tabs) == 10
+    assert tabs == panels and len(tabs) == 11
 
     callbacks = re.findall(r"""RegisterNUICallback\(['"]([^'"]+)['"]""", client)
     assert len(callbacks) == len(set(callbacks)), "Creator has duplicate NUI callbacks"

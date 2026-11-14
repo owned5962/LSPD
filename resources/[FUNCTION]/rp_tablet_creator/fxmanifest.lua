@@ -10,7 +10,7 @@ version '1.1.0'
 dependencies { 'rp_core', 'rp_jobs', 'rp_inventory', 'rp_characters', 'rp_gangs', 'rp_economy', 'oxmysql' }
 
 ui_page 'html/index.html'
-files { 'html/index.html', 'html/style.css', 'html/app.js' }
+files { 'html/index.html', 'html/style.css', 'html/app.js', 'html/images/creator-hero.svg' }
 
 client_scripts { 'client/main.lua' }
 server_scripts { '@oxmysql/lib/MySQL.lua', 'server/main.lua' }

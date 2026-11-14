@@ -563,7 +563,7 @@ def test_reconnect_waits_for_final_disconnect_save():
     assert "pendingDisconnectSaves[characterId] = nil" in core
     assert "AddEventHandler('onResourceStop'" in core
     assert "exports['rp_core']:IsCharacterSavePending(char.id)" in characters
-    assert "Votre dernière sauvegarde est en cours." in characters
+    assert "Votre dernière sauvegarde est encore en cours." in characters
 
 def test_admin_tablet_stays_hidden_until_authorized_open_message():
     css = read("resources/[FUNCTION]/rp_tablet_admin/html/css/style.css")
@@ -1014,8 +1014,13 @@ def test_character_player_controls_stay_locked_until_a_character_is_loaded():
     client = read("resources/[CORE]/rp_characters/client/main.lua")
     assert "SetPlayerControl(PlayerId(), false, 0)" in client
     assert "SetPlayerControl(PlayerId(), true, 0)" in client
-    assert "SetEntityVisible(ped, false, false)" in client
     assert "FreezeEntityPosition(PlayerPedId(), not characterSessionReady)" in client
+    selector_start = client.index("RegisterNetEvent('rp_characters:client:openCharacterSelection'")
+    selector_end = client.index("RegisterNetEvent('rp_characters:client:bootError'", selector_start)
+    selector = client[selector_start:selector_end]
+    assert "SetEntityVisible(ped, true, false)" in selector
+    assert "FreezeEntityPosition(ped, true)" in selector
+    assert "SetEntityVisible(ped, false, false)" not in selector
 
 
 def test_admin_server_has_no_duplicate_legacy_event_handlers():
@@ -1085,10 +1090,17 @@ def test_spectate_is_server_authorized_and_streams_target_coordinates():
 def test_character_boot_resumes_only_when_core_already_has_a_loaded_player():
     client = read("resources/[CORE]/rp_characters/client/main.lua")
     server = read("resources/[CORE]/rp_characters/server/main.lua")
-    assert "rp_characters:client:resumeLoadedCharacter" in client
-    assert "FinishCharacterBoot()" in client[client.index("RegisterNetEvent('rp_characters:client:resumeLoadedCharacter'"):client.index("RegisterNetEvent('rp_characters:client:bootError'")]
+    assert "RegisterNetEvent('rp_characters:client:resumeLoadedCharacter'" not in client
     assert "if exports['rp_core']:GetPlayerFromId(src) then" in server
-    assert "TriggerClientEvent('rp_characters:client:resumeLoadedCharacter', src)" in server
+    assert "local function ResumeRegisteredCharacter(src)" in server
+    assert "exports['rp_core']:GetPlayerSnapshot(src)" in server
+    assert "TriggerClientEvent('rp_characters:client:spawnPlayer', src, position, snapshot.sex, skin)" in server
+    bootstrap = server.split("local function CheckPlayerBootstrap(src)", 1)[1].split(
+        "RegisterNetEvent('rp_characters:server:checkPlayer'", 1
+    )[0]
+    assert "ResumeRegisteredCharacter(src)" in bootstrap
+    assert "return ResumeRegisteredCharacter()" not in server
+    assert "resumeLoadedCharacter" not in bootstrap
 
 
 def test_fivem_server_icon_is_registered():

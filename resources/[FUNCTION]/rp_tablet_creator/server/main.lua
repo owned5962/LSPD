@@ -461,12 +461,21 @@ RegisterNetEvent('rp_tablet_creator:server:requestJobBankData', function()
             error('Le service bancaire rp_economy n’est pas encore prêt.')
         end
         local jobs = exports['rp_jobs']:GetAllJobs() or {}
-        local jobList = {}
+        local jobList, bankValues, bankPlaceholders = {}, {}, {}
         for key, job in pairs(jobs) do
             local name = type(job) == 'table' and (job.name or key) or key
             local label = type(job) == 'table' and (job.label or name) or name
             jobList[#jobList + 1] = { name = name, label = label }
-            MySQL.insert.await('INSERT IGNORE INTO rp_job_bank_accounts (job) VALUES (?)', { name })
+            bankPlaceholders[#bankPlaceholders + 1] = '(?)'
+            bankValues[#bankValues + 1] = name
+        end
+        -- One batched insert avoids one oxmysql round-trip per job each time
+        -- the Creator banking tab is opened.
+        if #bankValues > 0 then
+            MySQL.insert.await(
+                'INSERT IGNORE INTO rp_job_bank_accounts (job) VALUES ' .. table.concat(bankPlaceholders, ','),
+                bankValues
+            )
         end
         table.sort(jobList, function(a, b) return a.label < b.label end)
         local accounts = MySQL.query.await('SELECT job, balance, allow_deposit, allow_withdraw FROM rp_job_bank_accounts ORDER BY job ASC') or {}

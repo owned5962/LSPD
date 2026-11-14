@@ -104,16 +104,15 @@ end)
 AddEventHandler('onClientResourceStart', function(resourceName)
     if resourceName ~= GetCurrentResourceName() then return end
     CreateThread(function()
-        -- rp_core may be restarted while the character remains active server-side.
-        -- Re-request the existing server-owned player data rather than leaving
-        -- this client permanently stuck with the empty startup table.
-        for attempt = 1, 10 do
-            if IsPlayerLoaded() then return end
-            TriggerServerEvent('rp_core:server:requestPlayerDataSync')
-            Wait(1000)
-        end
-        if not IsPlayerLoaded() then
-            print('[rp_core] Player data was not restored; the server has no active character session for this client.')
+        -- One request is enough: when no in-memory session exists, the server
+        -- asks rp_characters to rebuild the account/character bootstrap from SQL.
+        -- Repeating this request during creator/selector screens only produced
+        -- rate-limited noise and a misleading "no active character" warning.
+        if IsPlayerLoaded() then return end
+        TriggerServerEvent('rp_core:server:requestPlayerDataSync')
+        Wait(20000)
+        if not IsPlayerLoaded() and not bootstrapRequested then
+            print('[rp_core] No active character session was restored and no character bootstrap is pending.')
         end
     end)
 end)

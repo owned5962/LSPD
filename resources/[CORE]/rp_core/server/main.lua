@@ -202,15 +202,41 @@ RegisterNetEvent('rp_core:server:requestPlayerDataSync', function()
     player.syncClient()
 end)
 
--- Save all connected characters every minute to reduce the amount of progress
--- that can be lost if the server or database stops unexpectedly.
+-- Save connected characters every minute, but spread database writes across
+-- a small worker pool. A single sequential burst can stall the server tick when
+-- many players are online or the database is under load.
 CreateThread(function()
     while true do
         Wait(60 * 1000)
+
+        local queue = {}
         for _, player in pairs(Players) do
-            if player and player.save then
-                player.save()
+            if player and player.save and player.isLoaded == true then
+                queue[#queue + 1] = player
             end
+        end
+
+        local nextIndex = 1
+        local workerCount = math.min(4, #queue)
+        for _ = 1, workerCount do
+            CreateThread(function()
+                while true do
+                    local index = nextIndex
+                    nextIndex = nextIndex + 1
+                    local player = queue[index]
+                    if not player then break end
+
+                    -- Skip stale queue entries after disconnect/source reuse.
+                    if Players[tonumber(player.source)] == player and player.isLoaded == true then
+                        local ok, saved = pcall(player.save)
+                        if not ok or saved ~= true then
+                            print(('[rp_core] Autosave deferred/failed for character %s: %s')
+                                :format(tostring(player.charId), ok and 'save lock or SQL failure' or tostring(saved)))
+                        end
+                    end
+                    Wait(250)
+                end
+            end)
         end
     end
 end)

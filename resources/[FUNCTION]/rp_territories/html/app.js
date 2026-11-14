@@ -9,9 +9,13 @@ let pending = false;
 // Browser console stacks include the exact app.js line for each diagnostic.
 function diag(level, event, details) {
     const prefix = '[rp_territories][NUI][' + event + ']';
-    const stack = new Error().stack;
     const logger = console[level] || console.log;
-    logger.call(console, prefix, details || '', stack);
+    // Keep normal lifecycle logs clean; attach a stack only to real errors.
+    if (level === 'error') {
+        logger.call(console, prefix, details || '', new Error().stack);
+    } else {
+        logger.call(console, prefix, details || '');
+    }
 }
 
 window.addEventListener('error', event => {

@@ -24,7 +24,7 @@ document.getElementById('apply-time').addEventListener('click',()=>post('setWorl
 document.getElementById('send').addEventListener('click',()=>{const message=document.getElementById('announcement').value.trim();if(!message){showStatus('Saisissez une annonce avant de diffuser.',false);return;}post('broadcast',{message}).then(()=>{document.getElementById('announcement').value='';}).catch(()=>showStatus('Erreur de communication.',false));});
 
 
-let creatorJobs = [], creatorBlips = [], creatorMapping = [], creatorProps = [];
+let creatorJobs = [], creatorBlips = [], creatorMapping = [], creatorProps = [], creatorGangs = [];
 let creatorJobGarages = [];
 let editingJobGarageVehicles = [];
 
@@ -350,6 +350,34 @@ function renderCreatorAdminData(data) {
     renderCreatorModules();
     renderCreatorJobGrades();
     loadCreatorPlayer();
+    renderCreatorStatistics();
+}
+function drawCreatorBarChart(canvasId, entries, color='#a78bfa') {
+    const canvas=document.getElementById(canvasId); if(!canvas)return;
+    const width=Math.max(240,canvas.clientWidth||320),height=190,ratio=Math.max(1,Math.min(2,window.devicePixelRatio||1));
+    canvas.width=Math.round(width*ratio);canvas.height=Math.round(height*ratio);
+    const ctx=canvas.getContext('2d');if(!ctx)return;ctx.setTransform(ratio,0,0,ratio,0,0);ctx.clearRect(0,0,width,height);
+    ctx.font='10px Inter,Arial,sans-serif';ctx.fillStyle='#9aabc3';
+    if(!entries.length){ctx.fillText('Aucune donnée disponible pour le moment.',10,20);return;}
+    const visible=entries.slice(0,7),max=Math.max(1,...visible.map(item=>Number(item.value)||0)),gap=9,rowH=Math.min(18,(height-18-gap*(visible.length-1))/visible.length),left=112,barW=Math.max(50,width-left-35);
+    visible.forEach((item,index)=>{const y=10+index*(rowH+gap),value=Math.max(0,Number(item.value)||0);ctx.textAlign='right';ctx.fillStyle='#cbd5e1';ctx.fillText(String(item.label).slice(0,18),left-9,y+rowH*.75);ctx.fillStyle='rgba(167,139,250,.14)';ctx.fillRect(left,y,barW,rowH);ctx.fillStyle=color;ctx.fillRect(left,y,barW*value/max,rowH);ctx.textAlign='left';ctx.fillStyle='#ddd6fe';ctx.fillText(String(value),Math.min(width-18,left+barW*value/max+5),y+rowH*.75);});
+}
+function renderCreatorStatistics() {
+    const set=(id,value)=>{const el=document.getElementById(id);if(el)el.textContent=String(value);};
+    const activeModules=creatorModules.filter(item=>item&&item.enabled===true).length;
+    set('creator-stat-players',creatorPlayers.length);set('creator-stat-jobs',creatorJobs.length);
+    set('creator-stat-gangs',creatorGangs.length);set('creator-stat-modules',activeModules+' / '+creatorModules.length);
+    const accounts=Array.isArray(creatorJobBankData?.accounts)?creatorJobBankData.accounts:[];
+    const totalBalance=accounts.reduce((sum,item)=>sum+Math.max(0,Number(item.balance)||0),0);
+    set('creator-stat-bank',formatCreatorBankMoney(totalBalance));
+    const jobs=new Map();
+    creatorPlayers.forEach(player=>{const name=String(player.jobLabel||player.job||'Sans métier');jobs.set(name,(jobs.get(name)||0)+1);});
+    drawCreatorBarChart('creator-job-chart',Array.from(jobs,([label,value])=>({label,value})));
+    const modules=[{label:'Actifs',value:activeModules},{label:'Inactifs',value:Math.max(0,creatorModules.length-activeModules)}].filter(item=>item.value>0);
+    drawCreatorBarChart('creator-module-chart',modules,'#c4b5fd');
+    const jobLabels=new Map((creatorJobBankData.jobs||[]).map(item=>[item.name,item.label||item.name]));
+    const bankRows=accounts.map(item=>({label:jobLabels.get(item.job)||item.job||'Métier',value:Math.max(0,Number(item.balance)||0)})).sort((a,b)=>b.value-a.value);
+    drawCreatorBarChart('creator-bank-chart',bankRows,'#8b5cf6');
 }
 function renderCreatorModules() {
     const host = document.getElementById('creator-module-list');
@@ -473,7 +501,7 @@ function updateCreatorInventory(operation) {
 }
 document.getElementById('creator-item-add').addEventListener('click', () => updateCreatorInventory('add'));
 document.getElementById('creator-item-remove').addEventListener('click', () => updateCreatorInventory('remove'));
-document.querySelectorAll('.creator-tab').forEach(button => button.addEventListener('click', () => activateCreatorTab(button.dataset.tab)));
+document.querySelectorAll('.creator-tab').forEach(button => button.addEventListener('click', () => { activateCreatorTab(button.dataset.tab); if (button.dataset.tab === 'statistics') requestAnimationFrame(renderCreatorStatistics); }));
 document.getElementById('creator-noclip').addEventListener('click', event => {
     const button=event.currentTarget;
     button.disabled=true;
@@ -612,10 +640,11 @@ function resetGangEditor() {
     document.getElementById('new-gang-description').value = '';
 }
 function renderCreatorGangs(gangs) {
+    creatorGangs = Array.isArray(gangs) ? gangs : [];
     const host = document.getElementById('creator-gang-list');
     host.replaceChildren();
-    if (!Array.isArray(gangs) || gangs.length === 0) {
-        host.textContent = 'Aucun gang créé pour le moment.'; return;
+    if (!creatorGangs.length) {
+        host.textContent = 'Aucun gang créé pour le moment.'; renderCreatorStatistics(); return;
     }
     gangs.forEach(gang => {
         const row = document.createElement('div'); row.className = 'org-row';
@@ -640,6 +669,7 @@ function renderCreatorGangs(gangs) {
         });
         row.append(swatch, label, edit, remove); host.append(row);
     });
+    renderCreatorStatistics();
 }
 document.getElementById('cancel-gang-edit').addEventListener('click', resetGangEditor);
 document.getElementById('create-gang').addEventListener('click', () => {
@@ -700,6 +730,7 @@ function renderCreatorJobBank(data) {
     fillSelect(select, creatorJobBankData.jobs || [], 'name', 'label');
     if ((creatorJobBankData.jobs || []).some(item => item.name === previous)) select.value = previous;
     renderCreatorJobBankSelection();
+    renderCreatorStatistics();
 }
 document.getElementById('creator-bank-job').addEventListener('change', renderCreatorJobBankSelection);
 document.getElementById('creator-bank-refresh').addEventListener('click', () => post('refreshJobBank').catch(() => creatorMessage('Actualisation bancaire impossible.')));

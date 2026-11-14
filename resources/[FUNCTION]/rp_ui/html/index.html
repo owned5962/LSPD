@@ -67,33 +67,59 @@
         </div>
     </div>
 
-    <section id="client-diagnostics" class="hidden" aria-live="polite">
-        <header><strong>STATISTIQUES CLIENT</strong><button type="button" id="close-diagnostics" aria-label="Fermer">×</button></header>
-        <div class="diagnostic-grid">
-            <div><small>FPS</small><b id="diag-fps">--</b></div>
-            <div><small>Ping</small><b id="diag-ping">-- ms</b></div>
-            <div><small>Joueurs en ligne</small><b id="diag-players">--</b></div>
-            <div><small>Temps image</small><b id="diag-frame-ms">-- ms</b></div>
+    <section id="client-diagnostics" class="hidden" aria-live="polite" aria-label="Console de diagnostics F12">
+        <div class="diagnostics-shell">
+            <aside class="diagnostics-sidebar">
+                <div class="diagnostics-brand"><span class="diagnostics-brand-mark"><i class="fa-solid fa-gauge-high"></i></span><span><strong>LOS SANTOS</strong><small>CONSOLE SYSTÈME</small></span></div>
+                <div class="diagnostics-sidebar-label">SUPERVISION</div>
+                <nav class="diagnostics-nav" aria-label="Navigation des diagnostics">
+                    <button type="button" class="diagnostics-nav-item active" data-diagnostics-tab="overview" aria-current="page"><i class="fa-solid fa-grid-2"></i><span>Vue générale</span></button>
+                    <button type="button" class="diagnostics-nav-item" data-diagnostics-tab="performance"><i class="fa-solid fa-chart-line"></i><span>Performances</span></button>
+                    <button type="button" class="diagnostics-nav-item" data-diagnostics-tab="community"><i class="fa-solid fa-users"></i><span>Communauté</span></button>
+                </nav>
+                <div class="diagnostics-sidebar-bottom"><span class="diagnostics-live-dot"></span><span>Surveillance active</span><small>F12 · FONDATEUR</small></div>
+            </aside>
+            <div class="diagnostics-main">
+                <header class="diagnostics-topbar">
+                    <div><span class="diagnostics-eyebrow">CENTRE DE CONTRÔLE / F12</span><h2>Diagnostics serveur</h2><p>État du client, performances et activité de la communauté</p></div>
+                    <div class="diagnostics-top-actions"><span class="diagnostics-live-pill"><i></i> EN DIRECT</span><button type="button" id="close-diagnostics" aria-label="Fermer les diagnostics" title="Fermer"><i class="fa-solid fa-xmark"></i></button></div>
+                </header>
+                <div class="diagnostics-content">
+                    <section class="diagnostics-view active" data-diagnostics-panel="overview">
+                        <div class="diagnostics-section-title"><div><span>APERÇU</span><h3>État en temps réel</h3></div><small>Actualisation automatique</small></div>
+                        <div class="diagnostic-grid">
+                            <article class="diagnostic-metric"><span class="metric-icon"><i class="fa-solid fa-gauge-high"></i></span><small>FPS CLIENT</small><b id="diag-fps">--</b><em>Images par seconde</em></article>
+                            <article class="diagnostic-metric"><span class="metric-icon"><i class="fa-solid fa-tower-broadcast"></i></span><small>LATENCE</small><b id="diag-ping">-- ms</b><em>Ping serveur</em></article>
+                            <article class="diagnostic-metric"><span class="metric-icon"><i class="fa-solid fa-user-group"></i></span><small>JOUEURS EN LIGNE</small><b id="diag-players">--</b><em>Population connectée</em></article>
+                            <article class="diagnostic-metric"><span class="metric-icon"><i class="fa-solid fa-stopwatch"></i></span><small>TEMPS IMAGE</small><b id="diag-frame-ms">-- ms</b><em>Frame time client</em></article>
+                        </div>
+                        <div class="diagnostic-live-charts">
+                            <article class="diagnostic-panel"><div class="diagnostic-section-heading"><strong>ÉVOLUTION DES FPS</strong><span>Historique local</span></div><canvas id="diag-fps-chart" height="90" aria-label="Historique des FPS"></canvas></article>
+                            <article class="diagnostic-panel"><div class="diagnostic-section-heading"><strong>ÉVOLUTION DU PING</strong><span>Historique local</span></div><canvas id="diag-ping-chart" height="90" aria-label="Historique du ping"></canvas></article>
+                        </div>
+                        <div class="diagnostic-lower-grid">
+                            <article class="diagnostic-panel"><div class="diagnostic-section-heading"><strong>RÉPARTITION DES MÉTIERS</strong><span>Joueurs actifs</span></div><div id="diag-jobs-chart" class="diagnostic-jobs"><span class="diagnostic-empty">Chargement des métiers…</span></div></article>
+                            <article class="diagnostic-panel diagnostics-position-panel"><div class="diagnostic-section-heading"><strong>POSITION DU JOUEUR</strong><span>Coordonnées locales</span></div><div class="diagnostic-position-icon"><i class="fa-solid fa-location-crosshairs"></i></div><small>COORDONNÉES X / Y / Z</small><b id="diag-coords">--</b><p>Position actuelle de votre personnage sur la carte.</p></article>
+                        </div>
+                    </section>
+                    <section class="diagnostics-view" data-diagnostics-panel="performance" hidden>
+                        <div class="diagnostics-section-title"><div><span>CLIENT / PERFORMANCE</span><h3>Analyse de fluidité</h3></div><small>Mesures locales</small></div>
+                        <div class="diagnostic-grid diagnostics-performance-metrics">
+                            <article class="diagnostic-metric"><span class="metric-icon"><i class="fa-solid fa-gauge-high"></i></span><small>FPS ACTUELS</small><b id="diag-fps-performance">--</b><em>Mesure instantanée</em></article>
+                            <article class="diagnostic-metric"><span class="metric-icon"><i class="fa-solid fa-stopwatch"></i></span><small>FRAME TIME</small><b id="diag-frame-current">-- ms</b><em>Temps de rendu par image</em></article>
+                        </div>
+                        <article class="diagnostic-panel diagnostics-wide-panel"><div class="diagnostic-section-heading"><strong>HISTORIQUE DU FRAME TIME</strong><span>30 dernières mesures</span></div><canvas id="diag-frame-chart" height="150"></canvas><p class="diagnostic-note">Un frame time élevé peut indiquer une baisse de fluidité. La mesure affichée concerne le client, pas le coût CPU détaillé de chaque ressource.</p></article>
+                        <article class="diagnostic-panel diagnostics-resource-panel"><div><span class="diagnostics-eyebrow">OUTIL NATIF FIVEM</span><h3>Analyse par ressource</h3><p>Le moniteur natif affiche la consommation en millisecondes des ressources client. Cette donnée n'est pas accessible de façon fiable depuis les scripts Lua/NUI.</p></div><button type="button" id="open-resource-monitor"><i class="fa-solid fa-chart-column"></i> OUVRIR RESMON</button></article>
+                    </section>
+                    <section class="diagnostics-view" data-diagnostics-panel="community" hidden>
+                        <div class="diagnostics-section-title"><div><span>SERVEUR / COMMUNAUTÉ</span><h3>Activité de la communauté</h3></div><small id="diag-updated">Actualisation…</small></div>
+                        <article class="diagnostic-metric diagnostics-registered-card"><span class="metric-icon"><i class="fa-solid fa-address-card"></i></span><small>COMPTES ENREGISTRÉS</small><b id="diag-registered">--</b><em>Total des comptes dans la base de données</em></article>
+                        <article class="diagnostic-panel diagnostics-wide-panel"><div class="diagnostic-section-heading"><strong>NOUVELLES INSCRIPTIONS</strong><span>14 derniers jours</span></div><canvas id="diag-registration-chart" height="170"></canvas><p class="diagnostic-note">Historique calculé à partir de la date de création des comptes disponibles en base.</p></article>
+                    </section>
+                    <footer class="diagnostics-footer"><span><i class="fa-solid fa-shield-halved"></i> Accès fondateur sécurisé</span><span>LOS SANTOS RP <b>•</b> F12</span></footer>
+                </div>
+            </div>
         </div>
-        <div class="diagnostic-section">
-            <div class="diagnostic-section-heading"><strong>COMMUNAUTÉ</strong><span id="diag-updated">Actualisation…</span></div>
-            <div class="diagnostic-total"><span>Comptes inscrits</span><b id="diag-registered">--</b></div>
-            <small class="diagnostic-caption">Nouvelles inscriptions par jour · 14 derniers jours</small>
-            <canvas id="diag-registration-chart" height="92"></canvas>
-        </div>
-        <div class="diagnostic-section">
-            <div class="diagnostic-section-heading"><strong>JOUEURS PAR MÉTIER</strong><span>En ligne</span></div>
-            <div id="diag-jobs-chart" class="diagnostic-jobs"><span class="diagnostic-empty">Chargement des métiers…</span></div>
-        </div>
-        <div class="diagnostic-section">
-            <div class="diagnostic-section-heading"><strong>PERFORMANCES</strong><span>Temps par image</span></div>
-            <div class="diagnostic-total"><span>Frame time client</span><b id="diag-frame-current">-- ms</b></div>
-            <canvas id="diag-frame-chart" height="82"></canvas>
-            <p class="diagnostic-note">Le temps CPU détaillé par ressource n'est pas exposé aux scripts NUI/Lua. Ouvre le moniteur natif FiveM pour voir les ms de chaque ressource.</p>
-            <button type="button" id="open-resource-monitor">OUVRIR RESMON (MS PAR RESSOURCE)</button>
-        </div>
-        <div class="diagnostic-coordinates"><small>Position</small><b id="diag-coords">--</b></div>
-        <footer>F12 pour fermer</footer>
     </section>
 
     <div id="rp-notifications" aria-live="polite"></div>

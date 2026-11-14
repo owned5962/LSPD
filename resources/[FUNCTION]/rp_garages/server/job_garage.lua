@@ -37,7 +37,12 @@ local function loadGarages()
         end
     end
     garages = loaded
-    print(('[rp_garages] %d garage(s) métier chargé(s).'):format(#rows))
+    local loadedCount = 0
+    for _ in pairs(loaded) do loadedCount = loadedCount + 1 end
+    print(('[rp_garages] %d garage(s) métier chargé(s) sur %d ligne(s) Creator.'):format(loadedCount, #rows))
+    if #rows > 0 and loadedCount == 0 then
+        print('[rp_garages] AVERTISSEMENT: des lignes Creator existent mais aucune configuration de garage n’est valide.')
+    end
 end
 
 MySQL.ready(function()

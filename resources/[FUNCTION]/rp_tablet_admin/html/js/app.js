@@ -411,6 +411,43 @@ function renderAuditLogs(logs) {
     });
 }
 
+function drawAdminJobChart(entries) {
+    const canvas = document.getElementById('admin-job-chart');
+    if (!canvas) return;
+    const width = Math.max(220, canvas.clientWidth || 320), height = 76;
+    const ratio = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+    canvas.width = Math.round(width * ratio); canvas.height = Math.round(height * ratio);
+    const ctx = canvas.getContext('2d'); if (!ctx) return;
+    ctx.setTransform(ratio,0,0,ratio,0,0); ctx.clearRect(0,0,width,height);
+    ctx.font = '9px Plus Jakarta Sans, sans-serif'; ctx.fillStyle = '#94a3b8';
+    if (!entries.length) { ctx.fillText('Aucune donnée joueur disponible',8,18); return; }
+    const max = Math.max(1,...entries.map(item=>item.value)), gap=7, rowH=Math.min(13,(height-10-gap*(entries.length-1))/entries.length);
+    entries.forEach((item,index)=>{
+        const y=5+index*(rowH+gap), barX=104, barW=Math.max(0,width-barX-28);
+        ctx.textAlign='right';ctx.fillStyle='#cbd5e1';ctx.fillText(item.label.slice(0,15),96,y+rowH*.78);
+        ctx.fillStyle='rgba(239,68,68,.16)';ctx.fillRect(barX,y,barW,rowH);
+        ctx.fillStyle='#ef4444';ctx.fillRect(barX,y,barW*item.value/max,rowH);
+        ctx.textAlign='left';ctx.fillStyle='#fca5a5';ctx.fillText(String(item.value),Math.min(width-16,barX+barW*item.value/max+5),y+rowH*.78);
+    });
+}
+function renderAdminOverview() {
+    const playerCount = document.getElementById('admin-live-players');
+    const jobCount = document.getElementById('admin-live-jobs');
+    const pingCount = document.getElementById('admin-live-ping');
+    if (!playerCount || !jobCount || !pingCount) return;
+    playerCount.textContent = String(onlinePlayers.length);
+    const jobs = new Map();
+    let pingTotal = 0, pingSamples = 0;
+    onlinePlayers.forEach(player => {
+        const job = String(player.jobLabel || player.job || 'Sans métier');
+        jobs.set(job,(jobs.get(job)||0)+1);
+        const ping = Number(player.ping);
+        if (Number.isFinite(ping) && ping >= 0) { pingTotal += ping; pingSamples++; }
+    });
+    jobCount.textContent = String(jobs.size);
+    pingCount.textContent = pingSamples ? Math.round(pingTotal/pingSamples)+' ms' : '— ms';
+    drawAdminJobChart(Array.from(jobs,([label,value])=>({label,value})).sort((a,b)=>b.value-a.value).slice(0,5));
+}
 function renderOnlinePlayers() {
     const list = document.getElementById('players-list'), count = document.getElementById('player-count');
     if (!list) return;
@@ -437,6 +474,7 @@ function renderOnlinePlayers() {
     });
     if (selectedPlayerId && !onlinePlayers.some(p => Number(p.id) === Number(selectedPlayerId))) selectedPlayerId = null;
     filterPlayers();
+    renderAdminOverview();
 }
 function filterPlayers() {
     const query = (document.getElementById('player-search')?.value || '').trim().toLowerCase();

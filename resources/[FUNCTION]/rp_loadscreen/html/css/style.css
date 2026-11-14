@@ -192,3 +192,37 @@ body { position: relative; overflow: hidden; color: var(--text); background: #07
 .keybind-item kbd { min-width:32px; padding:5px 7px; border:1px solid rgba(125,211,252,.35); border-bottom-width:2px; border-radius:6px; background:rgba(14,165,233,.12); color:#bae6fd; text-align:center; font:800 10px 'JetBrains Mono',monospace; }
 @media(max-width:900px) { .keybind-strip { align-items:flex-start; flex-direction:column; } .keybind-list { justify-content:flex-start; } }
 @media(max-width:560px) { .keybind-list { display:grid; grid-template-columns:1fr 1fr; width:100%; } .keybind-item { white-space:normal; } }
+
+
+/* Premium LSS layout — five distinct life paths, cinematic glass panels. */
+.objective-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
+.objective-card { min-height: 116px; border-color: rgba(139, 203, 242, .28); background: rgba(7, 20, 36, .88); }
+.objective-card::before { content: ""; position: absolute; z-index: 1; inset: 0; pointer-events: none; border-radius: inherit; background: linear-gradient(135deg, rgba(119, 211, 255, .09), transparent 45%); opacity: .8; }
+.objective-card::after { background: linear-gradient(90deg, rgba(3, 10, 20, .94), rgba(3, 10, 20, .68) 68%, rgba(3, 10, 20, .32)), linear-gradient(0deg, rgba(3, 10, 20, .62), transparent 72%); }
+.objective-card img { opacity: .76; }
+.objective-card:hover { border-color: rgba(117, 213, 255, .7); box-shadow: 0 12px 34px rgba(0, 0, 0, .34), 0 0 24px rgba(67, 169, 226, .12); }
+.objective-illegal { border-color: rgba(202, 118, 255, .34); }
+.objective-illegal .objective-copy small, .objective-illegal .objective-number { color: #d3a0ff; }
+.objective-illegal:hover { border-color: rgba(211, 154, 255, .78); box-shadow: 0 12px 34px rgba(0, 0, 0, .34), 0 0 24px rgba(171, 86, 255, .16); }
+.keybind-strip { margin: 0; padding: 9px 13px; border-radius: 10px; background: linear-gradient(120deg, rgba(5, 18, 34, .86), rgba(10, 29, 50, .62)); }
+.keybind-heading small { font-size: 7px; }
+.keybind-heading strong { font-size: 10px; }
+.keybind-list { gap: 7px 12px; }
+.keybind-item { font-size: 8px; }
+.keybind-item kbd { min-width: 27px; padding: 3px 6px; font-size: 8px; }
+.hero-banner { border-color: rgba(117, 207, 255, .4); }
+.panel { border-color: rgba(135, 195, 232, .22); background: rgba(4, 14, 28, .86); }
+@media (max-width: 1100px) {
+    .objective-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 760px) {
+    .objective-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .objective-card { min-height: 112px; }
+}
+@media (max-height: 760px) and (min-width: 761px) {
+    .loadscreen { gap: 6px; padding-top: 8px; padding-bottom: 7px; }
+    .hero-banner { min-height: 94px; padding-top: 9px; padding-bottom: 9px; }
+    .objective-card { min-height: 82px; }
+    .keybind-strip { padding-top: 6px; padding-bottom: 6px; }
+    .server-panels { min-height: 95px; }
+}

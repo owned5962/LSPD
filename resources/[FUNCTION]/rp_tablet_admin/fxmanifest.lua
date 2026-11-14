@@ -15,7 +15,8 @@ files {
     'html/index.html',
     'html/css/style.css',
     'html/js/app.js',
-    'html/images/los_santos_map.svg'
+    'html/images/los_santos_map.svg',
+    'html/images/admin-hero.svg'
 }
 
 client_scripts {

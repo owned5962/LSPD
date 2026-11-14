@@ -1,0 +1,123 @@
+/* ==========================================================================
+   F10 admin shell aligned with F9 (AEGIS) sidebar organization
+   ========================================================================== */
+#view-admin.view-panel.active {
+    display: grid !important;
+    grid-template-columns: 230px minmax(0, 1fr);
+    grid-template-rows: auto auto 1fr;
+    gap: 0;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+    padding: 0 !important;
+}
+#view-admin > .panel-header {
+    grid-column: 2;
+    grid-row: 1;
+    margin: 16px 16px 0 16px;
+    border-radius: 14px;
+}
+#view-admin > .admin-visual-overview {
+    grid-column: 2;
+    grid-row: 2;
+    margin: 12px 16px 0 16px;
+    position: relative;
+    overflow: hidden;
+}
+#view-admin > .admin-visual-overview::after {
+    content: "";
+    position: absolute;
+    right: 12px;
+    bottom: 8px;
+    width: 120px;
+    height: 64px;
+    background: url("../images/admin-hero.svg") center / contain no-repeat;
+    opacity: 0.85;
+    pointer-events: none;
+}
+#view-admin > .admin-subnav {
+    grid-column: 1;
+    grid-row: 1 / -1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: 230px;
+    margin: 0;
+    padding: 18px 12px 16px;
+    background: radial-gradient(ellipse at 20% 0%, rgba(239,68,68,.12), transparent 55%), #101827;
+    border-right: 1px solid rgba(148,163,184,.14);
+    overflow-y: auto;
+    overflow-x: hidden;
+    flex-wrap: nowrap;
+}
+#view-admin > .admin-subnav::before {
+    content: "CENTRE ADMIN";
+    display: block;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 1.6px;
+    color: #f87171;
+    padding: 4px 10px 14px;
+    border-bottom: 1px solid rgba(148,163,184,.12);
+    margin-bottom: 8px;
+}
+#view-admin .admin-subnav-btn {
+    width: 100%;
+    justify-content: flex-start;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    border-radius: 10px;
+    border: 0;
+    background: transparent;
+    color: #93a2b7;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+    transition: background .18s ease, color .18s ease;
+}
+#view-admin .admin-subnav-btn i {
+    width: 18px;
+    text-align: center;
+    font-size: 14px;
+    flex-shrink: 0;
+}
+#view-admin .admin-subnav-btn:hover {
+    background: rgba(255,255,255,.045);
+    color: #fff;
+}
+#view-admin .admin-subnav-btn.active {
+    background: linear-gradient(90deg, rgba(239,68,68,.2), rgba(239,68,68,.04));
+    color: #fecaca;
+    border-left: 3px solid #ef4444;
+    padding-left: 9px;
+}
+#view-admin .admin-subnav-btn span {
+    margin-left: auto;
+    font-size: 10px;
+    background: rgba(239,68,68,.16);
+    color: #fecaca;
+    padding: 3px 7px;
+    border-radius: 20px;
+}
+#view-admin > .admin-subview {
+    grid-column: 2;
+    grid-row: 3;
+    margin: 12px 16px 16px 16px;
+    min-height: 0;
+    overflow: auto;
+}
+#view-admin > .admin-subview.active {
+    display: flex;
+    flex-direction: column;
+}
+@media (max-width: 960px) {
+    #view-admin.view-panel.active { grid-template-columns: 72px minmax(0, 1fr); }
+    #view-admin > .admin-subnav { width: 72px; padding: 14px 8px; }
+    #view-admin > .admin-subnav::before { font-size: 0; padding: 0 0 10px; border: 0; }
+    #view-admin .admin-subnav-btn { justify-content: center; padding: 12px 0; font-size: 0; gap: 0; }
+    #view-admin .admin-subnav-btn span { display: none; }
+    #view-admin .admin-subnav-btn.active { padding-left: 0; border-left: 0; border-bottom: 2px solid #ef4444; }
+}
