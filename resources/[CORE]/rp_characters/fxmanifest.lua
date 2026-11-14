@@ -1,15 +1,11 @@
 fx_version 'cerulean'
 game 'gta5'
 lua54 'yes'
-
 author 'FiveM RP Team'
 description 'Character registration and character creator for FiveM'
-version '1.1.3'
-
+version '1.1.4'
 dependencies { 'oxmysql', 'rp_core', 'rp_jobs' }
-
 ui_page 'html/index.html'
-
 files {
     'html/index.html',
     'html/css/style.css',
@@ -32,14 +28,16 @@ files {
     'client/p16.lua',
     'client/p17.lua',
     'client/p18.lua',
-    'client/p19.lua'
+    'client/p19.lua',
+    'client/p20.lua',
+    'client/p21.lua',
+    'client/p22.lua',
+    'client/p23.lua',
+    'client/p24.lua',
+    'client/p25.lua',
+    'client/p26.lua',
+    'client/p27.lua',
+    'client/p28.lua'
 }
-
-client_scripts {
-    'client/main.lua'
-}
-
-server_scripts {
-    '@oxmysql/lib/MySQL.lua',
-    'server/main.lua'
-}
+client_scripts { 'client/main.lua' }
+server_scripts { '@oxmysql/lib/MySQL.lua', 'server/main.lua' }

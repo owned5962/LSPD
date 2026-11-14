@@ -1,4 +1,3 @@
--- rp_characters client bootstrap: assemble split source (preserves locals).
 local res = GetCurrentResourceName()
 local parts = {
     LoadResourceFile(res, 'client/p1.lua') or '',
@@ -19,23 +18,25 @@ local parts = {
     LoadResourceFile(res, 'client/p16.lua') or '',
     LoadResourceFile(res, 'client/p17.lua') or '',
     LoadResourceFile(res, 'client/p18.lua') or '',
-    LoadResourceFile(res, 'client/p19.lua') or ''
+    LoadResourceFile(res, 'client/p19.lua') or '',
+    LoadResourceFile(res, 'client/p20.lua') or '',
+    LoadResourceFile(res, 'client/p21.lua') or '',
+    LoadResourceFile(res, 'client/p22.lua') or '',
+    LoadResourceFile(res, 'client/p23.lua') or '',
+    LoadResourceFile(res, 'client/p24.lua') or '',
+    LoadResourceFile(res, 'client/p25.lua') or '',
+    LoadResourceFile(res, 'client/p26.lua') or '',
+    LoadResourceFile(res, 'client/p27.lua') or '',
+    LoadResourceFile(res, 'client/p28.lua') or ''
 }
 local missing = {}
 for i, part in ipairs(parts) do
-    if part == nil or part == '' then
-        missing[#missing + 1] = ('p%d.lua'):format(i)
-    end
+    if not part or part == '' then missing[#missing+1] = i end
 end
 if #missing > 0 then
-    print(('[rp_characters] FATAL: missing client parts: %s'):format(table.concat(missing, ', ')))
-    print('[rp_characters] Restore client/main.lua from commit 2c5a42a or push all client/p*.lua parts.')
+    print(('[rp_characters] FATAL missing parts: %s'):format(table.concat(missing, ',')))
     return
 end
-local src = table.concat(parts)
-local fn, err = load(src, '@rp_characters/client/main.lua')
-if not fn then
-    print('[rp_characters] load error: ' .. tostring(err))
-    return
-end
+local fn, err = load(table.concat(parts), '@rp_characters/client/main.lua')
+if not fn then print('[rp_characters] load error: '..tostring(err)) return end
 fn()
