@@ -534,3 +534,87 @@ RegisterNetEvent('rp_characters:client:spawnPlayer', function(coords, gender, sk
         print('[rp_characters] Spawn pipeline received from server.')
         creationSubmissionPending = false
         characterSessionReady = true
+        coords = NormalizeClientSpawn(coords)
+
+        local spawnX, spawnY, spawnZ = coords.x, coords.y, coords.z
+        local spawnHeading = coords.heading
+        local ped = PlayerPedId()
+        local collisionLoaded = false
+        local pipelineOk, pipelineError = xpcall(function()
+            pcall(SendLoadingScreenMessage, json.encode({
+                eventName = 'lssStage',
+                stage = 'player',
+                status = 'Finalisation de votre personnage...'
+            }))
+
+            -- Release every layer belonging to the creator before fading the
+            -- world. Do not rely solely on the preceding closeMenu event.
+            SetNuiFocus(false, false)
+            SendNUIMessage({ action = 'closeRegistration' })
+            SendNUIMessage({ action = 'closeCharacterSelection' })
+            if charCamera then
+                RenderScriptCams(false, true, 0, true, true)
+                DestroyCam(charCamera, false)
+                charCamera = nil
+            else
+                RenderScriptCams(false, true, 0, true, true)
+            end
+            ClearFocus()
+
+            ShutdownLoadingScreen()
+            ShutdownLoadingScreenNui()
+            -- Force fade-out but never wait forever (black-screen hang guard).
+            DoScreenFadeOut(300)
+            local fadeStartedAt = GetGameTimer() % SPAWN_TIMER_MODULUS
+            while not IsScreenFadedOut() and not SpawnWaitExpired(fadeStartedAt, 2500) do
+                Wait(10)
+            end
+            if not IsScreenFadedOut() then
+                -- Some clients never report faded-out; continue the pipeline anyway.
+                print('[rp_characters] Fade-out did not complete in time; continuing spawn.')
+            end
+
+            local appearanceApplied = ApplyCharacterAppearance(gender, skin)
+            ped = PlayerPedId()
+            if not appearanceApplied then
+                print('[rp_characters] Appearance fallback was required; applying GTA default components.')
+                SetPedDefaultComponentVariation(ped)
+            end
+
+            FreezeEntityPosition(ped, true)
+            SetEntityCoordsNoOffset(ped, spawnX, spawnY, spawnZ, false, false, false)
+            SetEntityHeading(ped, spawnHeading)
+            RequestCollisionAtCoord(spawnX, spawnY, spawnZ)
+            SetFocusPosAndVel(spawnX, spawnY, spawnZ, 0.0, 0.0, 0.0)
+
+            local collisionStartedAt = GetGameTimer() % SPAWN_TIMER_MODULUS
+            while not HasCollisionLoadedAroundEntity(ped)
+                and not SpawnWaitExpired(collisionStartedAt, 8000) do
+                RequestCollisionAtCoord(spawnX, spawnY, spawnZ)
+                Wait(50)
+                ped = PlayerPedId()
+            end
+            collisionLoaded = HasCollisionLoadedAroundEntity(ped)
+            if not collisionLoaded then
+                print('[rp_characters] Spawn collision streaming timed out; recovering with a visible player.')
+            end
+        end, debug.traceback)
+
+        -- Mandatory finalizer: execute each recovery action independently so
+        -- one failed native cannot prevent the remaining display/control fixes.
+        local function recover(label, callback)
+            local ok, err = pcall(callback)
+            if not ok then
+                print(('[rp_characters] Spawn recovery step "%s" failed: %s'):format(label, tostring(err)))
+            end
+        end
+
+        ped = PlayerPedId()
+        if ped and ped ~= 0 and DoesEntityExist(ped) then
+            recover('position', function()
+                SetEntityCoordsNoOffset(ped, spawnX, spawnY, spawnZ, false, false, false)
+                SetEntityHeading(ped, spawnHeading)
+            end)
+            recover('visibility', function()
+                SetEntityVisible(ped, true, false)
+                ResetEntityAlpha(ped)
