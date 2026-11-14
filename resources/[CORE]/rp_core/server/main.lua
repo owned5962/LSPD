@@ -226,10 +226,13 @@ CreateThread(function()
                     local player = queue[index]
                     if not player then break end
 
-                    local ok, saved = pcall(player.save)
-                    if not ok or saved ~= true then
-                        print(('[rp_core] Autosave deferred/failed for character %s: %s')
-                            :format(tostring(player.charId), ok and 'save lock or SQL failure' or tostring(saved)))
+                    -- Skip stale queue entries after disconnect/source reuse.
+                    if Players[tonumber(player.source)] == player and player.isLoaded == true then
+                        local ok, saved = pcall(player.save)
+                        if not ok or saved ~= true then
+                            print(('[rp_core] Autosave deferred/failed for character %s: %s')
+                                :format(tostring(player.charId), ok and 'save lock or SQL failure' or tostring(saved)))
+                        end
                     end
                     Wait(250)
                 end
