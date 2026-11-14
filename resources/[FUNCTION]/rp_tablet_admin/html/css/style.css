@@ -1042,3 +1042,10 @@ button:disabled {
 @media(max-width:1000px){.admin-visual-overview{grid-template-columns:1fr 1fr}.admin-overview-chart{grid-column:1/-1}}
 @media(max-width:650px){.admin-visual-overview{grid-template-columns:1fr}.admin-overview-metrics{justify-content:space-between}.admin-overview-chart{grid-column:auto}.panel-header.admin-accent{background-position:center,right center}}
 
+
+/* Red accent consistency across administration cards and form controls */
+.give-category{border-color:rgba(239,68,68,.22);background:rgba(40,12,18,.45)}
+.give-category-heading{color:#fca5a5}
+.give-category-heading i{color:#f87171}
+.give-category.equipment{border-color:rgba(239,68,68,.28)}
+.give-card input:focus,.give-card select:focus,.admin-page-card input:focus,.admin-page-card select:focus,.admin-page-card textarea:focus{border-color:rgba(239,68,68,.65);outline-color:rgba(239,68,68,.35)}
