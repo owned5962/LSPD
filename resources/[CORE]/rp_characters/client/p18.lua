@@ -38,7 +38,7 @@ RegisterNUICallback('selectCharacter', function(data, cb)
         end
         print('[rp_characters] Spawn watchdog: no spawnPlayer within 15s after selectCharacter.')
         ShowCharacterBootError('Le spawn n\'a pas répondu après la sélection. Vérifiez la console serveur (CreateRPPlayer / oxmysql), puis resélectionnez votre personnage avec /relog ou en vous reconnectant.')
-        -- Ask core to re-open the account bootstrap / selection path.
+        -- Ask core to re-open the account / character selection path.
         TriggerServerEvent('rp_core:server:requestPlayerDataSync')
     end)
 end)
