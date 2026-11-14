@@ -20,6 +20,9 @@ const faceLabels = [
 const resourceName = () => window.GetParentResourceName ? window.GetParentResourceName() : 'rp_characters';
 const postNui = (name, payload) => fetch(`https://${resourceName()}/${name}`, {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload || {})
+}).then((response) => {
+    if (!response.ok) throw new Error(`NUI request failed: ${name}`);
+    return response.json().catch(() => ({}));
 });
 const parentNames = ['Benjamin','Daniel','Joshua','Noah','John','Alex','Isaac','Evan','Ethan','Vincent','Angel','Diego','Adrian','Gabriel','Michael','Santiago','Kevin','Louis','Samuel','Anthony','Claude','Niko','John','Misty','Jez','Jodie','Miriam','Eunice','Debra','Emilia','Hannah','Aubrey','Jasmine','Gigi','Katherine','Chastity','Paige','Petunia','Leah','Kelly','Kimberly','Debra','Rea','Olivia','Sophia','Charlotte'];
 function fillParents() {
@@ -91,6 +94,11 @@ window.addEventListener('message', (event) => {
         document.getElementById('character-selection').classList.remove('hidden');
     } else if (data.action === 'closeCharacterSelection') {
         document.getElementById('character-selection').classList.add('hidden');
+    } else if (data.action === 'creationResult' && data.ok === false) {
+        const submitButton = document.getElementById('submit-btn');
+        submitButton.disabled = false;
+        submitButton.textContent = 'Réessayer la création';
+        submitButton.dataset.pending = 'false';
     }
 });
 function renderCharacters(characters) {
@@ -216,14 +224,30 @@ document.querySelectorAll('.spawn-card').forEach(card => card.addEventListener('
 });
 document.getElementById('creator-form').addEventListener('submit', e => {
     e.preventDefault();
+    const form = e.currentTarget;
+    if (!form.reportValidity()) return;
+
+    const submitButton = document.getElementById('submit-btn');
+    if (submitButton.dataset.pending === 'true') return;
+    submitButton.dataset.pending = 'true';
+    submitButton.disabled = true;
+    submitButton.textContent = 'Enregistrement…';
+
     postNui('saveCharacter', {
         firstname: document.getElementById('firstname').value.trim(),
         lastname: document.getElementById('lastname').value.trim(),
         dateofbirth: document.getElementById('dateofbirth').value.split('/').reverse().join('-'),
         gender: document.getElementById('gender').value,
         height: Number(document.getElementById('height').value),
-        spawnPoint: selectedSpawn, skin: getSkin()
-    }).catch(() => {});
+        spawnPoint: selectedSpawn,
+        skin: getSkin()
+    }).then((result) => {
+        if (result && result.status === 'error') throw new Error('Character submission rejected');
+    }).catch(() => {
+        submitButton.dataset.pending = 'false';
+        submitButton.disabled = false;
+        submitButton.textContent = 'Réessayer la création';
+    });
 });
 fillParents(); buildFaceSliders();
 document.getElementById('dateofbirth').addEventListener('input', event => {
