@@ -3,7 +3,7 @@ game 'gta5'
 
 author 'FiveM RP Framework'
 description 'Modern TextUI & Animated Progress Bar'
-version '1.1.0'
+version '1.1.1'
 
 dependency 'rp_core'
 dependency 'rp_jobs'
@@ -23,6 +23,7 @@ server_scripts {
 files {
     'html/index.html',
     'html/css/style.css',
+    'html/css/f12-shell.css',
     'html/js/app.js',
     'html/images/diagnostics-hero.svg'
 }

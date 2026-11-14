@@ -1,0 +1,21 @@
+/* F12 Diagnostics — large shell like F9 */
+#client-diagnostics:not(.hidden){
+  position:absolute!important;
+  top:50%!important;left:50%!important;
+  transform:translate(-50%,-50%)!important;
+  width:min(1100px,94vw)!important;
+  height:min(720px,92vh)!important;
+  padding:0!important;
+  border-radius:18px!important;
+  border:1px solid rgba(56,189,248,.28)!important;
+  background:rgba(8,12,20,.98)!important;
+  box-shadow:0 30px 100px rgba(0,0,0,.75)!important;
+  overflow:hidden!important;
+  z-index:5000!important;
+}
+#client-diagnostics .diagnostics-shell{height:100%}
+#client-diagnostics .diagnostics-nav-item.active{
+  background:linear-gradient(90deg,rgba(14,165,233,.2),rgba(14,165,233,.04));
+  color:#bae6fd;
+  border-left:3px solid #0ea5e9;
+}

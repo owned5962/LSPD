@@ -1,0 +1,94 @@
+/* F11 Creator — sidebar aligned with F9 (AEGIS) */
+#tablet:not(.hidden){
+  display:grid!important;
+  grid-template-columns:230px minmax(0,1fr);
+  grid-template-rows:auto auto 1fr;
+  gap:0;
+  inset:4% 5%;
+  padding:0;
+  overflow:hidden;
+}
+#tablet>header{
+  grid-column:2;
+  grid-row:1;
+  margin:16px 18px 0;
+  padding-bottom:12px;
+}
+#tablet>.creator-tabs{
+  grid-column:1;
+  grid-row:1/-1;
+  display:flex;
+  flex-direction:column;
+  flex-wrap:nowrap;
+  gap:6px;
+  width:230px;
+  margin:0;
+  padding:18px 12px;
+  background:radial-gradient(ellipse at 20% 0%,rgba(14,165,233,.14),transparent 55%),#0b1220;
+  border:0;
+  border-right:1px solid rgba(148,163,184,.14);
+  border-radius:0;
+  overflow-y:auto;
+}
+#tablet>.creator-tabs::before{
+  content:"CREATOR CONTROL";
+  display:block;
+  font-size:10px;
+  font-weight:800;
+  letter-spacing:1.5px;
+  color:#38bdf8;
+  padding:4px 10px 14px;
+  border-bottom:1px solid rgba(148,163,184,.12);
+  margin-bottom:8px;
+}
+#tablet .creator-tab{
+  flex:0 0 auto;
+  min-width:0;
+  width:100%;
+  justify-content:flex-start;
+  text-align:left;
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:12px;
+  border-radius:10px;
+  border:0;
+  background:transparent;
+  color:#93a2b7;
+  font-size:12px;
+}
+#tablet .creator-tab:hover{background:rgba(255,255,255,.045);color:#fff}
+#tablet .creator-tab.active{
+  background:linear-gradient(90deg,rgba(14,165,233,.22),rgba(14,165,233,.04));
+  color:#bae6fd;
+  border-left:3px solid #0ea5e9;
+  padding-left:9px;
+}
+#tablet>.intro{
+  grid-column:2;
+  grid-row:2;
+  margin:12px 18px 0;
+}
+#tablet>.intro::after{
+  content:"";
+  display:inline-block;
+  width:110px;height:56px;
+  margin-left:12px;
+  vertical-align:middle;
+  background:url("images/creator-hero.svg") center/contain no-repeat;
+  opacity:.9;
+}
+#tablet>[data-tab-panel]{
+  grid-column:2;
+  grid-row:3;
+  margin:12px 18px 18px;
+  overflow:auto;
+  min-height:0;
+}
+@media(max-width:960px){
+  #tablet:not(.hidden){grid-template-columns:72px minmax(0,1fr)}
+  #tablet>.creator-tabs{width:72px;padding:14px 8px}
+  #tablet>.creator-tabs::before{font-size:0;padding:0 0 10px;border:0}
+  #tablet .creator-tab{justify-content:center;font-size:0;padding:12px 0}
+  #tablet .creator-tab i{font-size:15px}
+}
