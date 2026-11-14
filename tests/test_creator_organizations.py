@@ -245,8 +245,10 @@ def test_creator_bank_uses_economy_owned_schema_and_founder_lockout_survives_rec
     start = server.index("RegisterNetEvent('rp_tablet_creator:server:requestJobBankData'")
     end = server.index("RegisterNetEvent('rp_tablet_creator:server:saveJobBankPermissions'", start)
     handler = server[start:end]
+    economy = read("resources/[FUNCTION]/rp_economy/server/jobbank.lua")
     assert "'rp_economy'" in manifest
-    assert "GetResourceState('rp_economy') ~= 'started'" in handler
+    assert "exports['rp_economy']:IsJobBankReady() ~= true" in handler
+    assert "exports('IsJobBankReady'" in economy
     assert "CREATE TABLE IF NOT EXISTS rp_job_bank_" not in handler
     assert "INSERT IGNORE INTO rp_job_bank_accounts (job) VALUES (?)" in handler
     assert "getFounderAttemptKey(src)" in server
