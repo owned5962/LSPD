@@ -13,6 +13,11 @@ for _, rel in ipairs(MODULES) do
         print(('[rp_characters] FATAL missing server module %s'):format(rel))
         return
     end
+    -- Guard against previously truncated uploads.
+    if src:match('^%s*%-%-%s*truncated') or #src < 64 then
+        print(('[rp_characters] FATAL module %s looks truncated (%d bytes)'):format(rel, #src))
+        return
+    end
     buffer[#buffer + 1] = src
     if src:sub(-1) ~= '\n' then
         buffer[#buffer + 1] = '\n'
@@ -32,4 +37,9 @@ if not ok then
     return
 end
 
-print('[rp_characters] [OK] Server character pipeline loaded')
+if type(CheckPlayerBootstrap) ~= 'function' then
+    print('[rp_characters] WARN: CheckPlayerBootstrap was not published globally')
+end
+
+print(('[rp_characters] [OK] Server character pipeline loaded (%d bytes across %d modules)')
+    :format(#combined, #MODULES))
