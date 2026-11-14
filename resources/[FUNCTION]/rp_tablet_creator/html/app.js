@@ -20,8 +20,8 @@ document.getElementById('close').addEventListener('click',close);
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!tablet.classList.contains('hidden')){e.preventDefault();close();}});
 window.addEventListener('message',e=>{const d=e.data||{};if(d.action==='open'){tablet.classList.remove('hidden');activateCreatorTab('weather');document.getElementById('role').textContent=String(d.role||'CRÉATEUR').toUpperCase();showStatus('Connecté · Contrôles autorisés',true);}else if(d.action==='close'){tablet.classList.add('hidden');}else if(d.action==='result'){showStatus(d.message||'',d.success===true);}});
 document.querySelectorAll('[data-weather]').forEach(button=>button.addEventListener('click',()=>post('setWorld',{weather:button.dataset.weather}).catch(()=>showStatus('Erreur de communication.',false))));
-document.getElementById('apply-time').addEventListener('click',()=>post('setWorld',{hours:Number(document.getElementById('hours').value),minutes:Number(document.getElementById('minutes').value)}).catch(()=>{status.textContent='Erreur de communication';}));
-document.getElementById('send').addEventListener('click',()=>{const message=document.getElementById('announcement').value.trim();if(!message){showStatus('Saisissez une annonce avant de diffuser.',false);return;}post('broadcast',{message}).then(()=>{document.getElementById('announcement').value='';}).catch(()=>{status.textContent='Erreur de communication';});});
+document.getElementById('apply-time').addEventListener('click',()=>post('setWorld',{hours:Number(document.getElementById('hours').value),minutes:Number(document.getElementById('minutes').value)}).catch(()=>showStatus('Erreur de communication.',false)));
+document.getElementById('send').addEventListener('click',()=>{const message=document.getElementById('announcement').value.trim();if(!message){showStatus('Saisissez une annonce avant de diffuser.',false);return;}post('broadcast',{message}).then(()=>{document.getElementById('announcement').value='';}).catch(()=>showStatus('Erreur de communication.',false));});
 
 
 let creatorJobs = [], creatorBlips = [], creatorMapping = [], creatorProps = [];
@@ -270,7 +270,7 @@ function renderMapping() {
     creatorMapping.forEach(item=>{
         const row=document.createElement('div');row.className='mapping-row';
         const label=document.createElement('span');label.textContent='#'+item.id+' · '+item.model;
-        const del=document.createElement('button');del.textContent='Supprimer';del.addEventListener('click',()=>post('deleteProp',{id:item.id}).catch(()=>{status.textContent='Erreur de communication';}));
+        const del=document.createElement('button');del.textContent='Supprimer';del.addEventListener('click',()=>post('deleteProp',{id:item.id}).catch(()=>showStatus('Erreur de communication.',false)));
         row.append(label,del);host.append(row);
     });
 }
