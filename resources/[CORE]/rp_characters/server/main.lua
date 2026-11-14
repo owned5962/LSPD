@@ -221,7 +221,7 @@ local function LoadCharacter(src, identifier, userGroup, char)
     return false
 end
 
-function CheckPlayerBootstrap(src)
+local function InitializePlayerAccount(src)
     local actionOk, allowed = pcall(function()
         return exports['rp_core']:CanPerformAction(src, 'character:check_player', 5000)
     end)
@@ -229,10 +229,10 @@ function CheckPlayerBootstrap(src)
         error('rp_core CanPerformAction export failed: ' .. tostring(allowed))
     end
     if not allowed then
-        print(('[rp_characters] Duplicate bootstrap ignored for player %s'):format(tostring(src)))
+        print(('[rp_characters] Duplicate account initialization ignored for player %s'):format(tostring(src)))
         return
     end
-    print(('[rp_characters] Bootstrap started for player %s'):format(tostring(src)))
+    print(('[rp_characters] Account initialization started for player %s'):format(tostring(src)))
 
     local identifier = GetLicenseIdentifier(src)
     if not identifier then
@@ -318,11 +318,11 @@ function CheckPlayerBootstrap(src)
     end
 end
 
-RegisterNetEvent('rp_characters:server:checkPlayer', function()
+RegisterNetEvent('rp_characters:server:initializePlayer', function()
     local src = source
-    local ok, err = xpcall(CheckPlayerBootstrap, debug.traceback, src)
+    local ok, err = xpcall(InitializePlayerAccount, debug.traceback, src)
     if not ok then
-        print(('[rp_characters] Bootstrap pipeline crashed for player %s: %s')
+        print(('[rp_characters] Account initialization failed for player %s: %s')
             :format(tostring(src), tostring(err)))
         local message = 'Le chargement du compte a rencontré une erreur serveur. Consultez la console FXServer.'
         Notify(src, message, 'error')
@@ -496,28 +496,3 @@ RegisterNetEvent('rp_characters:server:createCharacter', function(data)
     end
 end)
 
--- Direct server event registration: FXManifest loads this file after the
--- character pipeline, so no secondary bootstrap hook/loader is required.
-local bootstrapInFlight = {}
-
-AddEventHandler('rp_characters:server:forceBootstrap', function(src)
-    src = tonumber(src)
-    if not src or src < 1 or not GetPlayerName(src) then return end
-    if bootstrapInFlight[src] then return end
-    if type(CheckPlayerBootstrap) ~= 'function' then
-        print('[rp_characters] forceBootstrap: CheckPlayerBootstrap not loaded')
-        return
-    end
-
-    bootstrapInFlight[src] = true
-    local ok, err = xpcall(CheckPlayerBootstrap, debug.traceback, src)
-    bootstrapInFlight[src] = nil
-    if not ok then
-        print(('[rp_characters] forceBootstrap crashed for player %s: %s')
-            :format(tostring(src), tostring(err)))
-    end
-end)
-
-AddEventHandler('playerDropped', function()
-    bootstrapInFlight[source] = nil
-end)
