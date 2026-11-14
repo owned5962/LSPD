@@ -46,6 +46,23 @@ local function formatCurrency(amount)
     return formatted .. ' $'
 end
 
+local function getPersonalHistory(characterId)
+    local ok, rows = pcall(MySQL.query.await,
+        'SELECT type, amount, sender_or_receiver, reason, created_at FROM bank_transactions WHERE character_id = ? ORDER BY id DESC LIMIT 20',
+        { tonumber(characterId) })
+    if not ok or type(rows) ~= 'table' then
+        print(('[rp_economy] Personal history lookup failed for character %s: %s'):format(
+            tostring(characterId), tostring(rows)))
+        return {}
+    end
+    return rows
+end
+
+local function refreshAccountSnapshot(src, player)
+    TriggerClientEvent('rp_economy:client:refreshBalances', src,
+        player.cash, player.bank, getPersonalHistory(player.charId))
+end
+
 local function notify(src, message, kind)
     TriggerClientEvent('rp_core:client:notify', src, message, kind or 'info')
     TriggerClientEvent('rp_economy:client:bankNotice', src, message, kind or 'info')
@@ -118,7 +135,8 @@ RegisterNetEvent('rp_economy:server:authenticate', function()
         cash = tonumber(player.cash) or 0,
         bank = tonumber(player.bank) or 0,
         playerName = (tostring(player.firstname or 'Citoyen') .. ' ' .. tostring(player.lastname or '')):gsub('%s+$', ''),
-        accountNumber = ('LS-%06d'):format(tonumber(player.charId) or 0)
+        accountNumber = ('LS-%06d'):format(tonumber(player.charId) or 0),
+        history = getPersonalHistory(player.charId)
     })
 end)
 
@@ -185,7 +203,7 @@ RegisterNetEvent('rp_economy:server:deposit', function(rawAmount)
     TriggerEvent('rp_economy:server:logTransaction', player.charId, 'deposit', amount, 'Système', 'Dépôt bancaire')
     TriggerClientEvent('rp_core:client:updateCash', src, player.cash)
     TriggerClientEvent('rp_core:client:updateBank', src, player.bank)
-    TriggerClientEvent('rp_economy:client:refreshBalances', src, player.cash, player.bank)
+    refreshAccountSnapshot(src, player)
     notify(src, 'Dépôt réussi : ' .. formatCurrency(amount), 'success')
 end)
 
@@ -276,7 +294,7 @@ RegisterNetEvent('rp_economy:server:transfer', function(rawTargetId, rawAmount)
     TriggerClientEvent('rp_core:client:updateBank', src, player.bank)
     TriggerClientEvent('rp_core:client:updateBank', targetId, target.bank)
     TriggerClientEvent('rp_economy:client:refreshBalances', src, player.cash, player.bank)
-    TriggerClientEvent('rp_economy:client:refreshBalances', targetId, target.cash, target.bank)
+    refreshAccountSnapshot(targetId, target)
     notify(src, 'Virement de ' .. formatCurrency(amount) .. ' effectué.', 'success')
     notify(targetId, 'Virement de ' .. formatCurrency(amount) .. ' reçu.', 'info')
 end)
