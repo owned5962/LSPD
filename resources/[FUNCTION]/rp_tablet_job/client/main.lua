@@ -27,6 +27,10 @@ local function openTablet()
         notify('Les données du personnage sont indisponibles. Réessayez dans quelques secondes.', 'error')
         return
     end
+    if type(player.job) ~= 'string' or player.job == '' or player.job == 'unemployed' then
+        notify('Vous devez avoir un métier pour accéder à la tablette professionnelle.', 'warning')
+        return
+    end
     currentJob = player.job
     isOpen = true
     SetNuiFocus(true, true)
@@ -96,8 +100,10 @@ RegisterNUICallback('toggleDuty', function(_, cb)
 end)
 
 RegisterNUICallback('policeWaypoint', function(data, cb)
+    data = type(data) == 'table' and data or {}
     local x, y = tonumber(data.x), tonumber(data.y)
-    if currentJob ~= 'police' or not currentDuty or not x or not y then
+    if currentJob ~= 'police' or not currentDuty or not x or not y
+        or x ~= x or y ~= y or math.abs(x) > 5000 or math.abs(y) > 5000 then
         cb({ ok = false })
         return
     end
@@ -107,7 +113,13 @@ end)
 
 RegisterNUICallback('markPoliceAlert', function(data, cb)
     if currentJob ~= 'police' or not currentDuty then cb({ ok = false }); return end
-    TriggerServerEvent('rp_police_interaction:server:markAlert', tonumber(data.id), data.status)
+    local alertId = tonumber(data and data.id)
+    local status = data and data.status
+    if not alertId or alertId % 1 ~= 0 or (status ~= 'Pris en charge' and status ~= 'Clôturée') then
+        cb({ ok = false })
+        return
+    end
+    TriggerServerEvent('rp_police_interaction:server:markAlert', alertId, status)
     cb({ ok = true })
 end)
 
@@ -149,7 +161,6 @@ end)
 for _, job in ipairs(JobsList or {}) do
     RegisterNetEvent('job_' .. job.name .. ':dutyUpdated', function(status)
         currentDuty = status == true
-        TriggerServerEvent('rp_tablet_job:server:setDutyState', currentDuty)
         if isOpen then
             TriggerServerEvent('rp_tablet_job:server:requestData')
             if currentJob == 'police' and currentDuty then
