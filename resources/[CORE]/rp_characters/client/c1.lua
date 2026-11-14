@@ -1,2 +1,0 @@
--- ORPHAN: not loaded by fxmanifest. Kept only to replace a previous PLACEHOLDER upload.
--- Safe to delete manually from the repo when convenient.
