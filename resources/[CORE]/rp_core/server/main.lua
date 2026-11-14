@@ -148,7 +148,7 @@ local function RegisterPlayer(source, player)
     if tonumber(player.source) ~= src then return reject('source_mismatch') end
     if not validIdentifier then return reject('invalid_identifier') end
     if not characterId or characterId < 1 or characterId % 1 ~= 0 then return reject('bad_charId') end
-    if not slot or slot < 1 or slot > 3 or slot % 1 ~= 0 then return reject('bad_slot') end
+    if not slot or slot ~= 1 then return reject('bad_slot') end
     if player.isLoaded ~= true then return reject('not_loaded_flag') end
 
     if IsCharacterSavePending(characterId) then
@@ -202,7 +202,6 @@ RegisterNetEvent('rp_core:server:requestPlayerDataSync', function()
     end
     print(('[rp_core] No active character session for %s — requesting account initialization.')
         :format(tostring(src)))
-    TriggerClientEvent('rp_core:client:requestCharacterInitialization', src)
     if GetResourceState('rp_characters') == 'started' then
         TriggerEvent('rp_characters:server:initializePlayer', src)
     end
