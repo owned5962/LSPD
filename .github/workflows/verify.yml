@@ -49,6 +49,7 @@ jobs:
           python tests/test_fuel_system.py
           python -m pytest -q tests/test_clothing_catalog.py tests/test_territory_claims.py
           python tests/test_player_session_contract.py
+          python -m pytest -q tests/test_inventory_workflow.py tests/test_inventory_backups.py
 
       - name: Compile every Lua file
         shell: bash
