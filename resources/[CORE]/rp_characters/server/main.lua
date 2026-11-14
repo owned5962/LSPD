@@ -122,20 +122,23 @@ end)
 
 local function LoadCharacterUnsafe(src, identifier, userGroup, char)
     if exports['rp_core']:IsCharacterSavePending(char.id) then
-        Notify(src, 'Votre dernière sauvegarde est en cours. Réessayez dans quelques secondes.', 'warning')
-        return
+        local message = 'Votre dernière sauvegarde est encore en cours. Réessayez dans quelques secondes.'
+        Notify(src, message, 'warning')
+        return false, message
     end
 
     local currentSession = exports['rp_core']:GetPlayerByIdentifier(identifier)
     if currentSession then
         if currentSession.source ~= src then
             DropPlayer(src, 'Une session est déjà active avec ce compte.')
+            return false, 'Une session est déjà active avec ce compte.'
         end
-        return
+        TriggerClientEvent('rp_characters:client:resumeLoadedCharacter', src)
+        return true
     end
     if exports['rp_core']:GetPlayerFromId(src) then
-        Notify(src, 'Un personnage est déjà chargé.')
-        return
+        TriggerClientEvent('rp_characters:client:resumeLoadedCharacter', src)
+        return true
     end
 
     char.position = DecodeJson(char.position, DefaultSpawn)
@@ -191,13 +194,15 @@ end
 -- Catch failures from core exports and player registration too, not only SQL.
 -- Previously an exception here could leave the client waiting with no response.
 local function LoadCharacter(src, identifier, userGroup, char)
-    local ok, err = pcall(LoadCharacterUnsafe, src, identifier, userGroup, char)
-    if ok then return true end
+    local ok, result, detail = pcall(LoadCharacterUnsafe, src, identifier, userGroup, char)
+    if ok and result ~= false then return true end
 
+    local reason = ok and detail or result
     print(('[rp_characters] Character load pipeline failed for player %s: %s')
-        :format(tostring(src), tostring(err)))
+        :format(tostring(src), tostring(reason)))
     pcall(function() exports['rp_core']:UnregisterPlayer(src, identifier) end)
-    local message = 'Le personnage a été enregistré, mais son chargement a échoué. Consultez la console serveur.'
+    local message = ok and (detail or 'Le chargement du personnage a été interrompu.')
+        or 'Le personnage a été enregistré, mais son chargement a échoué. Consultez la console serveur.'
     Notify(src, message, 'error')
     TriggerClientEvent('rp_characters:client:bootError', src, message)
     TriggerClientEvent('rp_characters:client:creationResult', src, { ok = false, message = message })
