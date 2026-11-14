@@ -563,7 +563,7 @@ def test_reconnect_waits_for_final_disconnect_save():
     assert "pendingDisconnectSaves[characterId] = nil" in core
     assert "AddEventHandler('onResourceStop'" in core
     assert "exports['rp_core']:IsCharacterSavePending(char.id)" in characters
-    assert "Votre dernière sauvegarde est en cours." in characters
+    assert "Votre dernière sauvegarde est encore en cours." in characters
 
 def test_admin_tablet_stays_hidden_until_authorized_open_message():
     css = read("resources/[FUNCTION]/rp_tablet_admin/html/css/style.css")
