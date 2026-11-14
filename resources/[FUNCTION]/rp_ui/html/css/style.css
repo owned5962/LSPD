@@ -725,6 +725,6 @@ body {
 #client-diagnostics [data-diagnostics-panel="overview"] .diagnostics-section-title h3::before,
 #client-diagnostics [data-diagnostics-panel="performance"] .diagnostics-section-title h3::before,
 #client-diagnostics [data-diagnostics-panel="community"] .diagnostics-section-title h3::before{content:"";display:inline-block;width:38px;height:38px;flex:0 0 38px;border-radius:11px;background:center/cover no-repeat;box-shadow:0 6px 18px rgba(0,0,0,.3)}
-#client-diagnostics [data-diagnostics-panel="overview"] .diagnostics-section-title h3::before{background-image:linear-gradient(145deg,#0f766e,#2dd4bf)}
-#client-diagnostics [data-diagnostics-panel="performance"] .diagnostics-section-title h3::before{background-image:linear-gradient(145deg,#b45309,#f59e0b)}
-#client-diagnostics [data-diagnostics-panel="community"] .diagnostics-section-title h3::before{background-image:linear-gradient(145deg,#6d28d9,#a78bfa)}
+#client-diagnostics [data-diagnostics-panel="overview"] .diagnostics-section-title h3::before{content:"▦";display:grid;place-items:center;color:#fff;font-size:22px;background:linear-gradient(145deg,#0f766e,#2dd4bf)}
+#client-diagnostics [data-diagnostics-panel="performance"] .diagnostics-section-title h3::before{content:"ϟ";display:grid;place-items:center;color:#fff;font-size:25px;background:linear-gradient(145deg,#b45309,#f59e0b)}
+#client-diagnostics [data-diagnostics-panel="community"] .diagnostics-section-title h3::before{content:"♟";display:grid;place-items:center;color:#fff;font-size:22px;background:linear-gradient(145deg,#6d28d9,#a78bfa)}
