@@ -19,9 +19,9 @@ function activateCreatorTab(tab){
 document.getElementById('close').addEventListener('click',close);
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!tablet.classList.contains('hidden')){e.preventDefault();close();}});
 window.addEventListener('message',e=>{const d=e.data||{};if(d.action==='open'){tablet.classList.remove('hidden');activateCreatorTab('weather');document.getElementById('role').textContent=String(d.role||'CRÉATEUR').toUpperCase();showStatus('Connecté · Contrôles autorisés',true);}else if(d.action==='close'){tablet.classList.add('hidden');}else if(d.action==='result'){showStatus(d.message||'',d.success===true);}});
-document.querySelectorAll('[data-weather]').forEach(button=>button.addEventListener('click',()=>post('setWorld',{weather:button.dataset.weather}).catch(()=>{status.textContent='Erreur de communication';})));
+document.querySelectorAll('[data-weather]').forEach(button=>button.addEventListener('click',()=>post('setWorld',{weather:button.dataset.weather}).catch(()=>showStatus('Erreur de communication.',false))));
 document.getElementById('apply-time').addEventListener('click',()=>post('setWorld',{hours:Number(document.getElementById('hours').value),minutes:Number(document.getElementById('minutes').value)}).catch(()=>{status.textContent='Erreur de communication';}));
-document.getElementById('send').addEventListener('click',()=>{const message=document.getElementById('announcement').value.trim();if(!message){status.textContent='Saisissez une annonce avant de diffuser.';return;}post('broadcast',{message}).then(()=>{document.getElementById('announcement').value='';}).catch(()=>{status.textContent='Erreur de communication';});});
+document.getElementById('send').addEventListener('click',()=>{const message=document.getElementById('announcement').value.trim();if(!message){showStatus('Saisissez une annonce avant de diffuser.',false);return;}post('broadcast',{message}).then(()=>{document.getElementById('announcement').value='';}).catch(()=>{status.textContent='Erreur de communication';});});
 
 
 let creatorJobs = [], creatorBlips = [], creatorMapping = [], creatorProps = [];
@@ -295,7 +295,7 @@ window.addEventListener('message',e=>{
 });
 document.getElementById('place-prop').addEventListener('click',()=>{
     const model=document.getElementById('mapping-prop').value;if(!model)return;
-    post('spawnProp',{model}).catch(()=>{status.textContent='Impossible de placer cet objet.';});
+    post('spawnProp',{model}).catch(()=>showStatus('Impossible de placer cet objet.',false));
 });
 document.getElementById('blip-job').addEventListener('change',e=>loadBlipForJob(e.target.value));
 document.getElementById('save-blip').addEventListener('click',()=>{
@@ -303,8 +303,8 @@ document.getElementById('save-blip').addEventListener('click',()=>{
         x:Number(document.getElementById('blip-x').value),y:Number(document.getElementById('blip-y').value),z:Number(document.getElementById('blip-z').value),
         sprite:Number(document.getElementById('blip-sprite').value),color:Number(document.getElementById('blip-color').value),
         scale:Number(document.getElementById('blip-scale').value),enabled:document.getElementById('blip-enabled').checked};
-    if(!data.job||!data.label||![data.x,data.y,data.z,data.sprite,data.color,data.scale].every(Number.isFinite)){status.textContent='Complétez tous les champs du blip.';return;}
-    post('saveJobBlip',data).catch(()=>{status.textContent='Erreur lors de la sauvegarde du blip.';});
+    if(!data.job||!data.label||![data.x,data.y,data.z,data.sprite,data.color,data.scale].every(Number.isFinite)){showStatus('Complétez tous les champs du blip.',false);return;}
+    post('saveJobBlip',data).catch(()=>showStatus('Erreur lors de la sauvegarde du blip.',false));
 });
 
 
@@ -480,10 +480,13 @@ document.getElementById('creator-noclip').addEventListener('click', event => {
     post('toggleNoClip').catch(()=>showStatus('Impossible de communiquer avec le serveur pour le no-clip.',false))
         .finally(()=>setTimeout(()=>{button.disabled=false;},1200));
 });
-document.getElementById('creator-spawn-vehicle').addEventListener('click', () => {
+document.getElementById('creator-spawn-vehicle').addEventListener('click', event => {
+    const button=event.currentTarget;
     const model=document.getElementById('creator-vehicle-model').value.trim().toLowerCase();
     if(!/^[a-z0-9_]{3,50}$/.test(model)){creatorMessage('Saisissez un modèle valide (ex. sultan ou police).');return;}
-    post('spawnVehicle',{model}).catch(()=>creatorMessage('Impossible de demander la création du véhicule.'));
+    button.disabled=true;
+    post('spawnVehicle',{model}).catch(()=>creatorMessage('Impossible de demander la création du véhicule.'))
+        .finally(()=>setTimeout(()=>{button.disabled=false;},1500));
 });
 document.getElementById('creator-save-access').addEventListener('click', () => {
     const player = getSelectedCreatorPlayer(); if (!player) { creatorMessage('Sélectionnez un joueur.'); return; }
