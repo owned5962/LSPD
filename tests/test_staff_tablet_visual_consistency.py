@@ -115,3 +115,24 @@ def test_character_selection_keeps_a_visible_preview_instead_of_hiding_the_game_
     assert "DoScreenFadeIn(700)" in handler
     assert "SetEntityVisible(ped, false, false)" not in handler
     assert "SetEntityAlpha(ped, 0, false)" not in handler
+
+
+def test_f12_is_a_navigable_founder_diagnostics_tablet():
+    html = read("resources/[FUNCTION]/rp_ui/html/index.html")
+    ui = read("resources/[FUNCTION]/rp_ui/html/js/app.js")
+    css = read("resources/[FUNCTION]/rp_ui/html/css/style.css")
+    client = read("resources/[FUNCTION]/rp_ui/client/main.lua")
+    for tab in ("overview", "performance", "community"):
+        assert f'data-diagnostics-tab="{tab}"' in html
+        assert f'data-diagnostics-panel="{tab}"' in html
+    for element in ("diag-fps-performance", "diag-frame-chart", "diag-registration-chart",
+                    "diag-jobs-chart", "diag-coords", "open-resource-monitor"):
+        assert f'id="{element}"' in html
+    assert "function activateDiagnosticsTab" in ui
+    assert "activateDiagnosticsTab('overview')" in ui
+    assert "drawLineChart('diag-frame-chart'" in ui
+    assert "requestDiagnosticsAccess" in client
+    assert "requestDiagnosticsStats" in client
+    assert "diagnostics-shell" in css
+    assert "diagnostics-sidebar" in css
+    assert "diagnostics-nav-item.active" in css
