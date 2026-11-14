@@ -58,9 +58,13 @@ local function CreationError(src, message, kind)
 end
 
 local function SafeDatabaseCall(src, operation, callback)
-    local ok, result = pcall(callback)
+    local ok, result = xpcall(callback, debug.traceback)
     if not ok then
-        print(('[rp_characters] %s failed for player %s: %s'):format(operation, tostring(src), tostring(result)))
+        if RPCharacterDiagnostics and RPCharacterDiagnostics.ReportServerError then
+            RPCharacterDiagnostics.ReportServerError(operation, result, src)
+        else
+            print(('[rp_characters] %s failed for player %s: %s'):format(operation, tostring(src), tostring(result)))
+        end
         local message = 'La base de données est temporairement indisponible. Vérifiez oxmysql et la console serveur.'
         Notify(src, message, 'error')
         TriggerClientEvent('rp_characters:client:bootError', src, message)
@@ -163,7 +167,7 @@ local function LoadCharacterUnsafe(src, identifier, userGroup, char)
 
     -- Keep export/runtime errors visible in the server console instead of silently
     -- leaving the client waiting after character selection.
-    local loadOk, player = pcall(function()
+    local loadOk, player = xpcall(function()
         local createdPlayer = exports['rp_core']:CreateRPPlayer(src, identifier, char)
         if not exports['rp_core']:RegisterPlayer(src, createdPlayer) then
             error('Central player registration rejected')
@@ -176,7 +180,7 @@ local function LoadCharacterUnsafe(src, identifier, userGroup, char)
             name = createdPlayer.name
         })
         return createdPlayer
-    end)
+    end, debug.traceback)
     if not loadOk or not player then
         pcall(function()
             exports['rp_core']:UnregisterPlayer(src, identifier)
@@ -208,7 +212,7 @@ end
 -- Catch failures from core exports and player registration too, not only SQL.
 -- Previously an exception here could leave the client waiting with no response.
 local function LoadCharacter(src, identifier, userGroup, char)
-    local ok, result, detail = pcall(LoadCharacterUnsafe, src, identifier, userGroup, char)
+    local ok, result, detail = xpcall(LoadCharacterUnsafe, debug.traceback, src, identifier, userGroup, char)
     if ok and result ~= false then return true end
 
     local reason = ok and detail or result
@@ -272,7 +276,7 @@ local function CheckPlayerBootstrap(src)
             local value = GetPlayerIdentifier(src, i)
             if value and value:sub(1, 8) == 'discord:' then discord = value:gsub('^discord:', '') break end
         end
-        local insertOk, insertResult = pcall(MySQL.insert.await,
+        local insertOk, insertResult = xpcall(MySQL.insert.await, debug.traceback,
             'INSERT IGNORE INTO users (identifier, license, discord, name, `group`) VALUES (?, ?, ?, ?, ?)',
             { identifier, license, discord, GetPlayerName(src) or 'Citoyen', 'user' }
         )
@@ -324,7 +328,7 @@ end
 
 RegisterNetEvent('rp_characters:server:checkPlayer', function()
     local src = source
-    local ok, err = pcall(CheckPlayerBootstrap, src)
+    local ok, err = xpcall(CheckPlayerBootstrap, debug.traceback, src)
     if not ok then
         print(('[rp_characters] Bootstrap pipeline crashed for player %s: %s')
             :format(tostring(src), tostring(err)))
@@ -371,7 +375,7 @@ end
 
 RegisterNetEvent('rp_characters:server:selectCharacter', function(slot)
     local src = source
-    local ok, err = pcall(SelectCharacter, src, slot)
+    local ok, err = xpcall(SelectCharacter, debug.traceback, src, slot)
     if not ok then
         print(('[rp_characters] Character selection failed for player %s: %s')
             :format(tostring(src), tostring(err)))
@@ -609,7 +613,7 @@ end
 
 RegisterNetEvent('rp_characters:server:createCharacter', function(data)
     local src = source
-    local ok, err = pcall(CreateCharacter, src, data)
+    local ok, err = xpcall(CreateCharacter, debug.traceback, src, data)
     if not ok then
         local identifier = GetLicenseIdentifier(src)
         if identifier then creationLocks[identifier] = nil end
