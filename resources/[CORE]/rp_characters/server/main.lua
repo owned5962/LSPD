@@ -301,7 +301,10 @@ end)
 
 RegisterNetEvent('rp_characters:server:createCharacter', function(data)
     local src = source
-    if not exports['rp_core']:CanPerformAction(src, 'character:create', 5000) then return end
+    if not exports['rp_core']:CanPerformAction(src, 'character:create', 5000) then
+        CreationError(src, 'Veuillez patienter quelques secondes avant de réessayer.', 'warning')
+        return
+    end
     local identifier = GetLicenseIdentifier(src)
     if not identifier or type(data) ~= 'table' then
         CreationError(src, 'Données de création invalides.')
