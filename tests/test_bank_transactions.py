@@ -109,6 +109,21 @@ def test_transfer_audit_names_are_safe_when_character_names_are_missing():
     assert "tostring(player.firstname or '') .. ' ' .. tostring(player.lastname or '')" in server
 
 
+
+def test_personal_history_is_loaded_and_refreshed_after_all_bank_operations():
+    server = read("server/main.lua")
+    client = read("client/main.lua")
+    html = read("html/index.html")
+    ui = read("html/js/app.js")
+    assert "ORDER BY id DESC LIMIT 20" in server
+    assert "history = getPersonalHistory(player.charId)" in server
+    assert "refreshAccountSnapshot(src, player)" in server
+    assert "refreshAccountSnapshot(targetId, target)" in server
+    assert "history = result.history or {}" in client
+    assert 'id="personal-bank-history"' in html
+    assert "function renderPersonalHistory(rows)" in ui
+    assert "renderPersonalHistory(data.history)" in ui
+
 if __name__ == "__main__":
     checks = [
         test_atm_and_bank_access_uses_registered_world_locations,
