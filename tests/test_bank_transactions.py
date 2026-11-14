@@ -83,6 +83,32 @@ def test_nui_has_biometric_gate_close_button_and_transaction_callbacks():
     assert "pendingInputs.get(name)" in ui
 
 
+
+def test_bank_ledger_schema_accepts_every_emitted_transaction_type():
+    server = read("server/main.lua")
+    schema = (ROOT / "database.sql").read_text(encoding="utf-8")
+    migration = (ROOT / "migrations/009_bank_fuel_transaction_types.sql").read_text(encoding="utf-8")
+    for transaction_type in ("deposit", "withdraw", "transfer_send", "transfer_receive", "salary", "fuel_refund", "fuel"):
+        assert transaction_type + " = true" in server
+        assert "'" + transaction_type + "'" in schema
+        assert "'" + transaction_type + "'" in migration
+
+
+def test_salary_requires_a_valid_job_grade_and_uses_one_notification_owner():
+    server = read("server/main.lua")
+    start = server.index("CreateThread(function()")
+    salary_loop = server[start:]
+    assert "type(gradeData) == 'table' and validAmount(gradeData.salary) or nil" in salary_loop
+    assert "notify(src, 'Salaire reçu" not in salary_loop
+    assert "local paidOk, paid = pcall(player.addBank" in salary_loop
+
+
+def test_transfer_audit_names_are_safe_when_character_names_are_missing():
+    server = read("server/main.lua")
+    assert "tostring(target.firstname or '') .. ' ' .. tostring(target.lastname or '')" in server
+    assert "tostring(player.firstname or '') .. ' ' .. tostring(player.lastname or '')" in server
+
+
 if __name__ == "__main__":
     checks = [
         test_atm_and_bank_access_uses_registered_world_locations,
