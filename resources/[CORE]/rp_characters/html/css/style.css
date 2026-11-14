@@ -1,1 +1,243 @@
-PLACEHOLDER
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    user-select: none;
+    font-family: 'Montserrat', sans-serif;
+}
+body {
+    background: transparent;
+    overflow: hidden;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+}
+.hidden { display: none !important; }
+#registration-app {
+    width: 480px;
+    background: rgba(18, 22, 33, 0.95);
+    border-radius: 20px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255,255,255,0.05);
+    color: #e8eef7;
+    overflow: hidden;
+    max-height: 92vh;
+    display: flex;
+    flex-direction: column;
+}
+#registration-app .header {
+    padding: 18px 22px;
+    background: linear-gradient(135deg, #0f172a, #1e293b);
+    border-bottom: 1px solid rgba(148,163,184,0.15);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+#registration-app .header h1 {
+    font-size: 16px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+}
+#registration-app .badge {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 20px;
+    background: rgba(14,165,233,0.15);
+    color: #7dd3fc;
+}
+#registration-app .tabs {
+    display: flex;
+    gap: 4px;
+    padding: 12px 16px 0;
+    background: #0f141f;
+}
+#registration-app .tab-btn {
+    flex: 1;
+    border: 0;
+    background: transparent;
+    color: #94a3b8;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 10px 8px;
+    border-radius: 10px 10px 0 0;
+    cursor: pointer;
+}
+#registration-app .tab-btn.active {
+    background: rgba(18, 22, 33, 0.95);
+    color: #f8fafc;
+    border: 1px solid rgba(148,163,184,0.12);
+    border-bottom-color: transparent;
+}
+#registration-app .tab-content {
+    display: none;
+    padding: 18px 22px;
+    overflow-y: auto;
+    flex: 1;
+}
+#registration-app .tab-content.active { display: block; }
+#registration-app .form-group { margin-bottom: 14px; }
+#registration-app .form-group label {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    color: #94a3b8;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+#registration-app input,
+#registration-app select,
+#registration-app textarea {
+    width: 100%;
+    background: #0b1220;
+    border: 1px solid #26354a;
+    border-radius: 10px;
+    color: #f1f5f9;
+    padding: 11px 12px;
+    font-size: 13px;
+    outline: none;
+}
+#registration-app input:focus,
+#registration-app select:focus {
+    border-color: #0ea5e9;
+    box-shadow: 0 0 0 3px rgba(14,165,233,0.15);
+}
+#registration-app .form-row {
+    display: flex;
+    gap: 12px;
+}
+#registration-app .form-group.half { flex: 1; }
+#registration-app .footer-actions {
+    padding: 14px 22px 18px;
+    display: flex;
+    gap: 10px;
+    border-top: 1px solid rgba(148,163,184,0.12);
+    background: #0f141f;
+}
+#registration-app .btn {
+    border: 0;
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+    flex: 1;
+}
+#registration-app .btn.primary {
+    background: linear-gradient(135deg, #0ea5e9, #2563eb);
+    color: #fff;
+}
+#registration-app .btn.secondary {
+    background: #1e293b;
+    color: #cbd5e1;
+}
+#registration-app .btn.success {
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: #fff;
+}
+#registration-app .character-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 360px;
+    overflow-y: auto;
+}
+#registration-app .spawn-card {
+    background: #121826;
+    border: 1px solid #26354a;
+    border-radius: 12px;
+    padding: 14px;
+    cursor: pointer;
+    transition: border-color .15s, background .15s;
+}
+#registration-app .spawn-card:hover,
+#registration-app .spawn-card.active {
+    border-color: #0ea5e9;
+    background: rgba(14,165,233,0.08);
+}
+#registration-app .spawn-title {
+    font-size: 14px;
+    font-weight: 800;
+    margin-bottom: 4px;
+}
+#registration-app .spawn-desc {
+    font-size: 12px;
+    color: #94a3b8;
+}
+#registration-app .selection-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 14px;
+}
+#registration-app .selection-count {
+    font-size: 12px;
+    color: #64748b;
+    margin-bottom: 10px;
+}
+#registration-app .appearance-editor {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+#registration-app .face-sliders label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    margin-bottom: 4px;
+}
+#registration-app .color-palette {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+#registration-app .color-dot {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    cursor: pointer;
+}
+#registration-app .color-dot.active {
+    border-color: #fff;
+    box-shadow: 0 0 0 2px #0ea5e9;
+}
+#registration-app .preview-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 10px;
+}
+#registration-app .preview-controls button {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    border: 1px solid #26354a;
+    background: #121826;
+    color: #e2e8f0;
+    cursor: pointer;
+}
+#registration-app .section-help {
+    font-size: 12px;
+    color: #64748b;
+    margin-bottom: 12px;
+    line-height: 1.4;
+}
+.creator-wrapper {
+    width: min(520px, 96vw);
+}
+@media (max-width: 520px) {
+    #registration-app { width: 100%; border-radius: 14px; }
+    #registration-app .form-row { flex-direction: column; gap: 0; }
+    #registration-app .preview-controls span {
+        max-width: 48vw;
+        white-space: normal;
+        font-size: 9px;
+    }
+    #registration-app .preview-controls button {
+        width: 38px;
+        height: 38px;
+    }
+}
