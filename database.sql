@@ -616,3 +616,97 @@ CREATE TABLE IF NOT EXISTS `rp_job_bank_transactions` (
     KEY `idx_job_bank_history` (`job`, `id`),
     KEY `idx_job_bank_character` (`character_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+
+-- =====================================================================
+-- MIGRATIONS CONSOLIDÉES (001 à 010)
+-- Les tables et données des migrations 002, 003, 005 et 006 sont déjà
+-- définies plus haut. Les migrations 001 et 004 sont traitées de façon
+-- protégée dans la section "Migrations intégrées".
+-- Les mises à niveau 007 à 010 sont réexécutables ci-dessous.
+-- =====================================================================
+
+-- 007 : ajoute le statut accepted uniquement s'il est absent.
+SET @rp_report_status_type = (
+    SELECT COLUMN_TYPE FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'player_reports'
+      AND COLUMN_NAME = 'status' LIMIT 1
+);
+SET @rp_report_status_sql = IF(
+    @rp_report_status_type IS NOT NULL AND @rp_report_status_type NOT LIKE '%accepted%',
+    "ALTER TABLE `player_reports` MODIFY COLUMN `status` ENUM('open','accepted','resolved','rejected') NOT NULL DEFAULT 'open'",
+    'SELECT 1'
+);
+PREPARE rp_report_status_stmt FROM @rp_report_status_sql;
+EXECUTE rp_report_status_stmt;
+DEALLOCATE PREPARE rp_report_status_stmt;
+
+-- 008 : ajoute l'index des statistiques salariales uniquement s'il manque.
+SET @rp_salary_index_exists = (
+    SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS
+    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'bank_transactions'
+      AND INDEX_NAME = 'idx_bank_salary_reason_created'
+);
+SET @rp_salary_index_sql = IF(
+    @rp_salary_index_exists = 0,
+    'ALTER TABLE `bank_transactions` ADD INDEX `idx_bank_salary_reason_created` (`type`, `reason`, `created_at`)',
+    'SELECT 1'
+);
+PREPARE rp_salary_index_stmt FROM @rp_salary_index_sql;
+EXECUTE rp_salary_index_stmt;
+DEALLOCATE PREPARE rp_salary_index_stmt;
+
+-- 009 : complète l'ENUM bancaire si l'une des deux valeurs carburant manque.
+SET @rp_bank_type = (
+    SELECT COLUMN_TYPE FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'bank_transactions'
+      AND COLUMN_NAME = 'type' LIMIT 1
+);
+SET @rp_bank_type_sql = IF(
+    @rp_bank_type IS NOT NULL
+      AND (LOCATE('fuel_refund', @rp_bank_type) = 0 OR LOCATE("'fuel'", @rp_bank_type) = 0),
+    "ALTER TABLE `bank_transactions` MODIFY COLUMN `type` ENUM('deposit','withdraw','transfer_send','transfer_receive','salary','fuel_refund','fuel') NOT NULL",
+    'SELECT 1'
+);
+PREPARE rp_bank_type_stmt FROM @rp_bank_type_sql;
+EXECUTE rp_bank_type_stmt;
+DEALLOCATE PREPARE rp_bank_type_stmt;
+
+-- 010 : journal AEGIS et provenance des détections.
+CREATE TABLE IF NOT EXISTS `anticheat_event_log` (
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `player_id` INT NOT NULL,
+    `player_identifier` VARCHAR(80) NULL,
+    `player_name` VARCHAR(100) NOT NULL,
+    `detection_type` VARCHAR(40) NOT NULL,
+    `reason` VARCHAR(180) NOT NULL,
+    `severity` VARCHAR(16) NOT NULL,
+    `sanction` VARCHAR(16) NOT NULL DEFAULT 'warn',
+    `source_type` VARCHAR(16) NOT NULL DEFAULT 'legacy',
+    `items_snapshot` LONGTEXT NULL,
+    `weapons_snapshot` LONGTEXT NULL,
+    `cash_snapshot` BIGINT NULL,
+    `bank_snapshot` BIGINT NULL,
+    `job_name` VARCHAR(50) NULL,
+    `job_label` VARCHAR(100) NULL,
+    `job_grade` INT NULL,
+    `job_grade_label` VARCHAR(100) NULL,
+    `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    INDEX `idx_anticheat_event_created` (`created_at`),
+    INDEX `idx_anticheat_event_player` (`player_identifier`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+SET @rp_aegis_source_type_exists = (
+    SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'anticheat_event_log'
+      AND COLUMN_NAME = 'source_type'
+);
+SET @rp_aegis_source_type_sql = IF(
+    @rp_aegis_source_type_exists = 0,
+    "ALTER TABLE `anticheat_event_log` ADD COLUMN `source_type` VARCHAR(16) NOT NULL DEFAULT 'legacy' AFTER `sanction`",
+    'SELECT 1'
+);
+PREPARE rp_aegis_source_type_stmt FROM @rp_aegis_source_type_sql;
+EXECUTE rp_aegis_source_type_stmt;
+DEALLOCATE PREPARE rp_aegis_source_type_stmt;

@@ -8,14 +8,17 @@
 - Les exports serveur `AddItem` et `AdminSetItem` prennent maintenant le verrou du personnage et le verrou de transfert avant d'écrire, pour éviter les mises à jour concurrentes perdues.
 - Les données envoyées au client ne donnent jamais au client l'autorité sur le contenu SQL : le serveur revalide objet, quantité, poids, distance et instance.
 
-## Migration
+## Base de données
 
-Sur une base existante, faire une sauvegarde complète avant toute migration, puis appliquer dans l'ordre :
+Les tables de persistance d'inventaire et d'objets au sol (migrations 002 et 003), ainsi que les autres évolutions SQL du serveur, sont intégrées à `database.sql`.
 
-1. `migrations/002_inventory_persistence.sql`
-2. `migrations/003_inventory_ground_drops.sql`
+Après avoir sauvegardé une base existante, exécuter le fichier unique sur la base cible :
 
-Le schéma complet neuf contient aussi ces deux tables dans `database.sql`. Les migrations sont idempotentes grâce à `CREATE TABLE IF NOT EXISTS`.
+```sql
+SOURCE database.sql;
+```
+
+Les tables sont créées avec `CREATE TABLE IF NOT EXISTS`, ce qui permet de conserver les données déjà présentes.
 
 ## Sauvegarde MySQL/MariaDB
 

@@ -4,14 +4,12 @@ on:
   push:
     paths:
       - "resources/[FUNCTION]/rp_jobs/shared/jobs_list.lua"
-      - "migrations/005_seed_jobs_and_grades.sql"
       - "database.sql"
       - "tests/test_job_catalog_seed.py"
       - ".github/workflows/job-catalog.yml"
   pull_request:
     paths:
       - "resources/[FUNCTION]/rp_jobs/shared/jobs_list.lua"
-      - "migrations/005_seed_jobs_and_grades.sql"
       - "database.sql"
       - "tests/test_job_catalog_seed.py"
       - ".github/workflows/job-catalog.yml"

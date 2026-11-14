@@ -22,17 +22,17 @@
 
 Le catalogue de politique d'armes est persisté dans `anticheat_weapon_rules`. Les protections et leur état sont conservés dans `anticheat_protection_config`. La durée de prison et les paramètres runtime sont conservés dans `anticheat_runtime_config`.
 
-## Migration
+## Base de données
 
-Sur une base existante, sauvegarder la base puis exécuter une fois :
+Toutes les évolutions SQL (migrations 001 à 010) sont désormais regroupées dans le fichier unique `database.sql`.
+
+Pour une nouvelle installation comme pour une base existante, effectuer d'abord une sauvegarde complète, sélectionner la base cible, puis exécuter :
 
 ```sql
-SOURCE migrations/010_anticheat_hardening.sql;
+SOURCE database.sql;
 ```
 
-La migration est réexécutable et crée les tables de réglages ainsi que le journal AEGIS si nécessaire. Les anciennes lignes reçoivent `source_type = 'legacy'` car leur origine ne peut pas être déterminée rétroactivement.
-
-Les nouvelles installations incluent les tables de configuration persistante dans `database.sql`. Le resource AEGIS crée aussi ses tables de détection au démarrage.
+Le fichier est réexécutable : les tables utilisent `IF NOT EXISTS`, les données de catalogue `INSERT IGNORE`, et les adaptations de colonnes/index vérifient leur présence avant modification. Les anciennes lignes AEGIS reçoivent `source_type = 'legacy'` lorsqu'elles n'ont pas de provenance connue. Le resource AEGIS initialise également ses tables de statistiques au démarrage.
 
 ## Contrôles et limites
 
