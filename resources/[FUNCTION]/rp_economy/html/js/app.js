@@ -150,6 +150,34 @@ document.addEventListener('keydown', event => {
     }
 });
 
+function renderPersonalHistory(rows) {
+    const host = $('personal-bank-history');
+    if (!host) return;
+    host.replaceChildren();
+    if (!Array.isArray(rows) || rows.length === 0) {
+        host.textContent = 'Aucune opération enregistrée.';
+        return;
+    }
+    rows.forEach(item => {
+        const row = document.createElement('div');
+        row.className = 'job-bank-history-row';
+        const label = document.createElement('span');
+        const types = {
+            deposit: 'Dépôt', withdraw: 'Retrait',
+            transfer_send: 'Virement envoyé', transfer_receive: 'Virement reçu',
+            salary: 'Salaire', fuel_refund: 'Remboursement carburant', fuel: 'Carburant'
+        };
+        label.textContent = (types[item.type] || 'Opération') + ' · ' + (item.sender_or_receiver || item.reason || 'Compte personnel');
+        const amount = document.createElement('strong');
+        const outgoing = item.type === 'withdraw' || item.type === 'transfer_send' || item.type === 'fuel';
+        amount.textContent = (outgoing ? '−' : '+') + formatMoney(item.amount);
+        const date = document.createElement('small');
+        date.textContent = item.created_at ? String(item.created_at).replace('T', ' ').slice(0, 19) : '';
+        row.append(label, amount, date);
+        host.append(row);
+    });
+}
+
 function renderJobBank(data) {
     const section = $('job-bank-section');
     if (!data || !data.account) { section.classList.add('hidden'); return; }
@@ -217,6 +245,7 @@ window.addEventListener('message', event => {
         $('account-number').textContent = data.accountNumber || 'LS-000000';
         $('display-bank').textContent = formatMoney(data.bank);
         $('display-cash').textContent = formatMoney(data.cash);
+        renderPersonalHistory(data.history);
         showToast('Empreinte reconnue. Bienvenue chez Fleeca.', 'success');
     } else if (data.action === 'authenticationFailed') {
         busy.delete('authenticate');
