@@ -238,7 +238,8 @@ def test_creator_admin_tools_are_authorized_and_functionally_wired():
     assert "RegisterNUICallback('toggleNoClip'" in client
     assert "RegisterNUICallback('spawnVehicle'" in client
     assert "IsModelInCdimage(hash)" in client and "IsModelAVehicle(hash)" in client
-    assert "SetEntityCollision(entity, false, false)" in client
+    assert "SetEntityCollision(ped, not isAdminNoclip, not isAdminNoclip)" in admin_client
+    assert "SetEntityCollision(ped, true, true)" in admin_client
     assert "rp_tablet_creator:client:setNoClip" in client
     assert 'id="creator-noclip"' in html and 'id="creator-spawn-vehicle"' in html
     assert "post('toggleNoClip')" in ui and "post('spawnVehicle',{model})" in ui
