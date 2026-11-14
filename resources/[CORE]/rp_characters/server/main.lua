@@ -64,6 +64,7 @@ local function SafeDatabaseCall(src, operation, callback)
         local message = 'La base de données est temporairement indisponible. Vérifiez oxmysql et la console serveur.'
         Notify(src, message, 'error')
         TriggerClientEvent('rp_characters:client:bootError', src, message)
+        TriggerClientEvent('rp_characters:client:creationResult', src, { ok = false, message = message })
         return false, nil
     end
     return true, result
