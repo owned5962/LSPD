@@ -52,13 +52,15 @@ async function submitJobBank(action) {
     $('job-bank-permissions').textContent = 'Saisissez un montant entier compris entre 1 et 1 000 000 $.';
     return;
   }
+  const depositWasDisabled = $('job-bank-deposit').disabled;
+  const withdrawWasDisabled = $('job-bank-withdraw').disabled;
   jobBankSubmitting = true;
   $('job-bank-deposit').disabled = true;
   $('job-bank-withdraw').disabled = true;
   const result = await post(action, { amount });
   jobBankSubmitting = false;
-  $('job-bank-deposit').disabled = result?.ok === false;
-  $('job-bank-withdraw').disabled = result?.ok === false;
+  $('job-bank-deposit').disabled = depositWasDisabled;
+  $('job-bank-withdraw').disabled = withdrawWasDisabled;
   if (result?.ok !== false) input.value = '';
 }
 
