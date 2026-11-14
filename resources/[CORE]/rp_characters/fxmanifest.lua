@@ -21,7 +21,16 @@ files {
     'client/p5.lua',
     'client/p6.lua',
     'client/p7.lua',
-    'client/p8.lua'
+    'client/p8.lua',
+    'client/p9.lua',
+    'client/p10.lua',
+    'client/p11.lua',
+    'client/p12.lua',
+    'client/p13.lua',
+    'client/p14.lua',
+    'client/p15.lua',
+    'client/p16.lua',
+    'client/p17.lua'
 }
 
 client_scripts {

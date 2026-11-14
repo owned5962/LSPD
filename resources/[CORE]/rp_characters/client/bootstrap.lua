@@ -8,7 +8,16 @@ local parts = {
     LoadResourceFile(res, 'client/p5.lua'),
     LoadResourceFile(res, 'client/p6.lua'),
     LoadResourceFile(res, 'client/p7.lua'),
-    LoadResourceFile(res, 'client/p8.lua')
+    LoadResourceFile(res, 'client/p8.lua'),
+    LoadResourceFile(res, 'client/p9.lua'),
+    LoadResourceFile(res, 'client/p10.lua'),
+    LoadResourceFile(res, 'client/p11.lua'),
+    LoadResourceFile(res, 'client/p12.lua'),
+    LoadResourceFile(res, 'client/p13.lua'),
+    LoadResourceFile(res, 'client/p14.lua'),
+    LoadResourceFile(res, 'client/p15.lua'),
+    LoadResourceFile(res, 'client/p16.lua'),
+    LoadResourceFile(res, 'client/p17.lua')
 }
 for i, part in ipairs(parts) do
     if not part or part == '' then
