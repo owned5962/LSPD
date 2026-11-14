@@ -69,7 +69,7 @@ body{display:flex!important;align-items:center!important;justify-content:center!
 .tablet-content{height:100%!important;background:#080c14!important}
 #view-admin.view-panel.active{background:#080c14!important}
 #view-admin>.admin-subnav{width:245px!important;min-width:245px!important;max-width:245px!important;padding:25px 16px 18px!important;background:#0c1320!important;border-right:1px solid rgba(148,163,184,.14)!important}
-#view-admin>.admin-subnav::before{content:"AEGIS\\AADMINISTRATION";padding:8px 8px 28px 56px!important;border-bottom:1px solid rgba(148,163,184,.14)!important;background:linear-gradient(145deg,#f05260,#a91e36) left 8px top 4px/40px 40px no-repeat!important}
+#view-admin>.admin-subnav::before{content:"AEGIS\AADMINISTRATION";padding:8px 8px 28px 56px!important;border-bottom:1px solid rgba(148,163,184,.14)!important;background:linear-gradient(145deg,#f05260,#a91e36) left 8px top 4px/40px 40px no-repeat!important}
 #view-admin .admin-subnav-btn:hover,#view-admin .admin-subnav-btn.active{background:linear-gradient(90deg,rgba(240,82,96,.18),rgba(240,82,96,.04))!important;color:#ff8790!important}
 #view-admin>.admin-subview{padding:26px 30px 20px!important;background:radial-gradient(ellipse at 80% 0%,rgba(31,67,103,.12),transparent 40%),#080c14!important}
 #view-admin>.admin-subview.active::before{border-color:rgba(148,163,184,.14)!important;background-color:#101827!important;background-position:16px center,0 0!important;border-radius:14px!important}
