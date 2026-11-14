@@ -51,6 +51,7 @@ local function ensureDetectionStatsTable()
             reason VARCHAR(180) NOT NULL,
             severity VARCHAR(16) NOT NULL,
             sanction VARCHAR(16) NOT NULL DEFAULT 'warn',
+            source_type VARCHAR(16) NOT NULL DEFAULT 'client',
             items_snapshot LONGTEXT NULL,
             weapons_snapshot LONGTEXT NULL,
             cash_snapshot BIGINT NULL,
@@ -70,6 +71,7 @@ local function ensureDetectionStatsTable()
         MySQL.query.await("ALTER TABLE anticheat_event_log ADD COLUMN sanction VARCHAR(16) NOT NULL DEFAULT 'warn'")
     end
     local snapshotColumns = {
+        { 'source_type', "VARCHAR(16) NOT NULL DEFAULT 'client'" },
         { 'items_snapshot', 'LONGTEXT NULL' },
         { 'weapons_snapshot', 'LONGTEXT NULL' },
         { 'cash_snapshot', 'BIGINT NULL' },
@@ -343,7 +345,7 @@ local function loadDetectionHistory()
     local ok, rows = pcall(function()
         return MySQL.query.await([[
             SELECT id, player_id AS playerId, player_name AS playerName,
-                   detection_type AS category, reason, severity, sanction,
+                   detection_type AS category, reason, severity, sanction, source_type AS sourceType,
                    items_snapshot AS itemsSnapshot, weapons_snapshot AS weaponsSnapshot,
                    cash_snapshot AS cash, bank_snapshot AS bank,
                    job_name AS job, job_label AS jobLabel,
@@ -413,6 +415,7 @@ local function recordDetection(src, reason, trustedServerEvent)
         reason = safe,
         time = os.date('%H:%M:%S'),
         timestamp = now,
+        sourceType = sourceKind,
         severity = 'high'
     }
     alert.category, alert.severity = detectionCategory(safe)
@@ -433,12 +436,12 @@ local function recordDetection(src, reason, trustedServerEvent)
             { alert.playerName, alert.category, alert.reason, alert.severity })
         alert.id = MySQL.insert.await([[
             INSERT INTO anticheat_event_log
-                (player_id, player_identifier, player_name, detection_type, reason, severity, sanction,
+                (player_id, player_identifier, player_name, detection_type, reason, severity, sanction, source_type,
                  items_snapshot, weapons_snapshot, cash_snapshot, bank_snapshot,
                  job_name, job_label, job_grade, job_grade_label)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ]], {
-            src, getLicense(src), alert.playerName, alert.category, alert.reason, alert.severity, alert.sanction,
+            src, getLicense(src), alert.playerName, alert.category, alert.reason, alert.severity, alert.sanction, alert.sourceType,
             json.encode(snapshot.items or {}), json.encode(snapshot.weapons or {}),
             snapshot.cash, snapshot.bank, snapshot.job, snapshot.jobLabel,
             snapshot.jobGrade, snapshot.jobGradeLabel
@@ -639,6 +642,7 @@ RegisterNetEvent('rp_anticheat:requestWeaponPolicy', function()
     policyRequestAt[src] = now
     if type(Config.WeaponPolicy) ~= 'table' then return end
     TriggerClientEvent('rp_anticheat:syncWeaponPolicy', src, Config.WeaponPolicy)
+    TriggerClientEvent('rp_anticheat:syncProtections', src, Config.Protections)
 end)
 
 RegisterNetEvent('rp_anticheat:requestOpen', function()
