@@ -28,7 +28,7 @@ PlayerData = {
 }
 
 local playerDataReady = false
-local bootstrapRequested = false
+local initializationRequested = false
 
 local function IsPlayerLoaded()
     local characterId = tonumber(PlayerData.charId)
@@ -51,10 +51,10 @@ RegisterNetEvent('rp_core:client:setPlayerData', function(data)
     if playerDataReady then bootstrapRequested = false end
 end)
 
-RegisterNetEvent('rp_core:client:requestCharacterBootstrap', function()
+RegisterNetEvent('rp_core:client:requestCharacterInitialization', function()
     if IsPlayerLoaded() or bootstrapRequested then return end
     bootstrapRequested = true
-    TriggerServerEvent('rp_characters:server:checkPlayer')
+    TriggerServerEvent('rp_characters:server:initializePlayer')
     SetTimeout(20000, function()
         if not IsPlayerLoaded() then bootstrapRequested = false end
     end)
@@ -105,14 +105,14 @@ AddEventHandler('onClientResourceStart', function(resourceName)
     if resourceName ~= GetCurrentResourceName() then return end
     CreateThread(function()
         -- One request is enough: when no in-memory session exists, the server
-        -- asks rp_characters to rebuild the account/character bootstrap from SQL.
+        -- asks rp_characters to rebuild the account/account and character data from SQL.
         -- Repeating this request during creator/selector screens only produced
         -- rate-limited noise and a misleading "no active character" warning.
         if IsPlayerLoaded() then return end
         TriggerServerEvent('rp_core:server:requestPlayerDataSync')
         Wait(20000)
         if not IsPlayerLoaded() and not bootstrapRequested then
-            print('[rp_core] No active character session was restored and no character bootstrap is pending.')
+            print('[rp_core] No active character session was restored and no account initialization is pending.')
         end
     end)
 end)
