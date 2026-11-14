@@ -1,13 +1,22 @@
 const resource = 'rp_tablet_job';
 let state = null;
 let policeAlerts = [];
+let jobBankSubmitting = false;
 
 const $ = id => document.getElementById(id);
 const post = (name, data = {}) => fetch('https://' + resource + '/' + name, {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify(data)
-}).catch(() => {});
+}).then(async response => {
+  if (!response.ok) throw new Error('NUI request failed: ' + response.status);
+  return response.json().catch(() => ({ ok: true }));
+}).catch(error => {
+  console.error('[rp_tablet_job] NUI request failed:', name, error);
+  const note = $('role-note');
+  if (note) note.textContent = 'La communication avec le serveur a échoué. Réessayez.';
+  return { ok: false };
+});
 
 const missionCatalog = {
   police: [['Patrouille de secteur', 'Effectuez une patrouille préventive dans votre secteur.'], ['Sécurisation d’une zone', 'Assurez une présence visible et sécurisez le périmètre.']],
@@ -35,15 +44,22 @@ $('salary-stats-refresh')?.addEventListener('click', () => post('refreshSalarySt
 $('job-bank-deposit').addEventListener('click', () => submitJobBank('jobBankDeposit'));
 $('job-bank-withdraw').addEventListener('click', () => submitJobBank('jobBankWithdraw'));
 
-function submitJobBank(action) {
+async function submitJobBank(action) {
+  if (jobBankSubmitting) return;
   const input = $('job-bank-amount');
   const amount = Number(input.value);
   if (!Number.isInteger(amount) || amount < 1 || amount > 1000000) {
     $('job-bank-permissions').textContent = 'Saisissez un montant entier compris entre 1 et 1 000 000 $.';
     return;
   }
-  post(action, { amount });
-  input.value = '';
+  jobBankSubmitting = true;
+  $('job-bank-deposit').disabled = true;
+  $('job-bank-withdraw').disabled = true;
+  const result = await post(action, { amount });
+  jobBankSubmitting = false;
+  $('job-bank-deposit').disabled = result?.ok === false;
+  $('job-bank-withdraw').disabled = result?.ok === false;
+  if (result?.ok !== false) input.value = '';
 }
 
 function renderJobBank(data) {
