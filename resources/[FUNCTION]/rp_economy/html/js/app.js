@@ -265,6 +265,7 @@ window.addEventListener('message', event => {
     } else if (data.action === 'updateBalances') {
         $('display-cash').textContent = formatMoney(data.cash);
         $('display-bank').textContent = formatMoney(data.bank);
+        renderPersonalHistory(data.history);
         ['deposit', 'withdraw', 'transfer'].forEach(name => {
             if (busy.has(name)) {
                 (pendingInputs.get(name) || []).forEach(id => { if ($(id)) $(id).value = ''; });
