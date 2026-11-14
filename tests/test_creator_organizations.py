@@ -256,6 +256,45 @@ def test_creator_bank_uses_economy_owned_schema_and_founder_lockout_survives_rec
     assert "windowStartedAt" in server and "> 900" in server
 
 
+
+
+def test_creator_nui_contract_has_unique_ids_all_tabs_and_live_callbacks():
+    import re
+
+    html = read("resources/[FUNCTION]/rp_tablet_creator/html/index.html")
+    ui = read("resources/[FUNCTION]/rp_tablet_creator/html/app.js")
+    client = read("resources/[FUNCTION]/rp_tablet_creator/client/main.lua")
+
+    ids = re.findall(r"""\\bid=["']([^"']+)["']""", html)
+    assert len(ids) == len(set(ids)), "Creator HTML contains duplicate IDs"
+    references = set(re.findall(r"""getElementById\\(['"]([^'"]+)['"]\\)""", ui))
+    assert references.issubset(set(ids)), f"Creator UI references missing IDs: {sorted(references - set(ids))}"
+
+    tabs = set(re.findall(r"""data-tab=["']([^"']+)["']""", html))
+    panels = set(re.findall(r"""data-tab-panel=["']([^"']+)["']""", html))
+    assert tabs == panels and len(tabs) == 10
+
+    callbacks = re.findall(r"""RegisterNUICallback\\(['"]([^'"]+)['"]""", client)
+    assert len(callbacks) == len(set(callbacks)), "Creator has duplicate NUI callbacks"
+    blocks = re.findall(
+        r"""RegisterNUICallback\\(['"]([^'"]+)['"]\\s*,\\s*function\\([^)]*\\)(.*?)\\nend\\)""",
+        client,
+        re.S,
+    )
+    for name, body in blocks:
+        if name != "close":
+            assert "TriggerServerEvent(" in body, f"NUI callback {name} has no server action"
+
+    actions = set(re.findall(r"""post\\(['"]([^'"]+)['"]""", ui))
+    for pair in re.findall(
+        r"""const action = editing(?:Job|Gang)Name \\? '((?:create|update)(?:Job|Gang))' : '((?:create|update)(?:Job|Gang))'""",
+        ui,
+    ):
+        actions.update(pair)
+    missing = set(callbacks) - {"close"} - actions
+    assert not missing, f"Creator callbacks unused by the UI: {sorted(missing)}"
+
+
 if __name__ == "__main__":
     test_custom_jobs_are_persisted_validated_and_loaded_with_numeric_grades()
     test_creator_job_creation_is_permission_gated_and_updates_job_selectors()
@@ -268,4 +307,5 @@ if __name__ == "__main__":
     test_creator_f11_toggle_and_job_blips_are_scoped_and_rate_limited()
     test_creator_admin_tools_are_authorized_and_functionally_wired()
     test_creator_bank_uses_economy_owned_schema_and_founder_lockout_survives_reconnects()
+    test_creator_nui_contract_has_unique_ids_all_tabs_and_live_callbacks()
     print("Creator organization regression checks passed.")
