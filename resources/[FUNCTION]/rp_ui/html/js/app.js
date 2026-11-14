@@ -165,7 +165,7 @@ document.getElementById('close-diagnostics')?.addEventListener('click', () => {
 
 
 // Lightweight local charts for the F12 diagnostics panel.
-const frameSamples = [], fpsSamples = [], pingSamples = [];
+const frameSamples = [], fpsSamples = [], pingSamples = [], registrationSamples = [];
 function pushDiagnosticSample(target, value, canvasId, suffix, emptyLabel) {
     if (!Number.isFinite(value)) return;
     target.push({ label: new Date().toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit', second:'2-digit'}), value });
@@ -228,7 +228,8 @@ function renderServerDiagnostics(stats) {
     const updated = document.getElementById('diag-updated');
     if (updated) updated.textContent = 'Mis à jour ' + new Date().toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'});
     const history = Array.isArray(stats.registrationHistory) ? stats.registrationHistory.slice().reverse() : [];
-    drawLineChart('diag-registration-chart', history.map(row => ({ label: String(row.day || '').slice(5), value: Number(row.total) || 0 })), '', 'Aucune inscription sur la période');
+    registrationSamples.splice(0, registrationSamples.length, ...history.map(row => ({ label: String(row.day || '').slice(5), value: Number(row.total) || 0 })));
+    drawLineChart('diag-registration-chart', registrationSamples, '', 'Aucune inscription sur la période');
     const host = document.getElementById('diag-jobs-chart');
     if (!host) return;
     host.replaceChildren();
@@ -274,6 +275,7 @@ function activateDiagnosticsTab(tab) {
         drawLineChart('diag-fps-chart', fpsSamples, '', 'En attente de FPS…');
         drawLineChart('diag-ping-chart', pingSamples, ' ms', 'En attente de ping…');
         drawLineChart('diag-frame-chart', frameSamples, ' ms', 'En attente de mesures…');
+        drawLineChart('diag-registration-chart', registrationSamples, '', 'Aucune inscription sur la période');
     });
 }
 document.querySelectorAll('[data-diagnostics-tab]').forEach(button => {
