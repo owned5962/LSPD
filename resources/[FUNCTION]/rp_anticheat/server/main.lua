@@ -151,11 +151,24 @@ local function getPlayer(src)
     return exports['rp_core']:GetPlayerFromId(tonumber(src))
 end
 
+local function isFounder(src)
+    local player = getPlayer(src)
+    return IsPlayerAceAllowed(src, 'rp_founder')
+        or (player and player.group == 'fondateur')
+end
+
 local function isStaff(src)
     local player = getPlayer(src)
     return IsPlayerAceAllowed(src, 'rp_admin')
         or IsPlayerAceAllowed(src, 'rp_creator')
         or (player and (player.group == 'admin' or player.group == 'superadmin' or player.group == 'fondateur'))
+end
+
+local function canModerateTarget(src, targetId)
+    if not targetId or targetId == src or not GetPlayerName(targetId) then return false end
+    if isFounder(targetId) and not isFounder(src) then return false end
+    if isStaff(targetId) and not isFounder(src) then return false end
+    return true
 end
 
 local function canUseAnticheatTablet(src)
@@ -174,6 +187,26 @@ local function getLicense(src)
         if identifier:sub(1, 8) == 'license:' then return identifier end
     end
     return nil
+end
+
+local function recordAdminAudit(adminId, action, targetId, details)
+    local adminSource = tonumber(adminId) or 0
+    local adminIdentifier = adminSource > 0 and getLicense(adminSource) or 'server:rp_anticheat'
+    local adminName = adminSource > 0 and (GetPlayerName(adminSource) or 'Administrateur') or 'AEGIS'
+    local targetIdentifier = targetId and GetPlayerName(targetId) and getLicense(targetId) or nil
+    local ok, err = pcall(MySQL.insert.await,
+        'INSERT INTO admin_logs (admin_identifier, admin_name, action, target_identifier, details) VALUES (?, ?, ?, ?, ?)',
+        {
+            adminIdentifier or 'unknown',
+            tostring(adminName):sub(1, 64),
+            tostring(action):sub(1, 64),
+            targetIdentifier,
+            tostring(details or ''):sub(1, 2000)
+        }
+    )
+    if not ok then
+        print(('[rp_anticheat][audit] Impossible d’enregistrer %s : %s'):format(tostring(action), tostring(err)))
+    end
 end
 
 local function capturePlayerSnapshot(src)
@@ -328,16 +361,23 @@ local function applyConfiguredSanction(targetId, alert)
     local sanction = alert.sanction or (Config.Sanctions and Config.Sanctions[alert.category]) or 'warn'
     local reason = 'AEGIS · ' .. tostring(alert.reason or 'Détection anticheat')
     if sanction == 'warn' then
+        recordAdminAudit(0, 'anticheat_auto_warn', targetId, reason)
         notify(targetId, 'warning', '[ANTICHEAT] Avertissement : ' .. reason)
     elseif sanction == 'kick' then
+        recordAdminAudit(0, 'anticheat_auto_kick', targetId, reason)
         DropPlayer(targetId, '[AEGIS - KICK] ' .. reason)
     elseif sanction == 'ban' then
         local ok, err = savePersistentBan(targetId, reason, 0)
-        if ok then DropPlayer(targetId, '[AEGIS - BAN PERMANENT] ' .. reason)
-        else print('[rp_anticheat] Auto-ban refusé: ' .. tostring(err)) end
+        if ok then
+            recordAdminAudit(0, 'anticheat_auto_ban', targetId, reason)
+            DropPlayer(targetId, '[AEGIS - BAN PERMANENT] ' .. reason)
+        else
+            print('[rp_anticheat] Auto-ban refusé: ' .. tostring(err))
+        end
     elseif sanction == 'prison' then
         local ok, err = applyPrison(targetId, reason, 0, Config.PrisonMinutes)
-        if not ok then print('[rp_anticheat] Auto-prison refusée: ' .. tostring(err)) end
+        if ok then recordAdminAudit(0, 'anticheat_auto_prison', targetId, reason)
+        else print('[rp_anticheat] Auto-prison refusée: ' .. tostring(err)) end
     end
 end
 
@@ -829,6 +869,7 @@ RegisterNetEvent('rp_anticheat:saveSanctionConfig', function(rawSanctions, rawPr
     end
     Config.Sanctions = clean
     Config.PrisonMinutes = minutes
+    recordAdminAudit(src, 'anticheat_save_sanctions', nil, json.encode({ sanctions = clean, prisonMinutes = minutes }))
     TriggerClientEvent('rp_anticheat:updateSanctionConfig', src, { sanctions = clean, prisonMinutes = minutes })
     notify(src, 'success', 'Configuration des sanctions enregistrée.')
 end)
@@ -863,6 +904,9 @@ RegisterNetEvent('rp_anticheat:unban', function(rawIdentifier)
         print('[rp_anticheat] Unban failed: ' .. tostring(affected))
         notify(src, 'error', 'Erreur SQL : bannissement non modifié.')
         return
+    end
+    if affected and affected > 0 then
+        recordAdminAudit(src, 'anticheat_unban', nil, 'Bannissement levé pour ' .. rawIdentifier)
     end
     notify(src, affected and affected > 0 and 'success' or 'info',
         affected and affected > 0 and 'Bannissement levé.' or 'Aucun bannissement trouvé.')
@@ -1024,6 +1068,7 @@ RegisterNetEvent('rp_anticheat:toggleProtection', function(key, state)
         return
     end
     Config.Protections[key].enabled = state
+    recordAdminAudit(src, 'anticheat_toggle_' .. key, nil, state and 'enabled' or 'disabled')
     TriggerClientEvent('rp_anticheat:syncProtections', -1, Config.Protections)
     notify(src, 'success', 'Protection ' .. Config.Protections[key].label .. ' : ' .. (state and 'ACTIVÉE' or 'DÉSACTIVÉE'))
 end)
@@ -1068,25 +1113,29 @@ RegisterNetEvent('rp_anticheat:punish', function(rawTargetId, punishType, rawRea
     local src = source
     if not isStaff(src) or not canUseAnticheatTablet(src) or not allowStaffAction(src, 'punish', 2) then return end
     local targetId = tonumber(rawTargetId)
-    if not targetId or targetId == src or not GetPlayerName(targetId) then
-        notify(src, 'error', 'Joueur cible introuvable.')
+    if not canModerateTarget(src, targetId) then
+        notify(src, 'error', 'Action refusée : impossible de sanctionner un membre du staff de rang égal ou supérieur.')
         return
     end
     if punishType ~= 'warn' and punishType ~= 'kick' and punishType ~= 'ban' and punishType ~= 'prison' then return end
     local reason = type(rawReason) == 'string' and rawReason:gsub('[%c]', ' '):sub(1, 180) or 'Décision de modération.'
     if punishType == 'warn' then
+        recordAdminAudit(src, 'anticheat_manual_warn', targetId, reason)
         notify(targetId, 'warning', '[ANTICHEAT] Avertissement : ' .. reason)
         notify(src, 'success', 'Avertissement envoyé au joueur ID ' .. targetId .. '.')
     elseif punishType == 'prison' then
         local ok, err = applyPrison(targetId, reason, src, Config.PrisonMinutes)
         if not ok then notify(src, 'error', err) return end
+        recordAdminAudit(src, 'anticheat_manual_prison', targetId, reason)
         notify(src, 'success', 'Joueur ID ' .. targetId .. ' placé en prison pour ' .. Config.PrisonMinutes .. ' minutes.')
     elseif punishType == 'ban' then
         local ok, err = savePersistentBan(targetId, reason, src)
         if not ok then notify(src, 'error', err) return end
+        recordAdminAudit(src, 'anticheat_manual_ban', targetId, reason)
         DropPlayer(targetId, '[ANTICHEAT - BAN PERMANENT] ' .. reason)
         notify(src, 'success', 'Joueur ID ' .. targetId .. ' banni durablement.')
     else
+        recordAdminAudit(src, 'anticheat_manual_kick', targetId, reason)
         DropPlayer(targetId, '[ANTICHEAT] ' .. reason)
         notify(src, 'success', 'Joueur ID ' .. targetId .. ' expulsé.')
     end
