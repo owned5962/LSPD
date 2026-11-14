@@ -278,3 +278,35 @@ if __name__ == "__main__":
     test_every_declared_resource_dependency_starts_before_its_consumer()
     test_every_core_export_consumer_declares_core_dependency()
     print("Player session, core architecture and SQL dependency checks passed.")
+
+
+def test_character_creation_is_serialized_and_uses_bounded_json_payloads():
+    server = (CHARACTERS / "server/main.lua").read_text(encoding="utf-8")
+    assert "local creationLocks = {}" in server
+    assert "if creationLocks[identifier] then" in server
+    assert "creationLocks[identifier] = src" in server
+    assert "creationLocks[identifier] = nil" in server
+    assert "locked character count query" in server
+    assert "locked character slot query" in server
+    assert "#encodedPosition > 1024 or #encodedSkin > 16384" in server
+    assert "pcall(function()" in server
+    assert "UNIQUE KEY `unique_user_char` (`identifier`, `char_id`)" in (ROOT / "database.sql").read_text(encoding="utf-8")
+
+
+def test_character_creator_validates_form_and_recovers_after_server_rejection():
+    ui = (CHARACTERS / "html/js/app.js").read_text(encoding="utf-8")
+    client = (CHARACTERS / "client/main.lua").read_text(encoding="utf-8")
+    server = (CHARACTERS / "server/main.lua").read_text(encoding="utf-8")
+    assert "form.reportValidity()" in ui
+    assert "submitButton.dataset.pending === 'true'" in ui
+    assert "data.action === 'creationResult' && data.ok === false" in ui
+    assert "creationSubmissionPending" in client
+    assert "rp_characters:client:creationResult" in client
+    assert "local function CreationError(src, message, kind)" in server
+    assert "TriggerClientEvent('rp_characters:client:creationResult'" in server
+
+
+def test_character_selector_only_receives_minimum_display_fields():
+    server = (CHARACTERS / "server/main.lua").read_text(encoding="utf-8")
+    assert "SELECT char_id, firstname, lastname, job FROM characters WHERE identifier = ?" in server
+    assert "SELECT id, char_id, firstname, lastname, dateofbirth, sex, height, phone_number, cash, bank, job, job_grade, position, skin, metadata, is_dead FROM characters WHERE identifier = ? ORDER BY char_id ASC" not in server
