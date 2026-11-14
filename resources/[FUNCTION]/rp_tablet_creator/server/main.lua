@@ -2,6 +2,18 @@ local CanUseTablet
 local LogCreatorAction
 local FounderCodeSessions = {}
 local FounderCodeAttempts = {}
+local NoClipSessions = {}
+
+local function getFounderAttemptKey(src)
+    local identifiers = GetPlayerIdentifiers(src) or {}
+    for _, identifier in ipairs(identifiers) do
+        if identifier:sub(1, 8) == 'license:' then return identifier end
+    end
+    for _, identifier in ipairs(identifiers) do
+        if identifier:sub(1, 6) == 'fivem:' then return identifier end
+    end
+    return 'source:' .. tostring(src)
+end
 
 local function isFounder(src)
     if IsPlayerAceAllowed(src, 'rp_founder') then return true end
@@ -15,8 +27,14 @@ end
 RegisterNetEvent('rp_tablet_creator:server:authenticateFounderCode', function(rawCode)
     local src = source
     local now = os.time()
-    local attempts = FounderCodeAttempts[src] or { count = 0, blockedUntil = 0 }
-    FounderCodeAttempts[src] = attempts
+    local attemptKey = getFounderAttemptKey(src)
+    local attempts = FounderCodeAttempts[attemptKey] or { count = 0, blockedUntil = 0, windowStartedAt = now }
+    FounderCodeAttempts[attemptKey] = attempts
+    if now - (tonumber(attempts.windowStartedAt) or now) > 900 then
+        attempts.count = 0
+        attempts.blockedUntil = 0
+        attempts.windowStartedAt = now
+    end
 
     if attempts.blockedUntil > now then
         TriggerClientEvent('rp_tablet_creator:client:founderCodeResult', src,
@@ -36,13 +54,14 @@ RegisterNetEvent('rp_tablet_creator:server:authenticateFounderCode', function(ra
         if attempts.count >= 5 then
             attempts.count = 0
             attempts.blockedUntil = now + 600
+            attempts.windowStartedAt = now
         end
         TriggerClientEvent('rp_tablet_creator:client:founderCodeResult', src,
             'Code incorrect.', false)
         return
     end
 
-    FounderCodeAttempts[src] = nil
+    FounderCodeAttempts[attemptKey] = nil
     FounderCodeSessions[src] = true
     TriggerClientEvent('rp_tablet_creator:client:founderCodeResult', src,
         'Identification fondateur validée pour cette connexion.', true)
@@ -56,7 +75,9 @@ end)
 AddEventHandler('playerDropped', function()
     local src = source
     FounderCodeSessions[src] = nil
-    FounderCodeAttempts[src] = nil
+    local attemptKey = getFounderAttemptKey(src)
+    if attemptKey:sub(1, 7) == 'source:' then FounderCodeAttempts[attemptKey] = nil end
+    NoClipSessions[src] = nil
 end)
 
 local function isCreator(src)
@@ -72,6 +93,65 @@ end
 local function reply(src, message, success)
     TriggerClientEvent('rp_tablet_creator:client:result', src, message, success == true)
 end
+
+RegisterNetEvent('rp_tablet_creator:server:toggleNoClip', function()
+    local src = source
+    if not creatorAccessAllowed(src)
+        or not exports['rp_core']:CanPerformAction(src, 'creator:noclip', 700) then return end
+    if GetResourceState('rp_tablet_admin') ~= 'started' then
+        reply(src, 'Le service des outils administrateur est indisponible.', false)
+        return
+    end
+    local readOk, current = pcall(function()
+        return exports['rp_tablet_admin']:IsAdminNoclipEnabled(src)
+    end)
+    if not readOk then
+        reply(src, 'Impossible de lire l’état du no-clip.', false)
+        return
+    end
+    local enabled = current ~= true
+    local setOk, saved = pcall(function()
+        return exports['rp_tablet_admin']:SetAdminNoclip(src, enabled, 'Creator F11')
+    end)
+    if not setOk or saved ~= true then
+        reply(src, 'Impossible de modifier le no-clip.', false)
+        return
+    end
+    NoClipSessions[src] = enabled and true or nil
+    TriggerClientEvent('rp_tablet_creator:client:setNoClip', src, enabled)
+    reply(src, enabled and 'No-clip activé.' or 'No-clip désactivé.', true)
+end)
+
+-- Cleanup endpoint: clients may only request deactivation, never activation.
+RegisterNetEvent('rp_tablet_creator:server:setNoClip', function(enabled)
+    local src = source
+    if enabled ~= false then return end
+    if GetResourceState('rp_tablet_admin') == 'started' then
+        pcall(function()
+            exports['rp_tablet_admin']:SetAdminNoclip(src, false, 'Creator F11 cleanup')
+        end)
+    end
+    NoClipSessions[src] = nil
+    TriggerClientEvent('rp_tablet_creator:client:setNoClip', src, false)
+end)
+
+RegisterNetEvent('rp_tablet_creator:server:spawnVehicle', function(rawModel)
+    local src = source
+    if not creatorAccessAllowed(src)
+        or not exports['rp_core']:CanPerformAction(src, 'creator:spawn_vehicle', 1200) then return end
+    if type(rawModel) ~= 'string' then
+        reply(src, 'Modèle de véhicule invalide.', false)
+        return
+    end
+    local model = rawModel:lower():gsub('^%s*(.-)%s*$', '%1')
+    if #model < 3 or #model > 50 or model:find('[^a-z0-9_]') ~= nil then
+        reply(src, 'Modèle invalide. Utilisez le nom technique du véhicule (ex. sultan).', false)
+        return
+    end
+    TriggerClientEvent('rp_tablet_creator:client:spawnVehicle', src, model)
+    reply(src, 'Demande de création du véhicule envoyée : ' .. model .. '.', true)
+    LogCreatorAction(src, 'spawn_vehicle', nil, model)
+end)
 
 RegisterNetEvent('rp_tablet_creator:server:requestWeaponPolicy', function()
     local src = source
@@ -145,6 +225,15 @@ RegisterNetEvent('rp_tablet_creator:server:requestOpen', function()
     local player = exports['rp_core']:GetPlayerFromId(src)
     local role = player and player.group or 'Créateur'
     TriggerClientEvent('rp_tablet_creator:client:open', src, role)
+    local noClipEnabled = false
+    if GetResourceState('rp_tablet_admin') == 'started' then
+        local ok, enabled = pcall(function()
+            return exports['rp_tablet_admin']:IsAdminNoclipEnabled(src)
+        end)
+        noClipEnabled = ok and enabled == true
+    end
+    NoClipSessions[src] = noClipEnabled and true or nil
+    TriggerClientEvent('rp_tablet_creator:client:setNoClip', src, noClipEnabled)
 end)
 
 RegisterNetEvent('rp_tablet_creator:server:setWorld', function(weather, rawHours, rawMinutes)
@@ -366,25 +455,11 @@ RegisterNetEvent('rp_tablet_creator:server:requestJobBankData', function()
     local src = source
     if not creatorAccessAllowed(src) then return end
     local ok, result = pcall(function()
-        MySQL.query.await([[CREATE TABLE IF NOT EXISTS rp_job_bank_accounts (
-            job VARCHAR(64) NOT NULL PRIMARY KEY,
-            balance BIGINT UNSIGNED NOT NULL DEFAULT 0,
-            allow_deposit TINYINT(1) NOT NULL DEFAULT 1,
-            allow_withdraw TINYINT(1) NOT NULL DEFAULT 1,
-            updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4]])
-        MySQL.query.await([[CREATE TABLE IF NOT EXISTS rp_job_bank_transactions (
-            id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-            job VARCHAR(64) NOT NULL,
-            character_id INT NOT NULL,
-            player_name VARCHAR(128) NOT NULL,
-            transaction_type ENUM('deposit','withdraw') NOT NULL,
-            amount BIGINT UNSIGNED NOT NULL,
-            balance_after BIGINT UNSIGNED NOT NULL,
-            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            KEY idx_job_bank_history (job, id),
-            KEY idx_job_bank_character (character_id)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4]])
+        -- Le schéma bancaire est initialisé par rp_economy, jamais par l'ouverture de l'interface.
+        if GetResourceState('rp_economy') ~= 'started'
+            or exports['rp_economy']:IsJobBankReady() ~= true then
+            error('Le service bancaire rp_economy n’est pas encore prêt.')
+        end
         local jobs = exports['rp_jobs']:GetAllJobs() or {}
         local jobList = {}
         for key, job in pairs(jobs) do
@@ -1302,4 +1377,24 @@ RegisterNetEvent('rp_tablet_creator:server:requestOrganizations', function()
     local jobsOk, jobs = pcall(function() return exports['rp_jobs']:GetCustomJobs() end)
     if not jobsOk then print('[rp_tablet_creator] Custom job list failed: ' .. tostring(jobs)); jobs = {} end
     TriggerClientEvent('rp_tablet_creator:client:customJobsData', src, jobs or {})
+end)
+
+
+AddEventHandler('onResourceStop', function(resourceName)
+    if resourceName ~= GetCurrentResourceName() then return end
+    if GetResourceState('rp_tablet_admin') == 'started' then
+        for _, rawId in ipairs(GetPlayers()) do
+            local src = tonumber(rawId)
+            if src then
+                local ok, enabled = pcall(function()
+                    return exports['rp_tablet_admin']:IsAdminNoclipEnabled(src)
+                end)
+                if ok and enabled == true then
+                    pcall(function()
+                        exports['rp_tablet_admin']:SetAdminNoclip(src, false, 'Creator resource stop')
+                    end)
+                end
+            end
+        end
+    end
 end)

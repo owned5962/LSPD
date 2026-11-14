@@ -1,4 +1,11 @@
 local isOpen = false
+local noClipEnabled = false
+
+local function setNoClipEnabled(enabled)
+    if type(enabled) ~= 'boolean' then return end
+    noClipEnabled = enabled
+    SendNUIMessage({ action = 'noClipState', enabled = enabled })
+end
 
 local function closeTablet()
     isOpen = false
@@ -44,6 +51,7 @@ RegisterNetEvent('rp_tablet_creator:client:open', function(role)
     isOpen = true
     SetNuiFocus(true, true)
     SendNUIMessage({ action = 'open', role = role or 'Créateur' })
+    SendNUIMessage({ action = 'noClipState', enabled = noClipEnabled })
     TriggerServerEvent('rp_tablet_creator:server:requestTools')
     TriggerServerEvent('rp_tablet_creator:server:requestAdminTools')
     TriggerServerEvent('rp_tablet_creator:server:requestOrganizations')
@@ -53,6 +61,16 @@ end)
 
 RegisterNUICallback('saveWeaponPolicy', function(data, cb)
     TriggerServerEvent('rp_tablet_creator:server:saveWeaponPolicy', data and data.policy)
+    cb({ ok = true })
+end)
+
+RegisterNUICallback('toggleNoClip', function(_, cb)
+    TriggerServerEvent('rp_tablet_creator:server:toggleNoClip')
+    cb({ ok = true })
+end)
+
+RegisterNUICallback('spawnVehicle', function(data, cb)
+    TriggerServerEvent('rp_tablet_creator:server:spawnVehicle', data and data.model)
     cb({ ok = true })
 end)
 
@@ -296,6 +314,8 @@ end)
 AddEventHandler('onResourceStop', function(resourceName)
     if resourceName ~= GetCurrentResourceName() then return end
     isOpen = false
+    if noClipEnabled then TriggerServerEvent('rp_tablet_creator:server:setNoClip', false) end
+    setNoClipEnabled(false)
     SetNuiFocus(false, false)
     for _, blip in ipairs(activeJobBlips) do
         if DoesBlipExist(blip) then RemoveBlip(blip) end
@@ -312,4 +332,42 @@ RegisterNetEvent('rp_tablet_creator:client:weaponPolicySaved', function(policy)
 end)
 RegisterNetEvent('rp_tablet_creator:client:weaponPolicySaveFailed', function(message)
     SendNUIMessage({ action = 'weaponPolicySaveFailed', message = tostring(message or 'Enregistrement impossible.') })
+end)
+
+RegisterNetEvent('rp_tablet_creator:client:setNoClip', function(enabled)
+    setNoClipEnabled(enabled)
+end)
+
+RegisterNetEvent('rp_tablet_creator:client:spawnVehicle', function(model)
+    if type(model) ~= 'string' or #model < 3 or #model > 50 or model:find('[^a-z0-9_]') then
+        TriggerEvent('rp_core:client:notify', 'Modèle de véhicule invalide.', 'error')
+        return
+    end
+    local hash = GetHashKey(model)
+    if not IsModelInCdimage(hash) or not IsModelAVehicle(hash) then
+        TriggerEvent('rp_core:client:notify', 'Ce modèle n’est pas un véhicule GTA V valide.', 'error')
+        return
+    end
+    RequestModel(hash)
+    local startedAt = GetGameTimer()
+    while not HasModelLoaded(hash) and GetGameTimer() - startedAt < 10000 do Wait(0) end
+    if not HasModelLoaded(hash) then
+        SetModelAsNoLongerNeeded(hash)
+        TriggerEvent('rp_core:client:notify', 'Le modèle du véhicule n’a pas pu être chargé.', 'error')
+        return
+    end
+
+    local ped = PlayerPedId()
+    local coords = GetOffsetFromEntityInWorldCoords(ped, 0.0, 5.0, 0.0)
+    local vehicle = CreateVehicle(hash, coords.x, coords.y, coords.z, GetEntityHeading(ped), true, true)
+    SetModelAsNoLongerNeeded(hash)
+    if not vehicle or vehicle == 0 then
+        TriggerEvent('rp_core:client:notify', 'Le véhicule n’a pas pu être créé.', 'error')
+        return
+    end
+    SetEntityAsMissionEntity(vehicle, true, true)
+    SetVehicleOnGroundProperly(vehicle)
+    SetVehicleEngineOn(vehicle, true, true, false)
+    TaskWarpPedIntoVehicle(ped, vehicle, -1)
+    TriggerEvent('rp_core:client:notify', 'Véhicule créé : ' .. model .. '.', 'success')
 end)
