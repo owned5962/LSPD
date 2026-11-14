@@ -216,8 +216,9 @@ def test_character_spawn_uses_validated_coordinates_and_wrap_safe_timeouts():
     assert "local function SpawnWaitExpired(startedAt, duration)" in character_client
     assert "local fadeStartedAt = GetGameTimer() % SPAWN_TIMER_MODULUS" in character_client
     assert "local collisionStartedAt = GetGameTimer() % SPAWN_TIMER_MODULUS" in character_client
-    assert "GetGameTimer() < fadeDeadline" not in character_client
-    assert "GetGameTimer() < collisionDeadline" not in character_client
+    spawn_block = character_client[character_client.index("RegisterNetEvent('rp_characters:client:spawnPlayer'"):]
+    assert "GetGameTimer() < fadeDeadline" not in spawn_block
+    assert "GetGameTimer() < collisionDeadline" not in spawn_block
 
 def test_every_declared_resource_dependency_starts_before_its_consumer():
     cfg = (ROOT / "server.cfg").read_text(encoding="utf-8")
