@@ -3,11 +3,19 @@ local creationLocks = {}
 local DefaultSpawn = { x = -1037.7, y = -2737.8, z = 20.1, heading = 330.0 }
 
 local function GetLicenseIdentifier(src)
+    local license2
     for i = 0, GetNumPlayerIdentifiers(src) - 1 do
         local identifier = GetPlayerIdentifier(src, i)
-        if identifier and identifier:sub(1, 8) == 'license:' then return identifier end
+        if type(identifier) == 'string' then
+            if identifier:sub(1, 8) == 'license:' then
+                return identifier
+            end
+            if identifier:sub(1, 9) == 'license2:' and not license2 then
+                license2 = identifier
+            end
+        end
     end
-    return nil
+    return license2
 end
 
 local FOUNDER_FIVEM_IDENTIFIER = 'fivem:12219878'
