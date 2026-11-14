@@ -224,8 +224,15 @@ def test_creator_admin_tools_are_authorized_and_functionally_wired():
     ui = read("resources/[FUNCTION]/rp_tablet_creator/html/app.js")
     css = read("resources/[FUNCTION]/rp_tablet_creator/html/style.css")
 
+    admin_server = read("resources/[FUNCTION]/rp_tablet_admin/server/extended.lua")
+    admin_client = read("resources/[FUNCTION]/rp_tablet_admin/client/main.lua")
     assert "rp_tablet_creator:server:toggleNoClip" in server
     assert "creator:noclip" in server and "creatorAccessAllowed(src)" in server
+    assert "exports['rp_tablet_admin']:SetAdminNoclip(src, enabled, 'Creator F11')" in server
+    assert "exports('SetAdminNoclip', SetAdminNoclip)" in admin_server
+    assert "TriggerEvent('rp_anticheat:setAdminInvulnerability'" in admin_server
+    assert "TriggerEvent('rp_tablet_creator:client:setNoClip', isAdminNoclip)" in admin_client
+    assert "if not quiet then" in admin_client
     assert "rp_tablet_creator:server:spawnVehicle" in server
     assert "creator:spawn_vehicle" in server and "model:find('[^a-z0-9_]')" in server
     assert "RegisterNUICallback('toggleNoClip'" in client
