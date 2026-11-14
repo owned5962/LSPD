@@ -23,5 +23,5 @@
             stage = 'player',
             status = 'Chargement du compte et des personnages...'
         }))
-        -- rp_core owns the bootstrap request and already retries session sync.
+        -- rp_core owns the initialization request and already retries session sync.
         -- Calling rp_characters:server:checkPlayer here as well created a race:
