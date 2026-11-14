@@ -54,7 +54,8 @@ local function SetAdminNoclip(src, enabled, reason)
         LogExtendedAction(src, 'noclip', nil,
             (enabled and 'Activation NoClip' or 'Désactivation NoClip') .. (reason and (' · ' .. tostring(reason)) or ''))
     end
-    TriggerClientEvent('rp_tablet_admin:client:toggleNoclip', src, enabled, true)
+    local quiet = type(reason) == 'string' and reason:find('Creator', 1, true) ~= nil
+    TriggerClientEvent('rp_tablet_admin:client:toggleNoclip', src, enabled, quiet)
     return true
 end
 
