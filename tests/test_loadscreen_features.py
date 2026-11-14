@@ -15,6 +15,7 @@ class LoadscreenFeatureTests(unittest.TestCase):
         self.assertIn("'server/main.lua'", manifest)
         self.assertIn("'updates.lua'", manifest)
         self.assertIn("'html/images/los_santos_skyline.svg'", manifest)
+        self.assertIn("'html/images/los_santos_illegal.svg'", manifest)
 
     def test_five_life_objective_banners_are_present(self):
         html = self.read("html/index.html")
