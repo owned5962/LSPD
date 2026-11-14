@@ -37,15 +37,11 @@ files {
     'client/p25.lua',
     'client/p26.lua',
     'client/p27.lua',
-    'client/p28.lua',
-    'server/modules/01_helpers.lua',
-    'server/modules/02_bootstrap.lua',
-    'server/modules/03_select_create.lua'
+    'client/p28.lua'
 }
 client_scripts { 'client/main.lua' }
 server_scripts {
     'server/diagnostics.lua',
     '@oxmysql/lib/MySQL.lua',
-    'server/main.lua',
-    'server/bootstrap_hook.lua'
+    'server/main.lua'
 }
