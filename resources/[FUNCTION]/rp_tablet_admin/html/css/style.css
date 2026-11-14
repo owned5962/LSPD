@@ -80,3 +80,13 @@ body{display:flex!important;align-items:center!important;justify-content:center!
 @media(max-width:960px){#tablet-wrapper{width:96vw!important;height:94vh!important}#view-admin>.admin-subnav{width:72px!important;min-width:72px!important;max-width:72px!important}}
 /* Color illustration tiles stay specific to each section title. */
 #view-admin>.admin-subview.active::before{background-size:48px,auto!important;background-repeat:no-repeat!important}
+
+
+
+/* AEGIS shared shell geometry — identical to F9 */
+body{min-height:100vh!important;display:flex!important;align-items:center!important;justify-content:center!important}
+#tablet-wrapper{position:relative!important;inset:auto!important;width:min(1450px,96vw)!important;height:min(880px,94vh)!important;max-height:94vh!important;margin:0 auto!important;flex:0 0 auto!important}
+#tablet-wrapper.is-open{display:flex!important;align-items:stretch!important}
+.tablet-frame,.tablet-screen{width:100%!important;height:100%!important;min-height:0!important;max-height:none!important;border-radius:20px!important}
+#view-admin>.admin-subnav{width:245px!important;min-width:245px!important;max-width:245px!important}
+@media(max-width:960px){#tablet-wrapper{width:96vw!important;height:94vh!important}#view-admin>.admin-subnav{width:72px!important;min-width:72px!important;max-width:72px!important}}
