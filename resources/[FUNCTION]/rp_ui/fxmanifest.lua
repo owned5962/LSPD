@@ -23,5 +23,6 @@ server_scripts {
 files {
     'html/index.html',
     'html/css/style.css',
-    'html/js/app.js'
+    'html/js/app.js',
+    'html/images/diagnostics-hero.svg'
 }
