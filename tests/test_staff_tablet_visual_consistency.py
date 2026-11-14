@@ -88,3 +88,30 @@ def test_f11_statistics_tab_does_not_replace_existing_creator_controls():
                     "creator-bank-save", "creator-weapon-save", "create-job", "create-gang"):
         assert f'id="{control}"' in html
         assert control in ui
+
+
+
+def test_staff_tablet_hero_illustrations_are_packaged_by_each_resource():
+    manifests = {
+        "F9": ("resources/[FUNCTION]/rp_anticheat/fxmanifest.lua", "html/images/anticheat-hero.svg"),
+        "F10": ("resources/[FUNCTION]/rp_tablet_admin/fxmanifest.lua", "html/images/admin-hero.svg"),
+        "F11": ("resources/[FUNCTION]/rp_tablet_creator/fxmanifest.lua", "html/images/creator-hero.svg"),
+        "F12": ("resources/[FUNCTION]/rp_ui/fxmanifest.lua", "html/images/diagnostics-hero.svg"),
+    }
+    for menu, (manifest_path, asset) in manifests.items():
+        manifest = read(manifest_path)
+        assert asset in manifest, f"{menu} hero image is not packaged in fxmanifest.lua"
+
+
+def test_character_selection_keeps_a_visible_preview_instead_of_hiding_the_game_world():
+    client = read("resources/[CORE]/rp_characters/client/main.lua")
+    handler_start = client.index("RegisterNetEvent('rp_characters:client:openCharacterSelection'")
+    handler_end = client.index("RegisterNetEvent('rp_characters:client:bootError'", handler_start)
+    handler = client[handler_start:handler_end]
+    assert "SetEntityVisible(ped, true, false)" in handler
+    assert "ResetEntityAlpha(ped)" in handler
+    assert "LoadFreemodeModel('m')" in handler
+    assert "SetupCreatorCamera()" in handler
+    assert "DoScreenFadeIn(700)" in handler
+    assert "SetEntityVisible(ped, false, false)" not in handler
+    assert "SetEntityAlpha(ped, 0, false)" not in handler
