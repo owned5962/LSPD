@@ -1014,8 +1014,13 @@ def test_character_player_controls_stay_locked_until_a_character_is_loaded():
     client = read("resources/[CORE]/rp_characters/client/main.lua")
     assert "SetPlayerControl(PlayerId(), false, 0)" in client
     assert "SetPlayerControl(PlayerId(), true, 0)" in client
-    assert "SetEntityVisible(ped, false, false)" in client
     assert "FreezeEntityPosition(PlayerPedId(), not characterSessionReady)" in client
+    selector_start = client.index("RegisterNetEvent('rp_characters:client:openCharacterSelection'")
+    selector_end = client.index("RegisterNetEvent('rp_characters:client:bootError'", selector_start)
+    selector = client[selector_start:selector_end]
+    assert "SetEntityVisible(ped, true, false)" in selector
+    assert "FreezeEntityPosition(ped, true)" in selector
+    assert "SetEntityVisible(ped, false, false)" not in selector
 
 
 def test_admin_server_has_no_duplicate_legacy_event_handlers():
