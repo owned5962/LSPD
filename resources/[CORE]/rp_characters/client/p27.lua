@@ -24,4 +24,4 @@
             status = 'Chargement du compte et des personnages...'
         }))
         -- rp_core owns the initialization request and already retries session sync.
-        -- Calling rp_characters:server:checkPlayer here as well created a race:
+        -- A second direct request here would race the core account lookup:
