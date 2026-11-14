@@ -244,7 +244,7 @@ RegisterNetEvent('rp_economy:server:withdraw', function(rawAmount)
     TriggerEvent('rp_economy:server:logTransaction', player.charId, 'withdraw', amount, 'Système', 'Retrait DAB / Guichet')
     TriggerClientEvent('rp_core:client:updateCash', src, player.cash)
     TriggerClientEvent('rp_core:client:updateBank', src, player.bank)
-    TriggerClientEvent('rp_economy:client:refreshBalances', src, player.cash, player.bank)
+    refreshAccountSnapshot(src, player)
     notify(src, 'Retrait réussi : ' .. formatCurrency(amount), 'success')
 end)
 
