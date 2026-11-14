@@ -13,7 +13,7 @@ end)
 
 AddEventHandler('onClientResourceStart', function(resourceName)
     if GetCurrentResourceName() ~= resourceName then return end
-    -- Mark the bootstrap pending before waiting for the network session so an
+    -- Mark the initialization pending before waiting for the network session so an
     -- early rp_core response cannot be overwritten by a later timeout thread.
     characterBootPending = true
     characterSessionReady = false
