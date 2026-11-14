@@ -394,7 +394,7 @@ local function UpdateCreatorCamera()
     local ped = PlayerPedId()
     if not ped or ped == 0 or not DoesEntityExist(ped) then return end
     -- Keep the camera in front of the ped, centered on the face and upper body.
-    local cameraCoords = GetOffsetFromEntityInWorldCoords(ped, 0.0, 2.35, 0.85)
+    local cameraCoords = GetOffsetFromEntityInWorldCoords(ped, 0.0, 3.25, 0.9)
     SetCamCoord(charCamera, cameraCoords.x, cameraCoords.y, cameraCoords.z)
     PointCamAtEntity(charCamera, ped, 0.0, 0.0, 0.9, true)
 end
