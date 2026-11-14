@@ -342,6 +342,7 @@ local function ApplyCharacterAppearance(gender, skin)
         end
         return false
     end
+
     local ped = PlayerPedId()
 
     -- GTA freemode genetic inheritance and facial morphs.
@@ -361,16 +362,70 @@ local function ApplyCharacterAppearance(gender, skin)
             blendId('shapeFirst', 0), blendId('shapeSecond', 21), blendId('shapeThird', 0),
             blendId('skinFirst', 0), blendId('skinSecond', 21), blendId('skinThird', 0),
             blendMix('shapeMix', 0.5), blendMix('skinMix', 0.5), blendMix('thirdMix', 0.0), false)
-        -- Force GTA to refresh the blended face after parent and mix sliders change.
         UpdatePedHeadBlendData(ped, true)
     end
 
-                local textureCount = GetNumberOfPedPropTextureVariations(ped, prop, drawable) or 1
-                texture = math.max(0, math.min(math.floor(texture), math.max(0, textureCount - 1)))
-                SetPedPropIndex(ped, prop, drawable, texture, true)
+    -- Apply all 20 GTA face morph sliders, clamped to the native range.
+    if type(skin.faceFeatures) == 'table' then
+        for index = 0, 19 do
+            local value = tonumber(skin.faceFeatures[tostring(index)] or skin.faceFeatures[index])
+            if value and value == value then
+                SetPedFaceFeature(ped, index, math.max(-1.0, math.min(1.0, value)))
             end
-        else
-            ClearPedProp(ped, prop)
+        end
+    end
+
+    -- Hair, eye colour and clothing components from the creator payload.
+    local hairStyle = tonumber(skin.hairStyle)
+    if hairStyle then SetSafeComponent(ped, 2, hairStyle, 0) end
+    local hairColor = math.max(0, math.min(63, math.floor(tonumber(skin.hairColor) or 0)))
+    SetPedHairColor(ped, hairColor, hairColor)
+    local eyeColor = tonumber(skin.eyeColor)
+    if eyeColor then SetPedEyeColor(ped, math.max(0, math.min(31, math.floor(eyeColor)))) end
+
+    if type(skin.components) == 'table' then
+        for componentKey, item in pairs(skin.components) do
+            local component = tonumber(componentKey)
+            if component and component >= 0 and component <= 11 and type(item) == 'table' then
+                SetSafeComponent(ped, component, item.drawable, item.texture)
+            end
+        end
+    end
+
+    -- Facial hair and eyebrow overlays.
+    if type(skin.overlays) == 'table' then
+        for overlayKey, item in pairs(skin.overlays) do
+            local overlay = tonumber(overlayKey)
+            if overlay and overlay >= 0 and overlay <= 12 and type(item) == 'table' then
+                local count = GetPedHeadOverlayNum(overlay) or 0
+                local index = math.floor(tonumber(item.index) or 0)
+                if count > 0 then index = math.max(0, math.min(index, count - 1)) else index = 0 end
+                local opacity = tonumber(item.opacity) or 1.0
+                opacity = math.max(0.0, math.min(1.0, opacity))
+                SetPedHeadOverlay(ped, overlay, index, opacity)
+                local color = math.max(0, math.min(63, math.floor(tonumber(item.color) or hairColor)))
+                SetPedHeadOverlayColor(ped, overlay, 1, color, color)
+            end
+        end
+    end
+
+    -- Props use -1 to mean "remove"; otherwise clamp drawable and texture indices.
+    if type(skin.props) == 'table' then
+        for propKey, item in pairs(skin.props) do
+            local prop = tonumber(propKey)
+            if prop and prop >= 0 and prop <= 7 and type(item) == 'table' then
+                local drawable = math.floor(tonumber(item.drawable) or -1)
+                local drawableCount = GetNumberOfPedPropDrawableVariations(ped, prop) or 0
+                if drawable < 0 or drawableCount < 1 then
+                    ClearPedProp(ped, prop)
+                else
+                    drawable = math.max(0, math.min(drawable, drawableCount - 1))
+                    local texture = math.floor(tonumber(item.texture) or 0)
+                    local textureCount = GetNumberOfPedPropTextureVariations(ped, prop, drawable) or 1
+                    texture = math.max(0, math.min(texture, math.max(0, textureCount - 1)))
+                    SetPedPropIndex(ped, prop, drawable, texture, true)
+                end
+            end
         end
     end
 
