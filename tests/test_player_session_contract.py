@@ -317,3 +317,55 @@ if __name__ == "__main__":
     test_character_creation_is_serialized_and_uses_bounded_json_payloads()
     test_character_creator_validates_form_and_recovers_after_server_rejection()
     test_character_selector_only_receives_minimum_display_fields()
+
+
+def test_character_bootstrap_has_one_owner_and_ignores_duplicate_requests():
+    client = (CHARACTERS / "client/main.lua").read_text(encoding="utf-8")
+    server = (CHARACTERS / "server/main.lua").read_text(encoding="utf-8")
+    assert "TriggerServerEvent('rp_core:server:requestPlayerDataSync')" in client
+    assert "TriggerServerEvent('rp_characters:server:checkPlayer')" not in client
+    assert "Duplicate bootstrap ignored" in server
+    assert "Bootstrap pipeline crashed" in server
+    assert "Character load pipeline failed" in server
+
+
+def test_character_preview_restores_visible_ped_and_checks_camera():
+    client = (CHARACTERS / "client/main.lua").read_text(encoding="utf-8")
+    assert "Creator preview could not acquire a valid player ped" in client
+    assert "SetEntityVisible(ped, true, false)" in client
+    assert "ResetEntityAlpha(ped)" in client
+    assert "Creator camera creation failed" in client
+    assert "Creator preview ready" in client
+
+
+if __name__ == "__main__":
+    test_character_bootstrap_has_one_owner_and_ignores_duplicate_requests()
+    test_character_preview_restores_visible_ped_and_checks_camera()
+
+def test_character_load_early_exits_never_silently_leave_the_player_waiting():
+    server = (CHARACTERS / "server/main.lua").read_text(encoding="utf-8")
+    load = server.split("local function LoadCharacterUnsafe", 1)[1].split(
+        "-- Catch failures from core exports", 1
+    )[0]
+    wrapper = server.split("local function LoadCharacter(src", 1)[1].split(
+        "local function CheckPlayerBootstrap", 1
+    )[0]
+
+    assert "return false, message" in load
+    assert "TriggerClientEvent('rp_characters:client:resumeLoadedCharacter', src)" in load
+    assert "if ok and result ~= false then return true end" in wrapper
+    assert "local reason = ok and detail or result" in wrapper
+    assert "TriggerClientEvent('rp_characters:client:bootError', src, message)" in wrapper
+
+
+
+def test_character_initialization_failure_is_propagated_to_load_wrapper():
+    server = (CHARACTERS / "server/main.lua").read_text(encoding="utf-8")
+    failure = server.split("if not loadOk or not player then", 1)[1].split(
+        "\n    end", 1
+    )[0]
+    assert "return false, message" in failure
+    assert "TriggerClientEvent('rp_characters:client:bootError', src, message)" not in failure
+    assert "TriggerClientEvent('rp_characters:client:bootError', src, message)" in server.split(
+        "-- Catch failures from core exports", 1
+    )[1]

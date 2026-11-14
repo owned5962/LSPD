@@ -120,22 +120,25 @@ AddEventHandler('playerDropped', function()
     tutorialStarted[source] = nil
 end)
 
-local function LoadCharacter(src, identifier, userGroup, char)
+local function LoadCharacterUnsafe(src, identifier, userGroup, char)
     if exports['rp_core']:IsCharacterSavePending(char.id) then
-        Notify(src, 'Votre dernière sauvegarde est en cours. Réessayez dans quelques secondes.', 'warning')
-        return
+        local message = 'Votre dernière sauvegarde est encore en cours. Réessayez dans quelques secondes.'
+        Notify(src, message, 'warning')
+        return false, message
     end
 
     local currentSession = exports['rp_core']:GetPlayerByIdentifier(identifier)
     if currentSession then
         if currentSession.source ~= src then
             DropPlayer(src, 'Une session est déjà active avec ce compte.')
+            return false, 'Une session est déjà active avec ce compte.'
         end
-        return
+        TriggerClientEvent('rp_characters:client:resumeLoadedCharacter', src)
+        return true
     end
     if exports['rp_core']:GetPlayerFromId(src) then
-        Notify(src, 'Un personnage est déjà chargé.')
-        return
+        TriggerClientEvent('rp_characters:client:resumeLoadedCharacter', src)
+        return true
     end
 
     char.position = DecodeJson(char.position, DefaultSpawn)
@@ -164,8 +167,9 @@ local function LoadCharacter(src, identifier, userGroup, char)
         end)
         print(('[rp_characters] Failed to initialize character for player %s: %s')
             :format(tostring(src), tostring(player)))
-        Notify(src, 'Impossible de finaliser le chargement du personnage. Consultez la console serveur.', 'error')
-        return
+        local message = 'Impossible de finaliser le chargement du personnage. Consultez la console serveur.'
+        -- Let LoadCharacter handle the failure response exactly once.
+        return false, message
     end
 
     -- Publish the saved RP identity as the server player name (scoreboard/player list).
@@ -185,13 +189,39 @@ local function LoadCharacter(src, identifier, userGroup, char)
     Notify(src, ('Bienvenue %s %s !'):format(char.firstname, char.lastname), 'success')
 end
 
-RegisterNetEvent('rp_characters:server:checkPlayer', function()
-    local src = source
-    if not exports['rp_core']:CanPerformAction(src, 'character:check_player', 5000) then
-        -- Duplicate bootstrap requests are expected when core and character
-        -- resources start together. Ignore them instead of showing a false error.
+-- Catch failures from core exports and player registration too, not only SQL.
+-- Previously an exception here could leave the client waiting with no response.
+local function LoadCharacter(src, identifier, userGroup, char)
+    local ok, result, detail = pcall(LoadCharacterUnsafe, src, identifier, userGroup, char)
+    if ok and result ~= false then return true end
+
+    local reason = ok and detail or result
+    print(('[rp_characters] Character load pipeline failed for player %s: %s')
+        :format(tostring(src), tostring(reason)))
+    pcall(function() exports['rp_core']:UnregisterPlayer(src, identifier) end)
+    local message = ok and (detail or 'Le chargement du personnage a été interrompu.')
+        or 'Le personnage a été enregistré, mais son chargement a échoué. Consultez la console serveur.'
+    Notify(src, message, 'error')
+    TriggerClientEvent('rp_characters:client:bootError', src, message)
+    TriggerClientEvent('rp_characters:client:creationResult', src, { ok = false, message = message })
+    return false
+end
+
+local function CheckPlayerBootstrap(src)
+    local actionOk, allowed = pcall(function()
+        return exports['rp_core']:CanPerformAction(src, 'character:check_player', 5000)
+    end)
+    if not actionOk then
+        error('rp_core CanPerformAction export failed: ' .. tostring(allowed))
+    end
+    if not allowed then
+        -- Duplicate bootstrap requests are expected when rp_core and rp_characters start together.
+        -- Ignore them; the first request owns the response.
+        print(('[rp_characters] Duplicate bootstrap ignored for player %s'):format(tostring(src)))
         return
     end
+    print(('[rp_characters] Bootstrap started for player %s'):format(tostring(src)))
+
     local identifier = GetLicenseIdentifier(src)
     if not identifier then
         DropPlayer(src, 'Identifiant FiveM license introuvable.')
@@ -249,6 +279,7 @@ RegisterNetEvent('rp_characters:server:checkPlayer', function()
         if not updateOk then return end
     end
 
+    print(('[rp_characters] Account loaded for player %s; querying characters.'):format(tostring(src)))
     local charactersOk, characters = SafeDatabaseCall(src, 'character list query', function()
         return MySQL.query.await(
             'SELECT char_id, firstname, lastname, job FROM characters WHERE identifier = ? ORDER BY char_id ASC',
@@ -259,14 +290,30 @@ RegisterNetEvent('rp_characters:server:checkPlayer', function()
     characters = characters or {}
 
     if #characters == 0 then
+        print(('[rp_characters] No character found for player %s; opening creator.'):format(tostring(src)))
         TriggerClientEvent('rp_characters:client:openMenu', src, MAX_CHARACTERS)
     else
+        print(('[rp_characters] %d character(s) found for player %s; opening selector.')
+            :format(#characters, tostring(src)))
         TriggerClientEvent('rp_characters:client:openCharacterSelection', src, characters, MAX_CHARACTERS)
+    end
+end
+
+RegisterNetEvent('rp_characters:server:checkPlayer', function()
+    local src = source
+    local ok, err = pcall(CheckPlayerBootstrap, src)
+    if not ok then
+        print(('[rp_characters] Bootstrap pipeline crashed for player %s: %s')
+            :format(tostring(src), tostring(err)))
+        local message = 'Le chargement du compte a rencontré une erreur serveur. Consultez la console FXServer.'
+        Notify(src, message, 'error')
+        TriggerClientEvent('rp_characters:client:bootError', src, message)
     end
 end)
 
-RegisterNetEvent('rp_characters:server:selectCharacter', function(slot)
-    local src = source
+
+
+local function SelectCharacter(src, slot)
     if not exports['rp_core']:CanPerformAction(src, 'character:select', 3000) then return end
     local identifier = GetLicenseIdentifier(src)
     slot = tonumber(slot)
@@ -297,10 +344,21 @@ RegisterNetEvent('rp_characters:server:selectCharacter', function(slot)
     end
 
     LoadCharacter(src, identifier, GetEffectiveUserGroup(src, user.group), char)
+end
+
+RegisterNetEvent('rp_characters:server:selectCharacter', function(slot)
+    local src = source
+    local ok, err = pcall(SelectCharacter, src, slot)
+    if not ok then
+        print(('[rp_characters] Character selection failed for player %s: %s')
+            :format(tostring(src), tostring(err)))
+        local message = 'La sélection du personnage a échoué côté serveur. Consultez la console FXServer.'
+        Notify(src, message, 'error')
+        TriggerClientEvent('rp_characters:client:bootError', src, message)
+    end
 end)
 
-RegisterNetEvent('rp_characters:server:createCharacter', function(data)
-    local src = source
+local function CreateCharacter(src, data)
     if not exports['rp_core']:CanPerformAction(src, 'character:create', 5000) then
         CreationError(src, 'Veuillez patienter quelques secondes avant de réessayer.', 'warning')
         return
@@ -524,4 +582,17 @@ RegisterNetEvent('rp_characters:server:createCharacter', function(data)
         position = spawn, skin = skin
     }
     LoadCharacter(src, identifier, user.group, char)
+end
+
+RegisterNetEvent('rp_characters:server:createCharacter', function(data)
+    local src = source
+    local ok, err = pcall(CreateCharacter, src, data)
+    if not ok then
+        local identifier = GetLicenseIdentifier(src)
+        if identifier then creationLocks[identifier] = nil end
+        print(('[rp_characters] Character creation pipeline failed for player %s: %s')
+            :format(tostring(src), tostring(err)))
+        local message = 'La création du personnage a rencontré une erreur serveur. Consultez la console FXServer.'
+        CreationError(src, message)
+    end
 end)
