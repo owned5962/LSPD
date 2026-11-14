@@ -33,6 +33,7 @@ window.addEventListener('message', function(event) {
         document.getElementById('hud-job-panel')?.classList.add('hidden');
     } else if (data.action === 'showDiagnostics') {
         document.getElementById('client-diagnostics')?.classList.remove('hidden');
+        activateDiagnosticsTab('overview');
     } else if (data.action === 'hideDiagnostics') {
         document.getElementById('client-diagnostics')?.classList.add('hidden');
     } else if (data.action === 'updateDiagnostics') {
@@ -40,6 +41,7 @@ window.addEventListener('message', function(event) {
         const fps = Math.max(0, Number(data.fps) || 0);
         const ping = Math.max(0, Number(data.ping) || 0);
         setDiag('diag-fps', fps);
+        setDiag('diag-fps-performance', fps);
         setDiag('diag-ping', ping + ' ms');
         pushDiagnosticSample(fpsSamples, fps, 'diag-fps-chart', '', 'En attente de FPS…');
         pushDiagnosticSample(pingSamples, ping, 'diag-ping-chart', ' ms', 'En attente de ping…');
@@ -249,4 +251,31 @@ document.getElementById('open-resource-monitor')?.addEventListener('click', () =
     fetch('https://' + (window.GetParentResourceName ? GetParentResourceName() : 'rp_ui') + '/openResourceMonitor', {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}'
     }).catch(() => {});
+});
+
+
+// F12 navigation: keep the dashboard compact while preserving live metric updates.
+function activateDiagnosticsTab(tab) {
+    const allowed = ['overview', 'performance', 'community'];
+    const active = allowed.includes(tab) ? tab : 'overview';
+    document.querySelectorAll('[data-diagnostics-tab]').forEach(button => {
+        const selected = button.dataset.diagnosticsTab === active;
+        button.classList.toggle('active', selected);
+        if (selected) button.setAttribute('aria-current', 'page');
+        else button.removeAttribute('aria-current');
+    });
+    document.querySelectorAll('[data-diagnostics-panel]').forEach(panel => {
+        const selected = panel.dataset.diagnosticsPanel === active;
+        panel.hidden = !selected;
+        panel.classList.toggle('active', selected);
+    });
+    // Canvases inside a hidden tab have zero width; redraw after it becomes visible.
+    requestAnimationFrame(() => {
+        drawLineChart('diag-fps-chart', fpsSamples, '', 'En attente de FPS…');
+        drawLineChart('diag-ping-chart', pingSamples, ' ms', 'En attente de ping…');
+        drawLineChart('diag-frame-chart', frameSamples, ' ms', 'En attente de mesures…');
+    });
+}
+document.querySelectorAll('[data-diagnostics-tab]').forEach(button => {
+    button.addEventListener('click', () => activateDiagnosticsTab(button.dataset.diagnosticsTab));
 });
