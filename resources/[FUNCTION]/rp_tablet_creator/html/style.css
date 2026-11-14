@@ -1,4 +1,4 @@
-/* F11 Creator — single-file stylesheet, F9 vertical sidebar parity */
+/* F11 Creator — shell parity with F9 (rp_tablet_job) */
 * { box-sizing: border-box; }
 body {
   margin: 0;
@@ -12,31 +12,27 @@ body {
 button { font: inherit; cursor: pointer; }
 .hidden { display: none !important; }
 
-/* ===== Shell: F9-like flex tablet with left sidebar ===== */
-#tablet:not(.hidden),
+/* Outer frame — identical to F9 #tablet */
 #tablet {
   position: absolute;
-  inset: 6vh 6vw;
+  inset: 7vh 8vw;
   display: none;
   overflow: hidden;
   border: 1px solid #29384e;
   border-radius: 18px;
   background: #0b1220;
   box-shadow: 0 24px 90px #000b;
-  color: #e5eef8;
+  color: #e8eef8;
 }
 #tablet:not(.hidden) {
   display: flex !important;
   flex-direction: row !important;
-  width: auto !important;
-  min-height: 620px !important;
-  max-height: 90vh !important;
 }
 
-/* Hide old top header — brand moves into sidebar */
+/* Hide legacy top header */
 #tablet > header { display: none !important; }
 
-/* Vertical nav (sidebar) */
+/* Sidebar — same as F9 .sidebar */
 #tablet .creator-tabs {
   display: flex !important;
   flex-direction: column !important;
@@ -44,29 +40,39 @@ button { font: inherit; cursor: pointer; }
   width: 235px !important;
   min-width: 235px !important;
   max-width: 235px !important;
-  gap: 6px !important;
-  padding: 22px 14px !important;
+  flex-shrink: 0 !important;
+  gap: 8px !important;
+  padding: 25px 16px !important;
   margin: 0 !important;
   background: #101b2c !important;
-  border-right: 1px solid rgba(148,163,184,0.14) !important;
+  border: 0 !important;
+  border-right: 1px solid #29384e !important;
+  border-radius: 0 !important;
   overflow-y: auto !important;
   overflow-x: hidden !important;
 }
+
+/* Brand block like F9 */
 #tablet .creator-tabs::before {
-  content: "CREATOR CONTROL";
+  content: "LSS\ACREATOR CONTROL";
+  white-space: pre;
   display: block;
-  font-size: 11px;
+  font-size: 15px;
   font-weight: 800;
-  letter-spacing: 1.4px;
-  color: #fbbf24;
-  padding: 4px 10px 16px;
-  border-bottom: 1px solid rgba(148,163,184,0.12);
-  margin-bottom: 10px;
+  letter-spacing: 2px;
+  color: #e8eef8;
+  line-height: 1.3;
+  padding: 8px 8px 28px 56px;
+  margin: 0 0 8px;
+  border-bottom: 1px solid #233249;
+  background: url("images/creator-hero.svg") left 8px top 4px / 40px 40px no-repeat;
 }
+
+/* Nav buttons — identical to F9 .nav */
 #tablet .creator-tab {
   display: flex !important;
   align-items: center !important;
-  gap: 12px !important;
+  gap: 0 !important;
   width: 100% !important;
   text-align: left !important;
   border: 0 !important;
@@ -80,30 +86,42 @@ button { font: inherit; cursor: pointer; }
   white-space: nowrap;
 }
 #tablet .creator-tab i {
-  width: 22px;
+  width: 25px;
   text-align: center;
   font-size: 14px;
   flex-shrink: 0;
+  margin-right: 0;
 }
-#tablet .creator-tab:hover {
+#tablet .creator-tab:hover,
+#tablet .creator-tab.active {
   background: #1d4ed8 !important;
   color: #fff !important;
-}
-#tablet .creator-tab.active {
-  background: linear-gradient(90deg, rgba(251,191,36,0.22), rgba(245,158,11,0.08)) !important;
-  color: #fff7ed !important;
-  box-shadow: inset 3px 0 0 #f59e0b;
+  box-shadow: none !important;
+  border-left: 0 !important;
+  padding-left: 13px !important;
 }
 
-/* Workspace / panels */
-#tablet .intro {
-  display: none !important; /* compact: info lives in panels */
+/* Close tab at bottom of sidebar */
+#tablet .creator-tabs #close-sidebar {
+  margin-top: auto !important;
+  color: #f87171 !important;
 }
+#tablet .creator-tabs #close-sidebar:hover {
+  background: #be123c !important;
+  color: #fff !important;
+}
+
+/* Intro strip (optional) */
+#tablet .intro {
+  display: none !important;
+}
+
+/* Workspace panels — F9 .workspace */
 #tablet .grid,
 #tablet section.grid {
   flex: 1 1 auto !important;
   min-width: 0 !important;
-  padding: 22px 28px !important;
+  padding: 26px 32px !important;
   overflow: auto !important;
   background: radial-gradient(ellipse at 85% 0%, #172943 0, transparent 42%), #0b1220 !important;
   display: block !important;
@@ -112,28 +130,28 @@ button { font: inherit; cursor: pointer; }
   display: none !important;
 }
 
-/* Panels & forms */
+/* Panels */
 #tablet .panel {
   background: #121e30;
   border: 1px solid #25364d;
-  border-radius: 14px;
-  padding: 20px 22px;
+  border-radius: 12px;
+  padding: 20px;
   margin-bottom: 16px;
 }
 #tablet .panel h2 {
   margin: 0 0 8px;
-  font-size: 17px;
+  font-size: 19px;
   color: #f1f5f9;
   display: flex;
   align-items: center;
   gap: 10px;
 }
-#tablet .panel h2 i { color: #fbbf24; }
+#tablet .panel h2 i { color: #6da7f5; }
 #tablet .panel-help,
 #tablet .panel p,
 #tablet .panel small {
   font-size: 11px;
-  color: #91a2b8;
+  color: #9aabc0;
   line-height: 1.45;
   margin: 0 0 14px;
 }
@@ -161,8 +179,8 @@ button { font: inherit; cursor: pointer; }
 #tablet input:focus,
 #tablet select:focus,
 #tablet textarea:focus {
-  border-color: #f59e0b;
-  box-shadow: 0 0 0 3px rgba(245,158,11,0.15);
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37,99,235,0.18);
 }
 #tablet textarea { min-height: 90px; resize: vertical; }
 #tablet .buttons {
@@ -261,18 +279,12 @@ button { font: inherit; cursor: pointer; }
 #tablet .fuel-settings { margin-top: 16px; }
 #tablet .inventory-actions { margin-top: 8px; }
 
-/* Floating close button */
-#tablet::after {
-  content: "";
-}
-body:has(#tablet:not(.hidden)) {
-  /* ensure room */
-}
+/* Floating close (header is hidden) */
 #close {
   position: absolute;
-  top: calc(6vh + 14px);
-  right: calc(6vw + 14px);
-  z-index: 20;
+  top: calc(7vh + 14px);
+  right: calc(8vw + 14px);
+  z-index: 30;
   border: 0;
   background: #1b293d;
   color: #dbeafe;
@@ -281,26 +293,27 @@ body:has(#tablet:not(.hidden)) {
   height: 36px;
   font-size: 18px;
 }
-/* Move close into tablet when open */
-#tablet:not(.hidden) ~ * #close,
-#tablet #close {
-  /* if close is inside header (hidden), provide alternate */
-}
-#tablet > header #close {
-  display: none;
-}
-
-/* Re-show a minimal close control */
-#tablet .creator-tabs::after {
-  content: "";
-  flex: 1;
-}
+#tablet > header #close { display: none !important; }
 
 @media (max-width: 900px) {
   #tablet:not(.hidden) { inset: 3vh 2vw; }
-  #tablet .creator-tabs { width: 72px !important; min-width: 72px !important; max-width: 72px !important; }
-  #tablet .creator-tabs::before { font-size: 0; padding-bottom: 8px; }
-  #tablet .creator-tab { justify-content: center; font-size: 0 !important; gap: 0 !important; }
+  #tablet .creator-tabs {
+    width: 72px !important;
+    min-width: 72px !important;
+    max-width: 72px !important;
+    padding: 16px 8px !important;
+  }
+  #tablet .creator-tabs::before {
+    font-size: 0;
+    padding: 0 0 12px;
+    background-position: center top;
+    min-height: 44px;
+  }
+  #tablet .creator-tab {
+    justify-content: center;
+    font-size: 0 !important;
+    padding: 12px 0 !important;
+  }
   #tablet .creator-tab i { font-size: 16px; width: auto; }
   #tablet .grid, #tablet section.grid { padding: 16px !important; }
   #tablet .coord-grid { grid-template-columns: 1fr; }
