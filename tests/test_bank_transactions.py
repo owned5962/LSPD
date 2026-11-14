@@ -114,10 +114,10 @@ def test_fingerprint_validates_location_before_rate_limit_and_prevents_duplicate
 def test_salary_loop_isolates_player_errors_and_non_table_grade_results():
     server = read("server/main.lua")
     assert "type(player) == 'table'" in server
-    assert "type(gradeData) == 'table' and gradeData.salary or 150" in server
+    assert "type(gradeData) == 'table' and validAmount(gradeData.salary) or nil" in server
     assert "local paidOk, paid = pcall(player.addBank" in server
     assert "tostring(paid)" in server
-    assert "elseif paid == true then" in server
+    assert "if not paidOk or paid ~= true then" in server
 
 
 def test_server_uses_real_terminal_proximity_and_atm_requires_registered_location():
@@ -131,4 +131,7 @@ def test_server_uses_real_terminal_proximity_and_atm_requires_registered_locatio
 if __name__ == "__main__":
     test_fingerprint_validates_location_before_rate_limit_and_prevents_duplicate_scans()
     test_server_uses_real_terminal_proximity_and_atm_requires_registered_location()
-    print("Fingerprint and terminal regression checks passed.")
+    test_bank_ledger_schema_accepts_every_emitted_transaction_type()
+    test_salary_requires_a_valid_job_grade_and_uses_one_notification_owner()
+    test_transfer_audit_names_are_safe_when_character_names_are_missing()
+    print("Fingerprint, terminal, salary and ledger regression checks passed.")
