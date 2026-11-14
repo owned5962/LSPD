@@ -1,4 +1,5 @@
 local MAX_CHARACTERS = 3
+local creationLocks = {}
 local DefaultSpawn = { x = -1037.7, y = -2737.8, z = 20.1, heading = 330.0 }
 
 local function GetLicenseIdentifier(src)
@@ -241,7 +242,7 @@ RegisterNetEvent('rp_characters:server:checkPlayer', function()
 
     local charactersOk, characters = SafeDatabaseCall(src, 'character list query', function()
         return MySQL.query.await(
-            'SELECT id, char_id, firstname, lastname, dateofbirth, sex, height, phone_number, cash, bank, job, job_grade, position, skin, metadata, is_dead FROM characters WHERE identifier = ? ORDER BY char_id ASC',
+            'SELECT char_id, firstname, lastname, job FROM characters WHERE identifier = ? ORDER BY char_id ASC',
             { identifier }
         )
     end)
@@ -439,12 +440,66 @@ RegisterNetEvent('rp_characters:server:createCharacter', function(data)
         end
     end
 
+    -- Serialize creation per FiveM license. The unique SQL key remains the
+    -- final guard if two sessions race or the resource restarts mid-request.
+    if creationLocks[identifier] then
+        Notify(src, 'Une création de personnage est déjà en cours pour ce compte.', 'warning')
+        return
+    end
+    creationLocks[identifier] = src
+
+    local lockedCountOk, lockedCount = SafeDatabaseCall(src, 'locked character count query', function()
+        return MySQL.scalar.await('SELECT COUNT(*) FROM characters WHERE identifier = ?', { identifier })
+    end)
+    if not lockedCountOk then
+        creationLocks[identifier] = nil
+        return
+    end
+    if (tonumber(lockedCount) or 0) >= MAX_CHARACTERS then
+        creationLocks[identifier] = nil
+        Notify(src, ('Vous avez atteint la limite de %s personnages.'):format(MAX_CHARACTERS))
+        return
+    end
+
+    local lockedSlotOk, lockedSlot = SafeDatabaseCall(src, 'locked character slot query', function()
+        return MySQL.scalar.await(
+            'SELECT COALESCE(MIN(t.slot), 1) FROM (SELECT 1 AS slot UNION SELECT 2 UNION SELECT 3) t LEFT JOIN characters c ON c.char_id = t.slot AND c.identifier = ? WHERE c.id IS NULL',
+            { identifier }
+        )
+    end)
+    if not lockedSlotOk then
+        creationLocks[identifier] = nil
+        return
+    end
+    slot = tonumber(lockedSlot)
+    if not slot or slot < 1 or slot > MAX_CHARACTERS then
+        creationLocks[identifier] = nil
+        Notify(src, 'Aucun emplacement de personnage disponible.')
+        return
+    end
+
+    -- Encode inside pcall: malformed or oversized NUI payloads must not abort
+    -- the event before the database error handler can release its lock.
+    local encodeOk, encodedPosition, encodedSkin = pcall(function()
+        return json.encode(spawn), json.encode(skin)
+    end)
+    if not encodeOk or type(encodedPosition) ~= 'string' or type(encodedSkin) ~= 'string'
+        or #encodedPosition > 1024 or #encodedSkin > 16384 then
+        creationLocks[identifier] = nil
+        Notify(src, 'L’apparence du personnage contient trop de données. Réduisez les options et réessayez.')
+        return
+    end
+
     local insertOk, charId = pcall(MySQL.insert.await,
         'INSERT INTO characters (identifier, char_id, firstname, lastname, dateofbirth, sex, height, cash, bank, job, job_grade, position, skin) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
         { identifier, slot, firstname, lastname, data.dateofbirth, data.gender, height,
-          2500, 10000, 'unemployed', 0, json.encode(spawn), json.encode(skin) }
+          2500, 10000, 'unemployed', 0, encodedPosition, encodedSkin }
     )
+    creationLocks[identifier] = nil
     if not insertOk or not charId then
+        if not insertOk then
+            print(('[rp_characters] Character insert failed for %s: %s'):format(identifier, tostring(charId)))
+        end
         Notify(src, 'Impossible d’enregistrer le personnage en base de données.')
         return
     end
