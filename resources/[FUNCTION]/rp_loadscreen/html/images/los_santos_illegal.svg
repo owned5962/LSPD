@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600" role="img" aria-label="Los Santos by night, clandestine city atmosphere">
+<defs>
+ <linearGradient id="sky" x2="0" y2="1"><stop stop-color="#11152f"/><stop offset=".55" stop-color="#301b48"/><stop offset="1" stop-color="#080f1d"/></linearGradient>
+ <linearGradient id="neon" x2="1" y2="1"><stop stop-color="#d58aff"/><stop offset="1" stop-color="#5735a5"/></linearGradient>
+ <linearGradient id="road" x2="0" y2="1"><stop stop-color="#172238"/><stop offset="1" stop-color="#050912"/></linearGradient>
+ <filter id="glow"><feGaussianBlur stdDeviation="12"/></filter>
+</defs>
+<rect width="1200" height="600" fill="url(#sky)"/>
+<circle cx="890" cy="150" r="115" fill="#9d5ee8" opacity=".12" filter="url(#glow)"/>
+<path d="M0 360 0 245 65 245 65 190 115 190 115 275 168 275 168 155 225 155 225 260 275 260 275 205 330 205 330 315 390 315 390 170 450 170 450 260 505 260 505 130 565 130 565 300 620 300 620 210 685 210 685 270 750 270 750 160 810 160 810 295 875 295 875 185 935 185 935 265 1000 265 1000 145 1065 145 1065 275 1125 275 1125 210 1200 210 1200 600 0 600Z" fill="#101b31"/>
+<g fill="#8e62bf" opacity=".45">
+ <path d="M180 180h9v18h-9zm22 0h9v18h-9zm-22 32h9v18h-9zm22 0h9v18h-9zM520 155h10v18h-10zm23 0h10v18h-10zm-23 32h10v18h-10zm23 0h10v18h-10zM765 185h10v18h-10zm23 0h10v18h-10zm-23 32h10v18h-10zm23 0h10v18h-10zM1018 170h10v18h-10zm23 0h10v18h-10zm-23 32h10v18h-10zm23 0h10v18h-10z"/>
+</g>
+<path d="M0 390 1200 350 1200 600 0 600Z" fill="url(#road)"/>
+<path d="M0 465 1200 425" stroke="#b66cff" stroke-width="3" opacity=".5"/>
+<path d="M0 490 1200 450" stroke="#4d8fd0" stroke-width="2" opacity=".35"/>
+<g opacity=".55" stroke="#d58aff" stroke-width="5" filter="url(#glow)"><path d="M130 355v-90m-10 90h20M1030 360v-110m-10 110h20"/></g>
+<g transform="translate(430 365)">
+ <path d="M20 85 42 34Q52 15 82 12h165q28 3 43 24l35 49 34 10v50H0v-43z" fill="#090d18" stroke="#a76bd5" stroke-width="3"/>
+ <path d="m70 36 20-18h150l31 22z" fill="#27334e" stroke="#6e75a9" stroke-width="2"/>
+ <path d="M95 27h65v25H76zm78 0h62l24 25h-86z" fill="#7e8da9" opacity=".45"/>
+ <path d="M8 91h344" stroke="#bd7cff" stroke-width="5" opacity=".8"/>
+ <circle cx="75" cy="142" r="22" fill="#05070d" stroke="#8291ad" stroke-width="6"/><circle cx="280" cy="142" r="22" fill="#05070d" stroke="#8291ad" stroke-width="6"/>
+ <path d="M18 100h42m255 0h27" stroke="#d58aff" stroke-width="6"/>
+</g>
+<g fill="#d9a4ff" opacity=".8"><circle cx="103" cy="320" r="4"/><circle cx="1090" cy="320" r="4"/><circle cx="900" cy="290" r="3"/></g>
+<path d="M0 0h1200v600H0z" fill="none" stroke="url(#neon)" stroke-width="3" opacity=".2"/>
+</svg>
