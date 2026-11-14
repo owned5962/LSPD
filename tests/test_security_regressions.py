@@ -1088,7 +1088,10 @@ def test_character_boot_resumes_only_when_core_already_has_a_loaded_player():
     assert "rp_characters:client:resumeLoadedCharacter" in client
     assert "FinishCharacterBoot()" in client[client.index("RegisterNetEvent('rp_characters:client:resumeLoadedCharacter'"):client.index("RegisterNetEvent('rp_characters:client:bootError'")]
     assert "if exports['rp_core']:GetPlayerFromId(src) then" in server
-    assert "TriggerClientEvent('rp_characters:client:resumeLoadedCharacter', src)" in server
+    assert "local function ResumeRegisteredCharacter()" in server
+    assert "exports['rp_core']:GetPlayerSnapshot(src)" in server
+    assert "TriggerClientEvent('rp_characters:client:spawnPlayer', src, position, snapshot.sex, skin)" in server
+    assert "TriggerClientEvent('rp_characters:client:resumeLoadedCharacter', src)" not in server
 
 
 def test_fivem_server_icon_is_registered():
