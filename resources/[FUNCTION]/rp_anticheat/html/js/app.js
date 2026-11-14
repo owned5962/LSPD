@@ -541,7 +541,9 @@ function renderLogs() {
         source.className = 'detection-source';
         source.textContent = log.sourceType === 'server'
             ? 'Preuve observée côté serveur'
-            : 'Signalement client — vérification manuelle requise';
+            : log.sourceType === 'client'
+                ? 'Signalement client — vérification manuelle requise'
+                : 'Ancienne détection — source non historisée';
         reason.appendChild(document.createElement('br'));
         reason.appendChild(source);
         const severity = document.createElement('td');
