@@ -1,7 +1,12 @@
-            DoScreenFadeOut(500)
+            -- Force fade-out but never wait forever (black-screen hang guard).
+            DoScreenFadeOut(300)
             local fadeStartedAt = GetGameTimer() % SPAWN_TIMER_MODULUS
-            while not IsScreenFadedOut() and not SpawnWaitExpired(fadeStartedAt, 5000) do
+            while not IsScreenFadedOut() and not SpawnWaitExpired(fadeStartedAt, 2500) do
                 Wait(10)
+            end
+            if not IsScreenFadedOut() then
+                -- Some clients never report faded-out; continue the pipeline anyway.
+                print('[rp_characters] Fade-out did not complete in time; continuing spawn.')
             end
 
             local appearanceApplied = ApplyCharacterAppearance(gender, skin)
@@ -19,6 +24,6 @@
 
             local collisionStartedAt = GetGameTimer() % SPAWN_TIMER_MODULUS
             while not HasCollisionLoadedAroundEntity(ped)
-                and not SpawnWaitExpired(collisionStartedAt, 10000) do
+                and not SpawnWaitExpired(collisionStartedAt, 8000) do
                 RequestCollisionAtCoord(spawnX, spawnY, spawnZ)
                 Wait(50)
