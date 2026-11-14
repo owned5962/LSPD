@@ -1,19 +1,23 @@
-            eventName = 'lssStage',
-            stage = 'player',
-            status = 'Chargement du compte et des personnages...'
-        }))
-        -- rp_core owns the bootstrap request and already retries session sync.
-        -- Calling rp_characters:server:checkPlayer here as well created a race:
-        -- the second request hit the 5s cooldown and falsely timed out after
-        -- the first request had already opened the creator.
-        print('[rp_characters] Requesting account bootstrap through rp_core...')
-        TriggerServerEvent('rp_core:server:requestPlayerDataSync')
+    SetEntityCollision(ped, true, true)
+    return true
+end
 
-        -- Never leave the loading screen covering the UI indefinitely.
-        Wait(20000)
-        if characterBootPending then
-            ShowCharacterBootError('Le serveur ne répond pas au chargement du compte. Vérifiez oxmysql et la console serveur, puis reconnectez-vous.')
-            print('[rp_characters] Character boot timed out waiting for server response.')
-        end
-    end)
-end)
+local function SetSafeComponent(ped, component, drawable, texture)
+    local count = GetNumberOfPedDrawableVariations(ped, component)
+    if not count or count < 1 then return end
+    drawable = math.max(0, math.min(math.floor(tonumber(drawable) or 0), count - 1))
+    local textures = GetNumberOfPedTextureVariations(ped, component, drawable)
+    texture = math.max(0, math.min(math.floor(tonumber(texture) or 0), math.max(0, (textures or 1) - 1)))
+    SetPedComponentVariation(ped, component, drawable, texture, 0)
+end
+
+local function ApplyCharacterAppearance(gender, skin)
+    skin = type(skin) == 'table' and skin or {}
+    if not LoadFreemodeModel(gender) then
+        -- Last-resort visual recovery: keep the current ped visible and restore
+        -- its default components rather than applying clothing natives to an invalid model.
+        local currentPed = PlayerPedId()
+        if currentPed and currentPed ~= 0 and DoesEntityExist(currentPed) then
+            SetPedDefaultComponentVariation(currentPed)
+            SetEntityVisible(currentPed, true, false)
+            ResetEntityAlpha(currentPed)
