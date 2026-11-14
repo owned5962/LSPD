@@ -352,7 +352,9 @@ def test_character_load_early_exits_never_silently_leave_the_player_waiting():
     )[0]
 
     assert "return false, message" in load
-    assert "TriggerClientEvent('rp_characters:client:resumeLoadedCharacter', src)" in load
+    assert "local function ResumeRegisteredCharacter()" in load
+    assert "GetPlayerSnapshot(src)" in load
+    assert "TriggerClientEvent('rp_characters:client:spawnPlayer', src, position, snapshot.sex, skin)" in load
     assert "if ok and result ~= false then return true end" in wrapper
     assert "local reason = ok and detail or result" in wrapper
     assert "TriggerClientEvent('rp_characters:client:bootError', src, message)" in wrapper
