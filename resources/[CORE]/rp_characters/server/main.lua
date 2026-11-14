@@ -168,10 +168,8 @@ local function LoadCharacterUnsafe(src, identifier, userGroup, char)
         print(('[rp_characters] Failed to initialize character for player %s: %s')
             :format(tostring(src), tostring(player)))
         local message = 'Impossible de finaliser le chargement du personnage. Consultez la console serveur.'
-        Notify(src, message, 'error')
-        TriggerClientEvent('rp_characters:client:bootError', src, message)
-        TriggerClientEvent('rp_characters:client:creationResult', src, { ok = false, message = message })
-        return
+        -- Let LoadCharacter handle the failure response exactly once.
+        return false, message
     end
 
     -- Publish the saved RP identity as the server player name (scoreboard/player list).
