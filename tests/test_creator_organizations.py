@@ -215,6 +215,45 @@ def test_creator_f11_toggle_and_job_blips_are_scoped_and_rate_limited():
     assert "TriggerClientEvent('rp_tablet_creator:client:syncJobBlips', -1" not in server
 
 
+
+
+def test_creator_admin_tools_are_authorized_and_functionally_wired():
+    server = read("resources/[FUNCTION]/rp_tablet_creator/server/main.lua")
+    client = read("resources/[FUNCTION]/rp_tablet_creator/client/main.lua")
+    html = read("resources/[FUNCTION]/rp_tablet_creator/html/index.html")
+    ui = read("resources/[FUNCTION]/rp_tablet_creator/html/app.js")
+    css = read("resources/[FUNCTION]/rp_tablet_creator/html/style.css")
+
+    assert "rp_tablet_creator:server:toggleNoClip" in server
+    assert "creator:noclip" in server and "creatorAccessAllowed(src)" in server
+    assert "rp_tablet_creator:server:spawnVehicle" in server
+    assert "creator:spawn_vehicle" in server and "model:find('[^a-z0-9_]')" in server
+    assert "RegisterNUICallback('toggleNoClip'" in client
+    assert "RegisterNUICallback('spawnVehicle'" in client
+    assert "IsModelInCdimage(hash)" in client and "IsModelAVehicle(hash)" in client
+    assert "SetEntityCollision(entity, false, false)" in client
+    assert "rp_tablet_creator:client:setNoClip" in client
+    assert 'id="creator-noclip"' in html and 'id="creator-spawn-vehicle"' in html
+    assert "post('toggleNoClip')" in ui and "post('spawnVehicle',{model})" in ui
+    assert "lastStatusMessage" in ui and "creator-toast" in css
+    assert "position:fixed" in css and "right:24px" in css
+
+
+def test_creator_bank_uses_economy_owned_schema_and_founder_lockout_survives_reconnects():
+    server = read("resources/[FUNCTION]/rp_tablet_creator/server/main.lua")
+    manifest = read("resources/[FUNCTION]/rp_tablet_creator/fxmanifest.lua")
+    start = server.index("RegisterNetEvent('rp_tablet_creator:server:requestJobBankData'")
+    end = server.index("RegisterNetEvent('rp_tablet_creator:server:saveJobBankPermissions'", start)
+    handler = server[start:end]
+    assert "'rp_economy'" in manifest
+    assert "GetResourceState('rp_economy') ~= 'started'" in handler
+    assert "CREATE TABLE IF NOT EXISTS rp_job_bank_" not in handler
+    assert "INSERT IGNORE INTO rp_job_bank_accounts (job) VALUES (?)" in handler
+    assert "getFounderAttemptKey(src)" in server
+    assert "identifier:sub(1, 8) == 'license:'" in server
+    assert "windowStartedAt" in server and "> 900" in server
+
+
 if __name__ == "__main__":
     test_custom_jobs_are_persisted_validated_and_loaded_with_numeric_grades()
     test_creator_job_creation_is_permission_gated_and_updates_job_selectors()
@@ -225,4 +264,6 @@ if __name__ == "__main__":
     test_job_garage_runtime_enforces_server_job_grade_and_vehicle_ownership()
     test_creator_job_armory_and_shared_locker_are_persisted_and_grade_restricted()
     test_creator_f11_toggle_and_job_blips_are_scoped_and_rate_limited()
+    test_creator_admin_tools_are_authorized_and_functionally_wired()
+    test_creator_bank_uses_economy_owned_schema_and_founder_lockout_survives_reconnects()
     print("Creator organization regression checks passed.")
