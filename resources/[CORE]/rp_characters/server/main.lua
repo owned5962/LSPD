@@ -223,7 +223,7 @@ end
 
 local function InitializePlayerAccount(src)
     local actionOk, allowed = pcall(function()
-        return exports['rp_core']:CanPerformAction(src, 'character:check_player', 5000)
+        return exports['rp_core']:CanPerformAction(src, 'character:initialize_player', 5000)
     end)
     if not actionOk then
         error('rp_core CanPerformAction export failed: ' .. tostring(allowed))
