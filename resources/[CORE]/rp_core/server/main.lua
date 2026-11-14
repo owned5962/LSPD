@@ -4,6 +4,7 @@ local pendingDisconnectSaves = {}
 local pendingDisconnectPlayers = {}
 
 local TIMER_MODULUS = 4294967296
+local DISCONNECT_SAVE_MAX_MS = 60000
 
 -- Prefer the in-resource global published by rate_limit.lua (no export hop).
 local function CanPerformAction(src, action, cooldownMs, opts)
@@ -15,7 +16,20 @@ end
 
 local function IsCharacterSavePending(characterId)
     characterId = tonumber(characterId)
-    return characterId ~= nil and pendingDisconnectSaves[characterId] == true
+    if not characterId then return false end
+    local startedAt = pendingDisconnectSaves[characterId]
+    if startedAt == nil then return false end
+    if startedAt == true then return true end
+    local now = GetGameTimer() % TIMER_MODULUS
+    local elapsed = (now - startedAt) % TIMER_MODULUS
+    if elapsed >= DISCONNECT_SAVE_MAX_MS then
+        pendingDisconnectSaves[characterId] = nil
+        pendingDisconnectPlayers[characterId] = nil
+        print(('[rp_core] Disconnect-save lock expired for character %s after %dms')
+            :format(tostring(characterId), DISCONNECT_SAVE_MAX_MS))
+        return false
+    end
+    return true
 end
 
 exports('IsCharacterSavePending', IsCharacterSavePending)
@@ -119,8 +133,8 @@ local function RegisterPlayer(source, player)
     local slot = type(player) == 'table' and tonumber(player.slot) or nil
     local identifier = type(player) == 'table' and player.identifier or nil
     local validIdentifier = type(identifier) == 'string'
-        and identifier:match('^license:[%w_%-]+$') ~= nil
-        and #identifier >= 10 and #identifier <= 80
+        and #identifier >= 10 and #identifier <= 96
+        and identifier:match('^license2?:[A-Za-z0-9_%-]+$') ~= nil
 
     local function reject(reason)
         print(('[rp_core] RegisterPlayer rejected src=%s reason=%s charId=%s slot=%s ident=%s')
@@ -137,13 +151,19 @@ local function RegisterPlayer(source, player)
     if not slot or slot < 1 or slot > 3 or slot % 1 ~= 0 then return reject('bad_slot') end
     if player.isLoaded ~= true then return reject('not_loaded_flag') end
 
-    if pendingDisconnectSaves[characterId] == true then
+    if IsCharacterSavePending(characterId) then
         return reject('disconnect_save_pending')
     end
 
     for otherSrc, other in pairs(Players) do
         if other and otherSrc ~= src and other.identifier == identifier then
-            return reject('identifier_already_online')
+            if not GetPlayerName(otherSrc) then
+                print(('[rp_core] Purging stale session src=%s for identifier %s')
+                    :format(tostring(otherSrc), tostring(identifier)))
+                Players[otherSrc] = nil
+            else
+                return reject('identifier_already_online')
+            end
         end
     end
 
@@ -273,7 +293,7 @@ AddEventHandler('playerDropped', function(reason)
             GetPlayerName(src) or tostring(src), player.identifier or 'unknown', reason or 'unknown'))
         local characterId = tonumber(player.charId)
         if characterId then
-            pendingDisconnectSaves[characterId] = true
+            pendingDisconnectSaves[characterId] = GetGameTimer() % TIMER_MODULUS
             pendingDisconnectPlayers[characterId] = player
         end
         Players[src] = nil
@@ -289,13 +309,21 @@ AddEventHandler('playerDropped', function(reason)
                         print(('[rp_core] Final save still pending for character %s (attempt %d); reconnect remains blocked.')
                             :format(tostring(characterId), attempt))
                     end
-                    Wait(math.min(30000, 1000 * attempt))
+                    -- Hard stop after DISCONNECT_SAVE_MAX_MS window (~60s)
+                    if attempt >= 12 then
+                        print(('[rp_core] Giving up disconnect-save lock for character %s after %d attempts')
+                            :format(tostring(characterId), attempt))
+                        break
+                    end
+                    Wait(math.min(5000, 1000 * attempt))
                 end
             end
-            if saved and characterId then
+            if characterId then
                 pendingDisconnectSaves[characterId] = nil
                 pendingDisconnectPlayers[characterId] = nil
-                print(('[rp_core] Final disconnect save completed for character %s.'):format(tostring(characterId)))
+                if saved then
+                    print(('[rp_core] Final disconnect save completed for character %s.'):format(tostring(characterId)))
+                end
             end
         end)
     end
@@ -319,6 +347,8 @@ AddEventHandler('onResourceStop', function(resourceName)
             end
         end
     end
+    pendingDisconnectSaves = {}
+    pendingDisconnectPlayers = {}
 end)
 
 CreateThread(function()
