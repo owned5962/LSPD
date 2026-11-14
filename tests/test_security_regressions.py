@@ -1085,13 +1085,16 @@ def test_spectate_is_server_authorized_and_streams_target_coordinates():
 def test_character_boot_resumes_only_when_core_already_has_a_loaded_player():
     client = read("resources/[CORE]/rp_characters/client/main.lua")
     server = read("resources/[CORE]/rp_characters/server/main.lua")
-    assert "rp_characters:client:resumeLoadedCharacter" in client
-    assert "FinishCharacterBoot()" in client[client.index("RegisterNetEvent('rp_characters:client:resumeLoadedCharacter'"):client.index("RegisterNetEvent('rp_characters:client:bootError'")]
+    assert "RegisterNetEvent('rp_characters:client:resumeLoadedCharacter'" not in client
     assert "if exports['rp_core']:GetPlayerFromId(src) then" in server
-    assert "local function ResumeRegisteredCharacter()" in server
+    assert "local function ResumeRegisteredCharacter(src)" in server
     assert "exports['rp_core']:GetPlayerSnapshot(src)" in server
     assert "TriggerClientEvent('rp_characters:client:spawnPlayer', src, position, snapshot.sex, skin)" in server
-    assert "TriggerClientEvent('rp_characters:client:resumeLoadedCharacter', src)" not in server
+    bootstrap = server.split("local function CheckPlayerBootstrap(src)", 1)[1].split(
+        "RegisterNetEvent('rp_characters:server:checkPlayer'", 1
+    )[0]
+    assert "ResumeRegisteredCharacter(src)" in bootstrap
+    assert "resumeLoadedCharacter" not in bootstrap
 
 
 def test_fivem_server_icon_is_registered():
