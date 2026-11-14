@@ -1,320 +1,37 @@
-/* F11 Creator — shell parity with F9 (rp_tablet_job) */
-* { box-sizing: border-box; }
-body {
-  margin: 0;
-  background: transparent;
-  color: #e8eef8;
-  font-family: Arial, "Segoe UI", sans-serif;
-  width: 100vw;
-  height: 100vh;
-  overflow: hidden;
-}
-button { font: inherit; cursor: pointer; }
-.hidden { display: none !important; }
-
-/* Outer frame — identical to F9 #tablet */
-#tablet {
-  position: absolute;
-  inset: 7vh 8vw;
-  display: none;
-  overflow: hidden;
-  border: 1px solid #29384e;
-  border-radius: 18px;
-  background: #0b1220;
-  box-shadow: 0 24px 90px #000b;
-  color: #e8eef8;
-}
-#tablet:not(.hidden) {
-  display: flex !important;
-  flex-direction: row !important;
-}
-
-/* Hide legacy top header */
-#tablet > header { display: none !important; }
-
-/* Sidebar — same as F9 .sidebar */
-#tablet .creator-tabs {
-  display: flex !important;
-  flex-direction: column !important;
-  flex-wrap: nowrap !important;
-  width: 235px !important;
-  min-width: 235px !important;
-  max-width: 235px !important;
-  flex-shrink: 0 !important;
-  gap: 8px !important;
-  padding: 25px 16px !important;
-  margin: 0 !important;
-  background: #101b2c !important;
-  border: 0 !important;
-  border-right: 1px solid #29384e !important;
-  border-radius: 0 !important;
-  overflow-y: auto !important;
-  overflow-x: hidden !important;
-}
-
-/* Brand block like F9 */
-#tablet .creator-tabs::before {
-  content: "LSS\ACREATOR CONTROL";
-  white-space: pre;
-  display: block;
-  font-size: 15px;
-  font-weight: 800;
-  letter-spacing: 2px;
-  color: #e8eef8;
-  line-height: 1.3;
-  padding: 8px 8px 28px 56px;
-  margin: 0 0 8px;
-  border-bottom: 1px solid #233249;
-  background: url("images/creator-hero.svg") left 8px top 4px / 40px 40px no-repeat;
-}
-
-/* Nav buttons — identical to F9 .nav */
-#tablet .creator-tab {
-  display: flex !important;
-  align-items: center !important;
-  gap: 0 !important;
-  width: 100% !important;
-  text-align: left !important;
-  border: 0 !important;
-  border-radius: 9px !important;
-  padding: 13px !important;
-  background: transparent !important;
-  color: #aab8ca !important;
-  font-size: 12px !important;
-  font-weight: 600 !important;
-  cursor: pointer !important;
-  white-space: nowrap;
-}
-#tablet .creator-tab i {
-  width: 25px;
-  text-align: center;
-  font-size: 14px;
-  flex-shrink: 0;
-  margin-right: 0;
-}
-#tablet .creator-tab:hover,
-#tablet .creator-tab.active {
-  background: #1d4ed8 !important;
-  color: #fff !important;
-  box-shadow: none !important;
-  border-left: 0 !important;
-  padding-left: 13px !important;
-}
-
-/* Close tab at bottom of sidebar */
-#tablet .creator-tabs #close-sidebar {
-  margin-top: auto !important;
-  color: #f87171 !important;
-}
-#tablet .creator-tabs #close-sidebar:hover {
-  background: #be123c !important;
-  color: #fff !important;
-}
-
-/* Intro strip (optional) */
-#tablet .intro {
-  display: none !important;
-}
-
-/* Workspace panels — F9 .workspace */
-#tablet .grid,
-#tablet section.grid {
-  flex: 1 1 auto !important;
-  min-width: 0 !important;
-  padding: 26px 32px !important;
-  overflow: auto !important;
-  background: radial-gradient(ellipse at 85% 0%, #172943 0, transparent 42%), #0b1220 !important;
-  display: block !important;
-}
-#tablet section.grid[hidden] {
-  display: none !important;
-}
-
-/* Panels */
-#tablet .panel {
-  background: #121e30;
-  border: 1px solid #25364d;
-  border-radius: 12px;
-  padding: 20px;
-  margin-bottom: 16px;
-}
-#tablet .panel h2 {
-  margin: 0 0 8px;
-  font-size: 19px;
-  color: #f1f5f9;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-#tablet .panel h2 i { color: #6da7f5; }
-#tablet .panel-help,
-#tablet .panel p,
-#tablet .panel small {
-  font-size: 11px;
-  color: #9aabc0;
-  line-height: 1.45;
-  margin: 0 0 14px;
-}
-#tablet label {
-  display: block;
-  font-size: 10px;
-  letter-spacing: 0.6px;
-  color: #8294ad;
-  margin: 10px 0 6px;
-  text-transform: uppercase;
-  font-weight: 700;
-}
-#tablet input,
-#tablet select,
-#tablet textarea {
-  width: 100%;
-  padding: 11px 12px;
-  border: 1px solid #34465f;
-  border-radius: 8px;
-  background: #0b1220;
-  color: #e8eef8;
-  font-size: 13px;
-  outline: none;
-}
-#tablet input:focus,
-#tablet select:focus,
-#tablet textarea:focus {
-  border-color: #2563eb;
-  box-shadow: 0 0 0 3px rgba(37,99,235,0.18);
-}
-#tablet textarea { min-height: 90px; resize: vertical; }
-#tablet .buttons {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin: 12px 0;
-}
-#tablet .buttons button,
-#tablet button.primary,
-#tablet .primary {
-  border: 0;
-  background: #2563eb;
-  color: #fff;
-  padding: 11px 15px;
-  border-radius: 8px;
-  font-size: 11px;
-  font-weight: 700;
-}
-#tablet .buttons button:hover,
-#tablet button.primary:hover {
-  filter: brightness(1.08);
-}
-#tablet .time-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-#tablet .time-row input { width: 72px; }
-#tablet .coord-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
-  margin: 8px 0;
-}
-#tablet .coord-grid label { margin-top: 0; }
-#tablet .check-line {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  text-transform: none;
-  font-size: 12px;
-  color: #cbd5e1;
-  letter-spacing: 0;
-  margin: 10px 0;
-}
-#tablet .check-line input { width: auto; }
-#tablet .subheading {
-  margin: 18px 0 8px;
-  font-size: 13px;
-  color: #e2e8f0;
-}
-#tablet .org-list,
-#tablet .mapping-list,
-#tablet .module-list {
-  display: grid;
-  gap: 8px;
-  margin-top: 10px;
-}
-#tablet .org-list > *,
-#tablet .mapping-list > *,
-#tablet .module-list > * {
-  padding: 12px 14px;
-  background: #0f1a2b;
-  border: 1px solid #25364d;
-  border-radius: 9px;
-  font-size: 12px;
-}
-#tablet .grade-editor {
-  display: grid;
-  grid-template-columns: 1fr 100px;
-  gap: 8px 10px;
-  margin: 8px 0 14px;
-}
-#tablet .tablet-access {
-  display: grid;
-  gap: 8px;
-  margin: 10px 0 14px;
-}
-#tablet .tablet-access label {
-  text-transform: none;
-  letter-spacing: 0;
-  font-size: 12px;
-  color: #cbd5e1;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-#tablet .tablet-access input { width: auto; }
-#tablet .module-heading {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin: 16px 0 8px;
-}
-#tablet .fuel-settings { margin-top: 16px; }
-#tablet .inventory-actions { margin-top: 8px; }
-
-/* Floating close (header is hidden) */
-#close {
-  position: absolute;
-  top: calc(7vh + 14px);
-  right: calc(8vw + 14px);
-  z-index: 30;
-  border: 0;
-  background: #1b293d;
-  color: #dbeafe;
-  border-radius: 9px;
-  width: 36px;
-  height: 36px;
-  font-size: 18px;
-}
-#tablet > header #close { display: none !important; }
-
-@media (max-width: 900px) {
-  #tablet:not(.hidden) { inset: 3vh 2vw; }
-  #tablet .creator-tabs {
-    width: 72px !important;
-    min-width: 72px !important;
-    max-width: 72px !important;
-    padding: 16px 8px !important;
-  }
-  #tablet .creator-tabs::before {
-    font-size: 0;
-    padding: 0 0 12px;
-    background-position: center top;
-    min-height: 44px;
-  }
-  #tablet .creator-tab {
-    justify-content: center;
-    font-size: 0 !important;
-    padding: 12px 0 !important;
-  }
-  #tablet .creator-tab i { font-size: 16px; width: auto; }
-  #tablet .grid, #tablet section.grid { padding: 16px !important; }
-  #tablet .coord-grid { grid-template-columns: 1fr; }
-}
+/* F11 Creator — F9/F12 shell parity + tab images */
+*{box-sizing:border-box}body{margin:0;background:transparent;color:#e8eef8;font-family:Arial,"Segoe UI",sans-serif;width:100vw;height:100vh;overflow:hidden}button{font:inherit;cursor:pointer}.hidden{display:none!important}
+#tablet{position:absolute;inset:7vh 8vw;display:none;overflow:hidden;border:1px solid #29384e;border-radius:18px;background:#0b1220;box-shadow:0 24px 90px #000b;color:#e8eef8}
+#tablet:not(.hidden){display:flex!important;flex-direction:row!important}
+#tablet>header{display:none!important}
+#tablet .creator-tabs{display:flex!important;flex-direction:column!important;flex-wrap:nowrap!important;width:235px!important;min-width:235px!important;max-width:235px!important;flex-shrink:0!important;gap:8px!important;padding:25px 16px!important;margin:0!important;background:#101b2c!important;border:0!important;border-right:1px solid #29384e!important;overflow-y:auto!important}
+#tablet .creator-tabs::before{content:"LSS\ACREATOR CONTROL";white-space:pre;display:block;font-size:15px;font-weight:800;letter-spacing:2px;color:#e8eef8;line-height:1.3;padding:8px 8px 28px 56px;margin:0 0 8px;border-bottom:1px solid #233249;background:url("images/creator-hero.svg") left 8px top 4px/40px 40px no-repeat}
+#tablet .creator-tab{display:flex!important;align-items:center!important;width:100%!important;text-align:left!important;border:0!important;border-radius:9px!important;padding:13px!important;background:transparent!important;color:#aab8ca!important;font-size:12px!important;font-weight:600!important;cursor:pointer!important;white-space:nowrap}
+#tablet .creator-tab i{width:25px;text-align:center;font-size:14px}
+#tablet .creator-tab:hover,#tablet .creator-tab.active{background:#1d4ed8!important;color:#fff!important}
+#tablet .creator-tabs #close-sidebar{margin-top:auto!important;color:#f87171!important}
+#tablet .creator-tabs #close-sidebar:hover{background:#be123c!important;color:#fff!important}
+#tablet .intro{display:none!important}
+#tablet .grid,#tablet section.grid{flex:1 1 auto!important;min-width:0!important;padding:26px 32px!important;overflow:auto!important;background:radial-gradient(ellipse at 85% 0%,#172943 0,transparent 42%),#0b1220!important;display:block!important}
+#tablet section.grid[hidden]{display:none!important}
+/* Hero image banner per active panel */
+#tablet section.grid:not([hidden])>.panel:first-child{position:relative;overflow:hidden}
+#tablet section.grid:not([hidden])>.panel:first-child::after{content:"";position:absolute;right:16px;top:16px;width:72px;height:48px;background:url("images/creator-hero.svg") center/contain no-repeat;opacity:.85;pointer-events:none}
+#tablet .panel{background:#121e30;border:1px solid #25364d;border-radius:12px;padding:20px;margin-bottom:16px}
+#tablet .panel h2{margin:0 0 8px;font-size:19px;color:#f1f5f9;display:flex;align-items:center;gap:10px}
+#tablet .panel h2 i{color:#6da7f5}
+#tablet .panel-help,#tablet .panel p,#tablet .panel small{font-size:11px;color:#9aabc0;line-height:1.45;margin:0 0 14px}
+#tablet label{display:block;font-size:10px;letter-spacing:.6px;color:#8294ad;margin:10px 0 6px;text-transform:uppercase;font-weight:700}
+#tablet input,#tablet select,#tablet textarea{width:100%;padding:11px 12px;border:1px solid #34465f;border-radius:8px;background:#0b1220;color:#e8eef8;font-size:13px;outline:none}
+#tablet input:focus,#tablet select:focus,#tablet textarea:focus{border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.18)}
+#tablet textarea{min-height:90px;resize:vertical}
+#tablet .buttons{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+#tablet .buttons button,#tablet button.primary,#tablet .primary{border:0;background:#2563eb;color:#fff;padding:11px 15px;border-radius:8px;font-size:11px;font-weight:700}
+#tablet .time-row{display:flex;align-items:center;gap:8px}
+#tablet .time-row input{width:72px}
+#tablet .coord-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:8px 0}
+#tablet .check-line{display:flex;align-items:center;gap:8px;text-transform:none;font-size:12px;color:#cbd5e1;letter-spacing:0;margin:10px 0}
+#tablet .check-line input{width:auto}
+#tablet .org-list,#tablet .mapping-list,#tablet .module-list{display:grid;gap:8px;margin-top:10px}
+#tablet .org-list>*,#tablet .mapping-list>*,#tablet .module-list>*{padding:12px 14px;background:#0f1a2b;border:1px solid #25364d;border-radius:9px;font-size:12px}
+#close{position:absolute;top:calc(7vh + 14px);right:calc(8vw + 14px);z-index:30;border:0;background:#1b293d;color:#dbeafe;border-radius:9px;width:36px;height:36px;font-size:18px}
+@media(max-width:900px){#tablet:not(.hidden){inset:3vh 2vw}#tablet .creator-tabs{width:72px!important;min-width:72px!important;max-width:72px!important;padding:16px 8px!important}#tablet .creator-tabs::before{font-size:0;padding:0 0 12px;background-position:center top;min-height:44px}#tablet .creator-tab{justify-content:center;font-size:0!important;padding:12px 0!important}#tablet .creator-tab i{font-size:16px;width:auto}#tablet .grid,#tablet section.grid{padding:16px!important}#tablet .coord-grid{grid-template-columns:1fr}}

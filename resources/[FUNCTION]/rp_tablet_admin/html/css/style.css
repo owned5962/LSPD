@@ -1,265 +1,46 @@
-/* rp_tablet_admin — F9-parity shell (no @import chain) */
-:root {
-  --bg-dark: #0b1220;
-  --bg-surface: #121e30;
-  --border-dark: #25364d;
-  --text-primary: #e8eef8;
-  --text-secondary: #aab8ca;
-  --text-muted: #8294ad;
-  --accent: #1d4ed8;
-  --accent-btn: #2563eb;
-  --danger: #be123c;
-}
-* { margin: 0; padding: 0; box-sizing: border-box; font-family: Arial, "Segoe UI", sans-serif; user-select: none; }
-body {
-  background: transparent;
-  width: 100vw;
-  height: 100vh;
-  overflow: hidden;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  color: var(--text-primary);
-}
+/* F10 Admin — shell parity with F9/F12 (AEGIS) */
+*{margin:0;padding:0;box-sizing:border-box;font-family:Arial,"Segoe UI",sans-serif;user-select:none}
+body{background:transparent;width:100vw;height:100vh;overflow:hidden;color:#e8eef8}
+#tablet-wrapper{position:absolute;inset:7vh 8vw;display:none}
+#tablet-wrapper.is-open{display:block}
+.tablet-frame,.tablet-screen{width:100%;height:100%;min-height:620px;max-height:86vh;background:#0b1220;border:1px solid #29384e;border-radius:18px;box-shadow:0 24px 90px #000b;overflow:hidden}
+.tablet-frame{padding:0}
+.status-bar{display:none!important}
+.tablet-home-indicator{display:none!important}
+.tablet-content{height:100%;padding:0;overflow:hidden}
+.view-panel{display:none;width:100%;height:100%}
+.view-panel.active{display:flex}
 
-/* Outer frame — same as F9 #tablet */
-#tablet-wrapper {
-  position: absolute;
-  inset: 7vh 8vw;
-  width: auto;
-  height: auto;
-  display: none;
-}
-#tablet-wrapper.is-open { display: block; }
-.tablet-frame {
-  width: 100%;
-  height: 100%;
-  min-height: 620px;
-  max-height: 86vh;
-  background: #0b1220;
-  border: 1px solid #29384e;
-  border-radius: 18px;
-  padding: 0;
-  box-shadow: 0 24px 90px #000b;
-  position: relative;
-  overflow: hidden;
-}
-.tablet-screen {
-  width: 100%;
-  height: 100%;
-  min-height: 620px;
-  max-height: 86vh;
-  background: #0b1220;
-  border-radius: 18px;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  border: 0;
-}
+/* Row: sidebar + workspace */
+#view-admin.view-panel.active{display:flex!important;flex-direction:row!important;height:100%;padding:0!important;gap:0;background:#0b1220}
+#view-admin>.admin-subnav{order:-1;width:235px;min-width:235px;max-width:235px;flex-shrink:0;display:flex;flex-direction:column;gap:8px;margin:0;padding:25px 16px;background:#101b2c;border-right:1px solid #29384e;overflow-y:auto}
+#view-admin>.admin-subnav::before{content:"LSS\AADMIN CENTRE";white-space:pre;display:block;font-size:15px;font-weight:800;letter-spacing:2px;color:#e8eef8;line-height:1.3;padding:8px 8px 28px 56px;margin:0 0 8px;border-bottom:1px solid #233249;background:url("../images/admin-hero.svg") left 8px top 4px/40px 40px no-repeat}
+#view-admin .admin-subnav-btn{width:100%;border:0;background:transparent;color:#aab8ca;text-align:left;padding:13px;border-radius:9px;font-size:12px;font-weight:600;display:flex;align-items:center;gap:0;cursor:pointer}
+#view-admin .admin-subnav-btn i{width:25px;text-align:center;font-size:14px}
+#view-admin .admin-subnav-btn:hover,#view-admin .admin-subnav-btn.active{background:#1d4ed8;color:#fff}
+#view-admin .admin-subnav-btn span{margin-left:auto;background:#be123c;color:#fff;border-radius:20px;padding:2px 7px;font-size:10px;font-weight:700}
+#view-admin>.panel-header,#view-admin>.admin-visual-overview{display:none!important}
+#view-admin>.admin-subview{display:none;flex:1;flex-direction:column;padding:26px 32px;overflow:auto;background:radial-gradient(ellipse at 85% 0%,#172943 0,transparent 42%),#0b1220;min-width:0;height:100%}
+#view-admin>.admin-subview.active{display:flex!important}
 
-/* Compact status bar */
-.status-bar {
-  height: 40px;
-  background: #101b2c;
-  border-bottom: 1px solid #233249;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0 18px;
-  color: var(--text-secondary);
-  font-size: 11px;
-  font-weight: 600;
-  flex-shrink: 0;
-}
-.tablet-content {
-  flex: 1;
-  overflow: hidden;
-  position: relative;
-  padding: 0;
-  min-height: 0;
-}
-.view-panel { display: none; width: 100%; height: 100%; }
-.view-panel.active { display: flex; }
+/* Tab hero strip with image */
+#view-admin>.admin-subview.active::before{content:attr(data-title);display:block;margin:0 0 16px;padding:18px 20px 18px 88px;border:1px solid #2b4260;border-radius:14px;background:linear-gradient(110deg,#132b4b,#152337);font-size:18px;font-weight:800;color:#fff;min-height:64px;position:relative}
+#admin-players-view.active::before{content:"Joueurs connectés";background-image:url("../images/admin-hero.svg"),linear-gradient(110deg,#132b4b,#152337);background-repeat:no-repeat,no-repeat;background-position:16px center,0 0;background-size:48px,auto}
+#admin-gives-view.active::before{content:"Attribution de ressources";background-image:url("../images/admin-hero.svg"),linear-gradient(110deg,#132b4b,#152337);background-repeat:no-repeat,no-repeat;background-position:16px center,0 0;background-size:48px,auto}
+#admin-sanctions-view.active::before{content:"Sanctions";background-image:url("../images/admin-hero.svg"),linear-gradient(110deg,#132b4b,#152337);background-repeat:no-repeat,no-repeat;background-position:16px center,0 0;background-size:48px,auto}
+#admin-functions-view.active::before{content:"Fonctions administrateur";background-image:url("../images/admin-hero.svg"),linear-gradient(110deg,#132b4b,#152337);background-repeat:no-repeat,no-repeat;background-position:16px center,0 0;background-size:48px,auto}
+#admin-jobs-view.active::before{content:"Attribution de métier";background-image:url("../images/admin-hero.svg"),linear-gradient(110deg,#132b4b,#152337);background-repeat:no-repeat,no-repeat;background-position:16px center,0 0;background-size:48px,auto}
+#admin-weather-view.active::before{content:"Météo & heure";background-image:url("../images/admin-hero.svg"),linear-gradient(110deg,#132b4b,#152337);background-repeat:no-repeat,no-repeat;background-position:16px center,0 0;background-size:48px,auto}
+#admin-map-view.active::before{content:"Carte San Andreas";background-image:url("../images/los_santos_map.svg"),linear-gradient(110deg,#132b4b,#152337);background-repeat:no-repeat,no-repeat;background-position:16px center,0 0;background-size:56px,auto}
+#admin-reports-view.active::before{content:"Signalements";background-image:url("../images/admin-hero.svg"),linear-gradient(110deg,#132b4b,#152337);background-repeat:no-repeat,no-repeat;background-position:16px center,0 0;background-size:48px,auto}
+#admin-audit-view.active::before{content:"Journal d'audit";background-image:url("../images/admin-hero.svg"),linear-gradient(110deg,#132b4b,#152337);background-repeat:no-repeat,no-repeat;background-position:16px center,0 0;background-size:48px,auto}
 
-/* ===== F10 admin = F9 layout (flex row + left nav) ===== */
-#view-admin.view-panel.active {
-  display: flex !important;
-  flex-direction: row !important;
-  height: 100%;
-  min-height: 0;
-  overflow: hidden;
-  padding: 0 !important;
-  gap: 0;
-  background: #0b1220;
-}
-#view-admin > .admin-subnav {
-  order: -1;
-  width: 235px;
-  min-width: 235px;
-  max-width: 235px;
-  flex-shrink: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin: 0;
-  padding: 25px 16px;
-  background: #101b2c;
-  border-right: 1px solid #29384e;
-  overflow-y: auto;
-  overflow-x: hidden;
-  flex-wrap: nowrap;
-}
-#view-admin > .admin-subnav::before {
-  content: "LSS\AADMIN CENTRE";
-  white-space: pre;
-  display: block;
-  font-size: 15px;
-  font-weight: 800;
-  letter-spacing: 2px;
-  color: #e8eef8;
-  line-height: 1.3;
-  padding: 8px 8px 28px 56px;
-  margin: 0 0 8px;
-  border-bottom: 1px solid #233249;
-  background: url("../images/admin-hero.svg") left 8px top 4px / 40px 40px no-repeat;
-}
-#view-admin .admin-subnav-btn {
-  width: 100%;
-  border: 0;
-  background: transparent;
-  color: #aab8ca;
-  text-align: left;
-  padding: 13px;
-  border-radius: 9px;
-  font-size: 12px;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 0;
-  white-space: nowrap;
-  cursor: pointer;
-}
-#view-admin .admin-subnav-btn i {
-  width: 25px;
-  text-align: center;
-  font-size: 14px;
-  flex-shrink: 0;
-}
-#view-admin .admin-subnav-btn:hover,
-#view-admin .admin-subnav-btn.active {
-  background: #1d4ed8;
-  color: #fff;
-  border-left: 0;
-  padding-left: 13px;
-}
-#view-admin .admin-subnav-btn span {
-  margin-left: auto;
-  background: #be123c;
-  color: #fff;
-  border-radius: 20px;
-  padding: 2px 7px;
-  font-size: 10px;
-  font-weight: 700;
-}
-#view-admin > .panel-header,
-#view-admin > .admin-visual-overview {
-  display: none !important;
-}
-#view-admin > .admin-subview {
-  display: none;
-  flex: 1 1 auto;
-  flex-direction: column;
-  padding: 26px 32px;
-  overflow: auto;
-  background: radial-gradient(ellipse at 85% 0%, #172943 0, transparent 42%), #0b1220;
-  min-height: 0;
-  min-width: 0;
-  height: 100%;
-}
-#view-admin > .admin-subview.active {
-  display: flex !important;
-}
-
-/* Cards / buttons */
-.admin-card, .player-entry, .give-card {
-  background: #121e30;
-  border: 1px solid #25364d;
-  border-radius: 11px;
-}
-.btn-red, .action-btn-red {
-  border: 0;
-  background: #2563eb;
-  color: #fff;
-  padding: 11px 15px;
-  border-radius: 8px;
-  font-size: 11px;
-  font-weight: 700;
-  cursor: pointer;
-}
-.btn-red.alert { background: #be123c; }
-#btn-close-tablet {
-  background: #1b293d;
-  border: 0;
-  color: #dbeafe;
-  width: 32px;
-  height: 32px;
-  border-radius: 9px;
-  cursor: pointer;
-}
-.player-list-scrollable {
-  flex: 1;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.player-entry {
-  padding: 10px 12px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  cursor: pointer;
-}
-.player-entry:hover { border-color: #1d4ed8; }
-.player-entry.selected {
-  border-color: #1d4ed8;
-  background: rgba(29, 78, 216, 0.18);
-}
-.header-titles h2 {
-  font-size: 18px;
-  font-weight: 800;
-  color: #fff;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.header-titles p {
-  font-size: 12px;
-  color: var(--text-muted);
-  margin-top: 3px;
-}
-.tablet-home-indicator { display: none; }
-
-@media (max-width: 960px) {
-  #tablet-wrapper { inset: 3vh 2vw; }
-  #view-admin > .admin-subnav {
-    width: 72px;
-    min-width: 72px;
-    max-width: 72px;
-    padding: 16px 8px;
-  }
-  #view-admin > .admin-subnav::before {
-    font-size: 0;
-    padding: 0 0 12px;
-    background-position: center top;
-    min-height: 44px;
-  }
-  #view-admin .admin-subnav-btn {
-    justify-content: center;
-    font-size: 0;
-    padding: 12px 0;
-  }
-  #view-admin .admin-subnav-btn i { font-size: 16px; width: auto; }
-  #view-admin .admin-subnav-btn span { display: none; }
-  #view-admin > .admin-subview { padding: 16px; }
-}
+.admin-card,.player-entry,.give-card{background:#121e30;border:1px solid #25364d;border-radius:11px}
+.btn-red,.action-btn-red{border:0;background:#2563eb;color:#fff;padding:11px 15px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer}
+.btn-red.alert{background:#be123c}
+#btn-close-tablet{position:absolute;top:calc(7vh + 14px);right:calc(8vw + 14px);z-index:40;background:#1b293d;border:0;color:#dbeafe;width:36px;height:36px;border-radius:9px;cursor:pointer}
+.player-list-scrollable{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px}
+.player-entry{padding:10px 12px;display:flex;align-items:center;gap:12px;cursor:pointer}
+.player-entry:hover,.player-entry.selected{border-color:#1d4ed8;background:rgba(29,78,216,.18)}
+.player-report-overlay.hidden{display:none!important}
+@media(max-width:960px){#tablet-wrapper{inset:3vh 2vw}#view-admin>.admin-subnav{width:72px;min-width:72px;max-width:72px;padding:16px 8px}#view-admin>.admin-subnav::before{font-size:0;padding:0 0 12px;background-position:center top;min-height:44px}#view-admin .admin-subnav-btn{justify-content:center;font-size:0;padding:12px 0}#view-admin .admin-subnav-btn i{font-size:16px;width:auto}#view-admin .admin-subnav-btn span{display:none}#view-admin>.admin-subview{padding:16px}}
