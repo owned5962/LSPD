@@ -338,5 +338,6 @@ RegisterNetEvent('rp_anticheat:notifyStaff', function(data, detectionCount)
         alert = data,
         detectionCount = detectionCount
     })
-    TriggerEvent('rp_core:notify', 'error', '[ANTICHEAT] ' .. data.playerName .. ' (ID ' .. data.playerId .. ') : ' .. data.reason)
+    local sourceLabel = data.sourceType == 'server' and '[PREUVE SERVEUR]' or '[SIGNAL CLIENT À VÉRIFIER]'
+    TriggerEvent('rp_core:notify', 'error', '[ANTICHEAT] ' .. sourceLabel .. ' ' .. data.playerName .. ' (ID ' .. data.playerId .. ') : ' .. data.reason)
 end)
