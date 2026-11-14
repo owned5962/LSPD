@@ -98,11 +98,41 @@ RegisterNetEvent('rp_tablet_creator:server:toggleNoClip', function()
     local src = source
     if not creatorAccessAllowed(src)
         or not exports['rp_core']:CanPerformAction(src, 'creator:noclip', 700) then return end
-    local enabled = NoClipSessions[src] ~= true
+    if GetResourceState('rp_tablet_admin') ~= 'started' then
+        reply(src, 'Le service des outils administrateur est indisponible.', false)
+        return
+    end
+    local readOk, current = pcall(function()
+        return exports['rp_tablet_admin']:IsAdminNoclipEnabled(src)
+    end)
+    if not readOk then
+        reply(src, 'Impossible de lire l’état du no-clip.', false)
+        return
+    end
+    local enabled = current ~= true
+    local setOk, saved = pcall(function()
+        return exports['rp_tablet_admin']:SetAdminNoclip(src, enabled, 'Creator F11')
+    end)
+    if not setOk or saved ~= true then
+        reply(src, 'Impossible de modifier le no-clip.', false)
+        return
+    end
     NoClipSessions[src] = enabled and true or nil
     TriggerClientEvent('rp_tablet_creator:client:setNoClip', src, enabled)
     reply(src, enabled and 'No-clip activé.' or 'No-clip désactivé.', true)
-    LogCreatorAction(src, 'noclip', nil, tostring(enabled))
+end)
+
+-- Cleanup endpoint: clients may only request deactivation, never activation.
+RegisterNetEvent('rp_tablet_creator:server:setNoClip', function(enabled)
+    local src = source
+    if enabled ~= false or NoClipSessions[src] ~= true then return end
+    if GetResourceState('rp_tablet_admin') == 'started' then
+        pcall(function()
+            exports['rp_tablet_admin']:SetAdminNoclip(src, false, 'Creator F11 cleanup')
+        end)
+    end
+    NoClipSessions[src] = nil
+    TriggerClientEvent('rp_tablet_creator:client:setNoClip', src, false)
 end)
 
 RegisterNetEvent('rp_tablet_creator:server:spawnVehicle', function(rawModel)
@@ -195,6 +225,15 @@ RegisterNetEvent('rp_tablet_creator:server:requestOpen', function()
     local player = exports['rp_core']:GetPlayerFromId(src)
     local role = player and player.group or 'Créateur'
     TriggerClientEvent('rp_tablet_creator:client:open', src, role)
+    local noClipEnabled = false
+    if GetResourceState('rp_tablet_admin') == 'started' then
+        local ok, enabled = pcall(function()
+            return exports['rp_tablet_admin']:IsAdminNoclipEnabled(src)
+        end)
+        noClipEnabled = ok and enabled == true
+    end
+    NoClipSessions[src] = noClipEnabled and true or nil
+    TriggerClientEvent('rp_tablet_creator:client:setNoClip', src, noClipEnabled)
 end)
 
 RegisterNetEvent('rp_tablet_creator:server:setWorld', function(weather, rawHours, rawMinutes)
@@ -1338,4 +1377,18 @@ RegisterNetEvent('rp_tablet_creator:server:requestOrganizations', function()
     local jobsOk, jobs = pcall(function() return exports['rp_jobs']:GetCustomJobs() end)
     if not jobsOk then print('[rp_tablet_creator] Custom job list failed: ' .. tostring(jobs)); jobs = {} end
     TriggerClientEvent('rp_tablet_creator:client:customJobsData', src, jobs or {})
+end)
+
+
+AddEventHandler('onResourceStop', function(resourceName)
+    if resourceName ~= GetCurrentResourceName() then return end
+    if GetResourceState('rp_tablet_admin') == 'started' then
+        for src, enabled in pairs(NoClipSessions) do
+            if enabled then
+                pcall(function()
+                    exports['rp_tablet_admin']:SetAdminNoclip(src, false, 'Creator resource stop')
+                end)
+            end
+        end
+    end
 end)
