@@ -200,11 +200,11 @@ RegisterNetEvent('rp_core:server:requestPlayerDataSync', function()
         player.syncClient()
         return
     end
-    print(('[rp_core] No active character session for %s — requesting character bootstrap.')
+    print(('[rp_core] No active character session for %s — requesting account initialization.')
         :format(tostring(src)))
-    TriggerClientEvent('rp_core:client:requestCharacterBootstrap', src)
+    TriggerClientEvent('rp_core:client:requestCharacterInitialization', src)
     if GetResourceState('rp_characters') == 'started' then
-        TriggerEvent('rp_characters:server:forceBootstrap', src)
+        TriggerEvent('rp_characters:server:initializePlayer', src)
     end
 end)
 
