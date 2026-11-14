@@ -6,6 +6,9 @@ on:
     paths:
       - "resources/**"
       - "tests/test_anticheat_statistics.py"
+      - "tests/test_anticheat_hardening.py"
+      - "database.sql"
+      - "migrations/**"
       - ".github/workflows/anticheat-statistics.yml"
   pull_request:
     branches: [main]
@@ -29,8 +32,10 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y lua5.4
-      - name: Run anticheat statistics regression checks
-        run: python tests/test_anticheat_statistics.py
+      - name: Run anticheat regression checks
+        run: |
+          python tests/test_anticheat_statistics.py
+          python tests/test_anticheat_hardening.py
       - name: Validate anticheat Lua syntax
         run: |
           luac -p "resources/[FUNCTION]/rp_anticheat/server/main.lua"
