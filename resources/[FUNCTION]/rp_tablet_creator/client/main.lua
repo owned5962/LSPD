@@ -1,4 +1,69 @@
 local isOpen = false
+local noClipEnabled = false
+local noClipEntity = nil
+
+local function setNoClipEnabled(enabled)
+    if type(enabled) ~= 'boolean' then return end
+    noClipEnabled = enabled
+    if not enabled and noClipEntity and DoesEntityExist(noClipEntity) then
+        SetEntityCollision(noClipEntity, true, true)
+        SetEntityHasGravity(noClipEntity, true)
+        SetEntityVelocity(noClipEntity, 0.0, 0.0, 0.0)
+    end
+    if not enabled then noClipEntity = nil end
+    SendNUIMessage({ action = 'noClipState', enabled = enabled })
+end
+
+CreateThread(function()
+    while true do
+        if not noClipEnabled then
+            Wait(250)
+        else
+            local ped = PlayerPedId()
+            local entity = ped
+            local vehicle = GetVehiclePedIsIn(ped, false)
+            if vehicle ~= 0 and GetPedInVehicleSeat(vehicle, -1) == ped then entity = vehicle end
+
+            if noClipEntity and noClipEntity ~= entity and DoesEntityExist(noClipEntity) then
+                SetEntityCollision(noClipEntity, true, true)
+                SetEntityHasGravity(noClipEntity, true)
+            end
+            noClipEntity = entity
+            SetEntityCollision(entity, false, false)
+            SetEntityHasGravity(entity, false)
+            SetEntityVelocity(entity, 0.0, 0.0, 0.0)
+
+            DisableControlAction(0, 32, true)
+            DisableControlAction(0, 33, true)
+            DisableControlAction(0, 34, true)
+            DisableControlAction(0, 35, true)
+            DisableControlAction(0, 22, true)
+            DisableControlAction(0, 36, true)
+            DisableControlAction(0, 21, true)
+
+            local camera = GetGameplayCamRot(2)
+            local yaw, pitch = math.rad(camera.z), math.rad(camera.x)
+            local fx, fy, fz = -math.sin(yaw) * math.cos(pitch), math.cos(yaw) * math.cos(pitch), math.sin(pitch)
+            local rx, ry = math.cos(yaw), math.sin(yaw)
+            local mx, my, mz = 0.0, 0.0, 0.0
+            if IsDisabledControlPressed(0, 32) then mx, my, mz = mx + fx, my + fy, mz + fz end
+            if IsDisabledControlPressed(0, 33) then mx, my, mz = mx - fx, my - fy, mz - fz end
+            if IsDisabledControlPressed(0, 35) then mx, my = mx + rx, my + ry end
+            if IsDisabledControlPressed(0, 34) then mx, my = mx - rx, my - ry end
+            if IsDisabledControlPressed(0, 22) then mz = mz + 1.0 end
+            if IsDisabledControlPressed(0, 36) then mz = mz - 1.0 end
+
+            local length = math.sqrt(mx * mx + my * my + mz * mz)
+            if length > 0.0 then
+                local speed = IsDisabledControlPressed(0, 21) and 0.9 or 0.18
+                mx, my, mz = mx / length * speed, my / length * speed, mz / length * speed
+                local coords = GetEntityCoords(entity)
+                SetEntityCoordsNoOffset(entity, coords.x + mx, coords.y + my, coords.z + mz, false, false, false)
+            end
+            Wait(0)
+        end
+    end
+end)
 
 local function closeTablet()
     isOpen = false
@@ -53,6 +118,16 @@ end)
 
 RegisterNUICallback('saveWeaponPolicy', function(data, cb)
     TriggerServerEvent('rp_tablet_creator:server:saveWeaponPolicy', data and data.policy)
+    cb({ ok = true })
+end)
+
+RegisterNUICallback('toggleNoClip', function(_, cb)
+    TriggerServerEvent('rp_tablet_creator:server:toggleNoClip')
+    cb({ ok = true })
+end)
+
+RegisterNUICallback('spawnVehicle', function(data, cb)
+    TriggerServerEvent('rp_tablet_creator:server:spawnVehicle', data and data.model)
     cb({ ok = true })
 end)
 
@@ -296,6 +371,7 @@ end)
 AddEventHandler('onResourceStop', function(resourceName)
     if resourceName ~= GetCurrentResourceName() then return end
     isOpen = false
+    setNoClipEnabled(false)
     SetNuiFocus(false, false)
     for _, blip in ipairs(activeJobBlips) do
         if DoesBlipExist(blip) then RemoveBlip(blip) end
@@ -312,4 +388,42 @@ RegisterNetEvent('rp_tablet_creator:client:weaponPolicySaved', function(policy)
 end)
 RegisterNetEvent('rp_tablet_creator:client:weaponPolicySaveFailed', function(message)
     SendNUIMessage({ action = 'weaponPolicySaveFailed', message = tostring(message or 'Enregistrement impossible.') })
+end)
+
+RegisterNetEvent('rp_tablet_creator:client:setNoClip', function(enabled)
+    setNoClipEnabled(enabled)
+end)
+
+RegisterNetEvent('rp_tablet_creator:client:spawnVehicle', function(model)
+    if type(model) ~= 'string' or #model < 3 or #model > 50 or model:find('[^a-z0-9_]') then
+        TriggerEvent('rp_core:client:notify', 'Modèle de véhicule invalide.', 'error')
+        return
+    end
+    local hash = GetHashKey(model)
+    if not IsModelInCdimage(hash) or not IsModelAVehicle(hash) then
+        TriggerEvent('rp_core:client:notify', 'Ce modèle n’est pas un véhicule GTA V valide.', 'error')
+        return
+    end
+    RequestModel(hash)
+    local startedAt = GetGameTimer()
+    while not HasModelLoaded(hash) and GetGameTimer() - startedAt < 10000 do Wait(0) end
+    if not HasModelLoaded(hash) then
+        SetModelAsNoLongerNeeded(hash)
+        TriggerEvent('rp_core:client:notify', 'Le modèle du véhicule n’a pas pu être chargé.', 'error')
+        return
+    end
+
+    local ped = PlayerPedId()
+    local coords = GetOffsetFromEntityInWorldCoords(ped, 0.0, 5.0, 0.0)
+    local vehicle = CreateVehicle(hash, coords.x, coords.y, coords.z, GetEntityHeading(ped), true, true)
+    SetModelAsNoLongerNeeded(hash)
+    if not vehicle or vehicle == 0 then
+        TriggerEvent('rp_core:client:notify', 'Le véhicule n’a pas pu être créé.', 'error')
+        return
+    end
+    SetEntityAsMissionEntity(vehicle, true, true)
+    SetVehicleOnGroundProperly(vehicle)
+    SetVehicleEngineOn(vehicle, true, true, false)
+    TaskWarpPedIntoVehicle(ped, vehicle, -1)
+    TriggerEvent('rp_core:client:notify', 'Véhicule créé : ' .. model .. '.', 'success')
 end)
