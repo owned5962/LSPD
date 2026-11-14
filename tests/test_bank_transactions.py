@@ -98,6 +98,8 @@ def test_salary_requires_a_valid_job_grade_and_uses_one_notification_owner():
     server = read("server/main.lua")
     start = server.index("CreateThread(function()")
     salary_loop = server[start:]
+    assert "if not exports['rp_jobs']:IsValidJob(player.job) then return nil end" in salary_loop
+    assert "return job.grades[grade]" in salary_loop
     assert "type(gradeData) == 'table' and validAmount(gradeData.salary) or nil" in salary_loop
     assert "notify(src, 'Salaire reçu" not in salary_loop
     assert "local paidOk, paid = pcall(player.addBank" in salary_loop
