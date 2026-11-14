@@ -265,19 +265,19 @@ def test_creator_nui_contract_has_unique_ids_all_tabs_and_live_callbacks():
     ui = read("resources/[FUNCTION]/rp_tablet_creator/html/app.js")
     client = read("resources/[FUNCTION]/rp_tablet_creator/client/main.lua")
 
-    ids = re.findall(r"""\\bid=["']([^"']+)["']""", html)
+    ids = re.findall(r"""\bid=["']([^"']+)["']""", html)
     assert len(ids) == len(set(ids)), "Creator HTML contains duplicate IDs"
-    references = set(re.findall(r"""getElementById\\(['"]([^'"]+)['"]\\)""", ui))
+    references = set(re.findall(r"""getElementById\(['"]([^'"]+)['"]\)""", ui))
     assert references.issubset(set(ids)), f"Creator UI references missing IDs: {sorted(references - set(ids))}"
 
     tabs = set(re.findall(r"""data-tab=["']([^"']+)["']""", html))
     panels = set(re.findall(r"""data-tab-panel=["']([^"']+)["']""", html))
     assert tabs == panels and len(tabs) == 10
 
-    callbacks = re.findall(r"""RegisterNUICallback\\(['"]([^'"]+)['"]""", client)
+    callbacks = re.findall(r"""RegisterNUICallback\(['"]([^'"]+)['"]""", client)
     assert len(callbacks) == len(set(callbacks)), "Creator has duplicate NUI callbacks"
     blocks = re.findall(
-        r"""RegisterNUICallback\\(['"]([^'"]+)['"]\\s*,\\s*function\\([^)]*\\)(.*?)\\nend\\)""",
+        r"""RegisterNUICallback\(['"]([^'"]+)['"]\s*,\s*function\([^)]*\)(.*?)\nend\)""",
         client,
         re.S,
     )
@@ -285,9 +285,9 @@ def test_creator_nui_contract_has_unique_ids_all_tabs_and_live_callbacks():
         if name != "close":
             assert "TriggerServerEvent(" in body, f"NUI callback {name} has no server action"
 
-    actions = set(re.findall(r"""post\\(['"]([^'"]+)['"]""", ui))
+    actions = set(re.findall(r"""post\(['"]([^'"]+)['"]""", ui))
     for pair in re.findall(
-        r"""const action = editing(?:Job|Gang)Name \\? '((?:create|update)(?:Job|Gang))' : '((?:create|update)(?:Job|Gang))'""",
+        r"""const action = editing(?:Job|Gang)Name \? '((?:create|update)(?:Job|Gang))' : '((?:create|update)(?:Job|Gang))'""",
         ui,
     ):
         actions.update(pair)
