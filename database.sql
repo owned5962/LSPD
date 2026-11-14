@@ -78,6 +78,21 @@ CREATE TABLE IF NOT EXISTS `anticheat_weapon_rules` (
     PRIMARY KEY (`weapon_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- AEGIS : réglages persistants des protections et des sanctions.
+CREATE TABLE IF NOT EXISTS `anticheat_protection_config` (
+    `protection_key` VARCHAR(50) NOT NULL,
+    `enabled` TINYINT(1) NOT NULL DEFAULT 1,
+    `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`protection_key`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `anticheat_runtime_config` (
+    `config_key` VARCHAR(40) NOT NULL,
+    `config_value` VARCHAR(255) NOT NULL,
+    `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`config_key`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- Registre central des points d'intérêt de la carte (alimenté au démarrage par rp_businesses).
 -- Les coordonnées et réglages peuvent ensuite être modifiés directement en base.
 CREATE TABLE IF NOT EXISTS `rp_world_locations` (

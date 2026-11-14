@@ -203,7 +203,7 @@ def test_economy_has_sql_logging_and_transaction_limits():
 def test_anticheat_rate_limits_reports_and_persists_bans():
     source = read("resources/[FUNCTION]/rp_anticheat/server/main.lua")
     sql = read("database.sql")
-    assert "lastFlagAt" in source and "now - lastFlagAt[src] < 5" in source
+    assert "lastFlagAt[src][sourceKind]" in source and "now - lastFlagAt[src][sourceKind] < 5" in source
     assert "player_bans" in sql
     assert "INSERT INTO player_bans" in source
     assert "AddEventHandler('playerConnecting'" in source

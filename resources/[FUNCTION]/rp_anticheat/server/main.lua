@@ -2,6 +2,7 @@ local detectionsLog = {}
 local lastFlagAt = {}
 local adminActionAt = {}
 local openRequestAt = {}
+local policyRequestAt = {}
 local openStaff = {}
 local adminInvulnerability = {}
 local explosionWindows = {}
@@ -50,6 +51,7 @@ local function ensureDetectionStatsTable()
             reason VARCHAR(180) NOT NULL,
             severity VARCHAR(16) NOT NULL,
             sanction VARCHAR(16) NOT NULL DEFAULT 'warn',
+            source_type VARCHAR(16) NOT NULL DEFAULT 'legacy',
             items_snapshot LONGTEXT NULL,
             weapons_snapshot LONGTEXT NULL,
             cash_snapshot BIGINT NULL,
@@ -69,6 +71,7 @@ local function ensureDetectionStatsTable()
         MySQL.query.await("ALTER TABLE anticheat_event_log ADD COLUMN sanction VARCHAR(16) NOT NULL DEFAULT 'warn'")
     end
     local snapshotColumns = {
+        { 'source_type', "VARCHAR(16) NOT NULL DEFAULT 'legacy'" },
         { 'items_snapshot', 'LONGTEXT NULL' },
         { 'weapons_snapshot', 'LONGTEXT NULL' },
         { 'cash_snapshot', 'BIGINT NULL' },
@@ -100,6 +103,32 @@ local function ensureDetectionStatsTable()
             PRIMARY KEY (weapon_name)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
     ]])
+    MySQL.query.await([[
+        CREATE TABLE IF NOT EXISTS anticheat_protection_config (
+            protection_key VARCHAR(50) NOT NULL,
+            enabled TINYINT(1) NOT NULL DEFAULT 1,
+            updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            PRIMARY KEY (protection_key)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    ]])
+    MySQL.query.await([[
+        CREATE TABLE IF NOT EXISTS anticheat_runtime_config (
+            config_key VARCHAR(40) NOT NULL,
+            config_value VARCHAR(255) NOT NULL,
+            updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            PRIMARY KEY (config_key)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    ]])
+    for key, protection in pairs(Config.Protections) do
+        MySQL.insert.await(
+            'INSERT IGNORE INTO anticheat_protection_config (protection_key, enabled) VALUES (?, ?)',
+            { key, protection.enabled and 1 or 0 }
+        )
+    end
+    MySQL.insert.await(
+        'INSERT IGNORE INTO anticheat_runtime_config (config_key, config_value) VALUES (?, ?)',
+        { 'prison_minutes', tostring(Config.PrisonMinutes or 30) }
+    )
     for _, weapon in ipairs(Config.WeaponCatalog) do
         MySQL.insert.await(
             'INSERT IGNORE INTO anticheat_weapon_rules (weapon_name, enabled) VALUES (?, ?)',
@@ -122,11 +151,31 @@ local function getPlayer(src)
     return exports['rp_core']:GetPlayerFromId(tonumber(src))
 end
 
+local function isFounder(src)
+    local player = getPlayer(src)
+    return IsPlayerAceAllowed(src, 'rp_founder')
+        or (player and player.group == 'fondateur')
+end
+
 local function isStaff(src)
     local player = getPlayer(src)
     return IsPlayerAceAllowed(src, 'rp_admin')
         or IsPlayerAceAllowed(src, 'rp_creator')
         or (player and (player.group == 'admin' or player.group == 'superadmin' or player.group == 'fondateur'))
+end
+
+local function getStaffLevel(src)
+    local player = getPlayer(src)
+    if isFounder(src) then return 3 end
+    if player and player.group == 'superadmin' then return 2 end
+    if isStaff(src) then return 1 end
+    return 0
+end
+
+local function canModerateTarget(src, targetId)
+    if not targetId or targetId == src or not GetPlayerName(targetId) then return false end
+    local targetLevel = getStaffLevel(targetId)
+    return targetLevel == 0 or getStaffLevel(src) > targetLevel
 end
 
 local function canUseAnticheatTablet(src)
@@ -145,6 +194,28 @@ local function getLicense(src)
         if identifier:sub(1, 8) == 'license:' then return identifier end
     end
     return nil
+end
+
+local function recordAdminAudit(adminId, action, targetId, details)
+    local adminSource = tonumber(adminId) or 0
+    local adminIdentifier = adminSource > 0
+        and (getLicense(adminSource) or ('player:' .. tostring(adminSource)))
+        or 'server:rp_anticheat'
+    local adminName = adminSource > 0 and (GetPlayerName(adminSource) or 'Administrateur') or 'AEGIS'
+    local targetIdentifier = targetId and GetPlayerName(targetId) and getLicense(targetId) or nil
+    local ok, err = pcall(MySQL.insert.await,
+        'INSERT INTO admin_logs (admin_identifier, admin_name, action, target_identifier, details) VALUES (?, ?, ?, ?, ?)',
+        {
+            adminIdentifier or 'unknown',
+            tostring(adminName):sub(1, 64),
+            tostring(action):sub(1, 64),
+            targetIdentifier,
+            tostring(details or ''):sub(1, 2000)
+        }
+    )
+    if not ok then
+        print(('[rp_anticheat][audit] Impossible d’enregistrer %s : %s'):format(tostring(action), tostring(err)))
+    end
 end
 
 local function capturePlayerSnapshot(src)
@@ -299,16 +370,23 @@ local function applyConfiguredSanction(targetId, alert)
     local sanction = alert.sanction or (Config.Sanctions and Config.Sanctions[alert.category]) or 'warn'
     local reason = 'AEGIS · ' .. tostring(alert.reason or 'Détection anticheat')
     if sanction == 'warn' then
+        recordAdminAudit(0, 'anticheat_auto_warn', targetId, reason)
         notify(targetId, 'warning', '[ANTICHEAT] Avertissement : ' .. reason)
     elseif sanction == 'kick' then
+        recordAdminAudit(0, 'anticheat_auto_kick', targetId, reason)
         DropPlayer(targetId, '[AEGIS - KICK] ' .. reason)
     elseif sanction == 'ban' then
         local ok, err = savePersistentBan(targetId, reason, 0)
-        if ok then DropPlayer(targetId, '[AEGIS - BAN PERMANENT] ' .. reason)
-        else print('[rp_anticheat] Auto-ban refusé: ' .. tostring(err)) end
+        if ok then
+            recordAdminAudit(0, 'anticheat_auto_ban', targetId, reason)
+            DropPlayer(targetId, '[AEGIS - BAN PERMANENT] ' .. reason)
+        else
+            print('[rp_anticheat] Auto-ban refusé: ' .. tostring(err))
+        end
     elseif sanction == 'prison' then
         local ok, err = applyPrison(targetId, reason, 0, Config.PrisonMinutes)
-        if not ok then print('[rp_anticheat] Auto-prison refusée: ' .. tostring(err)) end
+        if ok then recordAdminAudit(0, 'anticheat_auto_prison', targetId, reason)
+        else print('[rp_anticheat] Auto-prison refusée: ' .. tostring(err)) end
     end
 end
 
@@ -316,7 +394,7 @@ local function loadDetectionHistory()
     local ok, rows = pcall(function()
         return MySQL.query.await([[
             SELECT id, player_id AS playerId, player_name AS playerName,
-                   detection_type AS category, reason, severity, sanction,
+                   detection_type AS category, reason, severity, sanction, source_type AS sourceType,
                    items_snapshot AS itemsSnapshot, weapons_snapshot AS weaponsSnapshot,
                    cash_snapshot AS cash, bank_snapshot AS bank,
                    job_name AS job, job_label AS jobLabel,
@@ -361,7 +439,11 @@ local function restorePlayerPrison(targetId)
     if not row then activeJails[targetId] = nil return end
     local endsAt = tonumber(row.ends_at) or 0
     if endsAt <= os.time() then
-        MySQL.update('DELETE FROM anticheat_jails WHERE identifier = ?', { identifier })
+        local deleteOk, deleteErr = pcall(MySQL.update.await,
+            'DELETE FROM anticheat_jails WHERE identifier = ?', { identifier })
+        if not deleteOk then
+            print('[rp_anticheat] Suppression de prison expirée impossible: ' .. tostring(deleteErr))
+        end
         activeJails[targetId] = nil
         return
     end
@@ -372,10 +454,13 @@ end
 
 local function recordDetection(src, reason, trustedServerEvent)
     local now = os.time()
-    if not GetPlayerName(src) or (lastFlagAt[src] and now - lastFlagAt[src] < 5) then return false end
+    if not GetPlayerName(src) then return false end
+    local sourceKind = trustedServerEvent == true and 'server' or 'client'
+    lastFlagAt[src] = lastFlagAt[src] or {}
+    if lastFlagAt[src][sourceKind] and now - lastFlagAt[src][sourceKind] < 5 then return false end
     local safe = safeReason(reason, trustedServerEvent == true)
     if not safe then return false end
-    lastFlagAt[src] = now
+    lastFlagAt[src][sourceKind] = now
 
     local alert = {
         playerId = src,
@@ -383,10 +468,15 @@ local function recordDetection(src, reason, trustedServerEvent)
         reason = safe,
         time = os.date('%H:%M:%S'),
         timestamp = now,
+        sourceType = sourceKind,
         severity = 'high'
     }
     alert.category, alert.severity = detectionCategory(safe)
-    alert.sanction = (Config.Sanctions and Config.Sanctions[alert.category]) or 'warn'
+    -- Client-originated flags are untrusted telemetry: clients can forge their
+    -- own events. Only server-observed evidence may trigger configured sanctions.
+    alert.sanction = trustedServerEvent == true
+        and ((Config.Sanctions and Config.Sanctions[alert.category]) or 'warn')
+        or 'review'
     alert.snapshot = capturePlayerSnapshot(src)
     local snapshot = alert.snapshot or {}
     alert.items, alert.weapons = snapshot.items or {}, snapshot.weapons or {}
@@ -395,22 +485,32 @@ local function recordDetection(src, reason, trustedServerEvent)
     alert.jobGrade, alert.jobGradeLabel = snapshot.jobGrade, snapshot.jobGradeLabel
     alert.snapshotAvailable = alert.snapshot ~= nil
     local persisted, persistError = pcall(function()
-        MySQL.insert.await('INSERT INTO anticheat_detections (player_name, detection_type, reason, severity) VALUES (?, ?, ?, ?)',
-            { alert.playerName, alert.category, alert.reason, alert.severity })
-        alert.id = MySQL.insert.await([[
+        local detectionId = MySQL.insert.await(
+            'INSERT INTO anticheat_detections (player_name, detection_type, reason, severity) VALUES (?, ?, ?, ?)',
+            { alert.playerName, alert.category, alert.reason, alert.severity }
+        )
+        if not tonumber(detectionId) or tonumber(detectionId) < 1 then
+            error('anticheat_detections insert returned no row id')
+        end
+        local eventId = MySQL.insert.await([[
             INSERT INTO anticheat_event_log
-                (player_id, player_identifier, player_name, detection_type, reason, severity, sanction,
+                (player_id, player_identifier, player_name, detection_type, reason, severity, sanction, source_type,
                  items_snapshot, weapons_snapshot, cash_snapshot, bank_snapshot,
                  job_name, job_label, job_grade, job_grade_label)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ]], {
-            src, getLicense(src), alert.playerName, alert.category, alert.reason, alert.severity, alert.sanction,
+            src, getLicense(src), alert.playerName, alert.category, alert.reason, alert.severity, alert.sanction, alert.sourceType,
             json.encode(snapshot.items or {}), json.encode(snapshot.weapons or {}),
             snapshot.cash, snapshot.bank, snapshot.job, snapshot.jobLabel,
             snapshot.jobGrade, snapshot.jobGradeLabel
         })
+        if not tonumber(eventId) or tonumber(eventId) < 1 then
+            error('anticheat_event_log insert returned no row id')
+        end
+        alert.id = tonumber(eventId)
     end)
     if not persisted then
+        alert.sanction = 'review'
         print('[rp_anticheat][logs] Échec enregistrement du registre: ' .. tostring(persistError))
     else
         totalDetections = totalDetections + 1
@@ -424,7 +524,9 @@ local function recordDetection(src, reason, trustedServerEvent)
             TriggerClientEvent('rp_anticheat:notifyStaff', staffId, alert, totalDetections)
         end
     end
-    applyConfiguredSanction(src, alert)
+    if trustedServerEvent == true and persisted then
+        applyConfiguredSanction(src, alert)
+    end
     return true
 end
 
@@ -452,7 +554,7 @@ AddEventHandler('weaponDamageEvent', function(sender, data)
     local weaponName = Config.WeaponHashToName[weaponType]
     if weaponName and Config.WeaponPolicy[weaponName] ~= true then
         CancelEvent()
-        recordDetection(src, 'Arme interdite détectée : ' .. weaponName)
+        recordDetection(src, 'Arme interdite détectée : ' .. weaponName, true)
     end
 end)
 
@@ -472,7 +574,7 @@ AddEventHandler('entityCreating', function(entity)
     window.count = window.count + 1
     if window.count > (Config.MaxEntitiesPerWindow or 20) then
         CancelEvent()
-        recordDetection(owner, 'Entity spam détecté')
+        recordDetection(owner, 'Entity spam détecté', true)
     end
 end)
 
@@ -490,7 +592,7 @@ AddEventHandler('explosionEvent', function(sender, eventData)
     window.count = window.count + 1
     if window.count > (Config.MaxExplosionsPerWindow or 5) then
         CancelEvent()
-        recordDetection(src, 'Explosion spam détecté')
+        recordDetection(src, 'Explosion spam détecté', true)
     end
 end)
 
@@ -502,6 +604,25 @@ local function rebuildWeaponLookups()
         if Config.WeaponPolicy[weapon.name] ~= true then
             Config.BlacklistedWeapons[#Config.BlacklistedWeapons + 1] = GetHashKey(weapon.name)
         end
+    end
+end
+
+local function loadProtectionConfig()
+    local rows = MySQL.query.await('SELECT protection_key, enabled FROM anticheat_protection_config')
+    for _, row in ipairs(rows or {}) do
+        local current = Config.Protections[row.protection_key]
+        if current then current.enabled = tonumber(row.enabled) == 1 end
+    end
+end
+
+local function loadRuntimeConfig()
+    local row = MySQL.single.await(
+        'SELECT config_value FROM anticheat_runtime_config WHERE config_key = ?',
+        { 'prison_minutes' }
+    )
+    local minutes = row and tonumber(row.config_value) or nil
+    if minutes and minutes % 1 == 0 and minutes >= 1 and minutes <= 1440 then
+        Config.PrisonMinutes = minutes
     end
 end
 
@@ -573,14 +694,19 @@ exports('SaveWeaponPolicy', function(src, rawPolicy)
     end
     Config.WeaponPolicy = clean
     rebuildWeaponLookups()
+    recordAdminAudit(src, 'anticheat_save_weapon_policy', nil, json.encode(clean))
     TriggerClientEvent('rp_anticheat:syncWeaponPolicy', -1, Config.WeaponPolicy)
     return true, getWeaponPolicyList()
 end)
 
 RegisterNetEvent('rp_anticheat:requestWeaponPolicy', function()
     local src = source
+    local now = os.time()
+    if policyRequestAt[src] and now - policyRequestAt[src] < 3 then return end
+    policyRequestAt[src] = now
     if type(Config.WeaponPolicy) ~= 'table' then return end
     TriggerClientEvent('rp_anticheat:syncWeaponPolicy', src, Config.WeaponPolicy)
+    TriggerClientEvent('rp_anticheat:syncProtections', src, Config.Protections)
 end)
 
 RegisterNetEvent('rp_anticheat:requestOpen', function()
@@ -673,7 +799,7 @@ RegisterNetEvent('rp_anticheat:requestLogs', function()
     local ok, rows = pcall(function()
         return MySQL.query.await([[
             SELECT id, player_id AS playerId, player_name AS playerName,
-                   detection_type AS category, reason, severity, sanction,
+                   detection_type AS category, reason, severity, sanction, source_type AS sourceType,
                    items_snapshot AS itemsSnapshot, weapons_snapshot AS weaponsSnapshot,
                    cash_snapshot AS cash, bank_snapshot AS bank,
                    job_name AS job, job_label AS jobLabel,
@@ -732,21 +858,32 @@ RegisterNetEvent('rp_anticheat:saveSanctionConfig', function(rawSanctions, rawPr
         notify(src, 'error', 'La durée de prison doit être comprise entre 1 et 1440 minutes.')
         return
     end
-    local ok, err = pcall(function()
-        for _, category in ipairs(categories) do
-            MySQL.insert.await([[
+    local queries = {}
+    for _, category in ipairs(categories) do
+        queries[#queries + 1] = {
+            query = [[
                 INSERT INTO anticheat_sanction_config (category, sanction) VALUES (?, ?)
                 ON DUPLICATE KEY UPDATE sanction = VALUES(sanction)
-            ]], { category, clean[category] })
-        end
-    end)
-    if not ok then
-        print('[rp_anticheat] Sauvegarde des sanctions impossible: ' .. tostring(err))
+            ]],
+            values = { category, clean[category] }
+        }
+    end
+    queries[#queries + 1] = {
+        query = [[
+            INSERT INTO anticheat_runtime_config (config_key, config_value) VALUES (?, ?)
+            ON DUPLICATE KEY UPDATE config_value = VALUES(config_value)
+        ]],
+        values = { 'prison_minutes', tostring(minutes) }
+    }
+    local ok, committed = pcall(function() return MySQL.transaction.await(queries) end)
+    if not ok or committed ~= true then
+        print('[rp_anticheat] Sauvegarde des sanctions impossible: ' .. tostring(committed))
         notify(src, 'error', 'Erreur SQL : configuration non enregistrée.')
         return
     end
     Config.Sanctions = clean
     Config.PrisonMinutes = minutes
+    recordAdminAudit(src, 'anticheat_save_sanctions', nil, json.encode({ sanctions = clean, prisonMinutes = minutes }))
     TriggerClientEvent('rp_anticheat:updateSanctionConfig', src, { sanctions = clean, prisonMinutes = minutes })
     notify(src, 'success', 'Configuration des sanctions enregistrée.')
 end)
@@ -781,6 +918,9 @@ RegisterNetEvent('rp_anticheat:unban', function(rawIdentifier)
         print('[rp_anticheat] Unban failed: ' .. tostring(affected))
         notify(src, 'error', 'Erreur SQL : bannissement non modifié.')
         return
+    end
+    if affected and affected > 0 then
+        recordAdminAudit(src, 'anticheat_unban', nil, 'Bannissement levé pour ' .. rawIdentifier)
     end
     notify(src, affected and affected > 0 and 'success' or 'info',
         affected and affected > 0 and 'Bannissement levé.' or 'Aucun bannissement trouvé.')
@@ -848,12 +988,21 @@ CreateThread(function()
         print('[rp_anticheat] Chargement de l’historique impossible : ' .. tostring(historyError))
     end
 
+    local settingsOk, settingsErr = pcall(function()
+        loadProtectionConfig()
+        loadRuntimeConfig()
+    end)
+    if not settingsOk then
+        print('[rp_anticheat] Chargement des protections persistantes impossible: ' .. tostring(settingsErr))
+    end
+
     local weaponOk, weaponErr = pcall(loadWeaponPolicy)
     if not weaponOk then
         print('[rp_anticheat] Chargement des règles d’armes impossible, utilisation des valeurs par défaut: ' .. tostring(weaponErr))
         rebuildWeaponLookups()
     end
     TriggerClientEvent('rp_anticheat:syncWeaponPolicy', -1, Config.WeaponPolicy)
+    TriggerClientEvent('rp_anticheat:syncProtections', -1, Config.Protections)
     local configOk, configRows = pcall(function()
         return MySQL.query.await('SELECT category, sanction FROM anticheat_sanction_config')
     end)
@@ -882,8 +1031,24 @@ CreateThread(function()
                 activeJails[playerId] = nil
             elseif jail.endsAt <= os.time() then
                 activeJails[playerId] = nil
-                MySQL.update('DELETE FROM anticheat_jails WHERE identifier = ?', { jail.identifier })
+                local deleteOk, deleteErr = pcall(MySQL.update.await,
+                    'DELETE FROM anticheat_jails WHERE identifier = ?', { jail.identifier })
+                if not deleteOk then
+                    print('[rp_anticheat] Suppression de prison expirée impossible: ' .. tostring(deleteErr))
+                end
                 TriggerClientEvent('rp_anticheat:releasePrison', playerId)
+            else
+                local ped = GetPlayerPed(playerId)
+                local jailCoords = jail.payload and jail.payload.jail
+                if ped and ped ~= 0 and DoesEntityExist(ped) and jailCoords then
+                    local coords = GetEntityCoords(ped)
+                    local dx, dy, dz = coords.x - jailCoords.x, coords.y - jailCoords.y, coords.z - jailCoords.z
+                    local radius = tonumber(Config.PrisonRadius) or 90.0
+                    if (dx * dx + dy * dy + dz * dz) > (radius * radius) then
+                        SetEntityCoords(ped, jailCoords.x, jailCoords.y, jailCoords.z, false, false, false, false)
+                        TriggerClientEvent('rp_anticheat:applyPrison', playerId, jail.payload)
+                    end
+                end
             end
         end
     end
@@ -916,9 +1081,26 @@ RegisterNetEvent('rp_anticheat:toggleProtection', function(key, state)
     if not isStaff(src) or not canUseAnticheatTablet(src) or not allowStaffAction(src, 'toggle_protection', 1) then return end
     if type(key) ~= 'string' or type(state) ~= 'boolean' or not Config.Protections[key] then return end
 
+    local ok, committed = pcall(function()
+        return MySQL.transaction.await({
+            {
+                query = [[
+                    INSERT INTO anticheat_protection_config (protection_key, enabled) VALUES (?, ?)
+                    ON DUPLICATE KEY UPDATE enabled = VALUES(enabled)
+                ]],
+                values = { key, state and 1 or 0 }
+            }
+        })
+    end)
+    if not ok or committed ~= true then
+        print('[rp_anticheat] Sauvegarde protection impossible (' .. key .. '): ' .. tostring(committed))
+        notify(src, 'error', 'Impossible d’enregistrer cette protection dans MySQL.')
+        return
+    end
     Config.Protections[key].enabled = state
+    recordAdminAudit(src, 'anticheat_toggle_' .. key, nil, state and 'enabled' or 'disabled')
     TriggerClientEvent('rp_anticheat:syncProtections', -1, Config.Protections)
-    notify(src, 'info', 'Protection ' .. Config.Protections[key].label .. ' : ' .. (state and 'ACTIVÉE' or 'DÉSACTIVÉE'))
+    notify(src, 'success', 'Protection ' .. Config.Protections[key].label .. ' : ' .. (state and 'ACTIVÉE' or 'DÉSACTIVÉE'))
 end)
 
 RegisterNetEvent('rp_anticheat:flag', function(rawReason)
@@ -961,25 +1143,29 @@ RegisterNetEvent('rp_anticheat:punish', function(rawTargetId, punishType, rawRea
     local src = source
     if not isStaff(src) or not canUseAnticheatTablet(src) or not allowStaffAction(src, 'punish', 2) then return end
     local targetId = tonumber(rawTargetId)
-    if not targetId or targetId == src or not GetPlayerName(targetId) then
-        notify(src, 'error', 'Joueur cible introuvable.')
+    if not canModerateTarget(src, targetId) then
+        notify(src, 'error', 'Action refusée : impossible de sanctionner un membre du staff de rang égal ou supérieur.')
         return
     end
     if punishType ~= 'warn' and punishType ~= 'kick' and punishType ~= 'ban' and punishType ~= 'prison' then return end
     local reason = type(rawReason) == 'string' and rawReason:gsub('[%c]', ' '):sub(1, 180) or 'Décision de modération.'
     if punishType == 'warn' then
+        recordAdminAudit(src, 'anticheat_manual_warn', targetId, reason)
         notify(targetId, 'warning', '[ANTICHEAT] Avertissement : ' .. reason)
         notify(src, 'success', 'Avertissement envoyé au joueur ID ' .. targetId .. '.')
     elseif punishType == 'prison' then
         local ok, err = applyPrison(targetId, reason, src, Config.PrisonMinutes)
         if not ok then notify(src, 'error', err) return end
+        recordAdminAudit(src, 'anticheat_manual_prison', targetId, reason)
         notify(src, 'success', 'Joueur ID ' .. targetId .. ' placé en prison pour ' .. Config.PrisonMinutes .. ' minutes.')
     elseif punishType == 'ban' then
         local ok, err = savePersistentBan(targetId, reason, src)
         if not ok then notify(src, 'error', err) return end
+        recordAdminAudit(src, 'anticheat_manual_ban', targetId, reason)
         DropPlayer(targetId, '[ANTICHEAT - BAN PERMANENT] ' .. reason)
         notify(src, 'success', 'Joueur ID ' .. targetId .. ' banni durablement.')
     else
+        recordAdminAudit(src, 'anticheat_manual_kick', targetId, reason)
         DropPlayer(targetId, '[ANTICHEAT] ' .. reason)
         notify(src, 'success', 'Joueur ID ' .. targetId .. ' expulsé.')
     end
@@ -1040,6 +1226,7 @@ end, true)
 
 AddEventHandler('playerDropped', function()
     lastFlagAt[source] = nil
+    policyRequestAt[source] = nil
     openStaff[source] = nil
     adminInvulnerability[source] = nil
     explosionWindows[source] = nil
