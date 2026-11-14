@@ -186,9 +186,11 @@ local function transact(src, rawAmount, kind, fromJobMenu)
 
     local balance = kind == 'deposit' and (tonumber(account.balance) + amount) or (tonumber(account.balance) - amount)
     local playerName = (tostring(player.firstname or '') .. ' ' .. tostring(player.lastname or '')):gsub('^%s*(.-)%s*$', '%1')
-    local logOk, logErr = pcall(MySQL.insert.await,
+    local logCallOk, logResult = pcall(MySQL.insert.await,
         'INSERT INTO rp_job_bank_transactions (job, character_id, player_name, transaction_type, amount, balance_after) VALUES (?, ?, ?, ?, ?, ?)',
         { jobName, player.charId, playerName, kind, amount, balance })
+    local logOk = logCallOk and tonumber(logResult) ~= nil and tonumber(logResult) > 0
+    local logErr = logCallOk and ('insert returned ' .. tostring(logResult)) or logResult
 
     if not logOk then
         -- Keep the character lock until the compensating write is complete. This prevents
