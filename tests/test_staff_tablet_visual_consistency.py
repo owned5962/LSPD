@@ -75,9 +75,9 @@ def test_f12_diagnostics_statistics_remain_graphical_and_document_real_limits():
 def test_f10_inline_buttons_reference_existing_functions():
     html = read("resources/[FUNCTION]/rp_tablet_admin/html/index.html")
     ui = read("resources/[FUNCTION]/rp_tablet_admin/html/js/app.js")
-    handlers = set(re.findall(r'onclick="([A-Za-z_$][\\w$]*)\\s*\\(', html))
+    handlers = set(re.findall(r'onclick="([A-Za-z_$][\w$]*)\s*\(', html))
     for handler in handlers:
-        assert re.search(r"(?:function\\s+" + re.escape(handler) + r"\\s*\\(|(?:const|let|var)\\s+" + re.escape(handler) + r"\\s*=)", ui), handler
+        assert re.search(r"(?:function\s+" + re.escape(handler) + r"\s*\(|(?:const|let|var)\s+" + re.escape(handler) + r"\s*=)", ui), handler
 
 
 def test_f11_statistics_tab_does_not_replace_existing_creator_controls():
