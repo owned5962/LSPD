@@ -73,11 +73,21 @@ function getSkin() {
         }
     };
 }
+let previewTimer = null;
 function sendAppearancePreview() {
     ['shape-mix','skin-mix'].forEach(id => {
         document.getElementById(`${id}-val`).textContent = document.getElementById(id).value;
     });
-    postNui('updateSkinPreview', { gender: document.getElementById('gender').value, skin: getSkin() }).catch(() => {});
+
+    // Coalesce rapid slider/input events into one native/NUI update.
+    if (previewTimer !== null) window.clearTimeout(previewTimer);
+    previewTimer = window.setTimeout(() => {
+        previewTimer = null;
+        postNui('updateSkinPreview', {
+            gender: document.getElementById('gender').value,
+            skin: getSkin()
+        }).catch(() => {});
+    }, 50);
 }
 window.addEventListener('message', (event) => {
     const data = event.data || {};
