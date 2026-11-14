@@ -125,7 +125,7 @@ end)
 -- Cleanup endpoint: clients may only request deactivation, never activation.
 RegisterNetEvent('rp_tablet_creator:server:setNoClip', function(enabled)
     local src = source
-    if enabled ~= false or NoClipSessions[src] ~= true then return end
+    if enabled ~= false then return end
     if GetResourceState('rp_tablet_admin') == 'started' then
         pcall(function()
             exports['rp_tablet_admin']:SetAdminNoclip(src, false, 'Creator F11 cleanup')
@@ -1383,11 +1383,17 @@ end)
 AddEventHandler('onResourceStop', function(resourceName)
     if resourceName ~= GetCurrentResourceName() then return end
     if GetResourceState('rp_tablet_admin') == 'started' then
-        for src, enabled in pairs(NoClipSessions) do
-            if enabled then
-                pcall(function()
-                    exports['rp_tablet_admin']:SetAdminNoclip(src, false, 'Creator resource stop')
+        for _, rawId in ipairs(GetPlayers()) do
+            local src = tonumber(rawId)
+            if src then
+                local ok, enabled = pcall(function()
+                    return exports['rp_tablet_admin']:IsAdminNoclipEnabled(src)
                 end)
+                if ok and enabled == true then
+                    pcall(function()
+                        exports['rp_tablet_admin']:SetAdminNoclip(src, false, 'Creator resource stop')
+                    end)
+                end
             end
         end
     end
