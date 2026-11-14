@@ -40,4 +40,4 @@ files {
     'client/p28.lua'
 }
 client_scripts { 'client/main.lua' }
-server_scripts { '@oxmysql/lib/MySQL.lua', 'server/main.lua' }
+server_scripts { 'server/diagnostics.lua', '@oxmysql/lib/MySQL.lua', 'server/main.lua' }
