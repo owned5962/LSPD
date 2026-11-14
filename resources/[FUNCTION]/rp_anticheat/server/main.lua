@@ -198,7 +198,9 @@ end
 
 local function recordAdminAudit(adminId, action, targetId, details)
     local adminSource = tonumber(adminId) or 0
-    local adminIdentifier = adminSource > 0 and getLicense(adminSource) or 'server:rp_anticheat'
+    local adminIdentifier = adminSource > 0
+        and (getLicense(adminSource) or ('player:' .. tostring(adminSource)))
+        or 'server:rp_anticheat'
     local adminName = adminSource > 0 and (GetPlayerName(adminSource) or 'Administrateur') or 'AEGIS'
     local targetIdentifier = targetId and GetPlayerName(targetId) and getLicense(targetId) or nil
     local ok, err = pcall(MySQL.insert.await,
