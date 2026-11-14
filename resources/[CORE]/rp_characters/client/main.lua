@@ -42,7 +42,7 @@ local function reportClientError(context, err)
     if now - reportWindow > 10000 then reportWindow, reportCount = now, 0 end
     if reportCount >= 8 then return end
     reportCount = reportCount + 1
-    TriggerServerEvent("rp_characters:server:reportClientError", {
+    pcall(TriggerServerEvent, "rp_characters:server:reportClientError", {
         resource = RESOURCE, file = file, line = line,
         context = tostring(context):sub(1, 128),
         message = message, traceback = trace:sub(1, 6000)
@@ -110,7 +110,7 @@ for i = 1, PART_COUNT do
     for sourceLine = 1, count do
         lineMap[nextCombinedLine + sourceLine - 1] = { file = name, line = sourceLine }
     end
-    nextCombinedLine = nextCombinedLine + count + 1
+    nextCombinedLine = nextCombinedLine + count + (part:sub(-1) == "\n" and 1 or 0)
 end
 
 local chunk, compileError = load(table.concat(parts, "\n"), "@rp_characters/client/main.lua")
