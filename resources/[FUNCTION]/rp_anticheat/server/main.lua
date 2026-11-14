@@ -51,7 +51,7 @@ local function ensureDetectionStatsTable()
             reason VARCHAR(180) NOT NULL,
             severity VARCHAR(16) NOT NULL,
             sanction VARCHAR(16) NOT NULL DEFAULT 'warn',
-            source_type VARCHAR(16) NOT NULL DEFAULT 'client',
+            source_type VARCHAR(16) NOT NULL DEFAULT 'legacy',
             items_snapshot LONGTEXT NULL,
             weapons_snapshot LONGTEXT NULL,
             cash_snapshot BIGINT NULL,
@@ -71,7 +71,7 @@ local function ensureDetectionStatsTable()
         MySQL.query.await("ALTER TABLE anticheat_event_log ADD COLUMN sanction VARCHAR(16) NOT NULL DEFAULT 'warn'")
     end
     local snapshotColumns = {
-        { 'source_type', "VARCHAR(16) NOT NULL DEFAULT 'client'" },
+        { 'source_type', "VARCHAR(16) NOT NULL DEFAULT 'legacy'" },
         { 'items_snapshot', 'LONGTEXT NULL' },
         { 'weapons_snapshot', 'LONGTEXT NULL' },
         { 'cash_snapshot', 'BIGINT NULL' },
