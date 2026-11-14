@@ -195,7 +195,11 @@ local function transact(src, rawAmount, kind, fromJobMenu)
         'INSERT INTO rp_job_bank_transactions (job, character_id, player_name, transaction_type, amount, balance_after) VALUES (?, ?, ?, ?, ?, ?)',
         { jobName, player.charId, playerName, kind, amount, balance })
     jobLocks[jobName] = nil
-    if not logOk then print('[rp_jobbank] Historique non enregistré : ' .. tostring(logErr)) end
+    if not logOk then
+        print(('[rp_jobbank] CRITIQUE : opération %s de %s $ appliquée mais historique non enregistré pour %s : %s')
+            :format(kind, tostring(amount), jobName, tostring(logErr)))
+        notify(src, 'Opération effectuée, mais son historique n’a pas pu être enregistré. Prévenez un administrateur.', 'warning')
+    end
 
     TriggerClientEvent('rp_core:client:updateCash', src, player.cash)
     TriggerClientEvent('rp_economy:client:refreshBalances', src, player.cash, player.bank)
@@ -206,7 +210,9 @@ local function transact(src, rawAmount, kind, fromJobMenu)
         TriggerClientEvent('rp_jobbank:client:update', src, refreshedOk and refreshed or nil)
     end
     local formatted = tostring(amount):reverse():gsub('(%d%d%d)', '%1 '):reverse():gsub('^ ', '')
-    notify(src, (kind == 'deposit' and 'Dépôt' or 'Retrait') .. ' de ' .. formatted .. ' $ effectué sur le compte ' .. tostring(job.label or jobName) .. '.', 'success')
+    if logOk then
+        notify(src, (kind == 'deposit' and 'Dépôt' or 'Retrait') .. ' de ' .. formatted .. ' $ effectué sur le compte ' .. tostring(job.label or jobName) .. '.', 'success')
+    end
 end
 
 RegisterNetEvent('rp_jobbank:server:deposit', function(amount)
