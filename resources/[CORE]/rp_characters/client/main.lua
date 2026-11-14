@@ -586,80 +586,133 @@ local function NormalizeClientSpawn(coords)
 end
 
 RegisterNetEvent('rp_characters:client:spawnPlayer', function(coords, gender, skin)
-    print('[rp_characters] Spawn pipeline received from server.')
-    creationSubmissionPending = false
-    pcall(SendLoadingScreenMessage, json.encode({
-        eventName = 'lssStage',
-        stage = 'player',
-        status = 'Finalisation de votre personnage...'
-    }))
-    characterSessionReady = true
-    FinishCharacterBoot()
-    coords = NormalizeClientSpawn(coords)
+    -- Run the entire transition in a protected thread. A Lua/native error during
+    -- skin application, camera teardown or streaming must never strand the
+    -- player in a faded-out, frozen state.
+    CreateThread(function()
+        print('[rp_characters] Spawn pipeline received from server.')
+        creationSubmissionPending = false
+        characterSessionReady = true
+        coords = NormalizeClientSpawn(coords)
 
-    DoScreenFadeOut(500)
-    -- Never leave the client thread blocked forever if the fade native fails.
-    local fadeStartedAt = GetGameTimer() % SPAWN_TIMER_MODULUS
-    while not IsScreenFadedOut() and not SpawnWaitExpired(fadeStartedAt, 5000) do
-        Wait(10)
-    end
-    if not IsScreenFadedOut() then
-        print('[rp_characters] Screen fade-out timed out; continuing character spawn.')
-    end
+        local spawnX, spawnY, spawnZ = coords.x, coords.y, coords.z
+        local spawnHeading = coords.heading
+        local ped = PlayerPedId()
+        local collisionLoaded = false
+        local pipelineOk, pipelineError = xpcall(function()
+            pcall(SendLoadingScreenMessage, json.encode({
+                eventName = 'lssStage',
+                stage = 'player',
+                status = 'Finalisation de votre personnage...'
+            }))
 
-    local appearanceApplied = ApplyCharacterAppearance(gender, skin)
-    local ped = PlayerPedId()
-    if not appearanceApplied then
-        print('[rp_characters] Appearance fallback was required; applying GTA default components.')
-        SetPedDefaultComponentVariation(ped)
-        SetEntityVisible(ped, true, false)
-        ResetEntityAlpha(ped)
-        SetEntityCollision(ped, true, true)
-    end
-    local spawnX = tonumber(coords.x) or -1037.7
-    local spawnY = tonumber(coords.y) or -2737.8
-    local spawnZ = tonumber(coords.z) or 20.1
+            -- Release every layer belonging to the creator before fading the
+            -- world. Do not rely solely on the preceding closeMenu event.
+            SetNuiFocus(false, false)
+            SendNUIMessage({ action = 'closeRegistration' })
+            SendNUIMessage({ action = 'closeCharacterSelection' })
+            if charCamera then
+                RenderScriptCams(false, true, 0, true, true)
+                DestroyCam(charCamera, false)
+                charCamera = nil
+            else
+                RenderScriptCams(false, true, 0, true, true)
+            end
+            ClearFocus()
 
-    -- Move the ped to the destination BEFORE testing its surrounding
-    -- collision. Checking at the creator location caused false timeouts and
-    -- could leave the player on a black screen while the destination streamed.
-    FreezeEntityPosition(ped, true)
-    SetEntityCoordsNoOffset(ped, spawnX, spawnY, spawnZ, false, false, false)
-    SetEntityHeading(ped, tonumber(coords.heading) or 330.0)
-    RequestCollisionAtCoord(spawnX, spawnY, spawnZ)
-    SetFocusPosAndVel(spawnX, spawnY, spawnZ, 0.0, 0.0, 0.0)
+            ShutdownLoadingScreen()
+            ShutdownLoadingScreenNui()
+            DoScreenFadeOut(500)
+            local fadeStartedAt = GetGameTimer() % SPAWN_TIMER_MODULUS
+            while not IsScreenFadedOut() and not SpawnWaitExpired(fadeStartedAt, 5000) do
+                Wait(10)
+            end
 
-    local collisionStartedAt = GetGameTimer() % SPAWN_TIMER_MODULUS
-    while not HasCollisionLoadedAroundEntity(ped) and not SpawnWaitExpired(collisionStartedAt, 10000) do
-        RequestCollisionAtCoord(spawnX, spawnY, spawnZ)
-        Wait(50)
+            local appearanceApplied = ApplyCharacterAppearance(gender, skin)
+            ped = PlayerPedId()
+            if not appearanceApplied then
+                print('[rp_characters] Appearance fallback was required; applying GTA default components.')
+                SetPedDefaultComponentVariation(ped)
+            end
+
+            FreezeEntityPosition(ped, true)
+            SetEntityCoordsNoOffset(ped, spawnX, spawnY, spawnZ, false, false, false)
+            SetEntityHeading(ped, spawnHeading)
+            RequestCollisionAtCoord(spawnX, spawnY, spawnZ)
+            SetFocusPosAndVel(spawnX, spawnY, spawnZ, 0.0, 0.0, 0.0)
+
+            local collisionStartedAt = GetGameTimer() % SPAWN_TIMER_MODULUS
+            while not HasCollisionLoadedAroundEntity(ped)
+                and not SpawnWaitExpired(collisionStartedAt, 10000) do
+                RequestCollisionAtCoord(spawnX, spawnY, spawnZ)
+                Wait(50)
+                ped = PlayerPedId()
+            end
+            collisionLoaded = HasCollisionLoadedAroundEntity(ped)
+            if not collisionLoaded then
+                print('[rp_characters] Spawn collision streaming timed out; recovering with a visible player.')
+            end
+        end, debug.traceback)
+
+        -- Mandatory finalizer: execute each recovery action independently so
+        -- one failed native cannot prevent the remaining display/control fixes.
+        local function recover(label, callback)
+            local ok, err = pcall(callback)
+            if not ok then
+                print(('[rp_characters] Spawn recovery step "%s" failed: %s'):format(label, tostring(err)))
+            end
+        end
+
         ped = PlayerPedId()
-    end
-    local collisionLoaded = HasCollisionLoadedAroundEntity(ped)
-    if not collisionLoaded then
-        print('[rp_characters] Spawn collision streaming timed out; continuing with a visible, unfrozen player.')
-    end
+        if ped and ped ~= 0 and DoesEntityExist(ped) then
+            recover('position', function()
+                SetEntityCoordsNoOffset(ped, spawnX, spawnY, spawnZ, false, false, false)
+                SetEntityHeading(ped, spawnHeading)
+            end)
+            recover('visibility', function()
+                SetEntityVisible(ped, true, false)
+                ResetEntityAlpha(ped)
+                SetEntityCollision(ped, true, true)
+                FreezeEntityPosition(ped, false)
+            end)
+        end
+        recover('camera', function()
+            if charCamera then
+                RenderScriptCams(false, false, 0, true, true)
+                DestroyCam(charCamera, false)
+                charCamera = nil
+            end
+            RenderScriptCams(false, false, 0, true, true)
+        end)
+        recover('focus', ClearFocus)
+        recover('nui-focus', function() SetNuiFocus(false, false) end)
+        recover('player-control', function() SetPlayerControl(PlayerId(), true, 0) end)
+        recover('radar', function() DisplayRadar(true) end)
+        recover('loading-screen', function()
+            ShutdownLoadingScreen()
+            ShutdownLoadingScreenNui()
+        end)
+        recover('screen-fade', function()
+            if IsScreenFadedOut() or not IsScreenFadingIn() then
+                DoScreenFadeIn(1000)
+            end
+        end)
 
-    -- Reassert the destination after streaming and always release the focus.
-    SetEntityCoordsNoOffset(ped, spawnX, spawnY, spawnZ, false, false, false)
-    SetEntityHeading(ped, tonumber(coords.heading) or 330.0)
-    ClearFocus()
-    SetEntityVisible(ped, true, false)
-    ResetEntityAlpha(ped)
-    SetEntityCollision(ped, true, true)
-    FreezeEntityPosition(ped, false)
-    SetPlayerControl(PlayerId(), true, 0)
-    DisplayRadar(true)
+        Wait(1200)
+        if not pipelineOk then
+            print(('[rp_characters] Spawn pipeline recovered after an error: %s'):format(tostring(pipelineError)))
+            TriggerEvent('chat:addMessage', {
+                color = { 255, 170, 60 },
+                multiline = true,
+                args = { 'LOS SANTOS RP', 'Le chargement a rencontré une erreur. Votre affichage a été rétabli ; consultez la console F8.' }
+            })
+            return
+        end
 
-    -- Close both loading-screen layers after the character has been placed.
-    ShutdownLoadingScreen()
-    ShutdownLoadingScreenNui()
-    Wait(500)
-    DoScreenFadeIn(1000)
-    Wait(1500)
-    print(('[rp_characters] Spawn pipeline completed; collisionLoaded=%s position=%.2f,%.2f,%.2f.')
-        :format(tostring(collisionLoaded), spawnX, spawnY, spawnZ))
-    TriggerServerEvent('rp_characters:server:requestTutorial')
+        print(('[rp_characters] Spawn pipeline completed; collisionLoaded=%s position=%.2f,%.2f,%.2f.')
+            :format(tostring(collisionLoaded), spawnX, spawnY, spawnZ))
+        TriggerServerEvent('rp_characters:server:requestTutorial')
+    end)
 end)
 
 AddEventHandler('onClientResourceStart', function(resourceName)
