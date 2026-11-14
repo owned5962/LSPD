@@ -575,6 +575,7 @@ local function NormalizeClientSpawn(coords)
 end
 
 RegisterNetEvent('rp_characters:client:spawnPlayer', function(coords, gender, skin)
+    print('[rp_characters] Spawn pipeline received from server.')
     creationSubmissionPending = false
     pcall(SendLoadingScreenMessage, json.encode({
         eventName = 'lssStage',
@@ -623,6 +624,10 @@ RegisterNetEvent('rp_characters:client:spawnPlayer', function(coords, gender, sk
         Wait(50)
         ped = PlayerPedId()
     end
+    local collisionLoaded = HasCollisionLoadedAroundEntity(ped)
+    if not collisionLoaded then
+        print('[rp_characters] Spawn collision streaming timed out; continuing with a visible, unfrozen player.')
+    end
 
     -- Reassert the destination after streaming and always release the focus.
     SetEntityCoordsNoOffset(ped, spawnX, spawnY, spawnZ, false, false, false)
@@ -641,6 +646,8 @@ RegisterNetEvent('rp_characters:client:spawnPlayer', function(coords, gender, sk
     Wait(500)
     DoScreenFadeIn(1000)
     Wait(1500)
+    print(('[rp_characters] Spawn pipeline completed; collisionLoaded=%s position=%.2f,%.2f,%.2f.')
+        :format(tostring(collisionLoaded), spawnX, spawnY, spawnZ))
     TriggerServerEvent('rp_characters:server:requestTutorial')
 end)
 
