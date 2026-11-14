@@ -68,8 +68,8 @@ def test_moderation_protects_staff_hierarchy_and_writes_audit_logs():
     server = read(SERVER_PATH)
     assert "local function isFounder(src)" in server
     assert "local function canModerateTarget(src, targetId)" in server
-    assert "if isFounder(targetId) and not isFounder(src) then return false end" in server
-    assert "if isStaff(targetId) and not isFounder(src) then return false end" in server
+    assert "local function getStaffLevel(src)" in server
+    assert "return targetLevel == 0 or getStaffLevel(src) > targetLevel" in server
     assert "local function recordAdminAudit(adminId, action, targetId, details)" in server
     assert "INSERT INTO admin_logs" in server
     punish_start = server.index("RegisterNetEvent('rp_anticheat:punish'")
