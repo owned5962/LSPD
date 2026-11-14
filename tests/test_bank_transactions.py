@@ -83,6 +83,49 @@ def test_nui_has_biometric_gate_close_button_and_transaction_callbacks():
     assert "pendingInputs.get(name)" in ui
 
 
+
+def test_bank_ledger_schema_accepts_every_emitted_transaction_type():
+    server = read("server/main.lua")
+    schema = (ROOT / "database.sql").read_text(encoding="utf-8")
+    migration = (ROOT / "migrations/009_bank_fuel_transaction_types.sql").read_text(encoding="utf-8")
+    for transaction_type in ("deposit", "withdraw", "transfer_send", "transfer_receive", "salary", "fuel_refund", "fuel"):
+        assert transaction_type + " = true" in server
+        assert "'" + transaction_type + "'" in schema
+        assert "'" + transaction_type + "'" in migration
+
+
+def test_salary_requires_a_valid_job_grade_and_uses_one_notification_owner():
+    server = read("server/main.lua")
+    start = server.index("CreateThread(function()")
+    salary_loop = server[start:]
+    assert "if not exports['rp_jobs']:IsValidJob(player.job) then return nil end" in salary_loop
+    assert "return job.grades[grade]" in salary_loop
+    assert "type(gradeData) == 'table' and validAmount(gradeData.salary) or nil" in salary_loop
+    assert "notify(src, 'Salaire reçu" not in salary_loop
+    assert "local paidOk, paid = pcall(player.addBank" in salary_loop
+
+
+def test_transfer_audit_names_are_safe_when_character_names_are_missing():
+    server = read("server/main.lua")
+    assert "tostring(target.firstname or '') .. ' ' .. tostring(target.lastname or '')" in server
+    assert "tostring(player.firstname or '') .. ' ' .. tostring(player.lastname or '')" in server
+
+
+
+def test_personal_history_is_loaded_and_refreshed_after_all_bank_operations():
+    server = read("server/main.lua")
+    client = read("client/main.lua")
+    html = read("html/index.html")
+    ui = read("html/js/app.js")
+    assert "ORDER BY id DESC LIMIT 20" in server
+    assert "history = getPersonalHistory(player.charId)" in server
+    assert "refreshAccountSnapshot(src, player)" in server
+    assert "refreshAccountSnapshot(targetId, target)" in server
+    assert "history = result.history or {}" in client
+    assert 'id="personal-bank-history"' in html
+    assert "function renderPersonalHistory(rows)" in ui
+    assert "renderPersonalHistory(data.history)" in ui
+
 if __name__ == "__main__":
     checks = [
         test_atm_and_bank_access_uses_registered_world_locations,
@@ -114,10 +157,10 @@ def test_fingerprint_validates_location_before_rate_limit_and_prevents_duplicate
 def test_salary_loop_isolates_player_errors_and_non_table_grade_results():
     server = read("server/main.lua")
     assert "type(player) == 'table'" in server
-    assert "type(gradeData) == 'table' and gradeData.salary or 150" in server
+    assert "type(gradeData) == 'table' and validAmount(gradeData.salary) or nil" in server
     assert "local paidOk, paid = pcall(player.addBank" in server
     assert "tostring(paid)" in server
-    assert "elseif paid == true then" in server
+    assert "if not paidOk or paid ~= true then" in server
 
 
 def test_server_uses_real_terminal_proximity_and_atm_requires_registered_location():
@@ -131,4 +174,7 @@ def test_server_uses_real_terminal_proximity_and_atm_requires_registered_locatio
 if __name__ == "__main__":
     test_fingerprint_validates_location_before_rate_limit_and_prevents_duplicate_scans()
     test_server_uses_real_terminal_proximity_and_atm_requires_registered_location()
-    print("Fingerprint and terminal regression checks passed.")
+    test_bank_ledger_schema_accepts_every_emitted_transaction_type()
+    test_salary_requires_a_valid_job_grade_and_uses_one_notification_owner()
+    test_transfer_audit_names_are_safe_when_character_names_are_missing()
+    print("Fingerprint, terminal, salary and ledger regression checks passed.")

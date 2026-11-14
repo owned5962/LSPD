@@ -107,7 +107,7 @@ CREATE TABLE IF NOT EXISTS `rp_world_locations` (
 CREATE TABLE IF NOT EXISTS `bank_transactions` (
     `id` INT AUTO_INCREMENT PRIMARY KEY,
     `character_id` INT NOT NULL,
-    `type` ENUM('deposit', 'withdraw', 'transfer_send', 'transfer_receive', 'salary') NOT NULL,
+    `type` ENUM('deposit', 'withdraw', 'transfer_send', 'transfer_receive', 'salary', 'fuel_refund', 'fuel') NOT NULL,
     `amount` BIGINT NOT NULL,
     `sender_or_receiver` VARCHAR(128) DEFAULT NULL,
     `reason` VARCHAR(255) DEFAULT 'Transaction',

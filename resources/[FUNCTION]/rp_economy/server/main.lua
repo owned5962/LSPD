@@ -46,6 +46,23 @@ local function formatCurrency(amount)
     return formatted .. ' $'
 end
 
+local function getPersonalHistory(characterId)
+    local ok, rows = pcall(MySQL.query.await,
+        'SELECT type, amount, sender_or_receiver, reason, created_at FROM bank_transactions WHERE character_id = ? ORDER BY id DESC LIMIT 20',
+        { tonumber(characterId) })
+    if not ok or type(rows) ~= 'table' then
+        print(('[rp_economy] Personal history lookup failed for character %s: %s'):format(
+            tostring(characterId), tostring(rows)))
+        return {}
+    end
+    return rows
+end
+
+local function refreshAccountSnapshot(src, player)
+    TriggerClientEvent('rp_economy:client:refreshBalances', src,
+        player.cash, player.bank, getPersonalHistory(player.charId))
+end
+
 local function notify(src, message, kind)
     TriggerClientEvent('rp_core:client:notify', src, message, kind or 'info')
     TriggerClientEvent('rp_economy:client:bankNotice', src, message, kind or 'info')
@@ -118,7 +135,8 @@ RegisterNetEvent('rp_economy:server:authenticate', function()
         cash = tonumber(player.cash) or 0,
         bank = tonumber(player.bank) or 0,
         playerName = (tostring(player.firstname or 'Citoyen') .. ' ' .. tostring(player.lastname or '')):gsub('%s+$', ''),
-        accountNumber = ('LS-%06d'):format(tonumber(player.charId) or 0)
+        accountNumber = ('LS-%06d'):format(tonumber(player.charId) or 0),
+        history = getPersonalHistory(player.charId)
     })
 end)
 
@@ -135,7 +153,7 @@ AddEventHandler('rp_economy:server:logTransaction', function(characterId, transa
     amount = validAmount(amount)
     if not characterId or characterId % 1 ~= 0 or not validTypes[transactionType] or not amount then return end
 
-    local ok, err = pcall(MySQL.insert.await,
+    local ok, result = pcall(MySQL.insert.await,
         'INSERT INTO bank_transactions (character_id, type, amount, sender_or_receiver, reason) VALUES (?, ?, ?, ?, ?)',
         {
             characterId, transactionType, amount,
@@ -143,8 +161,8 @@ AddEventHandler('rp_economy:server:logTransaction', function(characterId, transa
             tostring(reason or 'Transaction'):sub(1, 255)
         }
     )
-    if not ok then
-        print(('[rp_economy] Transaction log failed for character %s: %s'):format(characterId, tostring(err)))
+    if not ok or tonumber(result) == nil or tonumber(result) < 1 then
+        print(('[rp_economy] Transaction log failed for character %s: %s'):format(characterId, tostring(result)))
     end
 end)
 
@@ -185,7 +203,7 @@ RegisterNetEvent('rp_economy:server:deposit', function(rawAmount)
     TriggerEvent('rp_economy:server:logTransaction', player.charId, 'deposit', amount, 'Système', 'Dépôt bancaire')
     TriggerClientEvent('rp_core:client:updateCash', src, player.cash)
     TriggerClientEvent('rp_core:client:updateBank', src, player.bank)
-    TriggerClientEvent('rp_economy:client:refreshBalances', src, player.cash, player.bank)
+    refreshAccountSnapshot(src, player)
     notify(src, 'Dépôt réussi : ' .. formatCurrency(amount), 'success')
 end)
 
@@ -226,7 +244,7 @@ RegisterNetEvent('rp_economy:server:withdraw', function(rawAmount)
     TriggerEvent('rp_economy:server:logTransaction', player.charId, 'withdraw', amount, 'Système', 'Retrait DAB / Guichet')
     TriggerClientEvent('rp_core:client:updateCash', src, player.cash)
     TriggerClientEvent('rp_core:client:updateBank', src, player.bank)
-    TriggerClientEvent('rp_economy:client:refreshBalances', src, player.cash, player.bank)
+    refreshAccountSnapshot(src, player)
     notify(src, 'Retrait réussi : ' .. formatCurrency(amount), 'success')
 end)
 
@@ -271,12 +289,12 @@ RegisterNetEvent('rp_economy:server:transfer', function(rawTargetId, rawAmount)
         return
     end
 
-    TriggerEvent('rp_economy:server:logTransaction', player.charId, 'transfer_send', amount, target.firstname .. ' ' .. target.lastname, 'Virement envoyé')
-    TriggerEvent('rp_economy:server:logTransaction', target.charId, 'transfer_receive', amount, player.firstname .. ' ' .. player.lastname, 'Virement reçu')
+    TriggerEvent('rp_economy:server:logTransaction', player.charId, 'transfer_send', amount, (tostring(target.firstname or '') .. ' ' .. tostring(target.lastname or '')):sub(1, 128), 'Virement envoyé')
+    TriggerEvent('rp_economy:server:logTransaction', target.charId, 'transfer_receive', amount, (tostring(player.firstname or '') .. ' ' .. tostring(player.lastname or '')):sub(1, 128), 'Virement reçu')
     TriggerClientEvent('rp_core:client:updateBank', src, player.bank)
     TriggerClientEvent('rp_core:client:updateBank', targetId, target.bank)
-    TriggerClientEvent('rp_economy:client:refreshBalances', src, player.cash, player.bank)
-    TriggerClientEvent('rp_economy:client:refreshBalances', targetId, target.cash, target.bank)
+    refreshAccountSnapshot(src, player)
+    refreshAccountSnapshot(targetId, target)
     notify(src, 'Virement de ' .. formatCurrency(amount) .. ' effectué.', 'success')
     notify(targetId, 'Virement de ' .. formatCurrency(amount) .. ' reçu.', 'info')
 end)
@@ -292,7 +310,11 @@ CreateThread(function()
         for src, player in pairs(allPlayers) do
             if type(player) == 'table' and type(player.addBank) == 'function' then
                 local gradeOk, gradeData = pcall(function()
-                    return exports['rp_jobs']:GetJobGrade(player.job, player.jobGrade)
+                    if not exports['rp_jobs']:IsValidJob(player.job) then return nil end
+                    local job = exports['rp_jobs']:GetJob(player.job)
+                    local grade = tonumber(player.jobGrade)
+                    if type(job) ~= 'table' or type(job.grades) ~= 'table' or not grade then return nil end
+                    return job.grades[grade]
                 end)
                 if not gradeOk then
                     print(('[rp_economy] Salary grade lookup failed for player %s: %s'):format(
@@ -300,17 +322,16 @@ CreateThread(function()
                     gradeData = nil
                 end
 
-                local salary = validAmount(type(gradeData) == 'table' and gradeData.salary or 150)
+                local salary = type(gradeData) == 'table' and validAmount(gradeData.salary) or nil
                 if salary then
-                    -- Isolate player-specific payment failures so one bad return/error object
-                    -- cannot terminate the recurring salary thread for every online player.
+                    -- addBank owns persistence, transaction history and the player notification.
+                    -- Avoid a duplicate notification and never invent a fallback salary if the
+                    -- job catalogue cannot provide a valid grade amount.
                     local paidOk, paid = pcall(player.addBank, salary,
                         'Salaire - ' .. tostring(player.job or 'Civil'), 'salary')
-                    if not paidOk then
+                    if not paidOk or paid ~= true then
                         print(('[rp_economy] Salary payment failed for player %s: %s'):format(
                             tostring(src), tostring(paid)))
-                    elseif paid == true then
-                        notify(src, 'Salaire reçu : ' .. formatCurrency(salary), 'success')
                     end
                 end
             end

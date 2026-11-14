@@ -176,12 +176,48 @@ local function transact(src, rawAmount, kind, fromJobMenu)
         params = { jobName, amount, amount, player.charId, player.identifier, amount }
     end
     local sqlOk, affected = pcall(MySQL.update.await, query, params)
-    exports['rp_core']:ReleaseCharacterLock(lockIds)
     if not sqlOk or not tonumber(affected) or tonumber(affected) < 1 then
+        exports['rp_core']:ReleaseCharacterLock(lockIds)
         jobLocks[jobName] = nil
         if not sqlOk then print(('[rp_jobbank] Erreur SQL %s/%s : %s'):format(jobName, kind, tostring(affected))) end
         notify(src, 'Opération refusée : solde, autorisation ou compte invalide.', 'error')
         return
+    end
+
+    local balance = kind == 'deposit' and (tonumber(account.balance) + amount) or (tonumber(account.balance) - amount)
+    local playerName = (tostring(player.firstname or '') .. ' ' .. tostring(player.lastname or '')):gsub('^%s*(.-)%s*$', '%1')
+    local logCallOk, logResult = pcall(MySQL.insert.await,
+        'INSERT INTO rp_job_bank_transactions (job, character_id, player_name, transaction_type, amount, balance_after) VALUES (?, ?, ?, ?, ?, ?)',
+        { jobName, player.charId, playerName, kind, amount, balance })
+    local logOk = logCallOk and tonumber(logResult) ~= nil and tonumber(logResult) > 0
+    local logErr = logCallOk and ('insert returned ' .. tostring(logResult)) or logResult
+
+    if not logOk then
+        -- Keep the character lock until the compensating write is complete. This prevents
+        -- a concurrent cash save from overwriting the rollback or the original operation.
+        local rollbackQuery, rollbackParams
+        if kind == 'deposit' then
+            rollbackQuery = [[UPDATE characters AS c JOIN rp_job_bank_accounts AS a ON a.job = ?
+                SET c.cash = c.cash + ?, a.balance = a.balance - ?
+                WHERE c.id = ? AND c.identifier = ? AND a.balance >= ?]]
+            rollbackParams = { jobName, amount, amount, player.charId, player.identifier, amount }
+        else
+            rollbackQuery = [[UPDATE characters AS c JOIN rp_job_bank_accounts AS a ON a.job = ?
+                SET c.cash = c.cash - ?, a.balance = a.balance + ?
+                WHERE c.id = ? AND c.identifier = ? AND c.cash >= ?]]
+            rollbackParams = { jobName, amount, amount, player.charId, player.identifier, amount }
+        end
+        local rollbackOk, rollbackAffected = pcall(MySQL.update.await, rollbackQuery, rollbackParams)
+        if rollbackOk and tonumber(rollbackAffected) and tonumber(rollbackAffected) > 0 then
+            exports['rp_core']:ReleaseCharacterLock(lockIds)
+            jobLocks[jobName] = nil
+            print(('[rp_jobbank] Opération %s annulée : historique indisponible pour %s : %s')
+                :format(kind, jobName, tostring(logErr)))
+            notify(src, 'Opération annulée : historique bancaire indisponible. Réessayez plus tard.', 'error')
+            return
+        end
+        print(('[rp_jobbank] CRITIQUE : écriture du journal et annulation échouées (%s/%s, %s $) : log=%s rollback=%s/%s')
+            :format(jobName, kind, tostring(amount), tostring(logErr), tostring(rollbackOk), tostring(rollbackAffected)))
     end
 
     if kind == 'deposit' then
@@ -189,14 +225,8 @@ local function transact(src, rawAmount, kind, fromJobMenu)
     else
         player.cash = player.cash + amount
     end
-    local balance = kind == 'deposit' and (tonumber(account.balance) + amount) or (tonumber(account.balance) - amount)
-    local playerName = (tostring(player.firstname or '') .. ' ' .. tostring(player.lastname or '')):gsub('^%s*(.-)%s*$', '%1')
-    local logOk, logErr = pcall(MySQL.insert.await,
-        'INSERT INTO rp_job_bank_transactions (job, character_id, player_name, transaction_type, amount, balance_after) VALUES (?, ?, ?, ?, ?, ?)',
-        { jobName, player.charId, playerName, kind, amount, balance })
+    exports['rp_core']:ReleaseCharacterLock(lockIds)
     jobLocks[jobName] = nil
-    if not logOk then print('[rp_jobbank] Historique non enregistré : ' .. tostring(logErr)) end
-
     TriggerClientEvent('rp_core:client:updateCash', src, player.cash)
     TriggerClientEvent('rp_economy:client:refreshBalances', src, player.cash, player.bank)
     local refreshedOk, refreshed = pcall(getAccountData, jobName)
@@ -206,7 +236,11 @@ local function transact(src, rawAmount, kind, fromJobMenu)
         TriggerClientEvent('rp_jobbank:client:update', src, refreshedOk and refreshed or nil)
     end
     local formatted = tostring(amount):reverse():gsub('(%d%d%d)', '%1 '):reverse():gsub('^ ', '')
-    notify(src, (kind == 'deposit' and 'Dépôt' or 'Retrait') .. ' de ' .. formatted .. ' $ effectué sur le compte ' .. tostring(job.label or jobName) .. '.', 'success')
+    if logOk then
+        notify(src, (kind == 'deposit' and 'Dépôt' or 'Retrait') .. ' de ' .. formatted .. ' $ effectué sur le compte ' .. tostring(job.label or jobName) .. '.', 'success')
+    else
+        notify(src, 'Opération appliquée, mais journal indisponible. Prévenez un administrateur.', 'warning')
+    end
 end
 
 RegisterNetEvent('rp_jobbank:server:deposit', function(amount)
