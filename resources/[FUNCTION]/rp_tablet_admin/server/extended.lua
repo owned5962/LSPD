@@ -41,6 +41,30 @@ local function LogExtendedAction(src, action, targetId, details)
     if not ok then print('[rp_tablet_admin] Audit log failed: ' .. tostring(err)) end
 end
 
+-- Shared server-side setter used by both the F10 admin tablet and Creator F11.
+-- Callers must authorize the actor before invoking this export.
+local function SetAdminNoclip(src, enabled, reason)
+    src = tonumber(src)
+    if not src or src < 1 or not GetPlayerName(src) or type(enabled) ~= 'boolean' then return false end
+    AdminModes[src] = AdminModes[src] or { godmode = false, noclip = false }
+    local changed = AdminModes[src].noclip ~= enabled
+    AdminModes[src].noclip = enabled
+    TriggerEvent('rp_anticheat:setAdminInvulnerability', src, AdminModes[src].noclip or AdminModes[src].godmode)
+    if changed then
+        LogExtendedAction(src, 'noclip', nil,
+            (enabled and 'Activation NoClip' or 'Désactivation NoClip') .. (reason and (' · ' .. tostring(reason)) or ''))
+    end
+    TriggerClientEvent('rp_tablet_admin:client:toggleNoclip', src, enabled, true)
+    return true
+end
+
+exports('SetAdminNoclip', SetAdminNoclip)
+exports('IsAdminNoclipEnabled', function(src)
+    src = tonumber(src)
+    local modes = src and AdminModes[src] or nil
+    return modes ~= nil and modes.noclip == true
+end)
+
 RegisterNetEvent('rp_tablet_admin:server:teleportToMapPoint', function(rawX, rawY)
     local src = source
     if not AllowExtendedAction(src, 'teleport_map_point', 1000) then return end
@@ -136,10 +160,7 @@ RegisterNetEvent('rp_tablet_admin:server:toggleNoclip', function()
     local src = source
     if not AllowExtendedAction(src, 'noclip', 500) then return end
     AdminModes[src] = AdminModes[src] or { godmode = false, noclip = false }
-    AdminModes[src].noclip = not AdminModes[src].noclip
-    TriggerEvent('rp_anticheat:setAdminInvulnerability', src, AdminModes[src].noclip or AdminModes[src].godmode)
-    LogExtendedAction(src, 'noclip', nil, AdminModes[src].noclip and 'Activation NoClip' or 'Désactivation NoClip')
-    TriggerClientEvent('rp_tablet_admin:client:toggleNoclip', src, AdminModes[src].noclip)
+    SetAdminNoclip(src, not AdminModes[src].noclip, 'F10')
 end)
 
 RegisterNetEvent('rp_tablet_admin:server:toggleGodmode', function()
@@ -515,3 +536,13 @@ RegisterNetEvent('rp_tablet_admin:server:updateReport', function(rawReportId, ra
         or ('Signalement #' .. reportId .. (status == 'resolved' and ' marqué comme traité.' or ' rejeté.')), 'success')
 end)
 
+
+
+AddEventHandler('onResourceStop', function(resourceName)
+    if resourceName ~= GetCurrentResourceName() then return end
+    for src, modes in pairs(AdminModes) do
+        TriggerEvent('rp_anticheat:setAdminInvulnerability', src, modes.godmode == true)
+        TriggerClientEvent('rp_tablet_admin:client:toggleNoclip', src, false, true)
+        TriggerClientEvent('rp_tablet_admin:client:toggleGodmode', src, false, true)
+    end
+end)
