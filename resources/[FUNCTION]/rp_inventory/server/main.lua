@@ -859,7 +859,8 @@ local function AddItem(source, itemName, rawCount)
         local ok = pcall(loadInventory, player)
         if not ok then return false end
     end
-    if exports['rp_core']:GetPlayerFromId(src) ~= player
+    local activePlayer = exports['rp_core']:GetPlayerFromId(src)
+    if not activePlayer or tonumber(activePlayer.charId) ~= tonumber(player.charId)
         or inventoryCharacterIds[src] ~= player.charId then return false end
 
     if not exports['rp_core']:AcquireCharacterLock({ player.charId }) then return false end
@@ -913,7 +914,8 @@ local function AdminSetItem(source, itemName, operation, rawCount)
         local ok = pcall(loadInventory, player)
         if not ok then return false end
     end
-    if exports['rp_core']:GetPlayerFromId(src) ~= player
+    local activePlayer = exports['rp_core']:GetPlayerFromId(src)
+    if not activePlayer or tonumber(activePlayer.charId) ~= tonumber(player.charId)
         or inventoryCharacterIds[src] ~= player.charId then return false end
     if not exports['rp_core']:AcquireCharacterLock({ player.charId }) then return false end
 
