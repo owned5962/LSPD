@@ -606,8 +606,11 @@ CreateThread(function()
         print(('[rp_inventory] Ground drop restoration failed: %s'):format(tostring(rows)))
         return
     end
-    for _, row in ipairs(rows or {}) do
+    for index, row in ipairs(rows or {}) do
         spawnSavedDrop(row)
+        -- Yield periodically so a large persisted drop list cannot monopolize
+        -- the server thread during resource startup.
+        if index % 15 == 0 then Wait(0) end
     end
     syncDrops()
 end)
