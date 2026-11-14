@@ -1,4 +1,4 @@
-local MAX_CHARACTERS = 3
+local MAX_CHARACTERS = 1
 local creationLocks = {}
 local DefaultSpawn = { x = -1037.7, y = -2737.8, z = 20.1, heading = 330.0 }
 
@@ -438,14 +438,7 @@ local function CreateCharacter(src, data)
     end
     creationLocks[identifier] = true
 
-    local slotOk, slot = SafeDatabaseCall(src, 'character slot query', function()
-        return MySQL.scalar.await(
-            'SELECT COALESCE(MIN(t.slot), 1) FROM (SELECT 1 AS slot UNION SELECT 2 UNION SELECT 3) t LEFT JOIN characters c ON c.char_id = t.slot AND c.identifier = ? WHERE c.id IS NULL',
-            { identifier }
-        )
-    end)
-    if not slotOk then creationLocks[identifier] = nil return end
-    slot = tonumber(slot) or 1
+    local slot = 1
 
     local allowedSpawns = {
         airport = DefaultSpawn,
