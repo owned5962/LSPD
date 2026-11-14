@@ -135,7 +135,7 @@ AddEventHandler('rp_economy:server:logTransaction', function(characterId, transa
     amount = validAmount(amount)
     if not characterId or characterId % 1 ~= 0 or not validTypes[transactionType] or not amount then return end
 
-    local ok, err = pcall(MySQL.insert.await,
+    local ok, result = pcall(MySQL.insert.await,
         'INSERT INTO bank_transactions (character_id, type, amount, sender_or_receiver, reason) VALUES (?, ?, ?, ?, ?)',
         {
             characterId, transactionType, amount,
@@ -143,8 +143,8 @@ AddEventHandler('rp_economy:server:logTransaction', function(characterId, transa
             tostring(reason or 'Transaction'):sub(1, 255)
         }
     )
-    if not ok then
-        print(('[rp_economy] Transaction log failed for character %s: %s'):format(characterId, tostring(err)))
+    if not ok or tonumber(result) == nil or tonumber(result) < 1 then
+        print(('[rp_economy] Transaction log failed for character %s: %s'):format(characterId, tostring(result)))
     end
 end)
 
