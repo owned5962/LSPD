@@ -430,7 +430,11 @@ local function restorePlayerPrison(targetId)
     if not row then activeJails[targetId] = nil return end
     local endsAt = tonumber(row.ends_at) or 0
     if endsAt <= os.time() then
-        MySQL.update('DELETE FROM anticheat_jails WHERE identifier = ?', { identifier })
+        local deleteOk, deleteErr = pcall(MySQL.update.await,
+            'DELETE FROM anticheat_jails WHERE identifier = ?', { identifier })
+        if not deleteOk then
+            print('[rp_anticheat] Suppression de prison expirée impossible: ' .. tostring(deleteErr))
+        end
         activeJails[targetId] = nil
         return
     end
@@ -1017,8 +1021,24 @@ CreateThread(function()
                 activeJails[playerId] = nil
             elseif jail.endsAt <= os.time() then
                 activeJails[playerId] = nil
-                MySQL.update('DELETE FROM anticheat_jails WHERE identifier = ?', { jail.identifier })
+                local deleteOk, deleteErr = pcall(MySQL.update.await,
+                    'DELETE FROM anticheat_jails WHERE identifier = ?', { jail.identifier })
+                if not deleteOk then
+                    print('[rp_anticheat] Suppression de prison expirée impossible: ' .. tostring(deleteErr))
+                end
                 TriggerClientEvent('rp_anticheat:releasePrison', playerId)
+            else
+                local ped = GetPlayerPed(playerId)
+                local jailCoords = jail.payload and jail.payload.jail
+                if ped and ped ~= 0 and DoesEntityExist(ped) and jailCoords then
+                    local coords = GetEntityCoords(ped)
+                    local dx, dy, dz = coords.x - jailCoords.x, coords.y - jailCoords.y, coords.z - jailCoords.z
+                    local radius = tonumber(Config.PrisonRadius) or 90.0
+                    if (dx * dx + dy * dy + dz * dz) > (radius * radius) then
+                        SetEntityCoords(ped, jailCoords.x, jailCoords.y, jailCoords.z, false, false, false, false)
+                        TriggerClientEvent('rp_anticheat:applyPrison', playerId, jail.payload)
+                    end
+                end
             end
         end
     end
