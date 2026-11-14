@@ -2,6 +2,7 @@ local isCreating = false
 local charCamera = nil
 local characterBootPending = false
 local characterSessionReady = false
+local creationSubmissionPending = false
 
 local function FinishCharacterBoot()
     characterBootPending = false
@@ -426,8 +427,23 @@ RegisterNUICallback('beginCreation', function(data, cb)
 end)
 
 RegisterNUICallback('saveCharacter', function(data, cb)
+    if not isCreating or creationSubmissionPending or type(data) ~= 'table' then
+        cb({ status = 'error' })
+        return
+    end
+    creationSubmissionPending = true
     TriggerServerEvent('rp_characters:server:createCharacter', data)
     cb({ status = 'submitted' })
+end)
+
+RegisterNetEvent('rp_characters:client:creationResult', function(result)
+    if type(result) ~= 'table' or result.ok == true then return end
+    creationSubmissionPending = false
+    SendNUIMessage({
+        action = 'creationResult',
+        ok = false,
+        message = type(result.message) == 'string' and result.message or 'La création a échoué. Vérifiez les informations puis réessayez.'
+    })
 end)
 
 RegisterNUICallback('selectCharacter', function(data, cb)
@@ -458,6 +474,7 @@ RegisterNUICallback('rotateCharacter', function(data, cb)
 end)
 
 RegisterNetEvent('rp_characters:client:openMenu', function(maxCharacters)
+    creationSubmissionPending = false
     -- The creator is the first screen for a new account. The loading screen
     -- must be closed here, not only after a character is spawned.
     FinishCharacterBoot()
@@ -527,6 +544,7 @@ local function NormalizeClientSpawn(coords)
 end
 
 RegisterNetEvent('rp_characters:client:spawnPlayer', function(coords, gender, skin)
+    creationSubmissionPending = false
     pcall(SendLoadingScreenMessage, json.encode({
         eventName = 'lssStage',
         stage = 'player',
