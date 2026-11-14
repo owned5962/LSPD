@@ -1,5 +1,4 @@
 local activeMissions = {}
-local dutyStates = {}
 
 local function getPlayer(src)
     return exports['rp_core']:GetPlayerFromId(src)
@@ -17,7 +16,7 @@ local function buildData(src)
     if not player or not tonumber(player.charId) then return nil end
 
     local job = exports['rp_jobs']:GetJob(player.job)
-    local grade = exports['rp_jobs']:GetJobGrade(player.job, player.jobGrade)
+    local grade = exports['rp_jobs']:GetJobGrade(player.job, player.jobGrade) or {}
     local roster = {}
     local allPlayers = exports['rp_core']:GetAllPlayers() or {}
     for id, member in pairs(allPlayers) do
@@ -25,8 +24,8 @@ local function buildData(src)
             roster[#roster + 1] = {
                 id = tonumber(id) or 0,
                 name = safeName(member),
-                grade = exports['rp_jobs']:GetJobGrade(member.job, member.jobGrade).label or 'Employé',
-                duty = dutyStates[tonumber(id)] == true
+                grade = (exports['rp_jobs']:GetJobGrade(member.job, member.jobGrade) or {}).label or 'Employé',
+                duty = member.duty == true
             }
         end
     end
@@ -36,21 +35,12 @@ local function buildData(src)
         job = tostring(job.label or player.job or 'Sans emploi'),
         jobName = tostring(player.job or 'unemployed'),
         grade = tostring(grade.label or 'Employé'),
-        duty = dutyStates[src] == true,
+        duty = player.duty == true,
         roster = roster,
         mission = activeMissions[src],
         missionAvailable = player.job ~= 'unemployed'
     }
 end
-
-RegisterNetEvent('rp_tablet_job:server:setDutyState', function(status)
-    local src = source
-    if type(status) ~= 'boolean' then return end
-    local player = getPlayer(src)
-    if not player or not player.job or player.job == 'unemployed' then return end
-    -- Display-only status reported after the job module sends its validated update.
-    dutyStates[src] = status
-end)
 
 RegisterNetEvent('rp_tablet_job:server:requestSalaryStats', function()
     local src = source
@@ -92,33 +82,72 @@ RegisterNetEvent('rp_tablet_job:server:requestData', function()
     TriggerClientEvent('rp_tablet_job:client:openData', src, data)
 end)
 
-RegisterNetEvent('rp_tablet_job:server:startMission', function(title, description)
+RegisterNetEvent('rp_tablet_job:server:startMission', function(title)
     local src = source
     if not exports['rp_core']:CanPerformAction(src, 'rp_tablet_job:startMission', 2500) then return end
     local player = getPlayer(src)
-    if not player or not player.job or player.job == 'unemployed' then return end
-    if activeMissions[src] then
+    if not player or not player.charId or not player.job or player.job == 'unemployed' then return end
+    if player.duty ~= true then
+        TriggerClientEvent('rp_tablet_job:client:notify', src, 'Vous devez être en service pour accepter une mission.', 'warning')
+        return
+    end
+    local existing = activeMissions[src]
+    if existing and (tonumber(existing.characterId) ~= tonumber(player.charId) or existing.jobName ~= player.job) then
+        activeMissions[src] = nil
+        existing = nil
+    end
+    if existing then
         TriggerClientEvent('rp_tablet_job:client:notify', src, 'Terminez votre mission actuelle avant d’en accepter une autre.', 'warning')
         return
     end
-    if type(title) ~= 'string' or #title > 64 or type(description) ~= 'string' or #description > 240 then return end
-    -- Mission entries are server-owned and tied to the current job; the client
-    -- cannot set a reward, change another player's mission, or grant inventory.
-    local allowed = {
-        police = { ['Patrouille de secteur'] = true, ['Sécurisation d’une zone'] = true },
-        ambulance = { ['Ronde de prévention'] = true, ['Intervention médicale'] = true },
-        firefighter = { ['Inspection de sécurité'] = true, ['Préparation intervention'] = true },
-        mechanic = { ['Contrôle atelier'] = true, ['Assistance dépannage'] = true },
-        taxi = { ['Course de transport'] = true, ['Mise à disposition'] = true },
-        security = { ['Ronde de surveillance'] = true, ['Sécurisation de site'] = true },
-        delivery = { ['Tournée de livraison'] = true, ['Collecte de colis'] = true },
-        garbage = { ['Tournée de collecte'] = true, ['Contrôle de secteur'] = true }
+
+    -- Mission titles and descriptions are both server-owned; client text is never persisted.
+    local catalog = {
+        police = {
+            ['Patrouille de secteur'] = 'Effectuez une patrouille préventive dans votre secteur.',
+            ['Sécurisation d’une zone'] = 'Assurez une présence visible et sécurisez le périmètre.'
+        },
+        ambulance = {
+            ['Ronde de prévention'] = 'Effectuez une ronde de prévention et vérifiez les points de secours.',
+            ['Intervention médicale'] = 'Préparez-vous à répondre à une demande d’assistance.'
+        },
+        firefighter = {
+            ['Inspection de sécurité'] = 'Effectuez une inspection préventive de votre secteur.',
+            ['Préparation intervention'] = 'Vérifiez le matériel et préparez une intervention.'
+        },
+        mechanic = {
+            ['Contrôle atelier'] = 'Vérifiez les équipements et l’état de l’atelier.',
+            ['Assistance dépannage'] = 'Préparez une mission d’assistance aux automobilistes.'
+        },
+        taxi = {
+            ['Course de transport'] = 'Prenez en charge une demande de transport.',
+            ['Mise à disposition'] = 'Assurez une présence dans les zones fréquentées.'
+        },
+        security = {
+            ['Ronde de surveillance'] = 'Effectuez une ronde de surveillance de votre secteur.',
+            ['Sécurisation de site'] = 'Assurez la sécurisation d’un site professionnel.'
+        },
+        delivery = {
+            ['Tournée de livraison'] = 'Préparez une tournée de livraison de colis.',
+            ['Collecte de colis'] = 'Effectuez une collecte auprès des partenaires.'
+        },
+        garbage = {
+            ['Tournée de collecte'] = 'Préparez une tournée de collecte des déchets.',
+            ['Contrôle de secteur'] = 'Vérifiez la propreté et les points de collecte.'
+        }
     }
-    if not (allowed[player.job] and allowed[player.job][title]) then
+    local description = type(title) == 'string' and catalog[player.job] and catalog[player.job][title]
+    if not description then
         TriggerClientEvent('rp_tablet_job:client:notify', src, 'Cette mission n’est pas disponible pour votre métier.', 'error')
         return
     end
-    activeMissions[src] = { title = title, description = description, startedAt = os.time() }
+    activeMissions[src] = {
+        title = title,
+        description = description,
+        startedAt = os.time(),
+        characterId = tonumber(player.charId),
+        jobName = player.job
+    }
     TriggerClientEvent('rp_tablet_job:client:notify', src, 'Mission acceptée : ' .. title, 'success')
     local data = buildData(src)
     if data then TriggerClientEvent('rp_tablet_job:client:refreshData', src, data) end
@@ -127,7 +156,15 @@ end)
 RegisterNetEvent('rp_tablet_job:server:finishMission', function()
     local src = source
     if not exports['rp_core']:CanPerformAction(src, 'rp_tablet_job:finishMission', 2500) then return end
-    if not activeMissions[src] then return end
+    local player = getPlayer(src)
+    local mission = activeMissions[src]
+    if not player or not mission
+        or tonumber(mission.characterId) ~= tonumber(player.charId)
+        or mission.jobName ~= player.job then
+        activeMissions[src] = nil
+        TriggerClientEvent('rp_tablet_job:client:notify', src, 'Aucune mission active pour ce personnage.', 'warning')
+        return
+    end
     activeMissions[src] = nil
     TriggerClientEvent('rp_tablet_job:client:notify', src, 'Mission clôturée. Aucun paiement automatique n’est associé.', 'success')
     local data = buildData(src)
@@ -136,14 +173,5 @@ end)
 
 AddEventHandler('playerDropped', function()
     activeMissions[source] = nil
-    dutyStates[source] = nil
 end)
 
--- Duty state is updated only from the matching job resource's server event.
--- Job resources remain authoritative for access checks and actual service state.
-for _, job in ipairs(JobsList or {}) do
-    AddEventHandler('job_' .. job.name .. ':dutyUpdated', function(src, status)
-        src = tonumber(src)
-        if src and type(status) == 'boolean' then dutyStates[src] = status end
-    end)
-end
