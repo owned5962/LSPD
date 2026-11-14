@@ -1,37 +1,15 @@
 Players = {}
 
-local actionCooldowns = {}
 local pendingDisconnectSaves = {}
 local pendingDisconnectPlayers = {}
 
 local TIMER_MODULUS = 4294967296
 
-local function CanPerformAction(src, action, cooldownMs)
-    src = tonumber(src)
-    if not src or src < 1 or src % 1 ~= 0
-        or type(action) ~= 'string' or action == '' or #action > 80 then
-        return false
-    end
-
-    local cooldown = tonumber(cooldownMs) or 1000
-    if cooldown ~= cooldown or cooldown == math.huge or cooldown == -math.huge then
-        cooldown = 1000
-    end
-    cooldown = math.floor(math.max(0, math.min(60000, cooldown)))
-
-    local now = GetGameTimer() % TIMER_MODULUS
-    actionCooldowns[src] = actionCooldowns[src] or {}
-    local lastAction = actionCooldowns[src][action]
-    if lastAction ~= nil then
-        local elapsed = (now - lastAction) % TIMER_MODULUS
-        if elapsed < cooldown then return false end
-    end
-
-    actionCooldowns[src][action] = now
-    return true
+-- Rate limiting lives in server/rate_limit.lua (loaded first).
+-- Keep a local alias so existing main.lua call sites stay readable.
+local function CanPerformAction(src, action, cooldownMs, opts)
+    return exports['rp_core']:CanPerformAction(src, action, cooldownMs, opts)
 end
-
-exports('CanPerformAction', CanPerformAction)
 
 local function IsCharacterSavePending(characterId)
     characterId = tonumber(characterId)
@@ -281,7 +259,7 @@ end)
 
 AddEventHandler('playerDropped', function(reason)
     local src = source
-    actionCooldowns[src] = nil
+    pcall(function() exports['rp_core']:ClearPlayerRateLimits(src) end)
     local player = Players[src]
     if player then
         print(string.format('[rp_core] Player %s (%s) disconnected: %s',
@@ -338,5 +316,5 @@ end)
 
 CreateThread(function()
     Wait(500)
-    print('^2[rp_core] [OK] Exports ready: CanPerformAction, GetPlayerFromId, RegisterPlayer, CreateRPPlayer^7')
+    print('^2[rp_core] [OK] Exports ready: CanPerformAction (rate-limit), GetPlayerFromId, RegisterPlayer, CreateRPPlayer^7')
 end)
