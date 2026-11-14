@@ -49,6 +49,14 @@ local function Notify(src, message, kind)
     TriggerClientEvent('rp_core:client:notify', src, message, kind or 'error')
 end
 
+local function CreationError(src, message, kind)
+    Notify(src, message, kind)
+    TriggerClientEvent('rp_characters:client:creationResult', src, {
+        ok = false,
+        message = message
+    })
+end
+
 local function SafeDatabaseCall(src, operation, callback)
     local ok, result = pcall(callback)
     if not ok then
@@ -295,12 +303,12 @@ RegisterNetEvent('rp_characters:server:createCharacter', function(data)
     if not exports['rp_core']:CanPerformAction(src, 'character:create', 5000) then return end
     local identifier = GetLicenseIdentifier(src)
     if not identifier or type(data) ~= 'table' then
-        Notify(src, 'Données de création invalides.')
+        CreationError(src, 'Données de création invalides.')
         return
     end
     local activeSession = exports['rp_core']:GetPlayerByIdentifier(identifier)
     if exports['rp_core']:GetPlayerFromId(src) or activeSession then
-        Notify(src, 'Une session est déjà active pour ce compte.')
+        CreationError(src, 'Une session est déjà active pour ce compte.')
         return
     end
 
@@ -308,21 +316,21 @@ RegisterNetEvent('rp_characters:server:createCharacter', function(data)
     local lastname = type(data.lastname) == 'string' and Trim(data.lastname) or ''
     if #firstname < 2 or #firstname > 32 or #lastname < 2 or #lastname > 32 or
         firstname:find('[%c<>]') or lastname:find('[%c<>]') then
-        Notify(src, 'Prénom ou nom invalide (2 à 32 caractères).')
+        CreationError(src, 'Prénom ou nom invalide (2 à 32 caractères).')
         return
     end
     if not IsValidDate(data.dateofbirth) then
-        Notify(src, 'Date de naissance invalide.')
+        CreationError(src, 'Date de naissance invalide.')
         return
     end
     if data.gender ~= 'm' and data.gender ~= 'f' then
-        Notify(src, 'Genre invalide.')
+        CreationError(src, 'Genre invalide.')
         return
     end
 
     local height = tonumber(data.height)
     if not height or height % 1 ~= 0 or height < 120 or height > 220 then
-        Notify(src, 'Taille invalide (120 à 220 cm).')
+        CreationError(src, 'Taille invalide (120 à 220 cm).')
         return
     end
 
@@ -331,7 +339,7 @@ RegisterNetEvent('rp_characters:server:createCharacter', function(data)
     end)
     if not userOk then return end
     if not user then
-        Notify(src, 'Compte introuvable. Reconnectez-vous.')
+        CreationError(src, 'Compte introuvable. Reconnectez-vous.')
         return
     end
 
@@ -341,7 +349,7 @@ RegisterNetEvent('rp_characters:server:createCharacter', function(data)
     if not countOk then return end
     count = count or 0
     if count >= MAX_CHARACTERS then
-        Notify(src, ('Vous avez atteint la limite de %s personnages.'):format(MAX_CHARACTERS))
+        CreationError(src, ('Vous avez atteint la limite de %s personnages.'):format(MAX_CHARACTERS))
         return
     end
 
@@ -443,7 +451,7 @@ RegisterNetEvent('rp_characters:server:createCharacter', function(data)
     -- Serialize creation per FiveM license. The unique SQL key remains the
     -- final guard if two sessions race or the resource restarts mid-request.
     if creationLocks[identifier] then
-        Notify(src, 'Une création de personnage est déjà en cours pour ce compte.', 'warning')
+        CreationError(src, 'Une création de personnage est déjà en cours pour ce compte.', 'warning')
         return
     end
     creationLocks[identifier] = src
@@ -457,7 +465,7 @@ RegisterNetEvent('rp_characters:server:createCharacter', function(data)
     end
     if (tonumber(lockedCount) or 0) >= MAX_CHARACTERS then
         creationLocks[identifier] = nil
-        Notify(src, ('Vous avez atteint la limite de %s personnages.'):format(MAX_CHARACTERS))
+        CreationError(src, ('Vous avez atteint la limite de %s personnages.'):format(MAX_CHARACTERS))
         return
     end
 
@@ -474,7 +482,7 @@ RegisterNetEvent('rp_characters:server:createCharacter', function(data)
     slot = tonumber(lockedSlot)
     if not slot or slot < 1 or slot > MAX_CHARACTERS then
         creationLocks[identifier] = nil
-        Notify(src, 'Aucun emplacement de personnage disponible.')
+        CreationError(src, 'Aucun emplacement de personnage disponible.')
         return
     end
 
@@ -486,7 +494,7 @@ RegisterNetEvent('rp_characters:server:createCharacter', function(data)
     if not encodeOk or type(encodedPosition) ~= 'string' or type(encodedSkin) ~= 'string'
         or #encodedPosition > 1024 or #encodedSkin > 16384 then
         creationLocks[identifier] = nil
-        Notify(src, 'L’apparence du personnage contient trop de données. Réduisez les options et réessayez.')
+        CreationError(src, 'L’apparence du personnage contient trop de données. Réduisez les options et réessayez.')
         return
     end
 
@@ -500,7 +508,7 @@ RegisterNetEvent('rp_characters:server:createCharacter', function(data)
         if not insertOk then
             print(('[rp_characters] Character insert failed for %s: %s'):format(identifier, tostring(charId)))
         end
-        Notify(src, 'Impossible d’enregistrer le personnage en base de données.')
+        CreationError(src, 'Impossible d’enregistrer le personnage en base de données.')
         return
     end
 
